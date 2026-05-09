@@ -1887,9 +1887,8 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
     finally { setDeleting(null); }
   };
 
-  // Долгий тап — показываем меню (только для своих сообщений)
+  // Долгий тап — показываем меню для любого сообщения в чате
   const startHold = (msg: Message) => {
-    if (!msg.out) return;
     holdTimer.current = setTimeout(() => {
       setContextMsg(msg);
       navigator.vibrate?.(30);
@@ -1922,7 +1921,7 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
               </div>
               <div>
                 <p className="text-red-400 font-semibold text-sm">Удалить сообщение</p>
-                <p className="text-white/30 text-xs">Удалится только у тебя</p>
+                <p className="text-white/30 text-xs">Удалится у обоих участников</p>
               </div>
             </button>
             <button
@@ -1975,7 +1974,7 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
               onTouchEnd={cancelHold}
               onTouchMove={cancelHold}>
               <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
-                style={{ cursor: msg.out ? "pointer" : "default" }}>
+                style={{ cursor: "pointer" }}>
                 {msg.text}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">

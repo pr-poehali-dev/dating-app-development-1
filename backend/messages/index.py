@@ -96,9 +96,14 @@ def handler(event: dict, context) -> dict:
         if action == 'delete':
             body = json.loads(event.get('body') or '{}')
             msg_id = int(body.get('message_id', 0))
-            cur.execute("SELECT id FROM messages WHERE id = %s AND sender_id = %s", (msg_id, me['id']))
+            # Проверяем что сообщение принадлежит матчу, в котором участвует текущий пользователь
+            cur.execute("""
+                SELECT m.id FROM messages m
+                JOIN matches ma ON ma.id = m.match_id
+                WHERE m.id = %s AND (ma.user1_id = %s OR ma.user2_id = %s)
+            """, (msg_id, me['id'], me['id']))
             if not cur.fetchone():
-                return resp(403, {'error': 'Нельзя удалить это сообщение'})
+                return resp(403, {'error': 'Нет доступа к этому сообщению'})
             cur.execute("DELETE FROM messages WHERE id = %s", (msg_id,))
             conn.commit()
             return resp(200, {'ok': True, 'message_id': msg_id})
