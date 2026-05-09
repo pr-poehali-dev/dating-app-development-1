@@ -24,16 +24,28 @@ async function req<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getToken();
-  const res = await fetch(`${URLS[base]}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: token } : {}),
-      ...(options.headers || {}),
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Ошибка сервера");
+  const url = `${URLS[base]}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: token } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  } catch (e) {
+    console.error("Fetch error:", e, "for", url);
+    throw new Error("Нет соединения с сервером. Проверь интернет.");
+  }
+  let data: Record<string, unknown>;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error("Некорректный ответ сервера");
+  }
+  if (!res.ok) throw new Error((data.error as string) || "Ошибка сервера");
   return data as T;
 }
 
