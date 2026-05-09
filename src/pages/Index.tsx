@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import { authApi, profilesApi, likesApi, matchesApi, messagesApi, type User, type Profile, type Match, type Message, type LikedBy } from "@/lib/api";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -672,10 +673,470 @@ function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen)
   );
 }
 
+// ─── Auth Screen ─────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      let result;
+      if (mode === "register") {
+        if (!name.trim()) { setError("Введи своё имя"); setLoading(false); return; }
+        result = await authApi.register(email, password, name);
+      } else {
+        result = await authApi.login(email, password);
+      }
+      onAuth(result.user);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full justify-center px-6 gap-6">
+      <div className="text-center mb-4">
+        <h1 className="font-unbounded text-white text-3xl font-black grad-text mb-2">SPARK</h1>
+        <p className="text-white/40 text-sm">Знакомься. Общайся. Влюбляйся.</p>
+      </div>
+
+      <div className="glass-card p-6 flex flex-col gap-4">
+        <div className="flex rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+          {(["login", "register"] as const).map((m) => (
+            <button key={m} onClick={() => setMode(m)} className="flex-1 py-2.5 text-sm font-medium transition-all"
+              style={mode === m ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white", borderRadius: "16px" } : { color: "rgba(255,255,255,0.5)" }}>
+              {m === "login" ? "Вход" : "Регистрация"}
+            </button>
+          ))}
+        </div>
+
+        {mode === "register" && (
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Твоё имя"
+            className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+        )}
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email"
+          className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+        <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" type="password"
+          onKeyDown={(e) => e.key === "Enter" && submit()}
+          className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+
+        {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+
+        <button onClick={submit} disabled={loading} className="btn-grad py-3.5 text-base font-semibold">
+          {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
+        </button>
+      </div>
+
+      <p className="text-white/30 text-xs text-center">Нажимая кнопку, ты соглашаешься с правилами сервиса</p>
+    </div>
+  );
+}
+
+// ─── Real Discover ────────────────────────────────────────────────────────────
+function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFilter: () => void }) {
+  const [cards, setCards] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [likeAnim, setLikeAnim] = useState(false);
+
+  useEffect(() => {
+    profilesApi.getDiscover()
+      .then((d) => setCards(d.profiles))
+      .catch(() => setCards(PROFILES))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLike = useCallback(async (profile: Profile) => {
+    setLikeAnim(true);
+    try { await likesApi.send(profile.id); } catch (e) { void e; }
+    setTimeout(() => { setLikeAnim(false); setCards((c) => c.slice(1)); }, 400);
+  }, []);
+
+  const handleDislike = useCallback(() => {
+    setCards((c) => c.slice(1));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center gap-4">
+        <div className="w-12 h-12 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+        <p className="text-white/40 text-sm">Ищем анкеты...</p>
+      </div>
+    );
+  }
+
+  const profileCards = cards.length > 0 ? cards : PROFILES;
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-5 py-4 relative z-10">
+        <div>
+          <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
+          <p className="text-white/40 text-xs">{currentUser.city || "Везде"} · Знакомства</p>
+        </div>
+        <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
+          <Icon name="SlidersHorizontal" size={15} />Фильтры
+        </button>
+      </div>
+      <div className="flex-1 relative mx-4" style={{ maxHeight: "calc(100% - 80px)" }}>
+        {profileCards.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-up">
+            <div className="text-6xl">🌟</div>
+            <p className="text-white/60 text-center text-sm">Анкеты закончились.<br />Расширь критерии поиска!</p>
+            <button className="btn-grad px-6 py-3 text-sm" onClick={() => profilesApi.getDiscover().then((d) => setCards(d.profiles)).catch(() => setCards(PROFILES))}>
+              Обновить
+            </button>
+          </div>
+        ) : (
+          profileCards.slice(0, 3).reverse().map((p, i) => {
+            const profile = { ...p, photo: p.photo_url || PROFILES[i % PROFILES.length].photo, distance: "рядом", tags: p.tags || [], online: p.online || false, verified: p.verified || false };
+            return (
+              <SwipeCard
+                key={p.id}
+                profile={profile as typeof PROFILES[0]}
+                isTop={i === profileCards.slice(0, 3).length - 1}
+                offset={profileCards.slice(0, 3).length - 1 - i}
+                onLike={() => handleLike(p)}
+                onDislike={handleDislike}
+              />
+            );
+          })
+        )}
+        {likeAnim && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center animate-heart"
+              style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+              <Icon name="Heart" size={44} className="text-white" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Real Matches ─────────────────────────────────────────────────────────────
+function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => void }) {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    matchesApi.getAll()
+      .then((d) => setMatches(d.matches))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="flex flex-col h-full items-center justify-center gap-4">
+      <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+    </div>
+  );
+
+  if (matches.length === 0) return (
+    <div className="flex flex-col h-full items-center justify-center gap-4 px-8">
+      <div className="text-5xl">💬</div>
+      <p className="text-white/60 text-center text-sm">Пока нет совпадений.<br />Лайкай анкеты — они лайкнут в ответ!</p>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      <div className="px-5 pt-5 pb-3">
+        <h2 className="text-white font-golos font-bold text-2xl">Совпадения</h2>
+        <p className="text-white/40 text-sm mt-0.5">У тебя {matches.length} совпадений</p>
+      </div>
+      <div className="px-5 mb-4">
+        <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Новые</p>
+        <div className="flex gap-3">
+          {matches.map((m) => (
+            <button key={m.match_id} onClick={() => onChat(m.match_id)} className="flex flex-col items-center gap-2">
+              <div className="relative">
+                <img src={m.photo_url || PROFILES[0].photo} className="w-16 h-16 rounded-full object-cover" style={{ boxShadow: "0 0 0 2px #FF2D78" }} />
+                {m.online && <div className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: "var(--spark-dark)" }} />}
+                {m.unread_count > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold"
+                    style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>{m.unread_count}</div>
+                )}
+              </div>
+              <span className="text-white/80 text-xs">{m.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="px-5 flex-1">
+        <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Сообщения</p>
+        <div className="flex flex-col gap-1">
+          {matches.map((m) => (
+            <button key={m.match_id} onClick={() => onChat(m.match_id)}
+              className="glass-card p-4 flex items-center gap-3 w-full text-left hover:bg-white/10 transition-all">
+              <div className="relative flex-shrink-0">
+                <img src={m.photo_url || PROFILES[0].photo} className="w-12 h-12 rounded-full object-cover" />
+                {m.online && <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: "var(--spark-dark)" }} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-semibold text-sm">{m.name}{m.age ? `, ${m.age}` : ""}</span>
+                  <span className="text-white/40 text-xs">{m.last_msg_time ? new Date(m.last_msg_time).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }) : ""}</span>
+                </div>
+                <p className="text-white/50 text-sm truncate mt-0.5">{m.last_msg || "Совпадение! Напиши первым 👋"}</p>
+              </div>
+              {m.unread_count > 0 && (
+                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>{m.unread_count}</div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Real Likes ───────────────────────────────────────────────────────────────
+function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
+  const [likedMe, setLikedMe] = useState<LikedBy[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    likesApi.getLikedMe()
+      .then((d) => setLikedMe(d.liked_me))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="flex flex-col h-full items-center justify-center">
+      <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      <div className="px-5 pt-5 pb-3">
+        <h2 className="text-white font-golos font-bold text-2xl">Ты им понравился</h2>
+        <p className="text-white/40 text-sm mt-0.5">{likedMe.length} человек лайкнули тебя</p>
+      </div>
+      <div className="mx-5 mb-5 p-5 rounded-3xl relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.25))", border: "1px solid rgba(255,45,120,0.3)" }}>
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-white font-bold text-base">Spark Premium</span>
+              <span className="premium-badge">GOLD</span>
+            </div>
+            <p className="text-white/60 text-sm">Смотри, кто тебя лайкнул — без ограничений</p>
+          </div>
+          <div className="text-3xl">✨</div>
+        </div>
+        <button onClick={onPremium} className="btn-grad px-5 py-2.5 text-sm w-full">Открыть все лайки</button>
+      </div>
+      {likedMe.length === 0 ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-3">
+          <div className="text-5xl">❤️</div>
+          <p className="text-white/50 text-sm text-center">Пока никто не лайкнул.<br />Заполни профиль и лайкай сам!</p>
+        </div>
+      ) : (
+        <div className="px-5 grid grid-cols-2 gap-3">
+          {likedMe.map((p, i) => (
+            <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-[3/4]">
+              <img src={p.photo_url || PROFILES[i % PROFILES.length].photo} className="w-full h-full object-cover"
+                style={{ filter: p.blurred ? "blur(20px) brightness(0.7)" : "none" }} />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
+              {p.blurred && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button onClick={onPremium} className="glass-card p-3 flex flex-col items-center gap-1">
+                    <Icon name="Lock" size={18} className="text-white" />
+                    <span className="text-white text-xs">Premium</span>
+                  </button>
+                </div>
+              )}
+              <div className="absolute bottom-3 left-3">
+                <p className="text-white font-semibold text-sm">{p.name}{p.age ? `, ${p.age}` : ""}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Real Chat ────────────────────────────────────────────────────────────────
+function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; currentUserId: number; onBack: () => void }) {
+  const [msgs, setMsgs] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [partnerName, setPartnerName] = useState("...");
+  const [partnerPhoto, setPartnerPhoto] = useState(PROFILES[0].photo);
+
+  useEffect(() => {
+    messagesApi.getByMatch(matchId)
+      .then((d) => setMsgs(d.messages))
+      .catch(() => {});
+    matchesApi.getAll().then((d) => {
+      const m = d.matches.find((x) => x.match_id === matchId);
+      if (m) { setPartnerName(m.name); setPartnerPhoto(m.photo_url || PROFILES[0].photo); }
+    }).catch(() => {});
+  }, [matchId]);
+
+  const send = async () => {
+    if (!input.trim()) return;
+    const text = input.trim();
+    setInput("");
+    try {
+      const msg = await messagesApi.send(matchId, text);
+      setMsgs((m) => [...m, msg]);
+    } catch (e) { void e; }
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-3 px-4 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <button onClick={onBack} className="text-white/70 hover:text-white transition-colors"><Icon name="ChevronLeft" size={24} /></button>
+        <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
+        <div className="flex-1">
+          <p className="text-white font-semibold text-sm">{partnerName}</p>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+        {msgs.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-2">
+            <p className="text-white/40 text-sm">Начни общение первым! 👋</p>
+          </div>
+        )}
+        {msgs.map((msg) => (
+          <div key={msg.id} className={`flex flex-col ${msg.out ? "items-end" : "items-start"}`}>
+            <div className={msg.out ? "msg-bubble-out" : "msg-bubble-in"}>{msg.text}</div>
+            <span className="text-white/30 text-[11px] mt-1 px-1">
+              {new Date(msg.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="px-4 py-3 flex items-center gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()}
+          placeholder="Написать..."
+          className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+        <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
+          <Icon name="Send" size={16} className="text-white" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Real Profile ─────────────────────────────────────────────────────────────
+function RealProfileScreen({ currentUser, onPremium, onLogout }: { currentUser: User; onPremium: () => void; onLogout: () => void }) {
+  const settings = [
+    { icon: "Bell", label: "Уведомления", value: "Включены", danger: false },
+    { icon: "Shield", label: "Приватность", value: "Стандартная", danger: false },
+    { icon: "Globe", label: "Язык", value: "Русский", danger: false },
+    { icon: "HelpCircle", label: "Поддержка", value: "", danger: false },
+    { icon: "LogOut", label: "Выйти", value: "", danger: true, action: onLogout },
+  ];
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+        <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
+        <button className="text-white/60 hover:text-white transition-colors"><Icon name="Settings" size={22} /></button>
+      </div>
+      <div className="flex flex-col items-center px-5 mb-5">
+        <div className="relative mb-4">
+          <img src={currentUser.photo_url || PROFILES[0].photo} className="w-24 h-24 rounded-full object-cover" style={{ boxShadow: "0 0 0 3px #FF2D78" }} />
+          <button className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
+            <Icon name="Camera" size={13} className="text-white" />
+          </button>
+        </div>
+        <h3 className="text-white font-bold text-xl">{currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}</h3>
+        <p className="text-white/50 text-sm flex items-center gap-1"><Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}</p>
+        <div className="grid grid-cols-3 gap-3 w-full mt-4">
+          {[
+            { label: "Лайки", value: "—", icon: "Heart", color: "#FF2D78" },
+            { label: "Просмотры", value: "—", icon: "Eye", color: "#9B59B6" },
+            { label: "Совпадения", value: "—", icon: "Zap", color: "#FF8C42" },
+          ].map((s) => (
+            <div key={s.label} className="glass-card p-3 flex flex-col items-center gap-1">
+              <Icon name={s.icon as "Heart" | "Eye" | "Zap"} size={18} style={{ color: s.color }} />
+              <span className="text-white font-bold text-lg">{s.value}</span>
+              <span className="text-white/50 text-xs">{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mx-5 glass-card p-4 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
+          <button className="text-white/50 hover:text-white transition-colors"><Icon name="Pencil" size={14} /></button>
+        </div>
+        <p className="text-white/70 text-sm leading-relaxed">{currentUser.bio || "Расскажи о себе — это привлечёт больше симпатий!"}</p>
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
+          <button className="tag-pill border-dashed opacity-50">+ Добавить</button>
+        </div>
+      </div>
+      <div className="mx-5 p-4 rounded-2xl mb-4 cursor-pointer"
+        style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-white font-bold">Spark Premium</span>
+              <span className="premium-badge">✨ GOLD</span>
+            </div>
+            <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
+          </div>
+          <Icon name="ChevronRight" size={20} className="text-white" />
+        </div>
+      </div>
+      <div className="mx-5 glass-card overflow-hidden mb-6">
+        {settings.map((s, i) => (
+          <button key={s.label}
+            onClick={(s as typeof settings[0] & { action?: () => void }).action}
+            className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
+            style={{ borderBottom: i < settings.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+            <Icon name={s.icon as "Bell" | "Shield" | "Globe" | "HelpCircle" | "LogOut"} size={17} className={s.danger ? "text-red-400" : "text-white/50"} />
+            <span className={`${s.danger ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{s.label}</span>
+            {s.value && <span className="text-white/40 text-xs">{s.value}</span>}
+            {!s.value && !s.danger && <Icon name="ChevronRight" size={15} className="text-white/30" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function Index() {
   const [screen, setScreen] = useState<Screen>("discover");
   const [chatId, setChatId] = useState<number | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    if (authApi.isLoggedIn()) {
+      authApi.me()
+        .then((d) => setCurrentUser(d.user))
+        .catch(() => {})
+        .finally(() => setAuthLoading(false));
+    } else {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  const handleAuth = (user: User) => setCurrentUser(user);
+
+  const handleLogout = async () => {
+    await authApi.logout();
+    setCurrentUser(null);
+    setScreen("discover");
+  };
 
   const mainScreens: Screen[] = ["discover", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
@@ -683,15 +1144,36 @@ export default function Index() {
   const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
   const backToMatches = () => { setChatId(null); setScreen("matches"); };
 
+  if (authLoading) {
+    return (
+      <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
+        <div className="flex flex-col items-center gap-3">
+          <h1 className="font-unbounded text-white text-2xl font-black grad-text">SPARK</h1>
+          <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="app-bg flex justify-center">
+        <div className="w-full max-w-sm relative z-10" style={{ height: "100dvh" }}>
+          <AuthScreen onAuth={handleAuth} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-bg flex justify-center">
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
-          {screen === "discover" && <DiscoverScreen onFilter={() => setScreen("filter")} />}
-          {screen === "matches" && <MatchesScreen onChat={openChat} />}
-          {screen === "likes" && <LikesScreen onPremium={() => setScreen("premium")} />}
-          {screen === "profile" && <ProfileScreen onPremium={() => setScreen("premium")} />}
-          {screen === "chat" && chatId && <ChatScreen matchId={chatId} onBack={backToMatches} />}
+          {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
+          {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
+          {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
+          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} />}
+          {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
           {screen === "filter" && <FilterScreen onClose={() => setScreen("discover")} />}
           {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} />}
         </div>

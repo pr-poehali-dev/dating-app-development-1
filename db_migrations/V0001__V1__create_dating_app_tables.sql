@@ -1,0 +1,53 @@
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  age INTEGER,
+  city VARCHAR(100),
+  bio TEXT,
+  photo_url TEXT,
+  tags TEXT[],
+  verified BOOLEAN DEFAULT FALSE,
+  online BOOLEAN DEFAULT FALSE,
+  gender VARCHAR(20) DEFAULT 'other',
+  looking_for VARCHAR(20) DEFAULT 'all',
+  premium BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  last_seen TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '30 days'
+);
+
+CREATE TABLE IF NOT EXISTS likes (
+  id SERIAL PRIMARY KEY,
+  from_user_id INTEGER NOT NULL,
+  to_user_id INTEGER NOT NULL,
+  is_super BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(from_user_id, to_user_id)
+);
+
+CREATE TABLE IF NOT EXISTS matches (
+  id SERIAL PRIMARY KEY,
+  user1_id INTEGER NOT NULL,
+  user2_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user1_id, user2_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id SERIAL PRIMARY KEY,
+  match_id INTEGER NOT NULL,
+  sender_id INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  read_at TIMESTAMP
+);
