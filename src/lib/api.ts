@@ -125,6 +125,65 @@ export const profilesApi = {
     }),
 };
 
+// ─── Verify ───────────────────────────────────────────────────────────────────
+export interface VerifyStatus {
+  verified: boolean;
+  email: string | null;
+  selfie_status: "pending" | "approved" | "rejected" | null;
+  email_verified: boolean;
+  reject_reason: string | null;
+}
+
+export const verifyApi = {
+  getStatus: () => req<VerifyStatus>("profiles", "verify_status"),
+
+  sendEmailCode: (email: string) =>
+    req<{ ok: boolean }>("profiles", "verify_email_send", {
+      method: "POST", body: JSON.stringify({ email }),
+    }),
+
+  confirmEmailCode: (email: string, code: string) =>
+    req<{ ok: boolean }>("profiles", "verify_email_confirm", {
+      method: "POST", body: JSON.stringify({ email, code }),
+    }),
+
+  uploadSelfie: (image: string, content_type: string) =>
+    req<{ ok: boolean }>("profiles", "verify_selfie", {
+      method: "POST", body: JSON.stringify({ image, content_type }),
+    }),
+
+  // Админ
+  adminList: (adminToken: string) =>
+    req<{ requests: AdminVerifyRequest[] }>("profiles", "admin_verify_list", {
+      headers: { "X-Admin-Token": adminToken },
+    }),
+
+  adminApprove: (adminToken: string, request_id: number) =>
+    req<{ ok: boolean }>("profiles", "admin_verify_approve", {
+      method: "POST", body: JSON.stringify({ request_id }),
+      headers: { "X-Admin-Token": adminToken },
+    }),
+
+  adminReject: (adminToken: string, request_id: number, reason: string) =>
+    req<{ ok: boolean }>("profiles", "admin_verify_reject", {
+      method: "POST", body: JSON.stringify({ request_id, reason }),
+      headers: { "X-Admin-Token": adminToken },
+    }),
+};
+
+export interface AdminVerifyRequest {
+  id: number;
+  user_id: number;
+  selfie_url: string;
+  status: string;
+  email_verified: boolean;
+  created_at: string;
+  name: string;
+  age?: number;
+  photo_url?: string;
+  reject_reason?: string;
+}
+
 // ─── Posts ────────────────────────────────────────────────────────────────────
 export const postsApi = {
   getFeed: () => req<{ posts: Post[] }>("profiles", "posts_feed"),

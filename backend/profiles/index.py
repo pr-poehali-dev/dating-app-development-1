@@ -1,18 +1,23 @@
 """
-Профили: discover / update_me / upload_photo
+Профили: discover / update_me / upload_photo / verify_*
 Роутинг через query-параметр ?action=...
 """
 import json
 import os
 import base64
 import uuid
+import random
+import smtplib
+import ssl
 import boto3
 import psycopg2
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token, X-Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token, X-Authorization, X-Admin-Token',
 }
 
 def get_conn():
@@ -21,11 +26,35 @@ def get_conn():
 def get_me(conn, token: str):
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, premium FROM users WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW() LIMIT 1)",
+        "SELECT id, premium, name FROM users WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW() LIMIT 1)",
         (token,)
     )
     row = cur.fetchone()
-    return {'id': row[0], 'premium': row[1]} if row else None
+    return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
+
+def send_verify_email(to_email: str, code: str, name: str):
+    host = os.environ.get('SMTP_HOST', '')
+    port = int(os.environ.get('SMTP_PORT', 465))
+    user = os.environ.get('SMTP_USER', '')
+    password = os.environ.get('SMTP_PASS', '')
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'Код подтверждения SPARK'
+    msg['From'] = f'SPARK <{user}>'
+    msg['To'] = to_email
+    html = f"""<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#1a1625;border-radius:16px;padding:32px;">
+      <h1 style="color:#FF2D78;font-size:28px;margin:0 0 8px">SPARK ✦</h1>
+      <p style="color:#ccc;margin:0 0 24px">Привет, {name}!</p>
+      <p style="color:#ccc;margin:0 0 16px">Твой код подтверждения:</p>
+      <div style="background:#2d2540;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px">
+        <span style="font-size:42px;font-weight:bold;letter-spacing:12px;color:#FF2D78">{code}</span>
+      </div>
+      <p style="color:#888;font-size:13px">Код действителен 10 минут.</p>
+    </div>"""
+    msg.attach(MIMEText(html, 'html'))
+    ctx = ssl.create_default_context()
+    with smtplib.SMTP_SSL(host, port, context=ctx) as server:
+        server.login(user, password)
+        server.sendmail(user, to_email, msg.as_string())
 
 def get_token(event: dict) -> str:
     raw = (event.get('headers') or {}).get('Authorization', '') or \
@@ -44,9 +73,54 @@ def handler(event: dict, context) -> dict:
     params = event.get('queryStringParameters') or {}
     action = params.get('action', '')
     token = get_token(event)
+    headers = event.get('headers') or {}
+    admin_token_hdr = headers.get('X-Admin-Token', '') or headers.get('x-admin-token', '')
 
     conn = get_conn()
     try:
+        cur = conn.cursor()
+
+        # ── ADMIN: верификация ─────────────────────────────────────────────────
+        if action.startswith('admin_verify'):
+            real_admin = os.environ.get('ADMIN_TOKEN', '')
+            if not real_admin or admin_token_hdr != real_admin:
+                return resp(403, {'error': 'Нет доступа'})
+
+            if action == 'admin_verify_list':
+                cur.execute("""
+                    SELECT vr.id, vr.user_id, vr.selfie_url, vr.status, vr.email_verified,
+                           vr.created_at, u.name, u.age, u.photo_url, vr.reject_reason
+                    FROM verification_requests vr
+                    JOIN users u ON u.id = vr.user_id
+                    WHERE vr.status = 'pending'
+                    ORDER BY vr.created_at ASC
+                """)
+                cols = ['id','user_id','selfie_url','status','email_verified','created_at','name','age','photo_url','reject_reason']
+                return resp(200, {'requests': [dict(zip(cols, r)) for r in cur.fetchall()]})
+
+            if action == 'admin_verify_approve':
+                body = json.loads(event.get('body') or '{}')
+                req_id = int(body.get('request_id', 0))
+                cur.execute("SELECT user_id FROM verification_requests WHERE id=%s", (req_id,))
+                row = cur.fetchone()
+                if not row:
+                    return resp(404, {'error': 'Заявка не найдена'})
+                cur.execute("UPDATE verification_requests SET status='approved', reviewed_at=NOW() WHERE id=%s", (req_id,))
+                cur.execute("UPDATE users SET verified=TRUE WHERE id=%s", (row[0],))
+                conn.commit()
+                return resp(200, {'ok': True})
+
+            if action == 'admin_verify_reject':
+                body = json.loads(event.get('body') or '{}')
+                req_id = int(body.get('request_id', 0))
+                reason = body.get('reason', '').strip()[:200]
+                cur.execute("UPDATE verification_requests SET status='rejected', reviewed_at=NOW(), reject_reason=%s WHERE id=%s", (reason or None, req_id))
+                conn.commit()
+                return resp(200, {'ok': True})
+
+            return resp(400, {'error': 'Неизвестное admin действие'})
+
+        # ── USER endpoints ─────────────────────────────────────────────────────
         me = get_me(conn, token)
         if not me:
             return resp(401, {'error': 'Не авторизован'})
@@ -290,6 +364,85 @@ def handler(event: dict, context) -> dict:
             cols = ['id', 'post_id', 'user_id', 'text', 'created_at', 'author_name', 'author_photo']
             comments = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'comments': comments})
+
+        # ── ВЕРИФИКАЦИЯ (user) ─────────────────────────────────────────────────
+
+        if action == 'verify_status':
+            cur.execute("SELECT verified, email FROM users WHERE id=%s", (me['id'],))
+            urow = cur.fetchone()
+            cur.execute("SELECT status, email_verified, reject_reason FROM verification_requests WHERE user_id=%s", (me['id'],))
+            vrow = cur.fetchone()
+            return resp(200, {
+                'verified': bool(urow[0]) if urow else False,
+                'email': urow[1] if urow else None,
+                'selfie_status': vrow[0] if vrow else None,
+                'email_verified': bool(vrow[1]) if vrow else False,
+                'reject_reason': vrow[2] if vrow else None,
+            })
+
+        if action == 'verify_email_send':
+            body = json.loads(event.get('body') or '{}')
+            email = body.get('email', '').strip().lower()
+            if not email or '@' not in email:
+                return resp(400, {'error': 'Некорректный email'})
+            cur.execute("SELECT id FROM users WHERE email=%s AND id != %s", (email, me['id']))
+            if cur.fetchone():
+                return resp(400, {'error': 'Этот email уже используется'})
+            code = str(random.randint(100000, 999999))
+            cur.execute("UPDATE email_codes SET used=TRUE WHERE user_id=%s AND used=FALSE", (me['id'],))
+            cur.execute("INSERT INTO email_codes (user_id, email, code) VALUES (%s, %s, %s)", (me['id'], email, code))
+            conn.commit()
+            try:
+                send_verify_email(email, code, me['name'])
+            except Exception as e:
+                return resp(500, {'error': f'Ошибка отправки письма: {str(e)}'})
+            return resp(200, {'ok': True})
+
+        if action == 'verify_email_confirm':
+            body = json.loads(event.get('body') or '{}')
+            email = body.get('email', '').strip().lower()
+            code = body.get('code', '').strip()
+            cur.execute("""
+                SELECT id FROM email_codes
+                WHERE user_id=%s AND email=%s AND code=%s AND used=FALSE AND expires_at > NOW()
+                ORDER BY created_at DESC LIMIT 1
+            """, (me['id'], email, code))
+            row = cur.fetchone()
+            if not row:
+                return resp(400, {'error': 'Неверный или истёкший код'})
+            cur.execute("UPDATE email_codes SET used=TRUE WHERE id=%s", (row[0],))
+            cur.execute("UPDATE users SET email=%s WHERE id=%s", (email, me['id']))
+            cur.execute("UPDATE verification_requests SET email_verified=TRUE WHERE user_id=%s", (me['id'],))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'verify_selfie':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"selfies/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+            cur.execute("SELECT id FROM verification_requests WHERE user_id=%s", (me['id'],))
+            if cur.fetchone():
+                cur.execute("UPDATE verification_requests SET selfie_url=%s, status='pending', reviewed_at=NULL, reject_reason=NULL WHERE user_id=%s",
+                            (cdn_url, me['id']))
+            else:
+                cur.execute("INSERT INTO verification_requests (user_id, selfie_url) VALUES (%s, %s)", (me['id'], cdn_url))
+            conn.commit()
+            return resp(200, {'ok': True})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
