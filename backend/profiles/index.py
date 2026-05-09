@@ -1,8 +1,11 @@
 """
-Профили пользователей: получить анкеты для свайпа, обновить свой профиль
+Профили пользователей: получить анкеты для свайпа, обновить свой профиль, загрузить фото
 """
 import json
 import os
+import base64
+import uuid
+import boto3
 import psycopg2
 
 CORS = {
@@ -103,6 +106,41 @@ def handler(event: dict, context) -> dict:
                 return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Не найден'})}
             cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online']
             return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'profile': dict(zip(cols, row))})}
+
+        # POST /profiles/photo — загрузить фото профиля
+        if method == 'POST' and path.endswith('/photo'):
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+
+            if not image_data:
+                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Нет изображения'})}
+
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Файл слишком большой (макс. 10 МБ)'})}
+
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"avatars/{me['id']}/{uuid.uuid4()}.{ext}"
+
+            s3 = boto3.client(
+                's3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+            )
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET photo_url = %s WHERE id = %s", (cdn_url, me['id']))
+            conn.commit()
+
+            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'ok': True, 'photo_url': cdn_url})}
 
         return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Not found'})}
 

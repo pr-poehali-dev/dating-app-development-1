@@ -81,6 +81,12 @@ export const profilesApi = {
     }),
 
   getById: (id: number) => req<{ profile: Profile }>("profiles", `/profiles/${id}`),
+
+  uploadPhoto: (image: string, content_type: string) =>
+    req<{ ok: boolean; photo_url: string }>("profiles", "/profiles/photo", {
+      method: "POST",
+      body: JSON.stringify({ image, content_type }),
+    }),
 };
 
 // ─── Likes ───────────────────────────────────────────────────────────────────

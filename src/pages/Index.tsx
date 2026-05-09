@@ -1033,7 +1033,55 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
 }
 
 // ─── Real Profile ─────────────────────────────────────────────────────────────
-function RealProfileScreen({ currentUser, onPremium, onLogout }: { currentUser: User; onPremium: () => void; onLogout: () => void }) {
+function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate }: {
+  currentUser: User;
+  onPremium: () => void;
+  onLogout: () => void;
+  onPhotoUpdate: (url: string) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [localPhoto, setLocalPhoto] = useState(currentUser.photo_url || "");
+
+  const handlePhotoClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoError("");
+
+    if (!file.type.startsWith("image/")) {
+      setPhotoError("Выбери изображение");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoError("Файл слишком большой (макс. 10 МБ)");
+      return;
+    }
+
+    // Показываем превью сразу
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      setLocalPhoto(base64);
+      setPhotoUploading(true);
+      try {
+        const res = await profilesApi.uploadPhoto(base64, file.type);
+        setLocalPhoto(res.photo_url);
+        onPhotoUpdate(res.photo_url);
+      } catch (err: unknown) {
+        setPhotoError(err instanceof Error ? err.message : "Ошибка загрузки");
+        setLocalPhoto(currentUser.photo_url || "");
+      } finally {
+        setPhotoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+    // Сбрасываем input чтобы можно было выбрать тот же файл снова
+    e.target.value = "";
+  };
+
   const settings = [
     { icon: "Bell", label: "Уведомления", value: "Включены", danger: false },
     { icon: "Shield", label: "Приватность", value: "Стандартная", danger: false },
@@ -1042,19 +1090,45 @@ function RealProfileScreen({ currentUser, onPremium, onLogout }: { currentUser: 
     { icon: "LogOut", label: "Выйти", value: "", danger: true, action: onLogout },
   ];
 
+  const displayPhoto = localPhoto || PROFILES[0].photo;
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-5 pt-5 pb-3 flex items-center justify-between">
         <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
         <button className="text-white/60 hover:text-white transition-colors"><Icon name="Settings" size={22} /></button>
       </div>
+
+      {/* Скрытый input для выбора файла */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <div className="flex flex-col items-center px-5 mb-5">
-        <div className="relative mb-4">
-          <img src={currentUser.photo_url || PROFILES[0].photo} className="w-24 h-24 rounded-full object-cover" style={{ boxShadow: "0 0 0 3px #FF2D78" }} />
-          <button className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
-            <Icon name="Camera" size={13} className="text-white" />
-          </button>
+        <div className="relative mb-4" onClick={handlePhotoClick} style={{ cursor: "pointer" }}>
+          <img
+            src={displayPhoto}
+            className="w-24 h-24 rounded-full object-cover transition-opacity"
+            style={{ boxShadow: "0 0 0 3px #FF2D78", opacity: photoUploading ? 0.5 : 1 }}
+          />
+          {photoUploading ? (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full">
+              <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            </div>
+          ) : (
+            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
+              <Icon name="Camera" size={13} className="text-white" />
+            </div>
+          )}
         </div>
+        {photoError && <p className="text-red-400 text-xs mb-2 text-center">{photoError}</p>}
+        {!photoUploading && !photoError && (
+          <p className="text-white/30 text-xs mb-2">Нажми на фото, чтобы изменить</p>
+        )}
         <h3 className="text-white font-bold text-xl">{currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}</h3>
         <p className="text-white/50 text-sm flex items-center gap-1"><Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}</p>
         <div className="grid grid-cols-3 gap-3 w-full mt-4">
@@ -1138,6 +1212,10 @@ export default function Index() {
     setScreen("discover");
   };
 
+  const handlePhotoUpdate = (url: string) => {
+    setCurrentUser((u) => u ? { ...u, photo_url: url } : u);
+  };
+
   const mainScreens: Screen[] = ["discover", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
@@ -1172,7 +1250,7 @@ export default function Index() {
           {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
-          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} />}
+          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} />}
           {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
           {screen === "filter" && <FilterScreen onClose={() => setScreen("discover")} />}
           {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} />}
