@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { authApi, profilesApi, likesApi, matchesApi, messagesApi, type User, type Profile, type Match, type Message, type LikedBy } from "@/lib/api";
+import { authApi, profilesApi, likesApi, matchesApi, messagesApi, postsApi, type User, type Profile, type Match, type Message, type LikedBy, type Post, type PostComment } from "@/lib/api";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ const MESSAGES: Record<number, { id: number; text: string; out: boolean; time: s
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium";
+type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos";
 type Profile = (typeof PROFILES)[0];
 
 // ─── SwipeCard ────────────────────────────────────────────────────────────────
@@ -641,12 +641,260 @@ function PremiumScreen({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Photos Screen ────────────────────────────────────────────────────────────
+function PhotosScreen({ currentUser }: { currentUser: User }) {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [openComments, setOpenComments] = useState<Post | null>(null);
+  const [comments, setComments] = useState<PostComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [caption, setCaption] = useState("");
+  const [showCaptionFor, setShowCaptionFor] = useState<string | null>(null); // base64 pending
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    postsApi.getFeed()
+      .then((d) => setPosts(d.posts))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setShowCaptionFor(base64);
+      setCaption("");
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handlePublish = async () => {
+    if (!showCaptionFor) return;
+    setUploading(true);
+    try {
+      const mimeMatch = showCaptionFor.match(/data:(image\/\w+);/);
+      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const res = await postsApi.create(showCaptionFor, mime, caption);
+      setPosts((prev) => [{
+        ...res.post,
+        author_name: currentUser.name,
+        author_photo: currentUser.photo_url,
+        likes_count: 0,
+        liked_by_me: false,
+        comments_count: 0,
+      }, ...prev]);
+      setShowCaptionFor(null);
+      setCaption("");
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleLike = async (post: Post) => {
+    const res = await postsApi.like(post.id);
+    setPosts((prev) => prev.map((p) =>
+      p.id === post.id ? { ...p, liked_by_me: res.liked, likes_count: res.likes_count } : p
+    ));
+  };
+
+  const openPostComments = async (post: Post) => {
+    setOpenComments(post);
+    setCommentsLoading(true);
+    try {
+      const res = await postsApi.getComments(post.id);
+      setComments(res.comments);
+    } catch (e: unknown) { void e; }
+    finally { setCommentsLoading(false); }
+  };
+
+  const sendComment = async () => {
+    if (!commentText.trim() || !openComments) return;
+    const text = commentText.trim();
+    setCommentText("");
+    try {
+      const res = await postsApi.addComment(openComments.id, text);
+      setComments((c) => [...c, res.comment]);
+      setPosts((prev) => prev.map((p) =>
+        p.id === openComments.id ? { ...p, comments_count: p.comments_count + 1 } : p
+      ));
+    } catch (e: unknown) { void e; }
+  };
+
+  const timeAgo = (dt: string) => {
+    const diff = (Date.now() - new Date(dt).getTime()) / 1000;
+    if (diff < 60) return "только что";
+    if (diff < 3600) return `${Math.floor(diff / 60)} мин`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ч`;
+    return `${Math.floor(diff / 86400)} дн`;
+  };
+
+  return (
+    <>
+      {/* Caption modal before publish */}
+      {showCaptionFor && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.8)" }}>
+          <div className="w-full max-w-sm animate-slide-up flex flex-col" style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0", maxHeight: "90dvh" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <button onClick={() => setShowCaptionFor(null)} className="text-white/50 text-sm">Отмена</button>
+              <h3 className="text-white font-bold text-sm">Новое фото</h3>
+              <button onClick={handlePublish} disabled={uploading} className="btn-grad px-4 py-1.5 text-sm">
+                {uploading ? "..." : "Опубликовать"}
+              </button>
+            </div>
+            <div className="p-5 flex flex-col gap-4">
+              <img src={showCaptionFor} className="w-full rounded-2xl object-cover max-h-64" />
+              <textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                placeholder="Добавь подпись..."
+                rows={3}
+                maxLength={200}
+                className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comments modal */}
+      {openComments && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)" }}>
+          <div className="w-full max-w-sm animate-slide-up flex flex-col" style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0", maxHeight: "80dvh" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <h3 className="text-white font-bold text-sm">Комментарии</h3>
+              <button onClick={() => setOpenComments(null)} className="text-white/50 hover:text-white">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-3">
+              {commentsLoading && <p className="text-white/40 text-sm text-center py-4">Загружаем...</p>}
+              {!commentsLoading && comments.length === 0 && (
+                <p className="text-white/30 text-sm text-center py-6">Пока нет комментариев. Будь первым!</p>
+              )}
+              {comments.map((c) => (
+                <div key={c.id} className="flex gap-3">
+                  <img src={c.author_photo || PROFILES[0].photo} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                  <div className="glass-card px-3 py-2 flex-1">
+                    <p className="text-white/60 text-xs mb-1">{c.author_name}</p>
+                    <p className="text-white text-sm">{c.text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="px-5 py-3 flex gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendComment()}
+                placeholder="Написать комментарий..."
+                className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos"
+              />
+              <button onClick={sendComment} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
+                <Icon name="Send" size={15} className="text-white" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <h2 className="text-white font-golos font-bold text-2xl">Фото</h2>
+            <p className="text-white/40 text-xs mt-0.5">Лента публикаций</p>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-grad w-10 h-10 rounded-full flex items-center justify-center"
+          >
+            <Icon name="Plus" size={20} className="text-white" />
+          </button>
+        </div>
+
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+
+        {/* Feed */}
+        <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-4 pb-4">
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+            </div>
+          )}
+          {!loading && posts.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="text-5xl">📸</div>
+              <p className="text-white/50 text-sm text-center">Пока нет публикаций.<br />Нажми «+» и добавь первое фото!</p>
+            </div>
+          )}
+          {posts.map((post) => (
+            <div key={post.id} className="glass-card overflow-hidden">
+              {/* Author */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <img src={post.author_photo || PROFILES[0].photo} className="w-9 h-9 rounded-full object-cover" />
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-sm">{post.author_name}</p>
+                  <p className="text-white/40 text-xs">{timeAgo(post.created_at)}</p>
+                </div>
+              </div>
+              {/* Photo */}
+              <img src={post.photo_url} className="w-full object-cover" style={{ maxHeight: 400 }} />
+              {/* Actions */}
+              <div className="px-4 pt-3 pb-1 flex items-center gap-4">
+                <button
+                  onClick={() => handleLike(post)}
+                  className="flex items-center gap-1.5 transition-all active:scale-90"
+                >
+                  <Icon
+                    name="Heart"
+                    size={22}
+                    style={{ color: post.liked_by_me ? "#FF2D78" : "rgba(255,255,255,0.5)",
+                      fill: post.liked_by_me ? "#FF2D78" : "transparent" }}
+                  />
+                  <span className="text-white/60 text-sm">{post.likes_count}</span>
+                </button>
+                <button
+                  onClick={() => openPostComments(post)}
+                  className="flex items-center gap-1.5"
+                >
+                  <Icon name="MessageCircle" size={22} className="text-white/50" />
+                  <span className="text-white/60 text-sm">{post.comments_count}</span>
+                </button>
+              </div>
+              {/* Caption */}
+              {post.caption && (
+                <div className="px-4 pb-3">
+                  <span className="text-white font-semibold text-sm">{post.author_name} </span>
+                  <span className="text-white/70 text-sm">{post.caption}</span>
+                </div>
+              )}
+              {post.comments_count > 0 && (
+                <button onClick={() => openPostComments(post)} className="px-4 pb-3 text-white/40 text-xs">
+                  Смотреть все комментарии ({post.comments_count})
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen) => void }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
     { screen: "discover", icon: "Flame", label: "Поиск" },
-    { screen: "matches", icon: "MessageCircle", label: "Чаты", badge: 2 },
-    { screen: "likes", icon: "Heart", label: "Лайки", badge: 2 },
+    { screen: "photos", icon: "Image", label: "Фото" },
+    { screen: "matches", icon: "MessageCircle", label: "Чаты" },
     { screen: "profile", icon: "User", label: "Профиль" },
   ];
 
@@ -658,7 +906,7 @@ function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen)
           className={`nav-item relative ${active === item.screen ? "active" : ""}`}
           onClick={() => onChange(item.screen)}>
           <div className="relative">
-            <Icon name={item.icon as "Flame" | "MessageCircle" | "Heart" | "User"} size={22} />
+            <Icon name={item.icon as "Flame" | "Image" | "MessageCircle" | "User"} size={22} />
             {item.badge && (
               <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
                 style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
@@ -1409,7 +1657,7 @@ export default function Index() {
     setCurrentUser((u) => u ? { ...u, ...data } : u);
   };
 
-  const mainScreens: Screen[] = ["discover", "matches", "likes", "profile"];
+  const mainScreens: Screen[] = ["discover", "photos", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
   const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
@@ -1441,6 +1689,7 @@ export default function Index() {
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
+          {screen === "photos" && <PhotosScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
           {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} />}

@@ -114,6 +114,105 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        # Загрузить фото-пост
+        if action == 'post_create':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            caption = body.get('caption', '').strip()
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"posts/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+            cur.execute(
+                "INSERT INTO posts (user_id, photo_url, caption) VALUES (%s, %s, %s) RETURNING id, created_at",
+                (me['id'], cdn_url, caption or None)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'post': {'id': row[0], 'photo_url': cdn_url, 'caption': caption, 'created_at': str(row[1])}})
+
+        # Лента постов всех пользователей
+        if action == 'posts_feed':
+            cur.execute(f"""
+                SELECT p.id, p.user_id, p.photo_url, p.caption, p.created_at,
+                       u.name, u.photo_url as author_photo,
+                       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
+                       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = {me['id']}) as liked_by_me,
+                       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count
+                FROM posts p
+                JOIN users u ON u.id = p.user_id
+                ORDER BY p.created_at DESC
+                LIMIT 30
+            """)
+            rows = cur.fetchall()
+            cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'likes_count', 'liked_by_me', 'comments_count']
+            posts = []
+            for r in rows:
+                item = dict(zip(cols, r))
+                item['liked_by_me'] = int(item['liked_by_me']) > 0
+                item['likes_count'] = int(item['likes_count'])
+                item['comments_count'] = int(item['comments_count'])
+                posts.append(item)
+            return resp(200, {'posts': posts})
+
+        # Лайк/анлайк поста
+        if action == 'post_like':
+            body = json.loads(event.get('body') or '{}')
+            post_id = int(body.get('post_id', 0))
+            cur.execute("SELECT id FROM post_likes WHERE post_id = %s AND user_id = %s", (post_id, me['id']))
+            if cur.fetchone():
+                cur.execute("DELETE FROM post_likes WHERE post_id = %s AND user_id = %s", (post_id, me['id']))
+                liked = False
+            else:
+                cur.execute("INSERT INTO post_likes (post_id, user_id) VALUES (%s, %s)", (post_id, me['id']))
+                liked = True
+            cur.execute("SELECT COUNT(*) FROM post_likes WHERE post_id = %s", (post_id,))
+            count = int(cur.fetchone()[0])
+            conn.commit()
+            return resp(200, {'liked': liked, 'likes_count': count})
+
+        # Добавить комментарий
+        if action == 'post_comment':
+            body = json.loads(event.get('body') or '{}')
+            post_id = int(body.get('post_id', 0))
+            text = body.get('text', '').strip()
+            if not text:
+                return resp(400, {'error': 'Пустой комментарий'})
+            cur.execute(
+                "INSERT INTO post_comments (post_id, user_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
+                (post_id, me['id'], text)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            cur.execute("SELECT name, photo_url FROM users WHERE id = %s", (me['id'],))
+            u = cur.fetchone()
+            return resp(200, {'comment': {'id': row[0], 'post_id': post_id, 'user_id': me['id'],
+                'author_name': u[0], 'author_photo': u[1], 'text': text, 'created_at': str(row[1])}})
+
+        # Получить комментарии к посту
+        if action == 'post_comments':
+            post_id = int(params.get('post_id', 0))
+            cur.execute("""
+                SELECT c.id, c.post_id, c.user_id, c.text, c.created_at, u.name, u.photo_url
+                FROM post_comments c JOIN users u ON u.id = c.user_id
+                WHERE c.post_id = %s ORDER BY c.created_at ASC
+            """, (post_id,))
+            cols = ['id', 'post_id', 'user_id', 'text', 'created_at', 'author_name', 'author_photo']
+            comments = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'comments': comments})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

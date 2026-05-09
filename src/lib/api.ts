@@ -99,6 +99,32 @@ export const profilesApi = {
     }),
 };
 
+// ─── Posts ────────────────────────────────────────────────────────────────────
+export const postsApi = {
+  getFeed: () => req<{ posts: Post[] }>("profiles", "posts_feed"),
+
+  create: (image: string, content_type: string, caption: string) =>
+    req<{ ok: boolean; post: Post }>("profiles", "post_create", {
+      method: "POST",
+      body: JSON.stringify({ image, content_type, caption }),
+    }),
+
+  like: (post_id: number) =>
+    req<{ liked: boolean; likes_count: number }>("profiles", "post_like", {
+      method: "POST",
+      body: JSON.stringify({ post_id }),
+    }),
+
+  getComments: (post_id: number) =>
+    req<{ comments: PostComment[] }>("profiles", "post_comments", {}, { post_id: String(post_id) }),
+
+  addComment: (post_id: number, text: string) =>
+    req<{ comment: PostComment }>("profiles", "post_comment", {
+      method: "POST",
+      body: JSON.stringify({ post_id, text }),
+    }),
+};
+
 // ─── Likes ───────────────────────────────────────────────────────────────────
 export const likesApi = {
   send: (to_user_id: number, is_super = false) =>
@@ -185,4 +211,27 @@ export interface Message {
   created_at: string;
   out: boolean;
   read?: boolean;
+}
+
+export interface Post {
+  id: number;
+  user_id: number;
+  photo_url: string;
+  caption?: string;
+  created_at: string;
+  author_name: string;
+  author_photo?: string;
+  likes_count: number;
+  liked_by_me: boolean;
+  comments_count: number;
+}
+
+export interface PostComment {
+  id: number;
+  post_id: number;
+  user_id: number;
+  text: string;
+  created_at: string;
+  author_name: string;
+  author_photo?: string;
 }
