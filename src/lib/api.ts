@@ -9,22 +9,23 @@ const URLS = {
 function getToken(): string {
   return localStorage.getItem("spark_token") || "";
 }
-
 function setToken(token: string) {
   localStorage.setItem("spark_token", token);
 }
-
 function clearToken() {
   localStorage.removeItem("spark_token");
 }
 
 async function req<T>(
   base: keyof typeof URLS,
-  path: string,
-  options: RequestInit = {}
+  action: string,
+  options: RequestInit = {},
+  extraParams?: Record<string, string>
 ): Promise<T> {
   const token = getToken();
-  const url = `${URLS[base]}${path}`;
+  const params = new URLSearchParams({ action, ...(extraParams || {}) });
+  const url = `${URLS[base]}?${params.toString()}`;
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -39,6 +40,7 @@ async function req<T>(
     console.error("Fetch error:", e, "for", url);
     throw new Error("Нет соединения с сервером. Проверь интернет.");
   }
+
   let data: Record<string, unknown>;
   try {
     data = await res.json();
@@ -52,7 +54,7 @@ async function req<T>(
 // ─── Auth ────────────────────────────────────────────────────────────────────
 export const authApi = {
   register: async (email: string, password: string, name: string) => {
-    const data = await req<{ token: string; user: User }>("auth", "/register", {
+    const data = await req<{ token: string; user: User }>("auth", "register", {
       method: "POST",
       body: JSON.stringify({ email, password, name }),
     });
@@ -61,7 +63,7 @@ export const authApi = {
   },
 
   login: async (email: string, password: string) => {
-    const data = await req<{ token: string; user: User }>("auth", "/login", {
+    const data = await req<{ token: string; user: User }>("auth", "login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
@@ -69,10 +71,10 @@ export const authApi = {
     return data;
   },
 
-  me: () => req<{ user: User }>("auth", "/me"),
+  me: () => req<{ user: User }>("auth", "me"),
 
   logout: async () => {
-    await req("auth", "/logout", { method: "POST" });
+    await req("auth", "logout", { method: "POST" });
     clearToken();
   },
 
@@ -81,21 +83,17 @@ export const authApi = {
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 export const profilesApi = {
-  getDiscover: (params?: { age_min?: number; age_max?: number; looking_for?: string }) => {
-    const qs = new URLSearchParams(params as Record<string, string>).toString();
-    return req<{ profiles: Profile[] }>("profiles", `/profiles${qs ? "?" + qs : ""}`);
-  },
+  getDiscover: (params?: { age_min?: number; age_max?: number; looking_for?: string }) =>
+    req<{ profiles: Profile[] }>("profiles", "discover", {}, params as Record<string, string>),
 
   updateMe: (data: Partial<Profile>) =>
-    req<{ ok: boolean }>("profiles", "/profiles/me", {
-      method: "PUT",
+    req<{ ok: boolean }>("profiles", "update_me", {
+      method: "POST",
       body: JSON.stringify(data),
     }),
 
-  getById: (id: number) => req<{ profile: Profile }>("profiles", `/profiles/${id}`),
-
   uploadPhoto: (image: string, content_type: string) =>
-    req<{ ok: boolean; photo_url: string }>("profiles", "/profiles/photo", {
+    req<{ ok: boolean; photo_url: string }>("profiles", "upload_photo", {
       method: "POST",
       body: JSON.stringify({ image, content_type }),
     }),
@@ -104,28 +102,28 @@ export const profilesApi = {
 // ─── Likes ───────────────────────────────────────────────────────────────────
 export const likesApi = {
   send: (to_user_id: number, is_super = false) =>
-    req<{ ok: boolean; match: boolean; match_id: number | null }>("likes", "/likes", {
+    req<{ ok: boolean; match: boolean; match_id: number | null }>("likes", "send", {
       method: "POST",
       body: JSON.stringify({ to_user_id, is_super }),
     }),
 
-  getLikedMe: () => req<{ liked_me: LikedBy[]; total: number }>("likes", "/likes"),
+  getLikedMe: () => req<{ liked_me: LikedBy[]; total: number }>("likes", "liked_me"),
 };
 
 // ─── Matches ─────────────────────────────────────────────────────────────────
 export const matchesApi = {
-  getAll: () => req<{ matches: Match[] }>("matches", "/matches"),
+  getAll: () => req<{ matches: Match[] }>("matches", "list"),
 };
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 export const messagesApi = {
   getByMatch: (matchId: number) =>
-    req<{ messages: Message[] }>("messages", `/messages/${matchId}`),
+    req<{ messages: Message[] }>("messages", "list", {}, { match_id: String(matchId) }),
 
   send: (matchId: number, text: string) =>
-    req<Message>("messages", `/messages/${matchId}`, {
+    req<Message>("messages", "send", {
       method: "POST",
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ match_id: matchId, text }),
     }),
 };
 

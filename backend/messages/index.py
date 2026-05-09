@@ -1,5 +1,6 @@
 """
-Сообщения в чате: получить историю, отправить сообщение
+Сообщения: list / send
+Роутинг через query-параметр ?action=...
 """
 import json
 import os
@@ -14,7 +15,7 @@ CORS = {
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
 
-def get_user_by_token(conn, token: str):
+def get_me(conn, token: str):
     cur = conn.cursor()
     cur.execute(
         "SELECT id FROM users WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW() LIMIT 1)",
@@ -23,88 +24,76 @@ def get_user_by_token(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0]} if row else None
 
+def get_token(event: dict) -> str:
+    raw = (event.get('headers') or {}).get('Authorization', '') or \
+          (event.get('headers') or {}).get('authorization', '') or \
+          (event.get('headers') or {}).get('X-Authorization', '') or \
+          (event.get('headers') or {}).get('x-authorization', '')
+    return raw.replace('Bearer ', '').strip()
+
+def resp(code: int, body: dict) -> dict:
+    return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False, default=str)}
 
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
-    path = event.get('path', '/')
-    method = event.get('httpMethod', 'GET')
-    _raw = event.get('headers', {}).get('X-Authorization', '') or event.get('headers', {}).get('x-authorization', '')
-    token = _raw.replace('Bearer ', '').strip()
+    params = event.get('queryStringParameters') or {}
+    action = params.get('action', '')
+    token = get_token(event)
 
     conn = get_conn()
     try:
-        me = get_user_by_token(conn, token)
+        me = get_me(conn, token)
         if not me:
-            return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Не авторизован'})}
+            return resp(401, {'error': 'Не авторизован'})
 
         cur = conn.cursor()
-        parts = path.rstrip('/').split('/')
 
-        # GET /messages/:match_id
-        if method == 'GET' and len(parts) >= 2 and parts[-1].isdigit():
-            match_id = int(parts[-1])
-
-            # Проверяем доступ
+        if action == 'list':
+            match_id = int(params.get('match_id', 0))
             cur.execute(
                 f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
             )
             if not cur.fetchone():
-                return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нет доступа'})}
+                return resp(403, {'error': 'Нет доступа'})
 
             cur.execute(
                 "SELECT id, sender_id, text, created_at, read_at FROM messages WHERE match_id = %s ORDER BY created_at ASC",
                 (match_id,)
             )
-            rows = cur.fetchall()
             msgs = []
-            for r in rows:
+            for r in cur.fetchall():
                 msgs.append({
-                    'id': r[0],
-                    'sender_id': r[1],
-                    'text': r[2],
-                    'created_at': str(r[3]),
-                    'out': r[1] == me['id'],
-                    'read': r[4] is not None
+                    'id': r[0], 'sender_id': r[1], 'text': r[2],
+                    'created_at': str(r[3]), 'out': r[1] == me['id'], 'read': r[4] is not None
                 })
-
-            # Помечаем прочитанными
             cur.execute(
                 f"UPDATE messages SET read_at = NOW() WHERE match_id = {match_id} AND sender_id != {me['id']} AND read_at IS NULL"
             )
             conn.commit()
+            return resp(200, {'messages': msgs})
 
-            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'messages': msgs})}
-
-        # POST /messages/:match_id
-        if method == 'POST' and len(parts) >= 2 and parts[-1].isdigit():
-            match_id = int(parts[-1])
+        if action == 'send':
             body = json.loads(event.get('body') or '{}')
+            match_id = int(body.get('match_id', 0))
             text = body.get('text', '').strip()
-
             if not text:
-                return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Пустое сообщение'})}
-
+                return resp(400, {'error': 'Пустое сообщение'})
             cur.execute(
                 f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
             )
             if not cur.fetchone():
-                return {'statusCode': 403, 'headers': CORS, 'body': json.dumps({'error': 'Нет доступа'})}
-
+                return resp(403, {'error': 'Нет доступа'})
             cur.execute(
                 "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
                 (match_id, me['id'], text)
             )
             row = cur.fetchone()
             conn.commit()
+            return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
 
-            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({
-                'id': row[0], 'sender_id': me['id'], 'text': text,
-                'created_at': str(row[1]), 'out': True
-            })}
-
-        return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Not found'})}
+        return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
         conn.close()

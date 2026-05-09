@@ -1,5 +1,6 @@
 """
-Матчи: получить список совпадений с последними сообщениями
+Матчи: list
+Роутинг через query-параметр ?action=...
 """
 import json
 import os
@@ -14,7 +15,7 @@ CORS = {
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
 
-def get_user_by_token(conn, token: str):
+def get_me(conn, token: str):
     cur = conn.cursor()
     cur.execute(
         "SELECT id FROM users WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW() LIMIT 1)",
@@ -23,38 +24,46 @@ def get_user_by_token(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0]} if row else None
 
+def get_token(event: dict) -> str:
+    raw = (event.get('headers') or {}).get('Authorization', '') or \
+          (event.get('headers') or {}).get('authorization', '') or \
+          (event.get('headers') or {}).get('X-Authorization', '') or \
+          (event.get('headers') or {}).get('x-authorization', '')
+    return raw.replace('Bearer ', '').strip()
+
+def resp(code: int, body: dict) -> dict:
+    return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False, default=str)}
 
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
-    path = event.get('path', '/')
-    method = event.get('httpMethod', 'GET')
-    _raw = event.get('headers', {}).get('X-Authorization', '') or event.get('headers', {}).get('x-authorization', '')
-    token = _raw.replace('Bearer ', '').strip()
+    params = event.get('queryStringParameters') or {}
+    action = params.get('action', '')
+    token = get_token(event)
 
     conn = get_conn()
     try:
-        me = get_user_by_token(conn, token)
+        me = get_me(conn, token)
         if not me:
-            return {'statusCode': 401, 'headers': CORS, 'body': json.dumps({'error': 'Не авторизован'})}
+            return resp(401, {'error': 'Не авторизован'})
 
         cur = conn.cursor()
 
-        # GET /matches
-        if method == 'GET':
+        if action == 'list':
+            uid = me['id']
             cur.execute(f"""
                 SELECT
                     m.id as match_id,
-                    CASE WHEN m.user1_id = {me['id']} THEN m.user2_id ELSE m.user1_id END as partner_id,
+                    CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END as partner_id,
                     u.name, u.age, u.photo_url, u.online,
                     (SELECT text FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg,
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg_time,
-                    (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != {me['id']} AND read_at IS NULL) as unread_count,
+                    (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != {uid} AND read_at IS NULL) as unread_count,
                     m.created_at
                 FROM matches m
-                JOIN users u ON u.id = CASE WHEN m.user1_id = {me['id']} THEN m.user2_id ELSE m.user1_id END
-                WHERE m.user1_id = {me['id']} OR m.user2_id = {me['id']}
+                JOIN users u ON u.id = CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END
+                WHERE m.user1_id = {uid} OR m.user2_id = {uid}
                 ORDER BY COALESCE(
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1),
                     m.created_at
@@ -65,13 +74,11 @@ def handler(event: dict, context) -> dict:
             matches = []
             for r in rows:
                 item = dict(zip(cols, r))
-                item['last_msg_time'] = str(item['last_msg_time']) if item['last_msg_time'] else None
-                item['created_at'] = str(item['created_at'])
                 item['unread_count'] = int(item['unread_count'])
                 matches.append(item)
-            return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'matches': matches})}
+            return resp(200, {'matches': matches})
 
-        return {'statusCode': 404, 'headers': CORS, 'body': json.dumps({'error': 'Not found'})}
+        return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
         conn.close()
