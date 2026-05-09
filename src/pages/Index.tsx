@@ -1032,17 +1032,186 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
   );
 }
 
+// ─── Edit Profile Modal ───────────────────────────────────────────────────────
+const ALL_INTERESTS = ["Путешествия", "Спорт", "Кино", "Музыка", "Кулинария", "Фотография", "Йога", "Искусство", "Книги", "Танцы", "Природа", "IT", "Кофе", "Игры", "Животные", "Фитнес"];
+
+function EditProfileModal({ user, onSave, onClose }: {
+  user: User;
+  onSave: (updated: Partial<User>) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(user.name || "");
+  const [age, setAge] = useState(String(user.age || ""));
+  const [city, setCity] = useState(user.city || "");
+  const [bio, setBio] = useState(user.bio || "");
+  const [gender, setGender] = useState(user.gender || "other");
+  const [tags, setTags] = useState<string[]>(user.tags || []);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const toggleTag = (t: string) =>
+    setTags((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]);
+
+  const handleSave = async () => {
+    if (!name.trim()) { setError("Введи имя"); return; }
+    setError("");
+    setSaving(true);
+    const payload: Partial<User> = {
+      name: name.trim(),
+      age: age ? Number(age) : undefined,
+      city: city.trim(),
+      bio: bio.trim(),
+      gender,
+      tags,
+    };
+    try {
+      await profilesApi.updateMe(payload);
+      onSave(payload);
+      onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
+      <div className="w-full max-w-sm flex flex-col animate-slide-up"
+        style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0", maxHeight: "92dvh" }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={onClose} className="text-white/50 hover:text-white transition-colors text-sm">Отмена</button>
+          <h3 className="text-white font-golos font-bold text-base">Редактировать профиль</h3>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="btn-grad px-4 py-1.5 text-sm"
+          >
+            {saving ? "..." : "Сохранить"}
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-5 py-4 flex flex-col gap-4 pb-8">
+          {error && (
+            <div className="text-red-400 text-sm text-center bg-red-500/10 rounded-2xl py-2 px-4">{error}</div>
+          )}
+
+          {/* Имя */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">Имя</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Твоё имя"
+              maxLength={50}
+              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos"
+            />
+          </div>
+
+          {/* Возраст + Город */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">Возраст</label>
+              <input
+                value={age}
+                onChange={(e) => setAge(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                placeholder="25"
+                type="number"
+                min={18}
+                max={99}
+                className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos"
+              />
+            </div>
+            <div>
+              <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">Город</label>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Москва"
+                maxLength={60}
+                className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos"
+              />
+            </div>
+          </div>
+
+          {/* Пол */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">Я</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: "female", label: "Девушка" },
+                { value: "male", label: "Парень" },
+                { value: "other", label: "Другое" },
+              ].map((g) => (
+                <button
+                  key={g.value}
+                  onClick={() => setGender(g.value)}
+                  className="py-2.5 rounded-2xl text-sm font-medium transition-all"
+                  style={gender === g.value
+                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
+                    : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* О себе */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">О себе</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Расскажи о себе — это привлечёт больше симпатий!"
+              maxLength={300}
+              rows={4}
+              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos resize-none"
+            />
+            <p className="text-white/30 text-xs text-right mt-1">{bio.length}/300</p>
+          </div>
+
+          {/* Интересы */}
+          <div>
+            <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">
+              Интересы <span className="text-white/30 normal-case">(выбрано {tags.length})</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_INTERESTS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => toggleTag(t)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                  style={tags.includes(t)
+                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
+                    : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Real Profile ─────────────────────────────────────────────────────────────
-function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate }: {
+function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, onProfileUpdate }: {
   currentUser: User;
   onPremium: () => void;
   onLogout: () => void;
   onPhotoUpdate: (url: string) => void;
+  onProfileUpdate: (data: Partial<User>) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [localPhoto, setLocalPhoto] = useState(currentUser.photo_url || "");
+  const [editOpen, setEditOpen] = useState(false);
 
   const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -1050,17 +1219,8 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate }: 
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoError("");
-
-    if (!file.type.startsWith("image/")) {
-      setPhotoError("Выбери изображение");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setPhotoError("Файл слишком большой (макс. 10 МБ)");
-      return;
-    }
-
-    // Показываем превью сразу
+    if (!file.type.startsWith("image/")) { setPhotoError("Выбери изображение"); return; }
+    if (file.size > 10 * 1024 * 1024) { setPhotoError("Файл слишком большой (макс. 10 МБ)"); return; }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
@@ -1078,7 +1238,6 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate }: 
       }
     };
     reader.readAsDataURL(file);
-    // Сбрасываем input чтобы можно было выбрать тот же файл снова
     e.target.value = "";
   };
 
@@ -1093,96 +1252,126 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate }: 
   const displayPhoto = localPhoto || PROFILES[0].photo;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto">
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-        <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
-        <button className="text-white/60 hover:text-white transition-colors"><Icon name="Settings" size={22} /></button>
-      </div>
+    <>
+      {editOpen && (
+        <EditProfileModal
+          user={currentUser}
+          onSave={onProfileUpdate}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
 
-      {/* Скрытый input для выбора файла */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <div className="flex flex-col h-full overflow-y-auto">
+        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+          <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="glass-card px-3 py-1.5 flex items-center gap-1.5 text-white/70 text-sm hover:text-white transition-colors"
+          >
+            <Icon name="Pencil" size={14} />
+            Изменить
+          </button>
+        </div>
 
-      <div className="flex flex-col items-center px-5 mb-5">
-        <div className="relative mb-4" onClick={handlePhotoClick} style={{ cursor: "pointer" }}>
-          <img
-            src={displayPhoto}
-            className="w-24 h-24 rounded-full object-cover transition-opacity"
-            style={{ boxShadow: "0 0 0 3px #FF2D78", opacity: photoUploading ? 0.5 : 1 }}
-          />
-          {photoUploading ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-full">
-              <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            </div>
-          ) : (
-            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
-              <Icon name="Camera" size={13} className="text-white" />
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+
+        <div className="flex flex-col items-center px-5 mb-5">
+          <div className="relative mb-3" onClick={handlePhotoClick} style={{ cursor: "pointer" }}>
+            <img
+              src={displayPhoto}
+              className="w-24 h-24 rounded-full object-cover transition-opacity"
+              style={{ boxShadow: "0 0 0 3px #FF2D78", opacity: photoUploading ? 0.5 : 1 }}
+            />
+            {photoUploading ? (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              </div>
+            ) : (
+              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
+                <Icon name="Camera" size={13} className="text-white" />
+              </div>
+            )}
+          </div>
+          {photoError && <p className="text-red-400 text-xs mb-1 text-center">{photoError}</p>}
+
+          <h3 className="text-white font-bold text-xl mt-1">
+            {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
+          </h3>
+          <p className="text-white/50 text-sm flex items-center gap-1 mt-0.5">
+            <Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 w-full mt-4">
+            {[
+              { label: "Лайки", value: "—", icon: "Heart", color: "#FF2D78" },
+              { label: "Просмотры", value: "—", icon: "Eye", color: "#9B59B6" },
+              { label: "Совпадения", value: "—", icon: "Zap", color: "#FF8C42" },
+            ].map((s) => (
+              <div key={s.label} className="glass-card p-3 flex flex-col items-center gap-1">
+                <Icon name={s.icon as "Heart" | "Eye" | "Zap"} size={18} style={{ color: s.color }} />
+                <span className="text-white font-bold text-lg">{s.value}</span>
+                <span className="text-white/50 text-xs">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* О себе */}
+        <div className="mx-5 glass-card p-4 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
+            <button onClick={() => setEditOpen(true)} className="text-white/40 hover:text-white transition-colors">
+              <Icon name="Pencil" size={14} />
+            </button>
+          </div>
+          <p className="text-white/70 text-sm leading-relaxed">
+            {currentUser.bio || (
+              <span className="text-white/30 italic">Расскажи о себе — нажми «Изменить»</span>
+            )}
+          </p>
+          {(currentUser.tags || []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
             </div>
           )}
+          {!(currentUser.tags || []).length && (
+            <button onClick={() => setEditOpen(true)} className="tag-pill border-dashed opacity-50 mt-3">
+              + Добавить интересы
+            </button>
+          )}
         </div>
-        {photoError && <p className="text-red-400 text-xs mb-2 text-center">{photoError}</p>}
-        {!photoUploading && !photoError && (
-          <p className="text-white/30 text-xs mb-2">Нажми на фото, чтобы изменить</p>
-        )}
-        <h3 className="text-white font-bold text-xl">{currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}</h3>
-        <p className="text-white/50 text-sm flex items-center gap-1"><Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}</p>
-        <div className="grid grid-cols-3 gap-3 w-full mt-4">
-          {[
-            { label: "Лайки", value: "—", icon: "Heart", color: "#FF2D78" },
-            { label: "Просмотры", value: "—", icon: "Eye", color: "#9B59B6" },
-            { label: "Совпадения", value: "—", icon: "Zap", color: "#FF8C42" },
-          ].map((s) => (
-            <div key={s.label} className="glass-card p-3 flex flex-col items-center gap-1">
-              <Icon name={s.icon as "Heart" | "Eye" | "Zap"} size={18} style={{ color: s.color }} />
-              <span className="text-white font-bold text-lg">{s.value}</span>
-              <span className="text-white/50 text-xs">{s.label}</span>
+
+        {/* Premium */}
+        <div className="mx-5 p-4 rounded-2xl mb-4 cursor-pointer"
+          style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-white font-bold">Spark Premium</span>
+                <span className="premium-badge">✨ GOLD</span>
+              </div>
+              <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
             </div>
+            <Icon name="ChevronRight" size={20} className="text-white" />
+          </div>
+        </div>
+
+        {/* Settings */}
+        <div className="mx-5 glass-card overflow-hidden mb-6">
+          {settings.map((s, i) => (
+            <button key={s.label}
+              onClick={(s as typeof settings[0] & { action?: () => void }).action}
+              className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
+              style={{ borderBottom: i < settings.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+              <Icon name={s.icon as "Bell" | "Shield" | "Globe" | "HelpCircle" | "LogOut"} size={17} className={s.danger ? "text-red-400" : "text-white/50"} />
+              <span className={`${s.danger ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{s.label}</span>
+              {s.value && <span className="text-white/40 text-xs">{s.value}</span>}
+              {!s.value && !s.danger && <Icon name="ChevronRight" size={15} className="text-white/30" />}
+            </button>
           ))}
         </div>
       </div>
-      <div className="mx-5 glass-card p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
-          <button className="text-white/50 hover:text-white transition-colors"><Icon name="Pencil" size={14} /></button>
-        </div>
-        <p className="text-white/70 text-sm leading-relaxed">{currentUser.bio || "Расскажи о себе — это привлечёт больше симпатий!"}</p>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
-          <button className="tag-pill border-dashed opacity-50">+ Добавить</button>
-        </div>
-      </div>
-      <div className="mx-5 p-4 rounded-2xl mb-4 cursor-pointer"
-        style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold">Spark Premium</span>
-              <span className="premium-badge">✨ GOLD</span>
-            </div>
-            <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
-          </div>
-          <Icon name="ChevronRight" size={20} className="text-white" />
-        </div>
-      </div>
-      <div className="mx-5 glass-card overflow-hidden mb-6">
-        {settings.map((s, i) => (
-          <button key={s.label}
-            onClick={(s as typeof settings[0] & { action?: () => void }).action}
-            className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
-            style={{ borderBottom: i < settings.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-            <Icon name={s.icon as "Bell" | "Shield" | "Globe" | "HelpCircle" | "LogOut"} size={17} className={s.danger ? "text-red-400" : "text-white/50"} />
-            <span className={`${s.danger ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{s.label}</span>
-            {s.value && <span className="text-white/40 text-xs">{s.value}</span>}
-            {!s.value && !s.danger && <Icon name="ChevronRight" size={15} className="text-white/30" />}
-          </button>
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -1214,6 +1403,10 @@ export default function Index() {
 
   const handlePhotoUpdate = (url: string) => {
     setCurrentUser((u) => u ? { ...u, photo_url: url } : u);
+  };
+
+  const handleProfileUpdate = (data: Partial<User>) => {
+    setCurrentUser((u) => u ? { ...u, ...data } : u);
   };
 
   const mainScreens: Screen[] = ["discover", "matches", "likes", "profile"];
@@ -1250,7 +1443,7 @@ export default function Index() {
           {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
-          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} />}
+          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} />}
           {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
           {screen === "filter" && <FilterScreen onClose={() => setScreen("discover")} />}
           {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} />}
