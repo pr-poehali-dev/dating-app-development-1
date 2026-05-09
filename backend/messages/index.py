@@ -1,5 +1,5 @@
 """
-Сообщения: list / send
+Сообщения: list / send / delete
 Роутинг через query-параметр ?action=...
 """
 import json
@@ -92,6 +92,16 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             conn.commit()
             return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
+
+        if action == 'delete':
+            body = json.loads(event.get('body') or '{}')
+            msg_id = int(body.get('message_id', 0))
+            cur.execute("SELECT id FROM messages WHERE id = %s AND sender_id = %s", (msg_id, me['id']))
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нельзя удалить это сообщение'})
+            cur.execute("DELETE FROM messages WHERE id = %s", (msg_id,))
+            conn.commit()
+            return resp(200, {'ok': True, 'message_id': msg_id})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 

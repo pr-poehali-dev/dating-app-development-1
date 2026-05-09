@@ -1851,10 +1851,14 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
   const [input, setInput] = useState("");
   const [partnerName, setPartnerName] = useState("...");
   const [partnerPhoto, setPartnerPhoto] = useState(PROFILES[0].photo);
+  const [contextMsg, setContextMsg] = useState<Message | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     messagesApi.getByMatch(matchId)
-      .then((d) => setMsgs(d.messages))
+      .then((d) => { setMsgs(d.messages); setTimeout(() => bottomRef.current?.scrollIntoView(), 50); })
       .catch(() => {});
     matchesApi.getAll().then((d) => {
       const m = d.matches.find((x) => x.match_id === matchId);
@@ -1869,42 +1873,132 @@ function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; c
     try {
       const msg = await messagesApi.send(matchId, text);
       setMsgs((m) => [...m, msg]);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (e) { void e; }
   };
 
+  const handleDelete = async (msg: Message) => {
+    setContextMsg(null);
+    setDeleting(msg.id);
+    try {
+      await messagesApi.delete(msg.id);
+      setMsgs((prev) => prev.filter((m) => m.id !== msg.id));
+    } catch (e) { void e; }
+    finally { setDeleting(null); }
+  };
+
+  // Долгий тап — показываем меню (только для своих сообщений)
+  const startHold = (msg: Message) => {
+    if (!msg.out) return;
+    holdTimer.current = setTimeout(() => {
+      setContextMsg(msg);
+      navigator.vibrate?.(30);
+    }, 450);
+  };
+  const cancelHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); };
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-4 py-3 relative z-10" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <button onClick={onBack} className="text-white/70 hover:text-white transition-colors"><Icon name="ChevronLeft" size={24} /></button>
-        <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
-        <div className="flex-1">
-          <p className="text-white font-semibold text-sm">{partnerName}</p>
+    <>
+      {/* Контекстное меню удаления */}
+      {contextMsg && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+          onClick={() => setContextMsg(null)}>
+          <div className="w-full max-w-sm animate-slide-up"
+            style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0" }}
+            onClick={(e) => e.stopPropagation()}>
+            {/* Превью сообщения */}
+            <div className="px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="text-white/40 text-xs mb-1.5">Сообщение</p>
+              <p className="text-white/80 text-sm line-clamp-3">{contextMsg.text}</p>
+            </div>
+            {/* Действия */}
+            <button
+              onClick={() => handleDelete(contextMsg)}
+              className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(255,45,78,0.15)" }}>
+                <Icon name="Trash2" size={18} style={{ color: "#FF2D4E" }} />
+              </div>
+              <div>
+                <p className="text-red-400 font-semibold text-sm">Удалить сообщение</p>
+                <p className="text-white/30 text-xs">Удалится только у тебя</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { navigator.clipboard?.writeText(contextMsg.text); setContextMsg(null); }}
+              className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(255,255,255,0.08)" }}>
+                <Icon name="Copy" size={18} className="text-white/60" />
+              </div>
+              <p className="text-white/80 font-semibold text-sm">Скопировать текст</p>
+            </button>
+            <div className="px-5 pb-6 pt-1">
+              <button onClick={() => setContextMsg(null)}
+                className="w-full glass-card py-3 text-white/50 text-sm font-medium">
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col h-full">
+        {/* Шапка */}
+        <div className="flex items-center gap-3 px-4 py-3 relative z-10"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={onBack} className="text-white/70 hover:text-white transition-colors">
+            <Icon name="ChevronLeft" size={24} />
+          </button>
+          <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
+          <div className="flex-1">
+            <p className="text-white font-semibold text-sm">{partnerName}</p>
+            <p className="text-white/40 text-xs">Удержи сообщение для удаления</p>
+          </div>
+        </div>
+
+        {/* Сообщения */}
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+          {msgs.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+              <p className="text-white/40 text-sm">Начни общение первым! 👋</p>
+            </div>
+          )}
+          {msgs.map((msg) => (
+            <div key={msg.id}
+              className={`flex flex-col ${msg.out ? "items-end" : "items-start"} ${deleting === msg.id ? "opacity-30" : ""} transition-opacity`}
+              onMouseDown={() => startHold(msg)}
+              onMouseUp={cancelHold}
+              onMouseLeave={cancelHold}
+              onTouchStart={() => startHold(msg)}
+              onTouchEnd={cancelHold}
+              onTouchMove={cancelHold}>
+              <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
+                style={{ cursor: msg.out ? "pointer" : "default" }}>
+                {msg.text}
+              </div>
+              <span className="text-white/30 text-[11px] mt-1 px-1">
+                {new Date(msg.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Ввод */}
+        <div className="px-4 py-3 flex items-center gap-3"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <input value={input} onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="Написать..."
+            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+          <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
+            <Icon name="Send" size={16} className="text-white" />
+          </button>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-        {msgs.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2">
-            <p className="text-white/40 text-sm">Начни общение первым! 👋</p>
-          </div>
-        )}
-        {msgs.map((msg) => (
-          <div key={msg.id} className={`flex flex-col ${msg.out ? "items-end" : "items-start"}`}>
-            <div className={msg.out ? "msg-bubble-out" : "msg-bubble-in"}>{msg.text}</div>
-            <span className="text-white/30 text-[11px] mt-1 px-1">
-              {new Date(msg.created_at).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="px-4 py-3 flex items-center gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send()}
-          placeholder="Написать..."
-          className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
-        <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
-          <Icon name="Send" size={16} className="text-white" />
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 

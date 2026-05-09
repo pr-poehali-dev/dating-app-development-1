@@ -214,6 +214,12 @@ export const messagesApi = {
       method: "POST",
       body: JSON.stringify({ match_id: matchId, text }),
     }),
+
+  delete: (message_id: number) =>
+    req<{ ok: boolean; message_id: number }>("messages", "delete", {
+      method: "POST",
+      body: JSON.stringify({ message_id }),
+    }),
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
