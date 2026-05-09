@@ -54,32 +54,88 @@ def handler(event: dict, context) -> dict:
         cur = conn.cursor()
 
         if action == 'discover':
-            age_max = int(params.get('age_max', 60))
+            age_max = int(params.get('age_max', 99))
             age_min = int(params.get('age_min', 18))
             looking_for = params.get('looking_for', 'all')
-            gender_filter = ""
-            if looking_for == 'female':
-                gender_filter = "AND u.gender = 'female'"
-            elif looking_for == 'male':
-                gender_filter = "AND u.gender = 'male'"
+            search = params.get('search', '').strip()
+            city_filter_val = params.get('city', '').strip()
+            country_filter_val = params.get('country', '').strip()
+            lat = params.get('lat', '')
+            lon = params.get('lon', '')
+            radius_km = int(params.get('radius_km', 0))
+            online_only = params.get('online_only', '') == '1'
 
+            conditions = [f"u.id != {me['id']}",
+                          f"(u.age IS NULL OR u.age BETWEEN {age_min} AND {age_max})",
+                          f"u.id NOT IN (SELECT to_user_id FROM likes WHERE from_user_id = {me['id']})"]
+
+            if looking_for == 'female':
+                conditions.append("u.gender = 'female'")
+            elif looking_for == 'male':
+                conditions.append("u.gender = 'male'")
+
+            if search:
+                safe = search.replace("'", "''")
+                conditions.append(f"u.name ILIKE '%{safe}%'")
+
+            if city_filter_val:
+                safe_city = city_filter_val.replace("'", "''")
+                conditions.append(f"u.city ILIKE '%{safe_city}%'")
+
+            if country_filter_val:
+                safe_country = country_filter_val.replace("'", "''")
+                conditions.append(f"u.country ILIKE '%{safe_country}%'")
+
+            if online_only:
+                conditions.append("u.online = TRUE")
+
+            geo_select = ""
+            geo_order = "u.last_seen DESC"
+            if lat and lon and radius_km > 0:
+                try:
+                    lat_f, lon_f = float(lat), float(lon)
+                    geo_select = f", (6371 * acos(cos(radians({lat_f})) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians({lon_f})) + sin(radians({lat_f})) * sin(radians(u.latitude)))) AS distance_km"
+                    conditions.append(f"u.latitude IS NOT NULL AND u.longitude IS NOT NULL")
+                    conditions.append(f"(6371 * acos(cos(radians({lat_f})) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians({lon_f})) + sin(radians({lat_f})) * sin(radians(u.latitude)))) <= {radius_km}")
+                    geo_order = "distance_km ASC"
+                except Exception:
+                    pass
+
+            where_clause = " AND ".join(conditions)
             cur.execute(f"""
-                SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online
+                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online{geo_select}
                 FROM users u
-                WHERE u.id != {me['id']}
-                  AND (u.age IS NULL OR u.age BETWEEN {age_min} AND {age_max})
-                  {gender_filter}
-                  AND u.id NOT IN (SELECT to_user_id FROM likes WHERE from_user_id = {me['id']})
-                ORDER BY u.last_seen DESC
-                LIMIT 20
+                WHERE {where_clause}
+                ORDER BY {geo_order}
+                LIMIT 60
             """)
             rows = cur.fetchall()
-            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online']
-            return resp(200, {'profiles': [dict(zip(cols, r)) for r in rows]})
+            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online']
+            if geo_select:
+                cols.append('distance_km')
+            profiles_list = []
+            for r in rows:
+                item = dict(zip(cols, r))
+                if 'distance_km' in item and item['distance_km'] is not None:
+                    item['distance_km'] = round(float(item['distance_km']), 1)
+                profiles_list.append(item)
+            return resp(200, {'profiles': profiles_list})
+
+        # Сохранить геолокацию
+        if action == 'update_geo':
+            body = json.loads(event.get('body') or '{}')
+            lat_v = float(body.get('lat', 0))
+            lon_v = float(body.get('lon', 0))
+            country_v = body.get('country', '').strip()[:100]
+            city_v = body.get('city', '').strip()[:100]
+            cur.execute("UPDATE users SET latitude=%s, longitude=%s, country=%s, city=COALESCE(NULLIF(%s,''), city) WHERE id=%s",
+                        (lat_v, lon_v, country_v or None, city_v or None, me['id']))
+            conn.commit()
+            return resp(200, {'ok': True})
 
         if action == 'update_me':
             body = json.loads(event.get('body') or '{}')
-            allowed = ['name', 'age', 'city', 'bio', 'photo_url', 'tags', 'gender', 'looking_for']
+            allowed = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'gender', 'looking_for']
             fields, values = [], []
             for key in allowed:
                 if key in body:

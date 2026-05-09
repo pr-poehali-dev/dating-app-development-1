@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { authApi, profilesApi, likesApi, matchesApi, messagesApi, postsApi, liveApi, type User, type Profile, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage } from "@/lib/api";
+import { authApi, profilesApi, likesApi, matchesApi, messagesApi, postsApi, liveApi, type User, type Profile, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage, type DiscoverParams } from "@/lib/api";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -495,66 +495,201 @@ function ProfileScreen({ onPremium }: { onPremium: () => void }) {
 }
 
 // ─── Filter ───────────────────────────────────────────────────────────────────
-function FilterScreen({ onClose }: { onClose: () => void }) {
-  const [ageMax, setAgeMax] = useState(35);
-  const [distance, setDistance] = useState(20);
-  const [gender, setGender] = useState("Девушек");
-  const interests = ["Путешествия", "Спорт", "Кино", "Музыка", "Кулинария", "Фотография", "Йога", "Искусство", "Книги", "Танцы", "Природа", "IT"];
-  const [selected, setSelected] = useState(["Путешествия", "Музыка"]);
-  const toggle = (t: string) => setSelected((s) => s.includes(t) ? s.filter((x) => x !== t) : [...s, t]);
+function FilterScreen({ initial, onApply, onClose }: {
+  initial: DiscoverParams;
+  onApply: (p: DiscoverParams) => void;
+  onClose: () => void;
+}) {
+  const [ageMin, setAgeMin] = useState(initial.age_min ?? 18);
+  const [ageMax, setAgeMax] = useState(initial.age_max ?? 60);
+  const [lookingFor, setLookingFor] = useState(initial.looking_for ?? "all");
+  const [country, setCountry] = useState(initial.country ?? "");
+  const [city, setCity] = useState(initial.city ?? "");
+  const [radius, setRadius] = useState(initial.radius_km ?? 0);
+  const [useGeo, setUseGeo] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoCoords, setGeoCoords] = useState<{ lat: number; lon: number } | null>(
+    initial.lat ? { lat: initial.lat, lon: initial.lon! } : null
+  );
+  const [onlineOnly, setOnlineOnly] = useState(initial.online_only ?? false);
+
+  const genders = [
+    { val: "female", label: "Девушек" },
+    { val: "male", label: "Парней" },
+    { val: "all", label: "Всех" },
+  ];
+
+  const requestGeo = () => {
+    if (!navigator.geolocation) return;
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        setGeoCoords({ lat, lon });
+        setUseGeo(true);
+        if (radius === 0) setRadius(50);
+        // Обратное геокодирование через open API
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+          const data = await r.json();
+          const c = data.address?.country || "";
+          const ci = data.address?.city || data.address?.town || data.address?.village || "";
+          if (c) setCountry(c);
+          if (ci) setCity(ci);
+          // Сохраняем в профиль
+          profilesApi.updateGeo(lat, lon, c, ci).catch(() => {});
+        } catch (e: unknown) { void e; }
+        setGeoLoading(false);
+      },
+      () => setGeoLoading(false)
+    );
+  };
+
+  const apply = () => {
+    const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
+    if (city) p.city = city;
+    if (country) p.country = country;
+    if (onlineOnly) p.online_only = true;
+    if (useGeo && geoCoords && radius > 0) {
+      p.lat = geoCoords.lat;
+      p.lon = geoCoords.lon;
+      p.radius_km = radius;
+    }
+    onApply(p);
+  };
+
+  const reset = () => {
+    setAgeMin(18); setAgeMax(60); setLookingFor("all");
+    setCountry(""); setCity(""); setRadius(0);
+    setUseGeo(false); setOnlineOnly(false);
+  };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-5 py-4">
         <h2 className="text-white font-golos font-bold text-xl">Фильтры</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white transition-colors"><Icon name="X" size={22} /></button>
+        <div className="flex items-center gap-3">
+          <button onClick={reset} className="text-white/40 text-xs hover:text-white/70 transition-colors">Сбросить</button>
+          <button onClick={onClose} className="text-white/50 hover:text-white"><Icon name="X" size={22} /></button>
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 flex flex-col gap-5">
-        <div className="glass-card p-4">
-          <div className="flex items-center justify-between mb-3">
+
+      <div className="flex-1 overflow-y-auto px-5 flex flex-col gap-4 pb-4">
+        {/* Возраст */}
+        <div className="glass-card p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
             <span className="text-white font-semibold text-sm">Возраст</span>
-            <span className="text-white/60 text-sm">20 – {ageMax} лет</span>
+            <span className="text-white/60 text-sm">{ageMin} – {ageMax} лет</span>
           </div>
-          <input type="range" min={18} max={60} value={ageMax} onChange={(e) => setAgeMax(+e.target.value)} className="w-full accent-pink-500" />
-        </div>
-        <div className="glass-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-white font-semibold text-sm">Расстояние</span>
-            <span className="text-white/60 text-sm">до {distance} км</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <span className="text-white/40 text-xs w-6">от</span>
+              <input type="range" min={18} max={ageMax} value={ageMin}
+                onChange={(e) => setAgeMin(+e.target.value)} className="flex-1 accent-pink-500" />
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-white/40 text-xs w-6">до</span>
+              <input type="range" min={ageMin} max={80} value={ageMax}
+                onChange={(e) => setAgeMax(+e.target.value)} className="flex-1 accent-pink-500" />
+            </div>
           </div>
-          <input type="range" min={1} max={100} value={distance} onChange={(e) => setDistance(+e.target.value)} className="w-full accent-pink-500" />
         </div>
+
+        {/* Кого ищешь */}
         <div className="glass-card p-4">
           <span className="text-white font-semibold text-sm block mb-3">Кого ищешь</span>
           <div className="grid grid-cols-3 gap-2">
-            {["Девушек", "Парней", "Всех"].map((g) => (
-              <button key={g} onClick={() => setGender(g)}
-                className="py-2 rounded-xl text-sm font-medium transition-all"
-                style={gender === g
+            {genders.map((g) => (
+              <button key={g.val} onClick={() => setLookingFor(g.val)}
+                className="py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={lookingFor === g.val
                   ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
                   : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                {g}
+                {g.label}
               </button>
             ))}
           </div>
         </div>
-        <div className="glass-card p-4">
-          <span className="text-white font-semibold text-sm block mb-3">Интересы</span>
-          <div className="flex flex-wrap gap-2">
-            {interests.map((t) => (
-              <button key={t} onClick={() => toggle(t)}
-                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-                style={selected.includes(t)
-                  ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                {t}
-              </button>
-            ))}
+
+        {/* Только онлайн */}
+        <button onClick={() => setOnlineOnly((v) => !v)}
+          className="glass-card p-4 flex items-center justify-between w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+            <span className="text-white font-semibold text-sm">Только онлайн</span>
           </div>
+          <div className="w-11 h-6 rounded-full transition-all relative flex-shrink-0"
+            style={{ background: onlineOnly ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.12)" }}>
+            <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow"
+              style={{ left: onlineOnly ? "calc(100% - 22px)" : "2px" }} />
+          </div>
+        </button>
+
+        {/* Страна и город */}
+        <div className="glass-card p-4 flex flex-col gap-3">
+          <span className="text-white font-semibold text-sm flex items-center gap-2">
+            <Icon name="Globe" size={15} className="text-white/50" />Местоположение
+          </span>
+          <input value={country} onChange={(e) => setCountry(e.target.value)}
+            placeholder="Страна (например: Россия)"
+            className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+          <input value={city} onChange={(e) => setCity(e.target.value)}
+            placeholder="Город (например: Москва)"
+            className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+        </div>
+
+        {/* Геолокация */}
+        <div className="glass-card p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="text-white font-semibold text-sm flex items-center gap-2">
+              <Icon name="LocateFixed" size={15} className="text-white/50" />Рядом со мной
+            </span>
+            <button onClick={requestGeo} disabled={geoLoading}
+              className="btn-grad px-3 py-1.5 text-xs flex items-center gap-1.5 disabled:opacity-50">
+              {geoLoading
+                ? <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />Определяем...</>
+                : geoCoords
+                ? <><Icon name="Check" size={12} className="text-white" />Обновить</>
+                : <><Icon name="Navigation" size={12} className="text-white" />Моя геопозиция</>}
+            </button>
+          </div>
+          {geoCoords && (
+            <>
+              <button onClick={() => setUseGeo((v) => !v)}
+                className="flex items-center justify-between w-full">
+                <span className="text-white/60 text-xs">Использовать геопозицию</span>
+                <div className="w-10 h-5 rounded-full transition-all relative flex-shrink-0"
+                  style={{ background: useGeo ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.12)" }}>
+                  <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow"
+                    style={{ left: useGeo ? "calc(100% - 18px)" : "2px" }} />
+                </div>
+              </button>
+              {useGeo && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-white/50 text-xs">Радиус поиска</span>
+                    <span className="text-white/70 text-xs font-semibold">{radius} км</span>
+                  </div>
+                  <input type="range" min={5} max={500} step={5} value={radius}
+                    onChange={(e) => setRadius(+e.target.value)} className="w-full accent-pink-500" />
+                  <div className="flex justify-between text-white/30 text-[10px] mt-1">
+                    <span>5 км</span><span>500 км</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {!geoCoords && (
+            <p className="text-white/30 text-xs">Разреши доступ к геолокации, чтобы искать людей рядом</p>
+          )}
         </div>
       </div>
+
       <div className="px-5 py-4">
-        <button onClick={onClose} className="btn-grad w-full py-3.5 text-base">Применить фильтры</button>
+        <button onClick={apply} className="btn-grad w-full py-3.5 text-base font-semibold">
+          Применить фильтры
+        </button>
       </div>
     </div>
   );
@@ -1413,21 +1548,42 @@ function DiscoverProfileModal({ profile, onClose, onLike }: {
   );
 }
 
-function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFilter: () => void }) {
+function RealDiscoverScreen({ currentUser, onOpenFilter }: {
+  currentUser: User;
+  onOpenFilter: (filters: DiscoverParams, onApply: (p: DiscoverParams) => void) => void;
+}) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Profile | null>(null);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<DiscoverParams>({});
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = () => {
+  const load = useCallback((params: DiscoverParams, q?: string) => {
     setLoading(true);
-    profilesApi.getDiscover()
+    profilesApi.getDiscover({ ...params, ...(q !== undefined ? { search: q } : {}) })
       .then((d) => setProfiles(d.profiles))
       .catch(() => {})
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => { load({}); }, []);
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => load(filters, val), 400);
   };
 
-  useEffect(() => { load(); }, []);
+  const handleApplyFilters = (p: DiscoverParams) => {
+    setFilters(p);
+    const cnt = [p.looking_for && p.looking_for !== "all", p.age_min && p.age_min > 18,
+      p.age_max && p.age_max < 80, p.country, p.city, p.online_only, p.radius_km].filter(Boolean).length;
+    setActiveFiltersCount(cnt);
+    load(p, search);
+  };
 
   const handleLike = useCallback((p: Profile) => {
     setLikedIds((prev) => new Set([...prev, p.id]));
@@ -1436,24 +1592,53 @@ function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFi
   return (
     <>
       {selected && (
-        <DiscoverProfileModal
-          profile={selected}
-          onClose={() => setSelected(null)}
-          onLike={handleLike}
-        />
+        <DiscoverProfileModal profile={selected} onClose={() => setSelected(null)} onLike={handleLike} />
       )}
 
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4">
-          <div>
-            <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
-            <p className="text-white/40 text-xs">{currentUser.city || "Везде"} · Знакомства</p>
-          </div>
-          <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3">
+          <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
+          <button
+            onClick={() => onOpenFilter(filters, handleApplyFilters)}
+            className="relative glass-card px-3 py-2 flex items-center gap-2 text-white/80 text-sm">
             <Icon name="SlidersHorizontal" size={15} />Фильтры
+            {activeFiltersCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+                {activeFiltersCount}
+              </div>
+            )}
           </button>
         </div>
+
+        {/* Поиск */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <Icon name="Search" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+            <input
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Поиск по имени..."
+              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl pl-9 pr-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos"
+            />
+            {search && (
+              <button onClick={() => handleSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                <Icon name="X" size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Активные фильтры-теги */}
+        {(filters.city || filters.country || filters.online_only || filters.radius_km) && (
+          <div className="px-4 pb-2 flex gap-2 flex-wrap">
+            {filters.online_only && <span className="glass-card px-2.5 py-1 text-green-400 text-xs flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-400" />Онлайн</span>}
+            {filters.city && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="MapPin" size={10} />{filters.city}</span>}
+            {filters.country && !filters.city && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="Globe" size={10} />{filters.country}</span>}
+            {filters.radius_km && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="Navigation" size={10} />{filters.radius_km} км</span>}
+          </div>
+        )}
 
         {/* Grid */}
         <div className="flex-1 overflow-y-auto">
@@ -1463,15 +1648,17 @@ function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFi
               <p className="text-white/40 text-sm">Ищем анкеты...</p>
             </div>
           )}
-
           {!loading && profiles.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full gap-4">
-              <div className="text-6xl">🌟</div>
-              <p className="text-white/60 text-center text-sm">Анкеты закончились.<br />Расширь критерии поиска!</p>
-              <button className="btn-grad px-6 py-3 text-sm" onClick={load}>Обновить</button>
+            <div className="flex flex-col items-center justify-center h-full gap-4 px-8">
+              <div className="text-6xl">🔍</div>
+              <p className="text-white/60 text-center text-sm">
+                {search ? `Никого не найдено по запросу «${search}»` : "Никого не найдено.\nПопробуй изменить фильтры."}
+              </p>
+              <button className="btn-grad px-6 py-3 text-sm" onClick={() => { setSearch(""); setFilters({}); setActiveFiltersCount(0); load({}); }}>
+                Сбросить фильтры
+              </button>
             </div>
           )}
-
           {!loading && profiles.length > 0 && (
             <div className="grid grid-cols-3 gap-0.5">
               {profiles.map((p) => {
@@ -1481,20 +1668,19 @@ function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFi
                   <button key={p.id} onClick={() => setSelected(p)}
                     className="relative aspect-square overflow-hidden group">
                     <img src={photo} className="w-full h-full object-cover transition-transform group-active:scale-95" />
-                    {/* Градиент снизу */}
-                    <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 55%, rgba(0,0,0,0.7) 100%)" }} />
-                    {/* Имя */}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, rgba(0,0,0,0.75) 100%)" }} />
                     <div className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5">
                       <p className="text-white text-[10px] font-semibold truncate leading-tight">
                         {p.name}{p.age ? `, ${p.age}` : ""}
                       </p>
+                      {(p as Profile & { distance_km?: number }).distance_km !== undefined && (
+                        <p className="text-white/50 text-[9px]">{(p as Profile & { distance_km?: number }).distance_km} км</p>
+                      )}
                     </div>
-                    {/* Онлайн-точка */}
                     {p.online && (
                       <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-green-400"
                         style={{ border: "1.5px solid rgba(0,0,0,0.5)" }} />
                     )}
-                    {/* Лайк-бейдж */}
                     {isLiked && (
                       <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center"
                         style={{ background: "rgba(255,45,120,0.9)" }}>
@@ -2105,6 +2291,15 @@ export default function Index() {
   const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
   const backToMatches = () => { setChatId(null); setScreen("matches"); };
 
+  // Фильтры для Discover — передаём через ref чтобы не терять при переходе
+  const filterParamsRef = useRef<DiscoverParams>({});
+  const filterCallbackRef = useRef<((p: DiscoverParams) => void) | null>(null);
+  const handleOpenFilter = (current: DiscoverParams, cb: (p: DiscoverParams) => void) => {
+    filterParamsRef.current = current;
+    filterCallbackRef.current = cb;
+    setScreen("filter");
+  };
+
   if (authLoading) {
     return (
       <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
@@ -2130,14 +2325,20 @@ export default function Index() {
     <div className="app-bg flex justify-center">
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
-          {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
+          {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onOpenFilter={handleOpenFilter} />}
           {screen === "photos" && <PhotosScreen currentUser={currentUser} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
           {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} />}
           {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
-          {screen === "filter" && <FilterScreen onClose={() => setScreen("discover")} />}
+          {screen === "filter" && (
+            <FilterScreen
+              initial={filterParamsRef.current}
+              onApply={(p) => { filterCallbackRef.current?.(p); setScreen("discover"); }}
+              onClose={() => setScreen("discover")}
+            />
+          )}
           {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} />}
         </div>
         {isMain && <BottomNav active={screen} onChange={setScreen} />}

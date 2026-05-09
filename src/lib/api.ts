@@ -82,14 +82,40 @@ export const authApi = {
 };
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
+export interface DiscoverParams {
+  age_min?: number;
+  age_max?: number;
+  looking_for?: string;
+  search?: string;
+  city?: string;
+  country?: string;
+  lat?: number;
+  lon?: number;
+  radius_km?: number;
+  online_only?: boolean;
+}
+
 export const profilesApi = {
-  getDiscover: (params?: { age_min?: number; age_max?: number; looking_for?: string }) =>
-    req<{ profiles: Profile[] }>("profiles", "discover", {}, params as Record<string, string>),
+  getDiscover: (params?: DiscoverParams) => {
+    const p: Record<string, string> = {};
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== "" && v !== false) p[k] = String(v === true ? "1" : v);
+      });
+    }
+    return req<{ profiles: Profile[] }>("profiles", "discover", {}, p);
+  },
 
   updateMe: (data: Partial<Profile>) =>
     req<{ ok: boolean }>("profiles", "update_me", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  updateGeo: (lat: number, lon: number, country: string, city: string) =>
+    req<{ ok: boolean }>("profiles", "update_geo", {
+      method: "POST",
+      body: JSON.stringify({ lat, lon, country, city }),
     }),
 
   uploadPhoto: (image: string, content_type: string) =>
