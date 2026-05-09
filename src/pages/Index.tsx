@@ -1330,84 +1330,185 @@ function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
 }
 
 // ─── Real Discover ────────────────────────────────────────────────────────────
-function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFilter: () => void }) {
-  const [cards, setCards] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [likeAnim, setLikeAnim] = useState(false);
+// ─── Discover Profile Modal ───────────────────────────────────────────────────
+function DiscoverProfileModal({ profile, onClose, onLike }: {
+  profile: Profile; onClose: () => void; onLike: (p: Profile) => void;
+}) {
+  const [liked, setLiked] = useState(false);
+  const [liking, setLiking] = useState(false);
 
-  useEffect(() => {
-    profilesApi.getDiscover()
-      .then((d) => setCards(d.profiles))
-      .catch(() => setCards(PROFILES))
-      .finally(() => setLoading(false));
-  }, []);
+  const handleLike = async () => {
+    if (liked || liking) return;
+    setLiking(true);
+    try { await likesApi.send(profile.id); setLiked(true); } catch (e) { void e; }
+    finally { setLiking(false); }
+    onLike(profile);
+  };
 
-  const handleLike = useCallback(async (profile: Profile) => {
-    setLikeAnim(true);
-    try { await likesApi.send(profile.id); } catch (e) { void e; }
-    setTimeout(() => { setLikeAnim(false); setCards((c) => c.slice(1)); }, 400);
-  }, []);
-
-  const handleDislike = useCallback(() => {
-    setCards((c) => c.slice(1));
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center gap-4">
-        <div className="w-12 h-12 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
-        <p className="text-white/40 text-sm">Ищем анкеты...</p>
-      </div>
-    );
-  }
-
-  const profileCards = cards.length > 0 ? cards : PROFILES;
+  const photo = profile.photo_url || PROFILES[0].photo;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-5 py-4 relative z-10">
-        <div>
-          <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
-          <p className="text-white/40 text-xs">{currentUser.city || "Везде"} · Знакомства</p>
-        </div>
-        <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
-          <Icon name="SlidersHorizontal" size={15} />Фильтры
+    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--spark-dark)" }}>
+      {/* Фото-шапка */}
+      <div className="relative flex-shrink-0" style={{ height: "55dvh" }}>
+        <img src={photo} className="w-full h-full object-cover" />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.8) 100%)" }} />
+        {/* Кнопка назад */}
+        <button onClick={onClose} className="absolute top-5 left-4 glass-card p-2">
+          <Icon name="ChevronLeft" size={20} className="text-white" />
         </button>
-      </div>
-      <div className="flex-1 relative mx-4" style={{ maxHeight: "calc(100% - 80px)" }}>
-        {profileCards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-4 animate-fade-up">
-            <div className="text-6xl">🌟</div>
-            <p className="text-white/60 text-center text-sm">Анкеты закончились.<br />Расширь критерии поиска!</p>
-            <button className="btn-grad px-6 py-3 text-sm" onClick={() => profilesApi.getDiscover().then((d) => setCards(d.profiles)).catch(() => setCards(PROFILES))}>
-              Обновить
-            </button>
-          </div>
-        ) : (
-          profileCards.slice(0, 3).reverse().map((p, i) => {
-            const profile = { ...p, photo: p.photo_url || PROFILES[i % PROFILES.length].photo, distance: "рядом", tags: p.tags || [], online: p.online || false, verified: p.verified || false };
-            return (
-              <SwipeCard
-                key={p.id}
-                profile={profile as typeof PROFILES[0]}
-                isTop={i === profileCards.slice(0, 3).length - 1}
-                offset={profileCards.slice(0, 3).length - 1 - i}
-                onLike={() => handleLike(p)}
-                onDislike={handleDislike}
-              />
-            );
-          })
-        )}
-        {likeAnim && (
-          <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-            <div className="w-24 h-24 rounded-full flex items-center justify-center animate-heart"
-              style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
-              <Icon name="Heart" size={44} className="text-white" />
+        {/* Имя поверх фото */}
+        <div className="absolute bottom-4 left-5 right-5">
+          <div className="flex items-end justify-between">
+            <div>
+              <h2 className="text-white font-golos font-bold text-2xl drop-shadow">
+                {profile.name}{profile.age ? `, ${profile.age}` : ""}
+                {profile.verified && <span className="ml-2 text-blue-400 text-lg">✓</span>}
+              </h2>
+              {profile.city && (
+                <p className="text-white/70 text-sm flex items-center gap-1 mt-0.5">
+                  <Icon name="MapPin" size={13} />{profile.city}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400" />}
+              <span className="text-white/60 text-xs">{profile.online ? "онлайн" : ""}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Контент */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+        {profile.bio && (
+          <div className="glass-card p-4">
+            <p className="text-white/80 text-sm leading-relaxed">{profile.bio}</p>
+          </div>
+        )}
+
+        {profile.tags && (profile.tags as string[]).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {(profile.tags as string[]).map((tag) => (
+              <span key={tag} className="glass-card px-3 py-1.5 text-white/70 text-xs rounded-full">{tag}</span>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Кнопки действий */}
+      <div className="px-5 pb-6 pt-3 flex gap-3">
+        <button onClick={onClose}
+          className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
+          <Icon name="X" size={18} />Пропустить
+        </button>
+        <button onClick={handleLike} disabled={liked}
+          className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
+          style={{ opacity: liked ? 0.7 : 1 }}>
+          <Icon name="Heart" size={18} className="text-white" />
+          {liked ? "Лайкнуто!" : "Лайкнуть"}
+        </button>
+      </div>
     </div>
+  );
+}
+
+function RealDiscoverScreen({ currentUser, onFilter }: { currentUser: User; onFilter: () => void }) {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Profile | null>(null);
+  const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+
+  const load = () => {
+    setLoading(true);
+    profilesApi.getDiscover()
+      .then((d) => setProfiles(d.profiles))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleLike = useCallback((p: Profile) => {
+    setLikedIds((prev) => new Set([...prev, p.id]));
+  }, []);
+
+  return (
+    <>
+      {selected && (
+        <DiscoverProfileModal
+          profile={selected}
+          onClose={() => setSelected(null)}
+          onLike={handleLike}
+        />
+      )}
+
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
+            <p className="text-white/40 text-xs">{currentUser.city || "Везде"} · Знакомства</p>
+          </div>
+          <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
+            <Icon name="SlidersHorizontal" size={15} />Фильтры
+          </button>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 overflow-y-auto">
+          {loading && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="w-12 h-12 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+              <p className="text-white/40 text-sm">Ищем анкеты...</p>
+            </div>
+          )}
+
+          {!loading && profiles.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <div className="text-6xl">🌟</div>
+              <p className="text-white/60 text-center text-sm">Анкеты закончились.<br />Расширь критерии поиска!</p>
+              <button className="btn-grad px-6 py-3 text-sm" onClick={load}>Обновить</button>
+            </div>
+          )}
+
+          {!loading && profiles.length > 0 && (
+            <div className="grid grid-cols-3 gap-0.5">
+              {profiles.map((p) => {
+                const photo = p.photo_url || PROFILES[0].photo;
+                const isLiked = likedIds.has(p.id);
+                return (
+                  <button key={p.id} onClick={() => setSelected(p)}
+                    className="relative aspect-square overflow-hidden group">
+                    <img src={photo} className="w-full h-full object-cover transition-transform group-active:scale-95" />
+                    {/* Градиент снизу */}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 55%, rgba(0,0,0,0.7) 100%)" }} />
+                    {/* Имя */}
+                    <div className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5">
+                      <p className="text-white text-[10px] font-semibold truncate leading-tight">
+                        {p.name}{p.age ? `, ${p.age}` : ""}
+                      </p>
+                    </div>
+                    {/* Онлайн-точка */}
+                    {p.online && (
+                      <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-green-400"
+                        style={{ border: "1.5px solid rgba(0,0,0,0.5)" }} />
+                    )}
+                    {/* Лайк-бейдж */}
+                    {isLiked && (
+                      <div className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,45,120,0.9)" }}>
+                        <Icon name="Heart" size={10} className="text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
