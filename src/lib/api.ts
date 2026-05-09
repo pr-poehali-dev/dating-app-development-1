@@ -123,6 +123,9 @@ export const postsApi = {
       method: "POST",
       body: JSON.stringify({ post_id, text }),
     }),
+
+  getUserProfile: (user_id: number) =>
+    req<{ profile: Profile; posts: Post[] }>("profiles", "user_profile", {}, { user_id: String(user_id) }),
 };
 
 // ─── Live ─────────────────────────────────────────────────────────────────────

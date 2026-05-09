@@ -114,6 +114,28 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        # Профиль пользователя по id
+        if action == 'user_profile':
+            uid = int(params.get('user_id', 0))
+            cur.execute("""
+                SELECT id, name, age, city, bio, photo_url, tags, verified, online
+                FROM users WHERE id = %s
+            """, (uid,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пользователь не найден'})
+            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online']
+            profile = dict(zip(cols, row))
+            cur.execute("""
+                SELECT id, photo_url, caption, created_at,
+                       (SELECT COUNT(*) FROM post_likes WHERE post_id = posts.id) as likes_count,
+                       (SELECT COUNT(*) FROM post_comments WHERE post_id = posts.id) as comments_count
+                FROM posts WHERE user_id = %s ORDER BY created_at DESC LIMIT 30
+            """, (uid,))
+            pcols = ['id', 'photo_url', 'caption', 'created_at', 'likes_count', 'comments_count']
+            posts = [dict(zip(pcols, r)) for r in cur.fetchall()]
+            return resp(200, {'profile': profile, 'posts': posts})
+
         # Загрузить фото-пост
         if action == 'post_create':
             body = json.loads(event.get('body') or '{}')
