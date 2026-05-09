@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { authApi, profilesApi, likesApi, matchesApi, messagesApi, postsApi, type User, type Profile, type Match, type Message, type LikedBy, type Post, type PostComment } from "@/lib/api";
+import { authApi, profilesApi, likesApi, matchesApi, messagesApi, postsApi, liveApi, type User, type Profile, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage } from "@/lib/api";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ const MESSAGES: Record<number, { id: number; text: string; out: boolean; time: s
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos";
+type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live";
 type Profile = (typeof PROFILES)[0];
 
 // ─── SwipeCard ────────────────────────────────────────────────────────────────
@@ -889,11 +889,280 @@ function PhotosScreen({ currentUser }: { currentUser: User }) {
   );
 }
 
+// ─── Live Screen ─────────────────────────────────────────────────────────────
+function LiveScreen({ currentUser }: { currentUser: User }) {
+  const [streams, setStreams] = useState<LiveStream[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false); // ведёт ли сам юзер
+  const [chatMsgs, setChatMsgs] = useState<LiveMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [heartsAnim, setHeartsAnim] = useState<number[]>([]);
+  const [showStart, setShowStart] = useState(false);
+  const [streamTitle, setStreamTitle] = useState("");
+  const [lastMsgId, setLastMsgId] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Загрузка списка стримов
+  const loadStreams = () => {
+    liveApi.list()
+      .then((d) => setStreams(d.streams))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadStreams(); }, []);
+
+  // Polling внутри стрима
+  useEffect(() => {
+    if (!activeStream) { if (pollRef.current) clearInterval(pollRef.current); return; }
+    const poll = async () => {
+      try {
+        const res = await liveApi.poll(activeStream.id, lastMsgId);
+        if (res.stream.status === 'ended' && !isStreaming) {
+          setActiveStream(null); setChatMsgs([]); setLastMsgId(0);
+          loadStreams(); return;
+        }
+        setActiveStream((prev) => prev ? { ...prev, viewers_count: res.stream.viewers_count, hearts_count: res.stream.hearts_count } : prev);
+        if (res.messages.length > 0) {
+          setChatMsgs((prev) => [...prev, ...res.messages]);
+          setLastMsgId(res.messages[res.messages.length - 1].id);
+        }
+      } catch (e: unknown) { void e; }
+    };
+    poll();
+    pollRef.current = setInterval(poll, 3000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [activeStream?.id, isStreaming]);
+
+  const handleJoin = async (stream: LiveStream) => {
+    setActiveStream(stream); setChatMsgs([]); setLastMsgId(0);
+    try { await liveApi.join(stream.id); } catch (e: unknown) { void e; }
+  };
+
+  const handleLeave = async () => {
+    if (!activeStream) return;
+    if (isStreaming) {
+      await liveApi.end();
+      setIsStreaming(false);
+    } else {
+      try { await liveApi.leave(activeStream.id); } catch (e: unknown) { void e; }
+    }
+    setActiveStream(null); setChatMsgs([]); setLastMsgId(0);
+    loadStreams();
+  };
+
+  const handleStartStream = async () => {
+    if (!streamTitle.trim()) return;
+    const res = await liveApi.start(streamTitle.trim());
+    setIsStreaming(true);
+    setActiveStream({ ...res.stream, author_name: currentUser.name, author_photo: currentUser.photo_url });
+    setChatMsgs([]); setLastMsgId(0); setShowStart(false); setStreamTitle("");
+  };
+
+  const handleHeart = async () => {
+    if (!activeStream) return;
+    const id = Date.now();
+    setHeartsAnim((prev) => [...prev, id]);
+    setTimeout(() => setHeartsAnim((prev) => prev.filter((x) => x !== id)), 1500);
+    try { const res = await liveApi.heart(activeStream.id); setActiveStream((prev) => prev ? { ...prev, hearts_count: res.hearts_count } : prev); }
+    catch (e: unknown) { void e; }
+  };
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim() || !activeStream) return;
+    const text = chatInput.trim(); setChatInput("");
+    try {
+      const res = await liveApi.chat(activeStream.id, text);
+      setChatMsgs((prev) => [...prev, res.message]);
+      setLastMsgId(res.message.id);
+    } catch (e: unknown) { void e; }
+  };
+
+  // ── Внутри стрима ──────────────────────────────────────────────────────────
+  if (activeStream) {
+    return (
+      <div className="flex flex-col h-full relative" style={{ background: "#0a0a0f" }}>
+        {/* Фон стрима (заглушка — градиент) */}
+        <div className="absolute inset-0" style={{
+          background: isStreaming
+            ? "linear-gradient(160deg, #1a0a20, #2d0a3d)"
+            : "linear-gradient(160deg, #0a0a20, #0a1a2d)"
+        }} />
+
+        {/* Floating hearts */}
+        {heartsAnim.map((id) => (
+          <div key={id} className="absolute pointer-events-none z-30 text-2xl animate-fade-up"
+            style={{ bottom: "30%", right: `${20 + Math.random() * 40}px`, animationDuration: "1.2s" }}>
+            ❤️
+          </div>
+        ))}
+
+        {/* Header */}
+        <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-2">
+          <button onClick={handleLeave} className="glass-card p-2">
+            <Icon name="ChevronLeft" size={20} className="text-white" />
+          </button>
+          <div className="flex-1 mx-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-white font-bold text-sm truncate">{activeStream.title}</span>
+            </div>
+            <p className="text-white/50 text-xs">{activeStream.author_name}</p>
+          </div>
+          <div className="flex items-center gap-3 text-white/70 text-xs">
+            <span className="flex items-center gap-1"><Icon name="Eye" size={14} />{activeStream.viewers_count}</span>
+            <span className="flex items-center gap-1">❤️ {activeStream.hearts_count}</span>
+          </div>
+        </div>
+
+        {isStreaming && (
+          <div className="relative z-10 mx-4 mb-2">
+            <div className="glass-card px-3 py-1.5 text-center">
+              <span className="text-white/60 text-xs">🎥 Ты в эфире · {activeStream.viewers_count} зрителей</span>
+            </div>
+          </div>
+        )}
+
+        {/* Чат */}
+        <div className="relative z-10 flex-1 overflow-hidden flex flex-col justify-end px-4 pb-2">
+          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto">
+            {chatMsgs.slice(-30).map((msg) => (
+              <div key={msg.id} className="flex items-center gap-2">
+                <img src={msg.author_photo || PROFILES[0].photo} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                <div className="glass-card px-2.5 py-1 max-w-[80%]">
+                  <span className="text-pink-400 text-xs font-semibold">{msg.author_name} </span>
+                  <span className="text-white text-xs">{msg.text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="relative z-10 px-4 pb-5 flex items-center gap-3">
+          <input
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+            placeholder="Написать в чат..."
+            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/15 focus:border-pink-500/50 font-golos"
+          />
+          <button onClick={handleSendChat} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
+            <Icon name="Send" size={15} className="text-white" />
+          </button>
+          <button onClick={handleHeart}
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl transition-all active:scale-75"
+            style={{ background: "rgba(255,45,120,0.2)", border: "1px solid rgba(255,45,120,0.4)" }}>
+            ❤️
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Список стримов ─────────────────────────────────────────────────────────
+  return (
+    <>
+      {/* Модал запуска стрима */}
+      {showStart && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.75)" }}>
+          <div className="w-full max-w-sm animate-slide-up flex flex-col"
+            style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <button onClick={() => setShowStart(false)} className="text-white/50 text-sm">Отмена</button>
+              <h3 className="text-white font-bold text-sm">Начать трансляцию</h3>
+              <button onClick={handleStartStream} className="btn-grad px-4 py-1.5 text-sm">Эфир!</button>
+            </div>
+            <div className="p-5 flex flex-col gap-3">
+              <input
+                value={streamTitle}
+                onChange={(e) => setStreamTitle(e.target.value)}
+                placeholder="Тема трансляции..."
+                maxLength={100}
+                autoFocus
+                className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos"
+              />
+              <p className="text-white/30 text-xs text-center">Нажми «Эфир!» и зрители смогут тебя найти</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <h2 className="text-white font-golos font-bold text-2xl">Live</h2>
+            <p className="text-white/40 text-xs mt-0.5">
+              {streams.length > 0 ? `${streams.length} трансляций сейчас` : "Пока никто не в эфире"}
+            </p>
+          </div>
+          <button onClick={() => setShowStart(true)} className="btn-grad px-4 py-2 flex items-center gap-2 text-sm font-semibold">
+            <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            В эфир
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-3 pb-4">
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+            </div>
+          )}
+
+          {!loading && streams.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 gap-4">
+              <div className="text-6xl">📡</div>
+              <p className="text-white/50 text-sm text-center">Нет активных трансляций.<br />Нажми «В эфир» и начни первым!</p>
+            </div>
+          )}
+
+          {streams.map((stream) => (
+            <button key={stream.id} onClick={() => handleJoin(stream)}
+              className="glass-card p-4 flex items-center gap-4 w-full text-left hover:bg-white/10 transition-all active:scale-[0.98]">
+              {/* Аватар с live-кружком */}
+              <div className="relative flex-shrink-0">
+                <img src={stream.author_photo || PROFILES[0].photo} className="w-14 h-14 rounded-full object-cover"
+                  style={{ boxShadow: "0 0 0 2px #FF2D78" }} />
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold text-white"
+                  style={{ background: "#FF2D78" }}>LIVE</div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold text-sm truncate">{stream.title}</p>
+                <p className="text-white/50 text-xs mt-0.5">{stream.author_name}</p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-white/40 text-xs flex items-center gap-1">
+                    <Icon name="Eye" size={12} />{stream.viewers_count}
+                  </span>
+                  <span className="text-white/40 text-xs">❤️ {stream.hearts_count}</span>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+                <Icon name="Play" size={14} className="text-white" style={{ marginLeft: 2 }} />
+              </div>
+            </button>
+          ))}
+
+          {/* Обновить */}
+          {!loading && (
+            <button onClick={loadStreams} className="text-white/30 text-xs text-center py-2 hover:text-white/60 transition-colors">
+              Обновить список
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Bottom Nav ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen) => void }) {
-  const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
+  const items: { screen: Screen; icon: string; label: string }[] = [
     { screen: "discover", icon: "Flame", label: "Поиск" },
     { screen: "photos", icon: "Image", label: "Фото" },
+    { screen: "live", icon: "Radio", label: "Live" },
     { screen: "matches", icon: "MessageCircle", label: "Чаты" },
     { screen: "profile", icon: "User", label: "Профиль" },
   ];
@@ -906,7 +1175,7 @@ function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen)
           className={`nav-item relative ${active === item.screen ? "active" : ""}`}
           onClick={() => onChange(item.screen)}>
           <div className="relative">
-            <Icon name={item.icon as "Flame" | "Image" | "MessageCircle" | "User"} size={22} />
+            <Icon name={item.icon as "Flame" | "Image" | "Radio" | "MessageCircle" | "User"} size={22} />
             {item.badge && (
               <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
                 style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
@@ -1657,7 +1926,7 @@ export default function Index() {
     setCurrentUser((u) => u ? { ...u, ...data } : u);
   };
 
-  const mainScreens: Screen[] = ["discover", "photos", "matches", "likes", "profile"];
+  const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
   const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
@@ -1690,6 +1959,7 @@ export default function Index() {
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onFilter={() => setScreen("filter")} />}
           {screen === "photos" && <PhotosScreen currentUser={currentUser} />}
+          {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
           {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} />}

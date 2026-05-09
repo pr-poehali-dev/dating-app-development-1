@@ -1,5 +1,5 @@
 """
-Матчи: list
+Матчи и Live-трансляции: list / live_start / live_end / live_list / live_join / live_leave / live_heart / live_chat / live_poll
 Роутинг через query-параметр ?action=...
 """
 import json
@@ -77,6 +77,113 @@ def handler(event: dict, context) -> dict:
                 item['unread_count'] = int(item['unread_count'])
                 matches.append(item)
             return resp(200, {'matches': matches})
+
+        # ── LIVE ──────────────────────────────────────────────────────────────
+
+        # Начать трансляцию
+        if action == 'live_start':
+            body = json.loads(event.get('body') or '{}')
+            title = body.get('title', 'Моя трансляция').strip()[:200]
+            # Завершаем предыдущие стримы этого пользователя
+            cur.execute("UPDATE live_streams SET status='ended', ended_at=NOW() WHERE user_id=%s AND status='active'", (me['id'],))
+            cur.execute(
+                "INSERT INTO live_streams (user_id, title) VALUES (%s, %s) RETURNING id, started_at",
+                (me['id'], title)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'stream': {'id': row[0], 'title': title, 'started_at': str(row[1]), 'viewers_count': 0, 'hearts_count': 0}})
+
+        # Завершить трансляцию
+        if action == 'live_end':
+            cur.execute("UPDATE live_streams SET status='ended', ended_at=NOW() WHERE user_id=%s AND status='active'", (me['id'],))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # Список активных трансляций
+        if action == 'live_list':
+            cur.execute("""
+                SELECT s.id, s.user_id, s.title, s.viewers_count, s.hearts_count, s.started_at,
+                       u.name, u.photo_url
+                FROM live_streams s JOIN users u ON u.id = s.user_id
+                WHERE s.status = 'active'
+                ORDER BY s.viewers_count DESC, s.started_at DESC
+                LIMIT 20
+            """)
+            cols = ['id', 'user_id', 'title', 'viewers_count', 'hearts_count', 'started_at', 'author_name', 'author_photo']
+            streams = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'streams': streams})
+
+        # Зайти в трансляцию (инкремент зрителей)
+        if action == 'live_join':
+            body = json.loads(event.get('body') or '{}')
+            stream_id = int(body.get('stream_id', 0))
+            cur.execute("UPDATE live_streams SET viewers_count = viewers_count + 1 WHERE id=%s AND status='active'", (stream_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # Выйти из трансляции
+        if action == 'live_leave':
+            body = json.loads(event.get('body') or '{}')
+            stream_id = int(body.get('stream_id', 0))
+            cur.execute("UPDATE live_streams SET viewers_count = GREATEST(viewers_count - 1, 0) WHERE id=%s AND status='active'", (stream_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # Отправить сердечко
+        if action == 'live_heart':
+            body = json.loads(event.get('body') or '{}')
+            stream_id = int(body.get('stream_id', 0))
+            cur.execute("UPDATE live_streams SET hearts_count = hearts_count + 1 WHERE id=%s AND status='active'", (stream_id,))
+            cur.execute("SELECT hearts_count FROM live_streams WHERE id=%s", (stream_id,))
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'hearts_count': int(row[0]) if row else 0})
+
+        # Написать в чат трансляции
+        if action == 'live_chat':
+            body = json.loads(event.get('body') or '{}')
+            stream_id = int(body.get('stream_id', 0))
+            text = body.get('text', '').strip()[:200]
+            if not text:
+                return resp(400, {'error': 'Пустое сообщение'})
+            cur.execute("SELECT id FROM live_streams WHERE id=%s AND status='active'", (stream_id,))
+            if not cur.fetchone():
+                return resp(404, {'error': 'Трансляция не найдена'})
+            cur.execute(
+                "INSERT INTO live_messages (stream_id, user_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
+                (stream_id, me['id'], text)
+            )
+            row = cur.fetchone()
+            cur.execute("SELECT name, photo_url FROM users WHERE id=%s", (me['id'],))
+            u = cur.fetchone()
+            conn.commit()
+            return resp(200, {'message': {
+                'id': row[0], 'stream_id': stream_id, 'user_id': me['id'],
+                'author_name': u[0], 'author_photo': u[1],
+                'text': text, 'created_at': str(row[1])
+            }})
+
+        # Получить состояние трансляции + новые сообщения (polling)
+        if action == 'live_poll':
+            stream_id = int(params.get('stream_id', 0))
+            since_id = int(params.get('since_id', 0))
+            cur.execute("SELECT id, status, viewers_count, hearts_count, title FROM live_streams WHERE id=%s", (stream_id,))
+            srow = cur.fetchone()
+            if not srow:
+                return resp(404, {'error': 'Трансляция не найдена'})
+            cur.execute("""
+                SELECT m.id, m.user_id, m.text, m.created_at, u.name, u.photo_url
+                FROM live_messages m JOIN users u ON u.id = m.user_id
+                WHERE m.stream_id=%s AND m.id > %s
+                ORDER BY m.created_at ASC LIMIT 50
+            """, (stream_id, since_id))
+            cols = ['id', 'user_id', 'text', 'created_at', 'author_name', 'author_photo']
+            messages = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {
+                'stream': {'id': srow[0], 'status': srow[1], 'viewers_count': int(srow[2]), 'hearts_count': int(srow[3]), 'title': srow[4]},
+                'messages': messages
+            })
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
