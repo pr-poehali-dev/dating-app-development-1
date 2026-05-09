@@ -2,90 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;900&family=Unbounded:wght@700;900&display=swap");
+
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
     --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
+    --radius: 1.5rem;
 
-    --radius: 0.5rem;
+    /* App brand colors */
+    --spark-coral: #ff5a5f;
+    --spark-pink: #ff2d78;
+    --spark-orange: #ff8c42;
+    --spark-violet: #7b5ea7;
+    --spark-purple: #9b59b6;
+    --spark-dark: #1a1625;
+    --spark-dark2: #231d35;
+    --spark-glass: rgba(255, 255, 255, 0.08);
+    --spark-glass-border: rgba(255, 255, 255, 0.15);
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -94,8 +53,303 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-family: "Golos Text", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* App shell */
+.app-bg {
+  background: var(--spark-dark);
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-bg::before {
+  content: "";
+  position: fixed;
+  top: -40%;
+  left: -20%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 45, 120, 0.18) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-bg::after {
+  content: "";
+  position: fixed;
+  bottom: -30%;
+  right: -20%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(
+    circle,
+    rgba(123, 94, 167, 0.2) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+}
+
+/* Gradient text */
+.grad-text {
+  background: linear-gradient(135deg, #ff5a5f, #ff2d78, #9b59b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Main gradient button */
+.btn-grad {
+  background: linear-gradient(135deg, #ff2d78, #9b59b6);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-family: "Golos Text", sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(255, 45, 120, 0.35);
+}
+.btn-grad:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(255, 45, 120, 0.5);
+}
+.btn-grad:active {
+  transform: translateY(0);
+}
+
+/* Card swipe */
+.swipe-card {
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  user-select: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.swipe-card:active {
+  cursor: grabbing;
+}
+
+/* Nav item */
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+}
+.nav-item.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+.nav-item:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Like / Dislike overlay */
+.stamp-like {
+  position: absolute;
+  top: 32px;
+  left: 24px;
+  padding: 8px 20px;
+  border: 3px solid #00e676;
+  border-radius: 12px;
+  color: #00e676;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 4px;
+  transform: rotate(-15deg);
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-family: "Golos Text", sans-serif;
+}
+.stamp-nope {
+  position: absolute;
+  top: 32px;
+  right: 24px;
+  padding: 8px 20px;
+  border: 3px solid #ff2d78;
+  border-radius: 12px;
+  color: #ff2d78;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 4px;
+  transform: rotate(15deg);
+  opacity: 0;
+  transition: opacity 0.15s;
+  font-family: "Golos Text", sans-serif;
+}
+
+/* Message bubble */
+.msg-bubble-out {
+  background: linear-gradient(135deg, #ff2d78, #9b59b6);
+  border-radius: 20px 20px 4px 20px;
+  color: white;
+  padding: 10px 16px;
+  max-width: 72%;
+  align-self: flex-end;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.msg-bubble-in {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px 20px 20px 4px;
+  color: white;
+  padding: 10px 16px;
+  max-width: 72%;
+  align-self: flex-start;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+@keyframes heartBeat {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes swipeLeft {
+  to {
+    transform: translateX(-150%) rotate(-30deg);
+    opacity: 0;
+  }
+}
+@keyframes swipeRight {
+  to {
+    transform: translateX(150%) rotate(30deg);
+    opacity: 0;
+  }
+}
+
+.animate-fade-up {
+  animation: fadeInUp 0.4s ease forwards;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease forwards;
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease forwards;
+}
+.animate-heart {
+  animation: heartBeat 0.6s ease;
+}
+
+.swipe-left {
+  animation: swipeLeft 0.4s ease forwards;
+}
+.swipe-right {
+  animation: swipeRight 0.4s ease forwards;
+}
+
+/* Tag pill */
+.tag-pill {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+
+/* Premium badge */
+.premium-badge {
+  background: linear-gradient(135deg, #ffd700, #ff8c42);
+  border-radius: 100px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1625;
+  letter-spacing: 0.5px;
 }
