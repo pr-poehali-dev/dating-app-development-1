@@ -33,7 +33,8 @@ def handler(event: dict, context) -> dict:
 
     path = event.get('path', '/')
     method = event.get('httpMethod', 'GET')
-    token = event.get('headers', {}).get('X-Authorization', '') or event.get('headers', {}).get('x-authorization', '')
+    _raw = event.get('headers', {}).get('X-Authorization', '') or event.get('headers', {}).get('x-authorization', '')
+    token = _raw.replace('Bearer ', '').strip()
 
     conn = get_conn()
     try:
