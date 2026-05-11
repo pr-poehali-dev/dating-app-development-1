@@ -38,11 +38,11 @@ def send_verify_email(to_email: str, code: str, name: str):
     user = os.environ.get('SMTP_USER', '')
     password = os.environ.get('SMTP_PASS', '')
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Код подтверждения SPARK'
-    msg['From'] = f'SPARK <{user}>'
+    msg['Subject'] = 'Код подтверждения LoveBloom'
+    msg['From'] = f'LoveBloom <{user}>'
     msg['To'] = to_email
     html = f"""<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#1a1625;border-radius:16px;padding:32px;">
-      <h1 style="color:#FF2D78;font-size:28px;margin:0 0 8px">SPARK ✦</h1>
+      <h1 style="color:#FF2D78;font-size:28px;margin:0 0 8px">LoveBloom 🌸</h1>
       <p style="color:#ccc;margin:0 0 24px">Привет, {name}!</p>
       <p style="color:#ccc;margin:0 0 16px">Твой код подтверждения:</p>
       <div style="background:#2d2540;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px">

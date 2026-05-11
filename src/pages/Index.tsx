@@ -320,7 +320,7 @@ function LikesScreen({ onPremium }: { onPremium: () => void }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold text-base">Spark Premium</span>
+              <span className="text-white font-bold text-base">LoveBloom Premium</span>
               <span className="premium-badge">GOLD</span>
             </div>
             <p className="text-white/60 text-sm">Смотри, кто тебя лайкнул — без ограничений</p>
@@ -470,7 +470,7 @@ function ProfileScreen({ onPremium }: { onPremium: () => void }) {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold">Spark Premium</span>
+              <span className="text-white font-bold">LoveBloom Premium</span>
               <span className="premium-badge">✨ GOLD</span>
             </div>
             <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
@@ -723,7 +723,7 @@ function PremiumScreen({ onClose }: { onClose: () => void }) {
           style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 0 40px rgba(255,45,120,0.5)" }}>
           <span className="text-4xl">✨</span>
         </div>
-        <h2 className="font-unbounded text-white font-black text-2xl text-center mb-2">SPARK PREMIUM</h2>
+        <h2 className="font-unbounded text-white font-black text-2xl text-center mb-2">LoveBloom PREMIUM</h2>
         <p className="text-white/50 text-sm text-center">Знакомься быстрее, находи лучшее</p>
       </div>
       <div className="mx-5 glass-card p-4 mb-5">
@@ -1598,7 +1598,10 @@ function RealDiscoverScreen({ currentUser, onOpenFilter }: {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
+          <div className="flex items-center gap-2">
+            <img src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/51fe4ec6-6465-42e1-b1ed-df2cd706037f.jpg" className="w-8 h-8 rounded-xl object-cover" />
+            <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
+          </div>
           <button
             onClick={() => onOpenFilter(filters, handleApplyFilters)}
             className="relative glass-card px-3 py-2 flex items-center gap-2 text-white/80 text-sm">
@@ -1805,7 +1808,7 @@ function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold text-base">Spark Premium</span>
+              <span className="text-white font-bold text-base">LoveBloom Premium</span>
               <span className="premium-badge">GOLD</span>
             </div>
             <p className="text-white/60 text-sm">Смотри, кто тебя лайкнул — без ограничений</p>
@@ -2318,7 +2321,7 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, on
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-white font-bold">Spark Premium</span>
+                <span className="text-white font-bold">LoveBloom Premium</span>
                 <span className="premium-badge">✨ GOLD</span>
               </div>
               <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
