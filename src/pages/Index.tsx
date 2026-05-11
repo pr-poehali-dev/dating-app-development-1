@@ -2444,6 +2444,12 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, on
   const [photoError, setPhotoError] = useState("");
   const [localPhoto, setLocalPhoto] = useState(currentUser.photo_url || "");
   const [editOpen, setEditOpen] = useState(false);
+
+  useEffect(() => {
+    if (currentUser.photo_url && !photoUploading) {
+      setLocalPhoto(currentUser.photo_url);
+    }
+  }, [currentUser.photo_url, photoUploading]);
   const [settingsScreen, setSettingsScreen] = useState<
     null | "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help"
   >(null);
@@ -2463,7 +2469,8 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, on
       setPhotoUploading(true);
       try {
         const res = await profilesApi.uploadPhoto(base64, file.type);
-        setLocalPhoto(res.photo_url);
+        const freshUrl = `${res.photo_url}?t=${Date.now()}`;
+        setLocalPhoto(freshUrl);
         onPhotoUpdate(res.photo_url);
       } catch (err: unknown) {
         setPhotoError(err instanceof Error ? err.message : "Ошибка загрузки");
