@@ -2180,6 +2180,8 @@ function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose }: {
 }) {
   const [name, setName] = useState(currentUser.name || "");
   const [email, setEmail] = useState(currentUser.email || "");
+  const [username, setUsername] = useState(currentUser.username || "");
+  const [usernameError, setUsernameError] = useState("");
   const [saved, setSaved] = useState(false);
 
   const [notif, setNotif] = useState({ matches: true, messages: true, likes: true, promo: false });
@@ -2219,9 +2221,19 @@ function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose }: {
   );
 
   const saveAccount = async () => {
-    onProfileUpdate({ name, email } as Partial<User>);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setUsernameError("");
+    if (username && !/^[a-z0-9_.]{3,50}$/.test(username)) {
+      setUsernameError("Только латиница, цифры, _ и . (3-50 символов)");
+      return;
+    }
+    try {
+      await profilesApi.updateMe({ name, username: username || undefined } as Parameters<typeof profilesApi.updateMe>[0]);
+      onProfileUpdate({ name, username: username || undefined });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e: unknown) {
+      setUsernameError(e instanceof Error ? e.message : "Ошибка сохранения");
+    }
   };
 
   return (
@@ -2240,10 +2252,21 @@ function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose }: {
           <div className="px-5 flex flex-col gap-4">
             <div className="glass-card overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
-                <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Имя пользователя</p>
+                <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Имя</p>
                 <input value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full bg-transparent text-white text-sm outline-none placeholder-white/30"
                   placeholder="Твоё имя" />
+              </div>
+              <div className="px-4 py-3 border-b border-white/5">
+                <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Имя пользователя</p>
+                <div className="flex items-center gap-1">
+                  <span className="text-white/30 text-sm">@</span>
+                  <input value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameError(""); }}
+                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30 font-mono"
+                    placeholder="username" maxLength={50} />
+                </div>
+                {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
+                <p className="text-white/25 text-xs mt-1">Только a-z, 0-9, _ и . (3–50 символов)</p>
               </div>
               <div className="px-4 py-3">
                 <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Электронная почта</p>
@@ -2535,7 +2558,11 @@ function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, on
 
           <h3 className="text-white font-bold text-xl mt-1">
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
+            {currentUser.verified && <span className="ml-1.5 text-blue-400 text-base">✓</span>}
           </h3>
+          {currentUser.username && (
+            <p className="text-white/40 text-sm font-mono mt-0.5">@{currentUser.username}</p>
+          )}
           <p className="text-white/50 text-sm flex items-center gap-1 mt-0.5">
             <Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}
           </p>

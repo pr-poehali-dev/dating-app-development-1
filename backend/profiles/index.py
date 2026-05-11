@@ -215,6 +215,18 @@ def handler(event: dict, context) -> dict:
                 if key in body:
                     fields.append(f"{key} = %s")
                     values.append(body[key])
+            # username — отдельно с проверкой уникальности
+            if 'username' in body:
+                uname = body['username'].strip().lower()[:50]
+                if uname:
+                    import re
+                    if not re.match(r'^[a-z0-9_.]{3,50}$', uname):
+                        return resp(400, {'error': 'Имя пользователя: только буквы, цифры, _ и . (3-50 символов)'})
+                    cur.execute("SELECT id FROM users WHERE username=%s AND id != %s", (uname, me['id']))
+                    if cur.fetchone():
+                        return resp(400, {'error': 'Это имя пользователя уже занято'})
+                    fields.append("username = %s")
+                    values.append(uname)
             if fields:
                 values.append(me['id'])
                 cur.execute(f"UPDATE users SET {', '.join(fields)} WHERE id = %s", values)

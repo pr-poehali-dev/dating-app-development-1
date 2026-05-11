@@ -78,7 +78,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'me':
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username "
                 "FROM users u JOIN sessions s ON s.user_id = u.id "
                 "WHERE s.token = %s AND s.expires_at > NOW()",
                 (token,)
@@ -86,7 +86,7 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row:
                 return resp(401, {'error': 'Не авторизован'})
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username']
             return resp(200, {'user': dict(zip(cols, row))})
 
         if action == 'logout':
