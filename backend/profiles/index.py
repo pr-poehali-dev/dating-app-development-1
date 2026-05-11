@@ -150,7 +150,11 @@ def handler(event: dict, context) -> dict:
 
             if search:
                 safe = search.replace("'", "''")
-                conditions.append(f"u.name ILIKE '%{safe}%'")
+                if search.startswith('@'):
+                    uname = safe.lstrip('@')
+                    conditions.append(f"u.username ILIKE '%{uname}%'")
+                else:
+                    conditions.append(f"(u.name ILIKE '%{safe}%' OR u.username ILIKE '%{safe}%')")
 
             if city_filter_val:
                 safe_city = city_filter_val.replace("'", "''")
@@ -177,14 +181,14 @@ def handler(event: dict, context) -> dict:
 
             where_clause = " AND ".join(conditions)
             cur.execute(f"""
-                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online{geo_select}
+                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username{geo_select}
                 FROM users u
                 WHERE {where_clause}
                 ORDER BY {geo_order}
                 LIMIT 60
             """)
             rows = cur.fetchall()
-            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online']
+            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username']
             if geo_select:
                 cols.append('distance_km')
             profiles_list = []

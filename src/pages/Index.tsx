@@ -1622,7 +1622,7 @@ function RealDiscoverScreen({ currentUser, onOpenFilter }: {
             <input
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Поиск по имени..."
+              placeholder="Поиск по имени или @username..."
               className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl pl-9 pr-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos"
             />
             {search && (
@@ -1675,7 +1675,11 @@ function RealDiscoverScreen({ currentUser, onOpenFilter }: {
                     <div className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5">
                       <p className="text-white text-[10px] font-semibold truncate leading-tight">
                         {p.name}{p.age ? `, ${p.age}` : ""}
+                        {p.verified && <span className="ml-0.5 text-blue-300">✓</span>}
                       </p>
+                      {(p as Profile & { username?: string }).username && (
+                        <p className="text-white/50 text-[9px] font-mono truncate">@{(p as Profile & { username?: string }).username}</p>
+                      )}
                       {(p as Profile & { distance_km?: number }).distance_km !== undefined && (
                         <p className="text-white/50 text-[9px]">{(p as Profile & { distance_km?: number }).distance_km} км</p>
                       )}
