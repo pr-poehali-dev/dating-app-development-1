@@ -224,6 +224,12 @@ export const postsApi = {
 
   getUserProfile: (user_id: number) =>
     req<{ profile: Profile; posts: Post[] }>("profiles", "user_profile", {}, { user_id: String(user_id) }),
+
+  deletePost: (post_id: number) =>
+    req<{ ok: boolean }>("profiles", "post_delete", {
+      method: "POST",
+      body: JSON.stringify({ post_id }),
+    }),
 };
 
 // ─── Live ─────────────────────────────────────────────────────────────────────

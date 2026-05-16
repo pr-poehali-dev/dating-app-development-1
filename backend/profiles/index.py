@@ -381,6 +381,24 @@ def handler(event: dict, context) -> dict:
             comments = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'comments': comments})
 
+        # Удалить пост
+        if action == 'post_delete':
+            body = json.loads(event.get('body') or '{}')
+            post_id = int(body.get('post_id', 0))
+            if not post_id:
+                return resp(400, {'error': 'post_id обязателен'})
+            cur.execute("SELECT user_id FROM posts WHERE id = %s", (post_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пост не найден'})
+            if row[0] != me['id']:
+                return resp(403, {'error': 'Нельзя удалить чужой пост'})
+            cur.execute("DELETE FROM post_comments WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM post_likes WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM posts WHERE id = %s", (post_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # ── ВЕРИФИКАЦИЯ (user) ─────────────────────────────────────────────────
 
         if action == 'verify_status':

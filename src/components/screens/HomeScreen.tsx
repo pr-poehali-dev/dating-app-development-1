@@ -2,6 +2,42 @@ import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { postsApi, liveApi, type Post, type PostComment, type LiveStream, type User } from "@/lib/api";
 
+// ─── DeleteConfirm ────────────────────────────────────────────────────────────
+function DeleteConfirm({ onConfirm, onCancel, loading }: {
+  onConfirm: () => void; onCancel: () => void; loading: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+      onClick={onCancel}>
+      <div className="w-full max-w-sm animate-slide-up"
+        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-5" style={{ background: "rgba(255,255,255,0.18)" }} />
+        <div className="px-5 pb-2 flex flex-col items-center gap-2 text-center">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
+            style={{ background: "rgba(239,68,68,0.12)" }}>
+            <Icon name="Trash2" size={24} style={{ color: "#F87171" }} />
+          </div>
+          <p className="text-white font-bold text-base">Удалить публикацию?</p>
+          <p className="text-white/40 text-sm">Это действие нельзя отменить. Фото и комментарии будут удалены.</p>
+        </div>
+        <div className="px-5 pb-8 pt-5 flex flex-col gap-2.5">
+          <button onClick={onConfirm} disabled={loading}
+            className="w-full py-3.5 rounded-2xl text-sm font-bold text-white disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg,#EF4444,#B91C1C)" }}>
+            {loading ? "Удаляем..." : "Удалить"}
+          </button>
+          <button onClick={onCancel}
+            className="w-full py-3.5 rounded-2xl text-sm font-semibold text-white/60 glass-card">
+            Отмена
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
 function timeAgo(dt: string) {
@@ -138,14 +174,20 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
 }
 
 // ─── PostCard ─────────────────────────────────────────────────────────────────
-function PostCard({ post, onLike, onComment }: {
+function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
   post: Post;
+  currentUserId: number;
   onLike: (p: Post) => void;
   onComment: (p: Post) => void;
+  onDelete: (p: Post) => void;
 }) {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [count, setCount] = useState(post.likes_count);
   const [bouncing, setBouncing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isOwn = post.user_id === currentUserId;
 
   const handleLike = () => {
     setBouncing(true);
@@ -156,7 +198,24 @@ function PostCard({ post, onLike, onComment }: {
     onLike(post);
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await postsApi.deletePost(post.id);
+      onDelete(post);
+    } catch (e: unknown) { void e; }
+    finally { setDeleting(false); setShowConfirm(false); }
+  };
+
   return (
+    <>
+      {showConfirm && (
+        <DeleteConfirm
+          onConfirm={handleDelete}
+          onCancel={() => setShowConfirm(false)}
+          loading={deleting}
+        />
+      )}
     <div className="flex flex-col" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
       {/* Author row */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -169,6 +228,12 @@ function PostCard({ post, onLike, onComment }: {
           <p className="text-white font-semibold text-sm">{post.author_name}</p>
           <p className="text-white/40 text-[10px]">{timeAgo(post.created_at)}</p>
         </div>
+        {isOwn && (
+          <button onClick={() => setShowConfirm(true)}
+            className="p-1.5 text-white/30 hover:text-white/70 transition-colors">
+            <Icon name="Trash2" size={16} />
+          </button>
+        )}
       </div>
 
       {/* Photo */}
@@ -201,6 +266,7 @@ function PostCard({ post, onLike, onComment }: {
 
       {!post.caption && <div className="pb-2" />}
     </div>
+    </>
   );
 }
 
@@ -411,8 +477,10 @@ export function HomeScreen({ currentUser, onGoLive }: {
                   <PostCard
                     key={post.id}
                     post={post}
+                    currentUserId={currentUser.id}
                     onLike={handleLike}
                     onComment={(p) => setCommentPost(p)}
+                    onDelete={(p) => setPosts((prev) => prev.filter((x) => x.id !== p.id))}
                   />
                 ))
               )}
