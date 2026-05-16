@@ -705,6 +705,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [contextMsg, setContextMsg] = useState<Message | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [showPlus, setShowPlus] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -882,9 +884,33 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
 
+        {/* Панель смайликов */}
+        {showEmoji && (
+          <div className="px-3 pb-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            {[
+              ["😍","🥰","❤️","🔥","😘","💋","🫦","💕"],
+              ["😂","🤣","😭","🥺","😅","🙈","😏","🤤"],
+              ["👋","🤙","💪","🙏","👅","💦","🥵","🫠"],
+              ["🎉","🏆","💎","🌹","🍓","🦋","✨","💯"],
+            ].map((row, i) => (
+              <div key={i} className="flex justify-between mb-1">
+                {row.map(em => (
+                  <button key={em} onClick={() => {
+                    setInput(v => v + em);
+                    inputRef.current?.focus();
+                  }}
+                    className="text-2xl w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-75 hover:bg-white/10">
+                    {em}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="px-4 py-3 flex items-center gap-2"
-          style={{ borderTop: showPlus ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
-          <button onClick={() => setShowPlus(v => !v)}
+          style={{ borderTop: (showPlus || showEmoji) ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={() => { setShowPlus(v => !v); setShowEmoji(false); }}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
             style={{
               background: showPlus ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)",
@@ -892,11 +918,16 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             }}>
             <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
           </button>
-          <input value={input} onChange={(e) => setInput(e.target.value)}
+          <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
-            onFocus={() => setShowPlus(false)}
+            onFocus={() => { setShowPlus(false); setShowEmoji(false); }}
             placeholder="Написать..."
             className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+          <button onClick={() => { setShowEmoji(v => !v); setShowPlus(false); }}
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
+            style={{ background: showEmoji ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
+            {showEmoji ? <Icon name="X" size={16} className="text-white" /> : "😊"}
+          </button>
           <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
             <Icon name="Send" size={16} className="text-white" />
           </button>
