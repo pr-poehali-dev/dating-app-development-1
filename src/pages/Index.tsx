@@ -49,6 +49,7 @@ export default function Index() {
 
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
   const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); setScreen("chat"); };
+  const goToChats = () => { setPrevScreen(screen); setScreen("matches"); };
   const backToMatches = () => { setChatId(null); setScreen(prevScreen); };
 
 
@@ -78,7 +79,7 @@ export default function Index() {
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} />}
-          {screen === "photos" && <PeopleScreen onOpenChat={openChat} />}
+          {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}

@@ -620,8 +620,8 @@ function ProfileMenuSheet({ profile, onClose, onReport }: {
 }
 
 // ─── DiscoverProfileModal ─────────────────────────────────────────────────────
-export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat }: {
-  profile: Profile; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void;
+export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onGoToChats }: {
+  profile: Profile; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void;
 }) {
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -684,7 +684,9 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat }: {
     const { matchesApi } = await import("@/lib/api");
     const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
     const m = data.matches.find(x => x.user.id === profile.id);
-    if (m && onOpenChat) onOpenChat(m.match_id);
+    if (m && onOpenChat) { onOpenChat(m.match_id); return; }
+    // Матча нет — переходим на экран чатов
+    onGoToChats?.();
   };
 
   // Свайп/тап влево-вправо для смены фото
