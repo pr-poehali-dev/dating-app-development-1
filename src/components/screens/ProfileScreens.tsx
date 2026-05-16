@@ -476,10 +476,40 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
       <div className="flex flex-col h-full overflow-y-auto">
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
           <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
-          <button onClick={() => setEditOpen(true)}
-            className="glass-card px-3 py-1.5 flex items-center gap-1.5 text-white/70 text-sm hover:text-white transition-colors">
-            <Icon name="Pencil" size={14} />Изменить
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setEditOpen(true)}
+              className="glass-card px-3 py-1.5 flex items-center gap-1.5 text-white/70 text-sm hover:text-white transition-colors">
+              <Icon name="Pencil" size={14} />Изменить
+            </button>
+            <div className="relative">
+              <button onClick={() => setActiveTab(v => v === "settings" ? null : "settings")}
+                className="glass-card p-2 flex items-center justify-center transition-colors"
+                style={activeTab === "settings" ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" } : {}}>
+                <Icon name="MoreVertical" size={18} className="text-white/70" />
+              </button>
+              {activeTab === "settings" && (
+                <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[200px]"
+                  style={{ background: "rgba(22,16,36,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  {[
+                    { icon: "User",       label: "Аккаунт",      action: () => { setSettingsScreen("account"); setActiveTab(null); } },
+                    { icon: "Bell",       label: "Уведомления",   action: () => { setSettingsScreen("notifications"); setActiveTab(null); } },
+                    { icon: "Palette",    label: "Интерфейс",     action: () => { setSettingsScreen("appearance"); setActiveTab(null); } },
+                    { icon: "Shield",     label: "Приватность",   action: () => { setSettingsScreen("privacy"); setActiveTab(null); } },
+                    { icon: "BadgeCheck", label: "Верификация",   action: () => { onVerify(); setActiveTab(null); } },
+                    { icon: "LogOut",     label: "Выйти",         action: () => { onLogout(); setActiveTab(null); }, danger: true },
+                  ].map(({ icon, label, action, danger }, i, arr) => (
+                    <button key={label} onClick={action}
+                      className="flex items-center gap-3 px-4 py-3 w-full hover:bg-white/5 transition-colors text-left"
+                      style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                      <Icon name={icon as "User"|"Bell"|"Palette"|"Shield"|"BadgeCheck"|"LogOut"} size={16}
+                        className={danger ? "text-red-400" : "text-white/50"} />
+                      <span className={`${danger ? "text-red-400" : "text-white/80"} text-sm`}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
@@ -525,47 +555,23 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             ))}
           </div>
 
-          {/* 3 кнопки действий */}
-          <div className="grid grid-cols-3 gap-2 w-full mt-4">
+          {/* 2 кнопки действий */}
+          <div className="grid grid-cols-2 gap-2 w-full mt-4">
             {[
-              { icon: "Settings",   label: "Настройки", action: () => setActiveTab(v => v === "settings" ? null : "settings"), tab: "settings" },
-              { icon: "BarChart2",  label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"),      tab: "stats" },
-              { icon: "ShoppingBag",label: "Магазин",   action: () => setActiveTab(v => v === "shop" ? null : "shop"),        tab: "shop" },
+              { icon: "BarChart2",  label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"), tab: "stats" },
+              { icon: "ShoppingBag",label: "Магазин",   action: () => setActiveTab(v => v === "shop" ? null : "shop"),   tab: "shop" },
             ].map(({ icon, label, action, tab }) => (
               <button key={label} onClick={action}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
                 style={activeTab === tab
                   ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
                   : { background: "rgba(255,255,255,0.08)" }}>
-                <Icon name={icon as "Settings"|"BarChart2"|"ShoppingBag"} size={20}
+                <Icon name={icon as "BarChart2"|"ShoppingBag"} size={20}
                   className={activeTab === tab ? "text-white" : "text-white/60"} />
                 <span className={`text-[10px] font-medium ${activeTab === tab ? "text-white" : "text-white/50"}`}>{label}</span>
               </button>
             ))}
           </div>
-
-          {/* Панель: Настройки */}
-          {activeTab === "settings" && (
-            <div className="w-full mt-3 glass-card overflow-hidden">
-              {[
-                { icon: "User",   label: "Аккаунт",        action: () => setSettingsScreen("account") },
-                { icon: "Shield", label: "Приватность",     action: () => setSettingsScreen("privacy") },
-                { icon: "Bell",   label: "Уведомления",     action: () => setSettingsScreen("notifications") },
-                { icon: "Palette",label: "Оформление",      action: () => setSettingsScreen("appearance") },
-                { icon: "BadgeCheck", label: "Верификация", action: onVerify },
-                { icon: "LogOut", label: "Выйти",           action: onLogout, danger: true },
-              ].map(({ icon, label, action, danger }, i, arr) => (
-                <button key={label} onClick={action}
-                  className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
-                  style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                  <Icon name={icon as "User"|"Shield"|"Bell"|"Palette"|"BadgeCheck"|"LogOut"} size={17}
-                    className={danger ? "text-red-400" : "text-white/50"} />
-                  <span className={`${danger ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{label}</span>
-                  {!danger && <Icon name="ChevronRight" size={15} className="text-white/30" />}
-                </button>
-              ))}
-            </div>
-          )}
 
           {/* Панель: Статистика */}
           {activeTab === "stats" && (
