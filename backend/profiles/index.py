@@ -255,7 +255,7 @@ def handler(event: dict, context) -> dict:
                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
-            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             cur.execute("UPDATE users SET photo_url = %s WHERE id = %s", (cdn_url, me['id']))
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
@@ -302,7 +302,7 @@ def handler(event: dict, context) -> dict:
                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
-            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             cur.execute(
                 "INSERT INTO posts (user_id, photo_url, caption) VALUES (%s, %s, %s) RETURNING id, created_at",
                 (me['id'], cdn_url, caption or None)
@@ -468,7 +468,7 @@ def handler(event: dict, context) -> dict:
                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
-            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/files/{key}"
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             cur.execute("SELECT id FROM verification_requests WHERE user_id=%s", (me['id'],))
             if cur.fetchone():
                 cur.execute("UPDATE verification_requests SET selfie_url=%s, status='pending', reviewed_at=NULL, reject_reason=NULL WHERE user_id=%s",
