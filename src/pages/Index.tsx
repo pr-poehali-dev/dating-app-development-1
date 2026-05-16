@@ -92,7 +92,7 @@ export default function Index() {
               onClose={() => setScreen("discover")}
             />
           )}
-          {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} />}
+          {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} currentUser={currentUser} />}
           {screen === "verify" && <VerifyScreen onClose={() => setScreen("profile")} />}
           {screen === "admin_verify" && <AdminVerifyScreen onClose={() => setScreen("profile")} />}
         </div>

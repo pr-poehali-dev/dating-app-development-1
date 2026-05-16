@@ -135,13 +135,15 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
 }
 
 // ─── PremiumScreen ────────────────────────────────────────────────────────────
-export function PremiumScreen({ onClose }: { onClose: () => void }) {
+export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; currentUser?: { id: number; email: string; name: string } | null }) {
   const plans = [
-    { label: "1 месяц", price: "699 ₽", per: "/мес", popular: false, total: "" },
-    { label: "3 месяца", price: "449 ₽", per: "/мес", popular: true, total: "1 347 ₽" },
-    { label: "12 месяцев", price: "249 ₽", per: "/мес", popular: false, total: "2 988 ₽" },
+    { label: "1 месяц",   price: "699 ₽",  amount: 699,  per: "/мес", popular: false, total: "",        plan: "1month"  },
+    { label: "3 месяца",  price: "449 ₽",  amount: 1347, per: "/мес", popular: true,  total: "1 347 ₽", plan: "3month"  },
+    { label: "12 месяцев",price: "249 ₽",  amount: 2988, per: "/мес", popular: false, total: "2 988 ₽", plan: "12month" },
   ];
   const [selected, setSelected] = useState(1);
+  const [paying, setPaying] = useState(false);
+  const [error, setError] = useState("");
 
   const features = [
     { icon: "Heart", label: "Безлимитные лайки каждый день" },
@@ -208,8 +210,44 @@ export function PremiumScreen({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <div className="px-5 pb-8">
-        <button className="btn-grad w-full py-4 text-base font-bold">Попробовать Premium</button>
-        <p className="text-white/30 text-xs text-center mt-3">Автопродление. Отмена в любой момент.</p>
+        {error && <p className="text-red-400 text-xs text-center mb-3">{error}</p>}
+        <button
+          disabled={paying}
+          onClick={async () => {
+            if (!currentUser) { setError("Войди в аккаунт для оплаты"); return; }
+            setPaying(true); setError("");
+            try {
+              const plan = plans[selected];
+              const res = await fetch("https://functions.poehali.dev/2198b7bb-a193-4ee9-b5e4-95e2f8f55549", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  amount: plan.amount,
+                  user_name: currentUser.name,
+                  user_email: currentUser.email,
+                  user_id: currentUser.id,
+                  plan: plan.plan,
+                  cart_items: [{ id: plan.plan, name: `LoveBloom Premium — ${plan.label}`, price: plan.amount, quantity: 1 }],
+                }),
+              });
+              const data = await res.json();
+              if (data.payment_url) {
+                window.location.href = data.payment_url;
+              } else {
+                setError("Ошибка создания платежа. Попробуй ещё раз.");
+              }
+            } catch {
+              setError("Ошибка соединения. Попробуй ещё раз.");
+            } finally {
+              setPaying(false);
+            }
+          }}
+          className="btn-grad w-full py-4 text-base font-bold disabled:opacity-60 flex items-center justify-center gap-2">
+          {paying
+            ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
+            : `Оплатить ${plans[selected].total || plans[selected].price}`}
+        </button>
+        <p className="text-white/30 text-xs text-center mt-3">Безопасная оплата через Robokassa</p>
       </div>
     </div>
   );
