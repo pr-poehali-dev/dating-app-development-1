@@ -216,56 +216,56 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
           loading={deleting}
         />
       )}
-    <div className="flex flex-col" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-      {/* Author row */}
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className="relative">
-          <img src={post.author_photo || FALLBACK_PHOTO}
-            className="w-9 h-9 rounded-full object-cover"
-            style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
+      <div className="flex flex-col" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        {/* Author row */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <div className="relative">
+            <img src={post.author_photo || FALLBACK_PHOTO}
+              className="w-9 h-9 rounded-full object-cover"
+              style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm">{post.author_name}</p>
+            <p className="text-white/40 text-[10px]">{timeAgo(post.created_at)}</p>
+          </div>
+          {isOwn && (
+            <button onClick={() => setShowConfirm(true)}
+              className="p-1.5 text-white/30 hover:text-white/70 transition-colors">
+              <Icon name="Trash2" size={16} />
+            </button>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-white font-semibold text-sm">{post.author_name}</p>
-          <p className="text-white/40 text-[10px]">{timeAgo(post.created_at)}</p>
+
+        {/* Photo */}
+        <div className="relative" onDoubleClick={handleLike}>
+          <img src={post.photo_url} className="w-full object-cover" style={{ maxHeight: 400 }} />
         </div>
-        {isOwn && (
-          <button onClick={() => setShowConfirm(true)}
-            className="p-1.5 text-white/30 hover:text-white/70 transition-colors">
-            <Icon name="Trash2" size={16} />
+
+        {/* Actions */}
+        <div className="px-4 pt-3 pb-1 flex items-center gap-5">
+          <button onClick={handleLike}
+            className="flex items-center gap-1.5 transition-all"
+            style={{ transform: bouncing ? "scale(1.25)" : "scale(1)", transition: "transform 0.2s" }}>
+            <Icon name="Heart" size={24}
+              style={{ color: liked ? "#FF2D78" : "rgba(255,255,255,0.6)", fill: liked ? "#FF2D78" : "transparent", transition: "color 0.2s, fill 0.2s" }} />
+            <span className="text-white/60 text-sm font-medium">{count}</span>
           </button>
-        )}
-      </div>
-
-      {/* Photo */}
-      <div className="relative" onDoubleClick={handleLike}>
-        <img src={post.photo_url} className="w-full object-cover" style={{ maxHeight: 400 }} />
-      </div>
-
-      {/* Actions */}
-      <div className="px-4 pt-3 pb-1 flex items-center gap-5">
-        <button onClick={handleLike}
-          className="flex items-center gap-1.5 transition-all"
-          style={{ transform: bouncing ? "scale(1.25)" : "scale(1)", transition: "transform 0.2s" }}>
-          <Icon name="Heart" size={24}
-            style={{ color: liked ? "#FF2D78" : "rgba(255,255,255,0.6)", fill: liked ? "#FF2D78" : "transparent", transition: "color 0.2s, fill 0.2s" }} />
-          <span className="text-white/60 text-sm font-medium">{count}</span>
-        </button>
-        <button onClick={() => onComment(post)} className="flex items-center gap-1.5">
-          <Icon name="MessageCircle" size={22} className="text-white/60" />
-          <span className="text-white/60 text-sm font-medium">{post.comments_count}</span>
-        </button>
-      </div>
-
-      {/* Caption */}
-      {post.caption && (
-        <div className="px-4 pb-3">
-          <span className="text-white font-semibold text-sm">{post.author_name} </span>
-          <span className="text-white/70 text-sm">{post.caption}</span>
+          <button onClick={() => onComment(post)} className="flex items-center gap-1.5">
+            <Icon name="MessageCircle" size={22} className="text-white/60" />
+            <span className="text-white/60 text-sm font-medium">{post.comments_count}</span>
+          </button>
         </div>
-      )}
 
-      {!post.caption && <div className="pb-2" />}
-    </div>
+        {/* Caption */}
+        {post.caption && (
+          <div className="px-4 pb-3">
+            <span className="text-white font-semibold text-sm">{post.author_name} </span>
+            <span className="text-white/70 text-sm">{post.caption}</span>
+          </div>
+        )}
+
+        {!post.caption && <div className="pb-2" />}
+      </div>
     </>
   );
 }
