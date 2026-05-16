@@ -704,8 +704,11 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [partnerPhoto, setPartnerPhoto] = useState(FALLBACK_PHOTO);
   const [contextMsg, setContextMsg] = useState<Message | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [showPlus, setShowPlus] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   void currentUserId;
 
@@ -728,6 +731,23 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       setMsgs((m) => [...m, msg]);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (e) { void e; }
+  };
+
+  const sendSystem = async (text: string) => {
+    setShowPlus(false);
+    try {
+      const msg = await messagesApi.send(matchId, text);
+      setMsgs((m) => [...m, msg]);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    } catch (e) { void e; }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setShowPlus(false);
+    sendSystem(`📷 [Фото]`);
+    e.target.value = "";
   };
 
   const handleDelete = async (msg: Message) => {
@@ -832,10 +852,49 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           <div ref={bottomRef} />
         </div>
 
-        <div className="px-4 py-3 flex items-center gap-3"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        {/* Меню + */}
+        {showPlus && (
+          <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="grid grid-cols-3 gap-2 pt-3 pb-1">
+              {[
+                { icon: "Camera", label: "Камера", action: () => cameraRef.current?.click() },
+                { icon: "Image", label: "Галерея", action: () => fileRef.current?.click() },
+                { icon: "Timer", label: "Исчезающее", action: () => sendSystem("🔥 [Исчезающее фото 0/1]") },
+                { icon: "MapPin", label: "Локация", action: () => sendSystem("📍 Моя локация") },
+                { icon: "Video", label: "Видеочат", action: () => sendSystem("📹 Запрос видеочата") },
+                { icon: "Trophy", label: "Награда", action: () => sendSystem("🏆 Награда для тебя!") },
+              ].map(({ icon, label, action }) => (
+                <button key={label} onClick={action}
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
+                  style={{ background: "rgba(255,255,255,0.07)" }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.2),rgba(155,89,182,0.2))" }}>
+                    <Icon name={icon} size={20} style={{ color: "#FF2D78" }} />
+                  </div>
+                  <span className="text-white/60 text-[11px]">{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Скрытые input'ы для файлов */}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+
+        <div className="px-4 py-3 flex items-center gap-2"
+          style={{ borderTop: showPlus ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={() => setShowPlus(v => !v)}
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+            style={{
+              background: showPlus ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)",
+              border: "1.5px solid rgba(255,255,255,0.15)"
+            }}>
+            <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
+          </button>
           <input value={input} onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
+            onFocus={() => setShowPlus(false)}
             placeholder="Написать..."
             className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
           <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
