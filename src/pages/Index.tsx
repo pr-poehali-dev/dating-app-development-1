@@ -1428,7 +1428,7 @@ function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   return (
     <div className="flex flex-col h-full justify-center px-6 gap-6">
       <div className="text-center mb-4">
-        <h1 className="font-unbounded text-white text-3xl font-black grad-text mb-2">SPARK</h1>
+        <h1 className="font-unbounded text-white text-3xl font-black grad-text mb-2">LoveBloom</h1>
         <p className="text-white/40 text-sm">Знакомься. Общайся. Влюбляйся.</p>
       </div>
 
