@@ -186,6 +186,9 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
   const [bouncing, setBouncing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [reported, setReported] = useState(false);
 
   const isOwn = post.user_id === currentUserId;
 
@@ -207,6 +210,8 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
     finally { setDeleting(false); setShowConfirm(false); }
   };
 
+  if (hidden) return null;
+
   return (
     <>
       {showConfirm && (
@@ -215,6 +220,39 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
           onCancel={() => setShowConfirm(false)}
           loading={deleting}
         />
+      )}
+      {/* Меню 3 точки для чужих постов */}
+      {showMenu && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={() => setShowMenu(false)}>
+          <div className="w-full max-w-sm pb-6 px-4" onClick={(e) => e.stopPropagation()}>
+            <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(30,24,40,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <button onClick={() => { setReported(true); setShowMenu(false); }}
+                className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/5"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <Icon name="Flag" size={18} className="text-red-400" />
+                <div>
+                  <p className="text-white text-sm font-semibold">{reported ? "Жалоба отправлена ✓" : "Пожаловаться"}</p>
+                  {!reported && <p className="text-white/40 text-xs mt-0.5">Нарушение правил сообщества</p>}
+                </div>
+              </button>
+              <button onClick={() => { setHidden(true); setShowMenu(false); }}
+                className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/5">
+                <Icon name="EyeOff" size={18} className="text-white/50" />
+                <div>
+                  <p className="text-white text-sm font-semibold">Скрыть пост</p>
+                  <p className="text-white/40 text-xs mt-0.5">Этот пост больше не будет показываться</p>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setShowMenu(false)}
+              className="w-full mt-2 py-4 rounded-2xl text-white/60 font-semibold text-sm"
+              style={{ background: "rgba(30,24,40,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
       <div className="flex flex-col" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         {/* Author row */}
@@ -228,10 +266,15 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
             <p className="text-white font-semibold text-sm">{post.author_name}</p>
             <p className="text-white/40 text-[10px]">{timeAgo(post.created_at)}</p>
           </div>
-          {isOwn && (
+          {isOwn ? (
             <button onClick={() => setShowConfirm(true)}
               className="p-1.5 text-white/30 hover:text-white/70 transition-colors">
               <Icon name="Trash2" size={16} />
+            </button>
+          ) : (
+            <button onClick={() => setShowMenu(true)}
+              className="p-1.5 text-white/30 hover:text-white/70 transition-colors">
+              <Icon name="MoreVertical" size={18} />
             </button>
           )}
         </div>
