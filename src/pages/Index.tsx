@@ -208,7 +208,7 @@ function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-5 py-4 relative z-10">
         <div>
-          <h1 className="font-unbounded text-white text-xl font-black grad-text">SPARK</h1>
+          <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
           <p className="text-white/40 text-xs">Москва · Найдено 284</p>
         </div>
         <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
@@ -3015,7 +3015,7 @@ export default function Index() {
     return (
       <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
         <div className="flex flex-col items-center gap-3">
-          <h1 className="font-unbounded text-white text-2xl font-black grad-text">SPARK</h1>
+          <h1 className="font-unbounded text-white text-2xl font-black grad-text">LoveBloom</h1>
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
         </div>
       </div>
