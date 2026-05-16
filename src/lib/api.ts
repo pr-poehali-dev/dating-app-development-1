@@ -4,6 +4,7 @@ const URLS = {
   likes: "https://functions.poehali.dev/c37e7b16-25a5-4fad-b27b-cd0dd5825909",
   matches: "https://functions.poehali.dev/ae9c2fc5-07a8-415c-9bf6-9318d8101a4d",
   messages: "https://functions.poehali.dev/dc1a6137-a066-4ec4-8081-52ac7b0b1530",
+  admin: "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18",
 };
 
 function getToken(): string {
@@ -370,3 +371,102 @@ export interface PostComment {
   author_name: string;
   author_photo?: string;
 }
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
+export interface AdminUser {
+  id: number;
+  name: string;
+  email: string;
+  username?: string;
+  age?: number;
+  city?: string;
+  verified: boolean;
+  online: boolean;
+  premium: boolean;
+  created_at: string;
+  banned: boolean;
+}
+
+export interface AdminReport {
+  id: number;
+  reason: string;
+  comment?: string;
+  status: string;
+  created_at: string;
+  reporter_name: string;
+  reporter_email: string;
+  reported_name: string;
+  reported_email: string;
+  reported_id: number;
+}
+
+export interface AdminVerifRequest {
+  id: number;
+  selfie_url: string;
+  status: string;
+  reject_reason?: string;
+  created_at: string;
+  user_id: number;
+  name: string;
+  age?: number;
+  email: string;
+  photo_url?: string;
+  email_verified: boolean;
+}
+
+export interface AdminStats {
+  total_users: number;
+  online_users: number;
+  new_today: number;
+  new_week: number;
+  total_likes: number;
+  total_matches: number;
+  total_messages: number;
+  active_sessions: number;
+  verified_users: number;
+  pending_reports: number;
+  pending_verif: number;
+}
+
+function adminReq<T>(action: string, options: RequestInit = {}, token: string, extraParams?: Record<string, string>): Promise<T> {
+  const params = new URLSearchParams({ action, ...(extraParams || {}) });
+  const url = `${URLS.admin}?${params.toString()}`;
+  return fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token, ...(options.headers || {}) },
+  }).then(async (res) => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка сервера');
+    return data as T;
+  });
+}
+
+export const adminApi = {
+  stats: (token: string) => adminReq<AdminStats>('stats', {}, token),
+
+  users: (token: string, page = 1, search = '') =>
+    adminReq<{ users: AdminUser[]; total: number; page: number; per_page: number }>(
+      'users', {}, token, { page: String(page), search }
+    ),
+
+  banUser: (token: string, user_id: number, reason: string) =>
+    adminReq<{ ok: boolean }>('ban_user', { method: 'POST', body: JSON.stringify({ user_id, reason }) }, token),
+
+  unbanUser: (token: string, user_id: number) =>
+    adminReq<{ ok: boolean }>('unban_user', { method: 'POST', body: JSON.stringify({ user_id }) }, token),
+
+  reports: (token: string, status = 'pending') =>
+    adminReq<{ reports: AdminReport[] }>('reports', {}, token, { status }),
+
+  resolveReport: (token: string, report_id: number, status: string) =>
+    adminReq<{ ok: boolean }>('resolve_report', { method: 'POST', body: JSON.stringify({ report_id, status }) }, token),
+
+  verifRequests: (token: string) =>
+    adminReq<{ requests: AdminVerifRequest[] }>('verif_requests', {}, token),
+
+  verifApprove: (token: string, id: number) =>
+    adminReq<{ ok: boolean }>('verif_approve', { method: 'POST', body: JSON.stringify({ id }) }, token),
+
+  verifReject: (token: string, id: number, reason: string) =>
+    adminReq<{ ok: boolean }>('verif_reject', { method: 'POST', body: JSON.stringify({ id, reason }) }, token),
+};

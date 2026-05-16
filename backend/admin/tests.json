@@ -1,0 +1,18 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Без токена — 401",
+      "method": "GET",
+      "path": "/?action=stats",
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
+    }
+  ]
+}
