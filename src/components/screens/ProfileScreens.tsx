@@ -561,18 +561,19 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             ))}
           </div>
 
-          {/* 2 кнопки действий */}
-          <div className="grid grid-cols-2 gap-2 w-full mt-4">
+          {/* 3 кнопки действий */}
+          <div className="grid grid-cols-3 gap-2 w-full mt-4">
             {[
-              { icon: "BarChart2",  label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"), tab: "stats" },
-              { icon: "ShoppingBag",label: "Магазин",   action: () => setActiveTab(v => v === "shop" ? null : "shop"),   tab: "shop" },
+              { icon: "BarChart2",  label: "Статистика",        action: () => setActiveTab(v => v === "stats" ? null : "stats"),   tab: "stats" },
+              { icon: "ShoppingBag",label: "Магазин",           action: () => setActiveTab(v => v === "shop" ? null : "shop"),     tab: "shop" },
+              { icon: "Shield",     label: "Конфиденц.",        action: () => setSettingsScreen("privacy"),                        tab: "privacy" },
             ].map(({ icon, label, action, tab }) => (
               <button key={label} onClick={action}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
                 style={activeTab === tab
                   ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
                   : { background: "rgba(255,255,255,0.08)" }}>
-                <Icon name={icon as "BarChart2"|"ShoppingBag"} size={20}
+                <Icon name={icon as "BarChart2"|"ShoppingBag"|"Shield"} size={20}
                   className={activeTab === tab ? "text-white" : "text-white/60"} />
                 <span className={`text-[10px] font-medium ${activeTab === tab ? "text-white" : "text-white/50"}`}>{label}</span>
               </button>
