@@ -400,6 +400,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [settingsScreen, setSettingsScreen] = useState<
     null | "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help"
   >(null);
+  const [activeTab, setActiveTab] = useState<null | "settings" | "stats" | "shop">(null);
 
   const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -523,6 +524,96 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               </div>
             ))}
           </div>
+
+          {/* 4 кнопки действий */}
+          <div className="grid grid-cols-4 gap-2 w-full mt-4">
+            {[
+              { icon: "Settings", label: "Настройки", action: () => setActiveTab(v => v === "settings" ? null : "settings"), tab: "settings" },
+              { icon: "BarChart2", label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"), tab: "stats" },
+              { icon: "ShoppingBag", label: "Магазин",    action: () => setActiveTab(v => v === "shop" ? null : "shop"),     tab: "shop" },
+              { icon: "Pencil",     label: "Изменить",   action: () => setEditOpen(true),                                   tab: null },
+            ].map(({ icon, label, action, tab }) => (
+              <button key={label} onClick={action}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
+                style={activeTab === tab && tab !== null
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                  : { background: "rgba(255,255,255,0.08)" }}>
+                <Icon name={icon as "Settings"|"BarChart2"|"ShoppingBag"|"Pencil"} size={20}
+                  className={activeTab === tab && tab !== null ? "text-white" : "text-white/60"} />
+                <span className={`text-[10px] font-medium ${activeTab === tab && tab !== null ? "text-white" : "text-white/50"}`}>{label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Панель: Настройки */}
+          {activeTab === "settings" && (
+            <div className="w-full mt-3 glass-card overflow-hidden">
+              {[
+                { icon: "User",   label: "Аккаунт",        action: () => setSettingsScreen("account") },
+                { icon: "Shield", label: "Приватность",     action: () => setSettingsScreen("privacy") },
+                { icon: "Bell",   label: "Уведомления",     action: () => setSettingsScreen("notifications") },
+                { icon: "Palette",label: "Оформление",      action: () => setSettingsScreen("appearance") },
+                { icon: "BadgeCheck", label: "Верификация", action: onVerify },
+                { icon: "LogOut", label: "Выйти",           action: onLogout, danger: true },
+              ].map(({ icon, label, action, danger }, i, arr) => (
+                <button key={label} onClick={action}
+                  className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
+                  style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                  <Icon name={icon as "User"|"Shield"|"Bell"|"Palette"|"BadgeCheck"|"LogOut"} size={17}
+                    className={danger ? "text-red-400" : "text-white/50"} />
+                  <span className={`${danger ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{label}</span>
+                  {!danger && <Icon name="ChevronRight" size={15} className="text-white/30" />}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Панель: Статистика */}
+          {activeTab === "stats" && (
+            <div className="w-full mt-3 glass-card p-4 flex flex-col gap-3">
+              {[
+                { label: "Просмотры профиля за неделю", value: "—", icon: "Eye", color: "#9B59B6" },
+                { label: "Лайки получено",              value: "—", icon: "Heart", color: "#FF2D78" },
+                { label: "Совпадения",                  value: "—", icon: "Zap", color: "#FF8C42" },
+                { label: "Сообщений отправлено",        value: "—", icon: "MessageCircle", color: "#3B82F6" },
+              ].map(({ label, value, icon, color }) => (
+                <div key={label} className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: `${color}22` }}>
+                    <Icon name={icon as "Eye"|"Heart"|"Zap"|"MessageCircle"} size={18} style={{ color }} />
+                  </div>
+                  <span className="text-white/70 text-sm flex-1">{label}</span>
+                  <span className="text-white font-bold">{value}</span>
+                </div>
+              ))}
+              <p className="text-white/20 text-xs text-center mt-1">Статистика обновляется раз в сутки</p>
+            </div>
+          )}
+
+          {/* Панель: Магазин */}
+          {activeTab === "shop" && (
+            <div className="w-full mt-3 flex flex-col gap-2">
+              {[
+                { icon: "Crown",  label: "Premium подписка",  desc: "Безлимитные лайки и приоритет",  price: "от 249 ₽/мес", action: onPremium, grad: true },
+                { icon: "Star",   label: "Суперлайки × 10",   desc: "Выдели себя среди остальных",    price: "199 ₽",         action: onPremium, grad: false },
+                { icon: "Zap",    label: "Буст профиля",      desc: "Топ показов на 30 минут",        price: "99 ₽",          action: onPremium, grad: false },
+                { icon: "Eye",    label: "Режим инкогнито",   desc: "Просматривай анонимно",          price: "149 ₽",         action: onPremium, grad: false },
+              ].map(({ icon, label, desc, price, action, grad }) => (
+                <button key={label} onClick={action}
+                  className="glass-card p-4 flex items-center gap-3 text-left w-full active:scale-[0.98] transition-all">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: grad ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.08)" }}>
+                    <Icon name={icon as "Crown"|"Star"|"Zap"|"Eye"} size={20} className={grad ? "text-white" : "text-white/60"} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold text-sm">{label}</p>
+                    <p className="text-white/40 text-xs mt-0.5">{desc}</p>
+                  </div>
+                  <span className="text-pink-400 font-bold text-sm flex-shrink-0">{price}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mx-5 glass-card p-4 mb-4">
