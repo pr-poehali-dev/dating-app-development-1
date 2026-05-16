@@ -108,9 +108,28 @@ function FilterSheet({ filters, onApply, onClose }: {
           {/* Город */}
           <div>
             <span className="text-white font-semibold text-sm block mb-2">Город</span>
-            <input value={city} onChange={(e) => setCity(e.target.value)}
-              placeholder="Например: Москва"
-              className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+            <div className="flex gap-2">
+              <input value={city} onChange={(e) => setCity(e.target.value)}
+                placeholder="Например: Москва"
+                className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+              <button
+                onClick={() => {
+                  if (!navigator.geolocation) return;
+                  navigator.geolocation.getCurrentPosition(async (pos) => {
+                    try {
+                      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
+                      const d = await r.json();
+                      const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
+                      if (detected) setCity(detected);
+                    } catch { /* ignore */ }
+                  });
+                }}
+                title="Определить город автоматически"
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+                style={{ background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)" }}>
+                <Icon name="Navigation" size={18} className="text-pink-400" />
+              </button>
+            </div>
           </div>
         </div>
 
