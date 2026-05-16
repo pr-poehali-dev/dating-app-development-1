@@ -80,7 +80,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'me':
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at "
                 "FROM users u JOIN sessions s ON s.user_id = u.id "
                 "WHERE s.token = %s AND s.expires_at > NOW()",
                 (token,)
@@ -88,8 +88,16 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row:
                 return resp(401, {'error': 'Не авторизован'})
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username']
-            return resp(200, {'user': dict(zip(cols, row))})
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at']
+            user = dict(zip(cols, row))
+            user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            # Подписчики и подписки
+            user_id = user['id']
+            cur.execute("SELECT COUNT(*) FROM likes WHERE liked_id = %s", (user_id,))
+            user['followers'] = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM likes WHERE liker_id = %s", (user_id,))
+            user['following'] = cur.fetchone()[0]
+            return resp(200, {'user': user})
 
         if action == 'logout':
             if token:

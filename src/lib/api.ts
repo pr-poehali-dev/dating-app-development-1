@@ -328,6 +328,12 @@ export interface User {
   gender?: string;
   looking_for?: string;
   premium?: boolean;
+  height?: number;
+  weight?: number;
+  relationship_status?: string;
+  created_at?: string;
+  followers?: number;
+  following?: number;
 }
 
 export interface Profile {

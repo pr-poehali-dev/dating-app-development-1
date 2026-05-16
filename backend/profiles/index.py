@@ -213,7 +213,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'update_me':
             body = json.loads(event.get('body') or '{}')
-            allowed = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'gender', 'looking_for']
+            allowed = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'gender', 'looking_for', 'height', 'weight', 'relationship_status']
             fields, values = [], []
             for key in allowed:
                 if key in body:

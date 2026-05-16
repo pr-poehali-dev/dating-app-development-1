@@ -521,16 +521,18 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
 
         <div className="flex flex-col items-center px-5 mb-5">
+
+          {/* Фото профиля */}
           <div className="relative mb-3" onClick={handlePhotoClick} style={{ cursor: "pointer" }}>
-            <img src={displayPhoto} className="w-24 h-24 rounded-full object-cover transition-opacity"
+            <img src={displayPhoto} className="w-28 h-28 rounded-full object-cover transition-opacity"
               style={{ boxShadow: "0 0 0 3px #FF2D78", opacity: photoUploading ? 0.5 : 1 }} />
             {photoUploading ? (
               <div className="absolute inset-0 flex items-center justify-center rounded-full">
                 <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
               </div>
             ) : (
-              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad">
-                <Icon name="Camera" size={13} className="text-white" />
+              <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center btn-grad shadow-lg">
+                <Icon name="Camera" size={14} className="text-white" />
               </div>
             )}
           </div>
@@ -547,19 +549,108 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             <Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}
           </p>
 
-          <div className="grid grid-cols-3 gap-3 w-full mt-4">
+          {/* Фото / Приватное фото */}
+          <div className="grid grid-cols-2 gap-2 w-full mt-4">
+            <button onClick={() => setActiveTab(v => v === "photos" ? null : "photos" as never)}
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+              style={(activeTab as string) === "photos"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                : { background: "rgba(255,255,255,0.08)" }}>
+              <Icon name="Image" size={18} className={(activeTab as string) === "photos" ? "text-white" : "text-white/60"} />
+              <span className={`text-sm font-semibold ${(activeTab as string) === "photos" ? "text-white" : "text-white/60"}`}>Фото</span>
+            </button>
+            <button onClick={() => setActiveTab(v => v === "private" ? null : "private" as never)}
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+              style={(activeTab as string) === "private"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                : { background: "rgba(255,255,255,0.08)" }}>
+              <Icon name="Lock" size={18} className={(activeTab as string) === "private" ? "text-white" : "text-white/60"} />
+              <span className={`text-sm font-semibold ${(activeTab as string) === "private" ? "text-white" : "text-white/60"}`}>Приватное фото</span>
+            </button>
+          </div>
+
+          {/* Галерея фото */}
+          {(activeTab as string) === "photos" && (
+            <div className="w-full mt-3">
+              {currentUser.photo_url ? (
+                <div className="grid grid-cols-3 gap-1">
+                  <div className="aspect-square rounded-xl overflow-hidden">
+                    <img src={currentUser.photo_url} className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              ) : (
+                <div className="glass-card p-6 flex flex-col items-center gap-2 text-center">
+                  <Icon name="Image" size={28} className="text-white/20" />
+                  <p className="text-white/30 text-sm">Нет фото. Нажми на аватар чтобы добавить.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Приватные фото */}
+          {(activeTab as string) === "private" && (
+            <div className="w-full mt-3 glass-card p-5 flex flex-col items-center gap-2 text-center">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,45,120,0.12)" }}>
+                <Icon name="Lock" size={22} className="text-pink-400" />
+              </div>
+              <p className="text-white font-semibold text-sm">Приватный альбом</p>
+              <p className="text-white/40 text-xs">Добавь фото — они будут видны только тем, кому ты откроешь доступ</p>
+              <button onClick={() => setSettingsScreen("private_photos")}
+                className="btn-grad px-5 py-2 text-xs font-semibold mt-1">
+                Настроить доступ
+              </button>
+            </div>
+          )}
+
+          {/* Рост, вес, пол, статус */}
+          <div className="grid grid-cols-4 gap-2 w-full mt-4">
             {[
-              { label: "Лайки", value: "—", icon: "Heart", color: "#FF2D78" },
-              { label: "Просмотры", value: "—", icon: "Eye", color: "#9B59B6" },
-              { label: "Совпадения", value: "—", icon: "Zap", color: "#FF8C42" },
-            ].map((s) => (
-              <div key={s.label} className="glass-card p-3 flex flex-col items-center gap-1">
-                <Icon name={s.icon as "Heart" | "Eye" | "Zap"} size={18} style={{ color: s.color }} />
-                <span className="text-white font-bold text-lg">{s.value}</span>
-                <span className="text-white/50 text-xs">{s.label}</span>
+              { label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
+              { label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
+              { label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
+              { label: "Статус", value: currentUser.relationship_status === "single" ? "Свободен" : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : "—", icon: "Heart" },
+            ].map(({ label, value, icon }) => (
+              <div key={label} className="glass-card p-2.5 flex flex-col items-center gap-1">
+                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"} size={15} className="text-white/40" />
+                <span className="text-white font-bold text-sm leading-tight">{value}</span>
+                <span className="text-white/40 text-[10px]">{label}</span>
               </div>
             ))}
           </div>
+
+          {/* Подписчики и подписки */}
+          <div className="glass-card w-full mt-3 flex items-center">
+            <div className="flex-1 flex flex-col items-center py-3">
+              <span className="text-white font-bold text-xl">{currentUser.followers ?? 0}</span>
+              <span className="text-white/40 text-xs mt-0.5">Подписчики</span>
+            </div>
+            <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <div className="flex-1 flex flex-col items-center py-3">
+              <span className="text-white font-bold text-xl">{currentUser.following ?? 0}</span>
+              <span className="text-white/40 text-xs mt-0.5">Подписки</span>
+            </div>
+          </div>
+
+          {/* Дата регистрации */}
+          {currentUser.created_at && (
+            <div className="w-full mt-3 flex items-center justify-center gap-1.5">
+              <Icon name="Calendar" size={13} className="text-white/25" />
+              <span className="text-white/25 text-xs">
+                Присоединился {(() => {
+                  const d = new Date(currentUser.created_at);
+                  const now = new Date();
+                  const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
+                  if (months === 0) return "менее месяца назад";
+                  if (months === 1) return "1 месяц назад";
+                  if (months < 5) return `${months} месяца назад`;
+                  if (months < 12) return `${months} месяцев назад`;
+                  const years = Math.floor(months / 12);
+                  return years === 1 ? "1 год назад" : `${years} года назад`;
+                })()}
+              </span>
+            </div>
+          )}
 
           {/* 3 кнопки действий */}
           <div className="grid grid-cols-3 gap-2 w-full mt-4">
