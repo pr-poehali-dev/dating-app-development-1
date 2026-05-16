@@ -264,14 +264,22 @@ def handler(event: dict, context) -> dict:
         if action == 'user_profile':
             uid = int(params.get('user_id', 0))
             cur.execute("""
-                SELECT id, name, age, city, bio, photo_url, tags, verified, online
+                SELECT id, name, age, city, bio, photo_url, tags, verified, online, created_at
                 FROM users WHERE id = %s
             """, (uid,))
             row = cur.fetchone()
             if not row:
                 return resp(404, {'error': 'Пользователь не найден'})
-            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online']
+            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'created_at']
             profile = dict(zip(cols, row))
+            profile['created_at'] = str(profile['created_at'])
+            # Подписчики = кто лайкнул, подписки = кого лайкнул
+            cur.execute("SELECT COUNT(*) FROM likes WHERE liked_id = %s", (uid,))
+            followers = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM likes WHERE liker_id = %s", (uid,))
+            following = cur.fetchone()[0]
+            profile['followers'] = followers
+            profile['following'] = following
             cur.execute("""
                 SELECT id, photo_url, caption, created_at,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = posts.id) as likes_count,

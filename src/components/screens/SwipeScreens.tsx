@@ -630,16 +630,29 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [photoTab, setPhotoTab] = useState<"public" | "private">("public");
+  const [privateReqSent, setPrivateReqSent] = useState(false);
+  const [profileData, setProfileData] = useState<{
+    bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
+  }>({ followers: 0, following: 0 });
 
   const mainPhoto = profile.photo_url || PROFILES_FALLBACK[0].photo;
 
-  // Загрузить посты пользователя для галереи фото
+  // Загрузить посты пользователя + доп данные профиля
   useEffect(() => {
     import("@/lib/api").then(({ postsApi }) => {
       postsApi.getUserProfile(profile.id)
         .then(d => {
           const postPhotos = d.posts.slice(0, 2).map(p => p.photo_url);
           setPhotos([mainPhoto, ...postPhotos].slice(0, 3));
+          const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
+          setProfileData({
+            bio: d.profile.bio,
+            tags: d.profile.tags as string[],
+            followers: p.followers ?? 0,
+            following: p.following ?? 0,
+            created_at: p.created_at,
+          });
         })
         .catch(() => setPhotos([mainPhoto]))
         .finally(() => setLoadingPhotos(false));
@@ -737,8 +750,10 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
         </div>
 
         {/* Инфо */}
-        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-4 flex flex-col gap-3">
-          <div className="flex items-start justify-between">
+        <div className="flex-1 overflow-y-auto pb-4 flex flex-col gap-0">
+
+          {/* Имя + онлайн */}
+          <div className="flex items-start justify-between px-5 pt-3 pb-3">
             <div>
               <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
                 {profile.name}{profile.age ? `, ${profile.age}` : ""}
@@ -756,17 +771,110 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
             </div>
           </div>
 
-          {profile.bio && (
-            <div className="glass-card p-4">
-              <p className="text-white/80 text-sm leading-relaxed">{profile.bio}</p>
+          {/* Вкладки Фото / Приватное фото */}
+          <div className="flex gap-2 px-5 pb-3">
+            <button onClick={() => setPhotoTab("public")}
+              className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
+              style={photoTab === "public"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
+              📷 Фото
+            </button>
+            <button onClick={() => setPhotoTab("private")}
+              className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
+              style={photoTab === "private"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
+              🔒 Приватное
+            </button>
+          </div>
+
+          {/* Содержимое вкладки */}
+          {photoTab === "public" ? (
+            <div className="px-5 pb-3">
+              {photos.length > 1 ? (
+                <div className="grid grid-cols-3 gap-1">
+                  {photos.map((ph, i) => (
+                    <div key={i} className="aspect-square rounded-xl overflow-hidden">
+                      <img src={ph} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-white/30 text-xs text-center py-4">Публичных фото нет</p>
+              )}
+            </div>
+          ) : (
+            <div className="px-5 pb-3">
+              {!privateReqSent ? (
+                <div className="glass-card p-5 flex flex-col items-center gap-3 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(255,45,120,0.12)" }}>
+                    <Icon name="Lock" size={22} className="text-pink-400" />
+                  </div>
+                  <p className="text-white font-semibold text-sm">Приватные фото закрыты</p>
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    Отправь запрос — {profile.name} решит, открыть ли тебе доступ
+                  </p>
+                  <button onClick={() => setPrivateReqSent(true)}
+                    className="btn-grad px-6 py-2.5 text-sm font-semibold w-full">
+                    Запросить доступ
+                  </button>
+                </div>
+              ) : (
+                <div className="glass-card p-5 flex flex-col items-center gap-2 text-center">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(74,222,128,0.12)" }}>
+                    <Icon name="Check" size={20} className="text-green-400" />
+                  </div>
+                  <p className="text-white font-semibold text-sm">Запрос отправлен</p>
+                  <p className="text-white/40 text-xs">Ожидаем ответа от {profile.name}</p>
+                </div>
+              )}
             </div>
           )}
 
-          {profile.tags && (profile.tags as string[]).length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {(profile.tags as string[]).map((tag) => (
-                <span key={tag} className="glass-card px-3 py-1.5 text-white/70 text-xs rounded-full">{tag}</span>
-              ))}
+          {/* О себе */}
+          <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <p className="text-white/40 text-xs uppercase tracking-widest mt-3 mb-2">О себе</p>
+            {(profileData.bio || profile.bio) ? (
+              <p className="text-white/80 text-sm leading-relaxed">
+                {profileData.bio || profile.bio}
+              </p>
+            ) : (
+              <p className="text-white/25 text-sm italic">Нет информации</p>
+            )}
+            {(profileData.tags || (profile.tags as string[]))?.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {((profileData.tags || profile.tags) as string[]).map((tag) => (
+                  <span key={tag} className="glass-card px-3 py-1 text-white/60 text-xs rounded-full">{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Подписчики / Подписки */}
+          <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex gap-4 mt-3">
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-white font-bold text-lg">{profileData.followers}</span>
+                <span className="text-white/40 text-xs">Подписчики</span>
+              </div>
+              <div className="w-px" style={{ background: "rgba(255,255,255,0.1)" }} />
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-white font-bold text-lg">{profileData.following}</span>
+                <span className="text-white/40 text-xs">Подписки</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Дата регистрации */}
+          {profileData.created_at && (
+            <div className="px-5 pb-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+              <p className="text-white/25 text-xs mt-3 flex items-center gap-1.5">
+                <Icon name="Calendar" size={12} />
+                На LoveBloom с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
+              </p>
             </div>
           )}
         </div>
