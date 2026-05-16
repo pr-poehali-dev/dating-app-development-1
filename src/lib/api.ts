@@ -299,6 +299,12 @@ export const messagesApi = {
       body: JSON.stringify({ match_id: matchId, text }),
     }),
 
+  sendDirect: (to_user_id: number, text: string) =>
+    req<{ ok: boolean; match_id: number }>("messages", "send_direct", {
+      method: "POST",
+      body: JSON.stringify({ to_user_id, text }),
+    }),
+
   delete: (message_id: number) =>
     req<{ ok: boolean; message_id: number }>("messages", "delete", {
       method: "POST",
