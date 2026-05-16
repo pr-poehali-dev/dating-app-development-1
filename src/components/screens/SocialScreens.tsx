@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { matchesApi, likesApi, messagesApi, postsApi, liveApi, type User, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage } from "@/lib/api";
+import { ReportModal } from "@/components/screens/SwipeScreens";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -100,6 +101,7 @@ function PostDetailModal({ post, currentUserId, onClose, onLike, onAuthorClick }
 function UserProfileModal({ userId, onClose }: { userId: number; onClose: () => void }) {
   const [data, setData] = useState<{ profile: { name: string; age?: number; city?: string; bio?: string; tags?: string[]; photo_url?: string; online?: boolean }; posts: Post[] } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
     postsApi.getUserProfile(userId)
@@ -109,13 +111,22 @@ function UserProfileModal({ userId, onClose }: { userId: number; onClose: () => 
   }, [userId]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--spark-dark)" }}>
-      <div className="flex items-center px-4 pt-5 pb-3">
-        <button onClick={onClose} className="glass-card p-2 mr-3">
-          <Icon name="ChevronLeft" size={20} className="text-white" />
-        </button>
-        <h2 className="text-white font-golos font-bold text-lg flex-1">Профиль</h2>
-      </div>
+    <>
+      {showReport && data && (
+        <ReportModal userId={userId} userName={data.profile.name} onClose={() => setShowReport(false)} />
+      )}
+      <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--spark-dark)" }}>
+        <div className="flex items-center px-4 pt-5 pb-3">
+          <button onClick={onClose} className="glass-card p-2 mr-3">
+            <Icon name="ChevronLeft" size={20} className="text-white" />
+          </button>
+          <h2 className="text-white font-golos font-bold text-lg flex-1">Профиль</h2>
+          {data && (
+            <button onClick={() => setShowReport(true)} className="glass-card p-2">
+              <Icon name="Flag" size={17} className="text-white/50" />
+            </button>
+          )}
+        </div>
 
       {loading && (
         <div className="flex-1 flex items-center justify-center">
@@ -175,7 +186,8 @@ function UserProfileModal({ userId, onClose }: { userId: number; onClose: () => 
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

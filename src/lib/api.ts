@@ -86,6 +86,12 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ email }),
     }),
+
+  sendReport: (reported_id: number, reason: string, comment: string) =>
+    req<{ ok: boolean }>("auth", "send_report", {
+      method: "POST",
+      body: JSON.stringify({ reported_id, reason, comment }),
+    }),
 };
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────

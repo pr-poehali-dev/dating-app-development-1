@@ -1,6 +1,82 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, likesApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { profilesApi, likesApi, authApi, type Profile, type DiscoverParams } from "@/lib/api";
+
+// ─── ReportModal ──────────────────────────────────────────────────────────────
+export function ReportModal({ userId, userName, onClose }: { userId: number; userName: string; onClose: () => void }) {
+  const REASONS = [
+    { value: "fake", label: "Фейковый аккаунт" },
+    { value: "spam", label: "Спам" },
+    { value: "abuse", label: "Оскорбления" },
+    { value: "photo", label: "Неприемлемые фото" },
+    { value: "other", label: "Другое" },
+  ];
+  const [reason, setReason] = useState("fake");
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    setLoading(true); setError("");
+    try {
+      await authApi.sendReport(userId, reason, comment);
+      setDone(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}>
+      <div className="w-full max-w-sm animate-slide-up flex flex-col"
+        style={{ background: "var(--spark-dark2, #1a1625)", borderRadius: "28px 28px 0 0" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <h3 className="text-white font-golos font-bold text-base">Пожаловаться на {userName}</h3>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><Icon name="X" size={20} /></button>
+        </div>
+
+        {done ? (
+          <div className="flex flex-col items-center gap-3 px-5 py-8">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(74,222,128,0.15)" }}>
+              <Icon name="Check" size={26} className="text-green-400" />
+            </div>
+            <p className="text-white font-semibold">Жалоба отправлена</p>
+            <p className="text-white/40 text-sm text-center">Мы рассмотрим её в ближайшее время</p>
+            <button onClick={onClose} className="btn-grad px-8 py-2.5 text-sm font-semibold mt-2">Закрыть</button>
+          </div>
+        ) : (
+          <div className="px-5 py-4 flex flex-col gap-4 pb-8">
+            <div className="flex flex-col gap-2">
+              {REASONS.map((r) => (
+                <button key={r.value} onClick={() => setReason(r.value)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all"
+                  style={reason === r.value
+                    ? { background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.4)" }
+                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
+                    style={{ borderColor: reason === r.value ? "#FF2D78" : "rgba(255,255,255,0.3)" }}>
+                    {reason === r.value && <div className="w-2 h-2 rounded-full" style={{ background: "#FF2D78" }} />}
+                  </div>
+                  <span className="text-white/80 text-sm">{r.label}</span>
+                </button>
+              ))}
+            </div>
+            <textarea value={comment} onChange={(e) => setComment(e.target.value)}
+              placeholder="Дополнительный комментарий (необязательно)" rows={3} maxLength={500}
+              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos resize-none" />
+            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            <button onClick={submit} disabled={loading} className="btn-grad py-3.5 text-sm font-semibold disabled:opacity-50">
+              {loading ? "Отправляем..." : "Отправить жалобу"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const PROFILES_FALLBACK = [
   {
@@ -434,6 +510,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
 }) {
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const handleLike = async () => {
     if (liked || liking) return;
@@ -446,35 +523,41 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
   const photo = profile.photo_url || PROFILES_FALLBACK[0].photo;
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col" style={{ background: "var(--spark-dark)" }}>
-      <div className="relative flex-shrink-0" style={{ height: "55%" }}>
-        <img src={photo} className="w-full h-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, var(--spark-dark) 100%)" }} />
-        <button onClick={onClose}
-          className="absolute top-4 left-4 glass-card p-2.5">
-          <Icon name="ChevronLeft" size={20} className="text-white" />
-        </button>
-      </div>
+    <>
+      {showReport && <ReportModal userId={profile.id} userName={profile.name} onClose={() => setShowReport(false)} />}
+      <div className="absolute inset-0 z-30 flex flex-col" style={{ background: "var(--spark-dark)" }}>
+        <div className="relative flex-shrink-0" style={{ height: "55%" }}>
+          <img src={photo} className="w-full h-full object-cover" />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, var(--spark-dark) 100%)" }} />
+          <button onClick={onClose}
+            className="absolute top-4 left-4 glass-card p-2.5">
+            <Icon name="ChevronLeft" size={20} className="text-white" />
+          </button>
+          <button onClick={() => setShowReport(true)}
+            className="absolute top-4 right-4 glass-card p-2.5">
+            <Icon name="Flag" size={18} className="text-white/60" />
+          </button>
+        </div>
 
-      <div className="flex-1 overflow-y-auto px-5 -mt-8 relative z-10">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
-              {profile.name}{profile.age ? `, ${profile.age}` : ""}
-              {profile.verified && <span className="ml-2 text-blue-400 text-lg">✓</span>}
-            </h2>
-            {profile.city && (
-              <p className="text-white/70 text-sm flex items-center gap-1 mt-0.5">
-                <Icon name="MapPin" size={13} />{profile.city}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5">
-            {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400" />}
-            <span className="text-white/60 text-xs">{profile.online ? "онлайн" : ""}</span>
+        <div className="flex-1 overflow-y-auto px-5 -mt-8 relative z-10">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
+                {profile.name}{profile.age ? `, ${profile.age}` : ""}
+                {profile.verified && <span className="ml-2 text-blue-400 text-lg">✓</span>}
+              </h2>
+              {profile.city && (
+                <p className="text-white/70 text-sm flex items-center gap-1 mt-0.5">
+                  <Icon name="MapPin" size={13} />{profile.city}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400" />}
+              <span className="text-white/60 text-xs">{profile.online ? "онлайн" : ""}</span>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
         {profile.bio && (
@@ -492,19 +575,20 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
         )}
       </div>
 
-      <div className="px-5 pb-6 pt-3 flex gap-3">
-        <button onClick={onClose}
-          className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
-          <Icon name="X" size={18} />Пропустить
-        </button>
-        <button onClick={handleLike} disabled={liked}
-          className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
-          style={{ opacity: liked ? 0.7 : 1 }}>
-          <Icon name="Heart" size={18} className="text-white" />
-          {liked ? "Лайкнуто!" : "Лайкнуть"}
-        </button>
+        <div className="px-5 pb-6 pt-3 flex gap-3">
+          <button onClick={onClose}
+            className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
+            <Icon name="X" size={18} />Пропустить
+          </button>
+          <button onClick={handleLike} disabled={liked}
+            className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
+            style={{ opacity: liked ? 0.7 : 1 }}>
+            <Icon name="Heart" size={18} className="text-white" />
+            {liked ? "Лайкнуто!" : "Лайкнуть"}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

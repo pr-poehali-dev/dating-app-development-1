@@ -124,6 +124,27 @@ def handler(event: dict, context) -> dict:
                 server.sendmail(smtp_user, [email], msg.as_string())
             return resp(200, {'ok': True})
 
+        if action == 'send_report':
+            # Требует авторизации
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            reporter_id = sess[0]
+            reported_id = body.get('reported_id')
+            reason = body.get('reason', 'other').strip()
+            comment = body.get('comment', '').strip()[:500]
+            if not reported_id:
+                return resp(400, {'error': 'reported_id обязателен'})
+            if reporter_id == reported_id:
+                return resp(400, {'error': 'Нельзя пожаловаться на себя'})
+            cur.execute(
+                "INSERT INTO reports (reporter_id, reported_id, reason, comment) VALUES (%s, %s, %s, %s)",
+                (reporter_id, reported_id, reason, comment)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
