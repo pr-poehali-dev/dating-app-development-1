@@ -247,10 +247,10 @@ function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
 }
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
-export function HomeScreen({ currentUser, onGoLive, onGoPhotos }: {
+export function HomeScreen({ currentUser, onGoLive }: {
   currentUser: User;
   onGoLive: () => void;
-  onGoPhotos: () => void;
+  onGoPhotos?: () => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
@@ -258,6 +258,12 @@ export function HomeScreen({ currentUser, onGoLive, onGoPhotos }: {
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showStoryMsg, setShowStoryMsg] = useState(false);
+
+  // Публикация фото прямо с главного экрана
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [captionFor, setCaptionFor] = useState<string | null>(null);
+  const [caption, setCaption] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -275,16 +281,70 @@ export function HomeScreen({ currentUser, onGoLive, onGoPhotos }: {
     } catch (e: unknown) { void e; }
   };
 
-  void currentUser;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { setCaptionFor(ev.target?.result as string); setCaption(""); };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handlePublish = async () => {
+    if (!captionFor) return;
+    setUploading(true);
+    try {
+      const mimeMatch = captionFor.match(/data:(image\/\w+);/);
+      const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const res = await postsApi.create(captionFor, mime, caption);
+      setPosts((prev) => [{
+        ...res.post,
+        author_name: currentUser.name,
+        author_photo: currentUser.photo_url,
+        likes_count: 0,
+        liked_by_me: false,
+        comments_count: 0,
+      }, ...prev]);
+      setCaptionFor(null); setCaption("");
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Ошибка загрузки");
+    } finally { setUploading(false); }
+  };
 
   return (
     <>
+      {/* Скрытый input для выбора файла */}
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+
+      {/* Модалка публикации */}
+      {captionFor && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.8)" }}>
+          <div className="w-full max-w-sm animate-slide-up flex flex-col"
+            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0", maxHeight: "90dvh" }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <button onClick={() => setCaptionFor(null)} className="text-white/50 text-sm">Отмена</button>
+              <h3 className="text-white font-bold text-sm">Новое фото</h3>
+              <button onClick={handlePublish} disabled={uploading} className="btn-grad px-4 py-1.5 text-sm">
+                {uploading ? "..." : "Опубликовать"}
+              </button>
+            </div>
+            <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+              <img src={captionFor} className="w-full rounded-2xl object-cover max-h-72" />
+              <textarea value={caption} onChange={(e) => setCaption(e.target.value)}
+                placeholder="Добавь подпись..." rows={3} maxLength={200}
+                className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos resize-none" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {commentPost && (
         <CommentSheet post={commentPost} onClose={() => setCommentPost(null)} />
       )}
       {showCreate && (
         <CreateMenu
-          onPhoto={onGoPhotos}
+          onPhoto={() => fileInputRef.current?.click()}
           onStory={() => setShowStoryMsg(true)}
           onLive={onGoLive}
           onClose={() => setShowCreate(false)}
