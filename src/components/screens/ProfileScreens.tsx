@@ -525,22 +525,21 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             ))}
           </div>
 
-          {/* 4 кнопки действий */}
-          <div className="grid grid-cols-4 gap-2 w-full mt-4">
+          {/* 3 кнопки действий */}
+          <div className="grid grid-cols-3 gap-2 w-full mt-4">
             {[
-              { icon: "Settings", label: "Настройки", action: () => setActiveTab(v => v === "settings" ? null : "settings"), tab: "settings" },
-              { icon: "BarChart2", label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"), tab: "stats" },
-              { icon: "ShoppingBag", label: "Магазин",    action: () => setActiveTab(v => v === "shop" ? null : "shop"),     tab: "shop" },
-              { icon: "Pencil",     label: "Изменить",   action: () => setEditOpen(true),                                   tab: null },
+              { icon: "Settings",   label: "Настройки", action: () => setActiveTab(v => v === "settings" ? null : "settings"), tab: "settings" },
+              { icon: "BarChart2",  label: "Статистика", action: () => setActiveTab(v => v === "stats" ? null : "stats"),      tab: "stats" },
+              { icon: "ShoppingBag",label: "Магазин",   action: () => setActiveTab(v => v === "shop" ? null : "shop"),        tab: "shop" },
             ].map(({ icon, label, action, tab }) => (
               <button key={label} onClick={action}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
-                style={activeTab === tab && tab !== null
+                style={activeTab === tab
                   ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
                   : { background: "rgba(255,255,255,0.08)" }}>
-                <Icon name={icon as "Settings"|"BarChart2"|"ShoppingBag"|"Pencil"} size={20}
-                  className={activeTab === tab && tab !== null ? "text-white" : "text-white/60"} />
-                <span className={`text-[10px] font-medium ${activeTab === tab && tab !== null ? "text-white" : "text-white/50"}`}>{label}</span>
+                <Icon name={icon as "Settings"|"BarChart2"|"ShoppingBag"} size={20}
+                  className={activeTab === tab ? "text-white" : "text-white/60"} />
+                <span className={`text-[10px] font-medium ${activeTab === tab ? "text-white" : "text-white/50"}`}>{label}</span>
               </button>
             ))}
           </div>
