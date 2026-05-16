@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
-import { authApi, type User, type DiscoverParams } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { authApi, type User } from "@/lib/api";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
-import { RealDiscoverScreen, FilterScreen } from "@/components/screens/SwipeScreens";
+import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { PhotosScreen, LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
 import { RealProfileScreen, VerifyScreen, AdminVerifyScreen } from "@/components/screens/ProfileScreens";
+import { HomeScreen } from "@/components/screens/HomeScreen";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
@@ -48,13 +49,6 @@ export default function Index() {
   const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
   const backToMatches = () => { setChatId(null); setScreen("matches"); };
 
-  const filterParamsRef = useRef<DiscoverParams>({});
-  const filterCallbackRef = useRef<((p: DiscoverParams) => void) | null>(null);
-  const handleOpenFilter = (current: DiscoverParams, cb: (p: DiscoverParams) => void) => {
-    filterParamsRef.current = current;
-    filterCallbackRef.current = cb;
-    setScreen("filter");
-  };
 
   if (authLoading) {
     return (
@@ -81,7 +75,7 @@ export default function Index() {
     <div className="app-bg flex justify-center">
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
-          {screen === "discover" && <RealDiscoverScreen currentUser={currentUser} onOpenFilter={handleOpenFilter} />}
+          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} />}
           {screen === "photos" && <PhotosScreen currentUser={currentUser} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
@@ -90,8 +84,8 @@ export default function Index() {
           {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
           {screen === "filter" && (
             <FilterScreen
-              initial={filterParamsRef.current}
-              onApply={(p) => { filterCallbackRef.current?.(p); setScreen("discover"); }}
+              initial={{}}
+              onApply={() => setScreen("discover")}
               onClose={() => setScreen("discover")}
             />
           )}
