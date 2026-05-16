@@ -228,7 +228,13 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
           onClick={() => setShowMenu(false)}>
           <div className="w-full max-w-sm pb-6 px-4" onClick={(e) => e.stopPropagation()}>
             <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(30,24,40,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <button onClick={() => { setReported(true); setShowMenu(false); }}
+              <button onClick={async () => {
+                  if (!reported) {
+                    setReported(true);
+                    await postsApi.reportPost(post.id).catch(() => {});
+                  }
+                  setShowMenu(false);
+                }}
                 className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-white/5"
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                 <Icon name="Flag" size={18} className="text-red-400" />

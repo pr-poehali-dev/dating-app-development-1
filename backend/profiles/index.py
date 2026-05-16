@@ -407,6 +407,31 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # Пожаловаться на пост
+        if action == 'report_post':
+            body = json.loads(event.get('body') or '{}')
+            post_id = int(body.get('post_id', 0))
+            reason = body.get('reason', 'other')[:100]
+            if not post_id:
+                return resp(400, {'error': 'post_id обязателен'})
+            cur.execute("SELECT user_id FROM posts WHERE id = %s", (post_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пост не найден'})
+            reported_user_id = row[0]
+            cur.execute(
+                "SELECT id FROM reports WHERE reporter_id=%s AND post_id=%s",
+                (me['id'], post_id)
+            )
+            if cur.fetchone():
+                return resp(200, {'ok': True, 'already': True})
+            cur.execute(
+                "INSERT INTO reports (reporter_id, reported_id, post_id, reason) VALUES (%s, %s, %s, %s)",
+                (me['id'], reported_user_id, post_id, reason)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # ── ВЕРИФИКАЦИЯ (user) ─────────────────────────────────────────────────
 
         if action == 'verify_status':

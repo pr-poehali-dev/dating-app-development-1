@@ -1,0 +1,1 @@
+ALTER TABLE t_p49767073_dating_app_developme.reports ADD COLUMN IF NOT EXISTS post_id integer NULL;

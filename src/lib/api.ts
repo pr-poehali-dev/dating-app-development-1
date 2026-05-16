@@ -230,6 +230,12 @@ export const postsApi = {
       method: "POST",
       body: JSON.stringify({ post_id }),
     }),
+
+  reportPost: (post_id: number, reason = "other") =>
+    req<{ ok: boolean }>("profiles", "report_post", {
+      method: "POST",
+      body: JSON.stringify({ post_id, reason }),
+    }),
 };
 
 // ─── Live ─────────────────────────────────────────────────────────────────────
