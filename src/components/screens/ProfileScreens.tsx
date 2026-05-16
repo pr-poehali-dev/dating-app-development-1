@@ -488,22 +488,28 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
                 <Icon name="MoreVertical" size={18} className="text-white/70" />
               </button>
               {activeTab === "settings" && (
-                <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[200px]"
+                <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[220px]"
                   style={{ background: "rgba(22,16,36,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   {[
-                    { icon: "User",       label: "Аккаунт",      action: () => { setSettingsScreen("account"); setActiveTab(null); } },
-                    { icon: "Bell",       label: "Уведомления",   action: () => { setSettingsScreen("notifications"); setActiveTab(null); } },
-                    { icon: "Palette",    label: "Интерфейс",     action: () => { setSettingsScreen("appearance"); setActiveTab(null); } },
-                    { icon: "Shield",     label: "Приватность",   action: () => { setSettingsScreen("privacy"); setActiveTab(null); } },
-                    { icon: "BadgeCheck", label: "Верификация",   action: () => { onVerify(); setActiveTab(null); } },
-                    { icon: "LogOut",     label: "Выйти",         action: () => { onLogout(); setActiveTab(null); }, danger: true },
-                  ].map(({ icon, label, action, danger }, i, arr) => (
+                    { icon: "BadgeCheck", label: currentUser.verified ? "✓ Верифицирован" : "Верификация", action: () => { onVerify(); setActiveTab(null); }, accent: currentUser.verified ? "blue" : "" },
+                    { icon: "User",       label: "Настройки аккаунта",   action: () => { setSettingsScreen("account"); setActiveTab(null); } },
+                    { icon: "Shield",     label: "Конфиденциальность",   action: () => { setSettingsScreen("privacy"); setActiveTab(null); } },
+                    { icon: "Lock",       label: "Приватные фото",       action: () => { setSettingsScreen("private_photos"); setActiveTab(null); } },
+                    { icon: "Ban",        label: "Заблокированные",      action: () => { setSettingsScreen("blocked"); setActiveTab(null); } },
+                    { icon: "Bell",       label: "Уведомления",          action: () => { setSettingsScreen("notifications"); setActiveTab(null); } },
+                    { icon: "Palette",    label: "Внешний вид",          action: () => { setSettingsScreen("appearance"); setActiveTab(null); } },
+                    { icon: "Volume2",    label: "Звуки",                action: () => { setSettingsScreen("sounds"); setActiveTab(null); } },
+                    { icon: "Video",      label: "Видеочат",             action: () => { setSettingsScreen("videochat"); setActiveTab(null); } },
+                    { icon: "HelpCircle", label: "Помощь и поддержка",  action: () => { setSettingsScreen("help"); setActiveTab(null); } },
+                    { icon: "LogOut",     label: "Выйти",                action: () => { onLogout(); setActiveTab(null); }, danger: true },
+                  ].map(({ icon, label, action, danger, accent }, i, arr) => (
                     <button key={label} onClick={action}
                       className="flex items-center gap-3 px-4 py-3 w-full hover:bg-white/5 transition-colors text-left"
                       style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                      <Icon name={icon as "User"|"Bell"|"Palette"|"Shield"|"BadgeCheck"|"LogOut"} size={16}
-                        className={danger ? "text-red-400" : "text-white/50"} />
-                      <span className={`${danger ? "text-red-400" : "text-white/80"} text-sm`}>{label}</span>
+                      <Icon name={icon as "BadgeCheck"|"User"|"Shield"|"Lock"|"Ban"|"Bell"|"Palette"|"Volume2"|"Video"|"HelpCircle"|"LogOut"} size={16}
+                        className={danger ? "text-red-400" : accent === "blue" ? "text-blue-400" : "text-white/50"} />
+                      <span className={`${danger ? "text-red-400" : accent === "blue" ? "text-blue-400" : "text-white/80"} text-sm flex-1`}>{label}</span>
+                      {!danger && <Icon name="ChevronRight" size={13} className="text-white/20" />}
                     </button>
                   ))}
                 </div>
@@ -659,24 +665,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           </div>
         </div>
 
-        {settingsGroups.map((group) => (
-          <div key={group.title} className="mx-5 mb-3">
-            {group.title && <p className="text-white/30 text-xs uppercase tracking-widest mb-1.5 px-1">{group.title}</p>}
-            <div className="glass-card overflow-hidden">
-              {group.items.map((s, i) => (
-                <button key={s.label} onClick={s.action}
-                  className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-white/5 transition-colors"
-                  style={{ borderBottom: i < group.items.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                  <Icon name={s.icon as "BadgeCheck"|"User"|"Shield"|"Lock"|"Ban"|"Bell"|"Palette"|"Volume2"|"Video"|"HelpCircle"|"LogOut"} size={17}
-                    className={s.accent === "danger" ? "text-red-400" : s.accent === "blue" ? "text-blue-400" : "text-white/50"} />
-                  <span className={`${s.accent === "danger" ? "text-red-400" : "text-white/80"} text-sm flex-1 text-left`}>{s.label}</span>
-                  {s.value && <span className="text-white/40 text-xs">{s.value}</span>}
-                  {s.accent !== "danger" && <Icon name="ChevronRight" size={15} className="text-white/30" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
         <div className="h-6" />
       </div>
 
