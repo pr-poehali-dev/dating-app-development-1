@@ -1,11 +1,13 @@
 """
-Авторизация: register / login / logout / me
+Авторизация: register / login / logout / me / reset_password
 Роутинг через query-параметр ?action=...
 """
 import json
 import os
 import hashlib
 import secrets
+import smtplib
+from email.mime.text import MIMEText
 import psycopg2
 
 CORS = {
@@ -94,6 +96,32 @@ def handler(event: dict, context) -> dict:
                 cur.execute("UPDATE sessions SET expires_at = NOW() WHERE token = %s", (token,))
                 cur.execute("UPDATE users SET online = FALSE, last_seen = NOW() WHERE id = (SELECT user_id FROM sessions WHERE token = %s)", (token,))
                 conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'reset_password':
+            email = body.get('email', '').strip().lower()
+            if not email or '@' not in email:
+                return resp(400, {'error': 'Введи корректный email'})
+            cur.execute("SELECT id, name FROM users WHERE email = %s", (email,))
+            row = cur.fetchone()
+            if not row:
+                return resp(200, {'ok': True})
+            user_id, name = row
+            new_password = secrets.token_urlsafe(10)
+            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (hash_password(new_password), user_id))
+            conn.commit()
+            smtp_user = os.environ.get('SMTP_USER', '')
+            smtp_password = os.environ.get('SMTP_PASSWORD', '')
+            msg = MIMEText(
+                f"Привет, {name}!\n\nТвой новый пароль для LoveBloom:\n\n{new_password}\n\nВойди и сразу смени его в настройках профиля.\n\nС уважением,\nКоманда LoveBloom",
+                'plain', 'utf-8'
+            )
+            msg['Subject'] = 'Восстановление пароля — LoveBloom'
+            msg['From'] = smtp_user
+            msg['To'] = email
+            with smtplib.SMTP_SSL('smtp.yandex.ru', 465) as server:
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, [email], msg.as_string())
             return resp(200, {'ok': True})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})

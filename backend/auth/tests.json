@@ -6,6 +6,22 @@
       "path": "/",
       "expectedStatus": 200,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "reset_password — несуществующий email возвращает ok",
+      "method": "POST",
+      "path": "/?action=reset_password",
+      "body": {"email": "nonexistent_test_user_xyz@example.com"},
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "reset_password — невалидный email",
+      "method": "POST",
+      "path": "/?action=reset_password",
+      "body": {"email": "notanemail"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
     }
   ]
 }

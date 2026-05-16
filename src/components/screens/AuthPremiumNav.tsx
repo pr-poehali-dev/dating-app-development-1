@@ -2,6 +2,59 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { authApi, type User } from "@/lib/api";
 
+// ─── ForgotPasswordModal ───────────────────────────────────────────────────────
+function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!email.includes("@")) { setError("Введи корректный email"); return; }
+    setError(""); setLoading(true);
+    try {
+      await authApi.resetPassword(email);
+      setDone(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Ошибка");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}>
+      <div className="w-full max-w-sm animate-slide-up p-6 flex flex-col gap-4"
+        style={{ background: "var(--spark-dark2, #1a1625)", borderRadius: "28px 28px 0 0" }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-golos font-bold text-lg">Восстановление пароля</h3>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><Icon name="X" size={20} /></button>
+        </div>
+
+        {done ? (
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: "rgba(74,222,128,0.15)" }}>
+              <Icon name="Mail" size={28} className="text-green-400" />
+            </div>
+            <p className="text-white font-semibold text-center">Письмо отправлено!</p>
+            <p className="text-white/50 text-sm text-center">Проверь почту {email} — там новый пароль для входа.</p>
+            <button onClick={onClose} className="btn-grad w-full py-3 text-sm font-semibold mt-2">Войти</button>
+          </div>
+        ) : (
+          <>
+            <p className="text-white/50 text-sm">Введи email — пришлём новый пароль.</p>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email"
+              placeholder="Email" onKeyDown={(e) => e.key === "Enter" && submit()}
+              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            <button onClick={submit} disabled={loading} className="btn-grad py-3 text-sm font-semibold disabled:opacity-50">
+              {loading ? "Отправляем..." : "Отправить новый пароль"}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
 // ─── AuthScreen ───────────────────────────────────────────────────────────────
@@ -12,6 +65,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showForgot, setShowForgot] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -33,6 +87,8 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   };
 
   return (
+    <>
+    {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     <div className="flex flex-col h-full justify-center px-6 gap-6">
       <div className="text-center mb-4">
         <h1 className="font-unbounded text-white text-3xl font-black grad-text mb-2">LoveBloom</h1>
@@ -64,10 +120,17 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         <button onClick={submit} disabled={loading} className="btn-grad py-3.5 text-base font-semibold">
           {loading ? "Загрузка..." : mode === "login" ? "Войти" : "Создать аккаунт"}
         </button>
+
+        {mode === "login" && (
+          <button onClick={() => setShowForgot(true)} className="text-white/40 text-xs text-center hover:text-white/70 transition-colors">
+            Забыл пароль?
+          </button>
+        )}
       </div>
 
       <p className="text-white/30 text-xs text-center">Нажимая кнопку, ты соглашаешься с правилами сервиса</p>
     </div>
+    </>
   );
 }
 

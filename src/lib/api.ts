@@ -79,6 +79,12 @@ export const authApi = {
   },
 
   isLoggedIn: () => !!getToken(),
+
+  resetPassword: (email: string) =>
+    req<{ ok: boolean }>("auth", "reset_password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
 };
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
