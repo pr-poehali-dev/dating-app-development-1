@@ -219,7 +219,7 @@ export function PremiumScreen({ onClose }: { onClose: () => void }) {
 export function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen) => void }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
     { screen: "discover", icon: "Home", label: "Главная" },
-    { screen: "photos", icon: "Image", label: "Фото" },
+    { screen: "photos", icon: "Search", label: "Поиск" },
     { screen: "live", icon: "Radio", label: "Live" },
     { screen: "matches", icon: "MessageCircle", label: "Чаты" },
     { screen: "profile", icon: "User", label: "Профиль" },
@@ -233,7 +233,7 @@ export function BottomNav({ active, onChange }: { active: Screen; onChange: (s: 
           className={`nav-item relative ${active === item.screen ? "active" : ""}`}
           onClick={() => onChange(item.screen)}>
           <div className="relative">
-            <Icon name={item.icon as "Home" | "Image" | "Radio" | "MessageCircle" | "User"} size={22} />
+            <Icon name={item.icon as "Home" | "Search" | "Radio" | "MessageCircle" | "User"} size={22} />
             {item.badge && (
               <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
                 style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>

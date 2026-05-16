@@ -3,7 +3,8 @@ import { authApi, type User } from "@/lib/api";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
-import { PhotosScreen, LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
+import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
+import { PeopleScreen } from "@/components/screens/PeopleScreen";
 import { RealProfileScreen, VerifyScreen, AdminVerifyScreen } from "@/components/screens/ProfileScreens";
 import { HomeScreen } from "@/components/screens/HomeScreen";
 
@@ -76,7 +77,7 @@ export default function Index() {
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onGoPhotos={() => setScreen("photos")} />}
-          {screen === "photos" && <PhotosScreen currentUser={currentUser} />}
+          {screen === "photos" && <PeopleScreen />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
