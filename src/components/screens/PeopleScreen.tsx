@@ -245,16 +245,8 @@ export function PeopleScreen() {
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="px-4 pt-4 pb-2 flex-shrink-0">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h2 className="text-white font-golos font-bold text-2xl">Люди</h2>
-            <button onClick={() => setShowViewers(true)}
-              className="relative glass-card p-2.5 flex items-center justify-center">
-              <Icon name="Eye" size={20} className="text-white/60" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                0
-              </div>
-            </button>
           </div>
 
           {/* Search bar */}
@@ -280,6 +272,14 @@ export function PeopleScreen() {
                   {filterCount}
                 </div>
               )}
+            </button>
+            <button onClick={() => setShowViewers(true)}
+              className="relative glass-card p-2.5 flex items-center justify-center flex-shrink-0">
+              <Icon name="Eye" size={20} className="text-white/60" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                0
+              </div>
             </button>
           </div>
 
