@@ -204,12 +204,60 @@ function PostCard({ post, onLike, onComment }: {
   );
 }
 
+// ─── CreateMenu ───────────────────────────────────────────────────────────────
+function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
+  onPhoto: () => void;
+  onStory: () => void;
+  onLive: () => void;
+  onClose: () => void;
+}) {
+  const items = [
+    { icon: "Image", label: "Опубликовать фото", sub: "Поделись моментом", action: onPhoto, color: "#FF2D78" },
+    { icon: "Film", label: "Видеоистория", sub: "Короткое видео на 24 часа", action: onStory, color: "#9B59B6" },
+    { icon: "Radio", label: "Начать Live", sub: "Прямой эфир для всех", action: onLive, color: "#EF4444" },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}>
+      <div className="w-full max-w-sm animate-slide-up"
+        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-4" style={{ background: "rgba(255,255,255,0.2)" }} />
+        <p className="text-white/40 text-xs uppercase tracking-widest px-5 mb-3">Создать</p>
+        <div className="flex flex-col pb-8">
+          {items.map((item) => (
+            <button key={item.label}
+              onClick={() => { item.action(); onClose(); }}
+              className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors text-left">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: `${item.color}22` }}>
+                <Icon name={item.icon as "Image" | "Film" | "Radio"} size={20} style={{ color: item.color }} />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">{item.label}</p>
+                <p className="text-white/40 text-xs mt-0.5">{item.sub}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
-export function HomeScreen({ currentUser, onGoLive }: { currentUser: User; onGoLive: () => void }) {
+export function HomeScreen({ currentUser, onGoLive, onGoPhotos }: {
+  currentUser: User;
+  onGoLive: () => void;
+  onGoPhotos: () => void;
+}) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
   const [loading, setLoading] = useState(true);
   const [commentPost, setCommentPost] = useState<Post | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showStoryMsg, setShowStoryMsg] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -234,6 +282,26 @@ export function HomeScreen({ currentUser, onGoLive }: { currentUser: User; onGoL
       {commentPost && (
         <CommentSheet post={commentPost} onClose={() => setCommentPost(null)} />
       )}
+      {showCreate && (
+        <CreateMenu
+          onPhoto={onGoPhotos}
+          onStory={() => setShowStoryMsg(true)}
+          onLive={onGoLive}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
+      {showStoryMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-8"
+          style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShowStoryMsg(false)}>
+          <div className="glass-card p-6 flex flex-col items-center gap-3 text-center"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl">🎬</div>
+            <p className="text-white font-bold">Видеоистории скоро!</p>
+            <p className="text-white/50 text-sm">Функция находится в разработке и появится в следующем обновлении.</p>
+            <button onClick={() => setShowStoryMsg(false)} className="btn-grad px-6 py-2 text-sm font-semibold">Понятно</button>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -243,10 +311,10 @@ export function HomeScreen({ currentUser, onGoLive }: { currentUser: User; onGoL
               className="w-8 h-8 rounded-xl object-cover" />
             <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
           </div>
-          <button onClick={onGoLive}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
-            style={{ background: "linear-gradient(135deg,#EF4444,#B91C1C)" }}>
-            <Icon name="Video" size={13} className="text-white" />Эфир
+          <button onClick={() => setShowCreate(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+            <Icon name="Plus" size={20} className="text-white" />
           </button>
         </div>
 
