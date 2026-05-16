@@ -47,8 +47,9 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
-  const openChat = (id: number) => { setChatId(id); setScreen("chat"); };
-  const backToMatches = () => { setChatId(null); setScreen("matches"); };
+  const [prevScreen, setPrevScreen] = useState<Screen>("matches");
+  const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); setScreen("chat"); };
+  const backToMatches = () => { setChatId(null); setScreen(prevScreen); };
 
 
   if (authLoading) {
@@ -77,7 +78,7 @@ export default function Index() {
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} />}
-          {screen === "photos" && <PeopleScreen />}
+          {screen === "photos" && <PeopleScreen onOpenChat={openChat} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}

@@ -167,7 +167,7 @@ function ProfileViewersSheet({ onClose }: { onClose: () => void }) {
 }
 
 // ─── PeopleScreen ─────────────────────────────────────────────────────────────
-export function PeopleScreen() {
+export function PeopleScreen({ onOpenChat }: { onOpenChat?: (matchId: number) => void }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -231,6 +231,7 @@ export function PeopleScreen() {
           profile={selected}
           onClose={() => setSelected(null)}
           onLike={(p) => setLikedIds((prev) => new Set([...prev, p.id]))}
+          onOpenChat={(matchId) => { setSelected(null); onOpenChat?.(matchId); }}
         />
       )}
       {showFilters && (

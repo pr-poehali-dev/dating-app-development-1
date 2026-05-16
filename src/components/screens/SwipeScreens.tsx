@@ -620,11 +620,12 @@ function ProfileMenuSheet({ profile, onClose, onReport }: {
 }
 
 // ─── DiscoverProfileModal ─────────────────────────────────────────────────────
-export function DiscoverProfileModal({ profile, onClose, onLike }: {
-  profile: Profile; onClose: () => void; onLike: (p: Profile) => void;
+export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat }: {
+  profile: Profile; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void;
 }) {
   const [liked, setLiked] = useState(false);
   const [liking, setLiking] = useState(false);
+  const [matchId, setMatchId] = useState<number | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -665,9 +666,25 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
   const handleLike = async () => {
     if (liked || liking) return;
     setLiking(true);
-    try { await likesApi.send(profile.id); setLiked(true); } catch (e) { void e; }
+    try {
+      const res = await likesApi.send(profile.id);
+      setLiked(true);
+      if (res.match && res.match_id) {
+        setMatchId(res.match_id);
+        const { messagesApi } = await import("@/lib/api");
+        await messagesApi.send(res.match_id, `❤️ ${profile.name}, ты мне понравилась!`).catch(() => {});
+      }
+    } catch (e) { void e; }
     finally { setLiking(false); }
     onLike(profile);
+  };
+
+  const handleOpenChat = async () => {
+    if (matchId && onOpenChat) { onOpenChat(matchId); return; }
+    const { matchesApi } = await import("@/lib/api");
+    const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
+    const m = data.matches.find(x => x.user.id === profile.id);
+    if (m && onOpenChat) onOpenChat(m.match_id);
   };
 
   // Свайп/тап влево-вправо для смены фото
@@ -733,7 +750,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike }: {
               style={{ background: liked ? "rgba(255,45,120,0.9)" : "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
               <Icon name="Heart" size={22} style={{ color: liked ? "white" : "#FF2D78", fill: liked ? "white" : "transparent" }} />
             </button>
-            <button
+            <button onClick={handleOpenChat}
               className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
               style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
               <Icon name="MessageCircle" size={20} className="text-white" />
