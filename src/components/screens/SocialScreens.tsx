@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { matchesApi, likesApi, messagesApi, postsApi, liveApi, type User, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage } from "@/lib/api";
-import { ReportModal } from "@/components/screens/SwipeScreens";
+import { matchesApi, likesApi, messagesApi, postsApi, liveApi, type User, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage, type Profile } from "@/lib/api";
+import { ReportModal, DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
@@ -823,6 +823,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [input, setInput] = useState("");
   const [partnerName, setPartnerName] = useState("...");
   const [partnerPhoto, setPartnerPhoto] = useState(FALLBACK_PHOTO);
+  const [partnerId, setPartnerId] = useState<number | null>(null);
+  const [showPartnerProfile, setShowPartnerProfile] = useState(false);
   const [contextMsg, setContextMsg] = useState<Message | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [showPlus, setShowPlus] = useState(false);
@@ -846,7 +848,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       .catch(() => {});
     matchesApi.getAll().then((d) => {
       const m = d.matches.find((x) => x.match_id === matchId);
-      if (m) { setPartnerName(m.name); setPartnerPhoto(m.photo_url || FALLBACK_PHOTO); }
+      if (m) { setPartnerName(m.name); setPartnerPhoto(m.photo_url || FALLBACK_PHOTO); setPartnerId(m.partner_id); }
     }).catch(() => {});
   }, [matchId]);
 
@@ -1003,11 +1005,13 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           <button onClick={onBack} className="text-white/70 hover:text-white transition-colors">
             <Icon name="ChevronLeft" size={24} />
           </button>
-          <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
-          <div className="flex-1">
-            <p className="text-white font-semibold text-sm">{partnerName}</p>
-            <p className="text-white/40 text-xs">Удержи сообщение для удаления</p>
-          </div>
+          <button onClick={() => setShowPartnerProfile(true)} className="flex items-center gap-3 flex-1 text-left">
+            <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
+            <div>
+              <p className="text-white font-semibold text-sm">{partnerName}</p>
+              <p className="text-white/40 text-xs">Нажми для просмотра профиля</p>
+            </div>
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
@@ -1118,6 +1122,15 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           </button>
         </div>
       </div>
+
+      {/* Профиль партнёра */}
+      {showPartnerProfile && partnerId && (
+        <DiscoverProfileModal
+          profile={{ id: partnerId, name: partnerName, photo_url: partnerPhoto } as Profile}
+          onClose={() => setShowPartnerProfile(false)}
+          onLike={() => {}}
+        />
+      )}
 
       {/* Видеозвонок */}
       {videoCall && (
