@@ -766,8 +766,9 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   const [opened, setOpened] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(60);
 
+  // Таймер запускается только у получателя
   useEffect(() => {
-    if (!opened) return;
+    if (!opened || out) return;
     const timer = setInterval(() => {
       setSecondsLeft(s => {
         if (s <= 1) { clearInterval(timer); setVisible(false); return 0; }
@@ -775,14 +776,12 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [opened]);
+  }, [opened, out]);
 
   if (!visible) {
     return <span className="text-white/40 text-sm italic">🔥 Фото исчезло</span>;
   }
 
-  // Отправитель видит размытое превью
-  // Получатель видит размытое превью с кнопкой открыть
   const isBlurred = !opened;
 
   return (
@@ -802,11 +801,13 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
               style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
               <Icon name="Timer" size={20} className="text-pink-400" />
             </div>
-            <span className="text-white text-xs font-medium">Нажми чтобы открыть</span>
+            <span className="text-white text-xs font-medium">
+              {out ? "Нажми чтобы посмотреть" : "Нажми чтобы открыть"}
+            </span>
           </div>
         )}
-        {/* Таймер после открытия */}
-        {opened && (
+        {/* Таймер только у получателя после открытия */}
+        {opened && !out && (
           <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
             style={{ background: "rgba(0,0,0,0.65)" }}>
             🔥 {secondsLeft}с
