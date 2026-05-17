@@ -695,7 +695,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
     if (matchId && onOpenChat) { onOpenChat(matchId); return; }
     const { matchesApi } = await import("@/lib/api");
     const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
-    const m = data.matches.find(x => x.user.id === profile.id);
+    const m = data.matches.find(x => x.partner_id === profile.id);
     if (m && onOpenChat) { onOpenChat(m.match_id); return; }
     // Матча нет — показываем поле ввода
     setShowMsgInput(true);
