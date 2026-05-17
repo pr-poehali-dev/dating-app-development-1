@@ -93,9 +93,9 @@ def handler(event: dict, context) -> dict:
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
             # Подписчики и подписки
             user_id = user['id']
-            cur.execute("SELECT COUNT(*) FROM likes WHERE liked_id = %s", (user_id,))
+            cur.execute("SELECT COUNT(*) FROM likes WHERE to_user_id = %s", (user_id,))
             user['followers'] = cur.fetchone()[0]
-            cur.execute("SELECT COUNT(*) FROM likes WHERE liker_id = %s", (user_id,))
+            cur.execute("SELECT COUNT(*) FROM likes WHERE from_user_id = %s", (user_id,))
             user['following'] = cur.fetchone()[0]
             return resp(200, {'user': user})
 
