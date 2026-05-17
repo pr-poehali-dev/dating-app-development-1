@@ -368,19 +368,6 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
       )}
 
       <div className="flex flex-col h-full">
-        {/* Header с кнопками Инструменты и Настройки */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
-          <button onClick={() => setShowTools(true)}
-            className="glass-card px-3 py-2 flex items-center gap-2 text-white/70 text-sm active:scale-95 transition-all">
-            <Icon name="Wrench" size={15} />
-            <span>Инструменты</span>
-          </button>
-          <button onClick={() => setShowSettings(true)}
-            className="glass-card p-2 flex items-center justify-center active:scale-95 transition-all">
-            <Icon name="Settings" size={18} className="text-white/70" />
-          </button>
-        </div>
-
         {/* Вкладки */}
         <div className="flex-shrink-0 px-4 pb-2">
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
@@ -439,13 +426,25 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
           ))}
         </div>
 
-        {/* Кнопка «Выйти в эфир» внизу по центру */}
-        <div className="flex-shrink-0 px-5 pb-5 pt-3"
+        {/* Нижняя панель: Инструменты + Выйти в эфир + Настройки */}
+        <div className="flex-shrink-0 px-4 pb-5 pt-3 flex items-center gap-2"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+          <button onClick={() => setShowTools(true)}
+            className="glass-card px-3 py-3.5 flex flex-col items-center gap-1 active:scale-95 transition-all flex-shrink-0"
+            style={{ minWidth: 72 }}>
+            <Icon name="Wrench" size={18} className="text-white/70" />
+            <span className="text-white/60 text-[10px] font-medium">Инструменты</span>
+          </button>
           <button onClick={() => setShowStart(true)}
-            className="btn-grad w-full py-3.5 text-base font-bold flex items-center justify-center gap-2 rounded-2xl">
-            <Icon name="Radio" size={20} className="text-white" />
+            className="btn-grad flex-1 py-3.5 text-sm font-bold flex items-center justify-center gap-2 rounded-2xl">
+            <Icon name="Radio" size={18} className="text-white" />
             Выйти в эфир
+          </button>
+          <button onClick={() => setShowSettings(true)}
+            className="glass-card px-3 py-3.5 flex flex-col items-center gap-1 active:scale-95 transition-all flex-shrink-0"
+            style={{ minWidth: 72 }}>
+            <Icon name="Settings" size={18} className="text-white/70" />
+            <span className="text-white/60 text-[10px] font-medium">Настройки</span>
           </button>
         </div>
       </div>
