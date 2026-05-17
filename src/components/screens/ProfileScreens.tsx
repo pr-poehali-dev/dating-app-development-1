@@ -697,25 +697,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </div>
           </div>
 
-          {/* Дата регистрации */}
-          {currentUser.created_at && (
-            <div className="w-full mt-3 flex items-center justify-center gap-1.5">
-              <Icon name="Calendar" size={13} className="text-white/25" />
-              <span className="text-white/25 text-xs">
-                Присоединился {(() => {
-                  const d = new Date(currentUser.created_at);
-                  const now = new Date();
-                  const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
-                  if (months === 0) return "менее месяца назад";
-                  if (months === 1) return "1 месяц назад";
-                  if (months < 5) return `${months} месяца назад`;
-                  if (months < 12) return `${months} месяцев назад`;
-                  const years = Math.floor(months / 12);
-                  return years === 1 ? "1 год назад" : `${years} года назад`;
-                })()}
-              </span>
-            </div>
-          )}
+
 
 
 
@@ -804,6 +786,26 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </button>
           )}
         </div>
+
+        {/* Дата регистрации */}
+        {currentUser.created_at && (
+          <div className="flex items-center justify-center gap-1.5 mb-4">
+            <Icon name="Calendar" size={13} className="text-white/25" />
+            <span className="text-white/25 text-xs">
+              Присоединился {(() => {
+                const d = new Date(currentUser.created_at);
+                const now = new Date();
+                const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
+                if (months === 0) return "менее месяца назад";
+                if (months === 1) return "1 месяц назад";
+                if (months < 5) return `${months} месяца назад`;
+                if (months < 12) return `${months} месяцев назад`;
+                const years = Math.floor(months / 12);
+                return years === 1 ? "1 год назад" : `${years} года назад`;
+              })()}
+            </span>
+          </div>
+        )}
 
         <div className="h-6" />
       </div>
