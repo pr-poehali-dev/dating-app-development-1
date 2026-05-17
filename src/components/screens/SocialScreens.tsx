@@ -788,7 +788,7 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="w-48 h-48 rounded-xl overflow-hidden relative cursor-pointer"
-        onClick={() => { if (!out && !opened) setOpened(true); }}>
+        onClick={() => { if (!opened) setOpened(true); }}>
         <img
           src={url}
           className="w-full h-full object-cover transition-all duration-300"
@@ -802,8 +802,7 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
               style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
               <Icon name="Timer" size={20} className="text-pink-400" />
             </div>
-            {!out && <span className="text-white text-xs font-medium">Нажми чтобы открыть</span>}
-            {out && <span className="text-white/60 text-xs">Исчезающее фото</span>}
+            <span className="text-white text-xs font-medium">Нажми чтобы открыть</span>
           </div>
         )}
         {/* Таймер после открытия */}
