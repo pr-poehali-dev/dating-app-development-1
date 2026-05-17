@@ -366,10 +366,12 @@ function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
 }
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
-export function HomeScreen({ currentUser, onGoLive }: {
+export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   currentUser: User;
   onGoLive: () => void;
   onGoPhotos?: () => void;
+  onOpenChat?: (matchId: number) => void;
+  onGoToChats?: () => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
@@ -438,6 +440,8 @@ export function HomeScreen({ currentUser, onGoLive }: {
           profile={viewProfile}
           onClose={() => setViewProfile(null)}
           onLike={() => {}}
+          onOpenChat={onOpenChat ? (id) => { setViewProfile(null); onOpenChat(id); } : undefined}
+          onGoToChats={onGoToChats ? () => { setViewProfile(null); onGoToChats(); } : undefined}
         />
       )}
 

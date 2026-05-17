@@ -78,7 +78,7 @@ export default function Index() {
     <div className="app-bg flex justify-center">
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
-          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} />}
+          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onOpenChat={openChat} onGoToChats={goToChats} />}
           {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} isPremium={!!currentUser.premium} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
           {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
