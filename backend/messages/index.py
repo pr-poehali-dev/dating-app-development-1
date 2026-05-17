@@ -4,7 +4,10 @@
 """
 import json
 import os
+import base64
+import uuid
 import psycopg2
+import boto3
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -118,6 +121,32 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             conn.commit()
             return resp(200, {'ok': True, 'match_id': match_id, 'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1])})
+
+        # Загрузить фото для чата (vanish или обычное)
+        if action == 'upload_chat_photo':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            match_id = int(body.get('match_id', 0))
+            if not image_data or not match_id:
+                return resp(400, {'error': 'image и match_id обязательны'})
+            cur.execute(f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})")
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нет доступа'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"chat_photos/{match_id}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            return resp(200, {'ok': True, 'photo_url': cdn_url})
 
         # WebRTC сигналинг: отправить сигнал (offer/answer/ice)
         if action == 'signal_send':

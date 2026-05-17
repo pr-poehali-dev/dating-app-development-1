@@ -329,6 +329,12 @@ export const messagesApi = {
       body: JSON.stringify({ message_id }),
     }),
 
+  uploadChatPhoto: (match_id: number, image: string, content_type: string) =>
+    req<{ ok: boolean; photo_url: string }>("messages", "upload_chat_photo", {
+      method: "POST",
+      body: JSON.stringify({ match_id, image, content_type }),
+    }),
+
   signalSend: (match_id: number, signal_type: string, payload: string) =>
     req<{ ok: boolean }>("messages", "signal_send", {
       method: "POST",

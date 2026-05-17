@@ -780,25 +780,36 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   if (!visible) {
     return <span className="text-white/40 text-sm italic">🔥 Фото исчезло</span>;
   }
-  if (!opened && !out) {
-    return (
-      <button onClick={() => setOpened(true)}
-        className="flex items-center gap-2 px-1">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(255,45,120,0.2)" }}>
-          <Icon name="Timer" size={16} className="text-pink-400" />
-        </div>
-        <span className="text-sm">Исчезающее фото — нажми чтобы открыть</span>
-      </button>
-    );
-  }
+
+  // Отправитель видит размытое превью
+  // Получатель видит размытое превью с кнопкой открыть
+  const isBlurred = !opened;
+
   return (
     <div className="flex flex-col gap-1">
-      <div className="w-48 h-48 rounded-xl overflow-hidden relative">
-        <img src={url} className="w-full h-full object-cover" />
+      <div className="w-48 h-48 rounded-xl overflow-hidden relative cursor-pointer"
+        onClick={() => { if (!out && !opened) setOpened(true); }}>
+        <img
+          src={url}
+          className="w-full h-full object-cover transition-all duration-300"
+          style={{ filter: isBlurred ? "blur(18px)" : "none", transform: isBlurred ? "scale(1.1)" : "scale(1)" }}
+        />
+        {/* Оверлей до открытия */}
+        {isBlurred && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+            style={{ background: "rgba(0,0,0,0.35)" }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
+              <Icon name="Timer" size={20} className="text-pink-400" />
+            </div>
+            {!out && <span className="text-white text-xs font-medium">Нажми чтобы открыть</span>}
+            {out && <span className="text-white/60 text-xs">Исчезающее фото</span>}
+          </div>
+        )}
+        {/* Таймер после открытия */}
         {opened && (
           <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
-            style={{ background: "rgba(0,0,0,0.6)" }}>
+            style={{ background: "rgba(0,0,0,0.65)" }}>
             🔥 {secondsLeft}с
           </div>
         )}
@@ -876,9 +887,17 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setShowPlus(false);
-    sendSystem(`📷 [Фото]`);
     e.target.value = "";
+    setShowPlus(false);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      try {
+        const res = await messagesApi.uploadChatPhoto(matchId, base64, file.type);
+        await sendSystem(`__VANISH__${res.photo_url}`);
+      } catch { /* ignore */ }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Исчезающее фото — загружаем галерею профиля
