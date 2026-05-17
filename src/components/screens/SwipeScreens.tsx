@@ -1,84 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, likesApi, authApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { profilesApi, type Profile, type DiscoverParams } from "@/lib/api";
 
-// ─── ReportModal ──────────────────────────────────────────────────────────────
-export function ReportModal({ userId, userName, onClose }: { userId: number; userName: string; onClose: () => void }) {
-  const REASONS = [
-    { value: "fake", label: "Фейковый аккаунт" },
-    { value: "spam", label: "Спам" },
-    { value: "abuse", label: "Оскорбления" },
-    { value: "photo", label: "Неприемлемые фото" },
-    { value: "other", label: "Другое" },
-  ];
-  const [reason, setReason] = useState("fake");
-  const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState("");
+// Re-exports
+export { ReportModal } from "@/components/screens/ReportModal";
+export { FilterScreen } from "@/components/screens/FilterScreen";
+export { DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
 
-  const submit = async () => {
-    setLoading(true); setError("");
-    try {
-      await authApi.sendReport(userId, reason, comment);
-      setDone(true);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ошибка");
-    } finally { setLoading(false); }
-  };
+import { PROFILES_FALLBACK, DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center" style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}>
-      <div className="w-full max-w-sm animate-slide-up flex flex-col"
-        style={{ background: "var(--spark-dark2, #1a1625)", borderRadius: "28px 28px 0 0" }}
-        onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <h3 className="text-white font-golos font-bold text-base">Пожаловаться на {userName}</h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><Icon name="X" size={20} /></button>
-        </div>
+type LocalProfile = (typeof PROFILES_FALLBACK)[0];
 
-        {done ? (
-          <div className="flex flex-col items-center gap-3 px-5 py-8">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "rgba(74,222,128,0.15)" }}>
-              <Icon name="Check" size={26} className="text-green-400" />
-            </div>
-            <p className="text-white font-semibold">Жалоба отправлена</p>
-            <p className="text-white/40 text-sm text-center">Мы рассмотрим её в ближайшее время</p>
-            <button onClick={onClose} className="btn-grad px-8 py-2.5 text-sm font-semibold mt-2">Закрыть</button>
-          </div>
-        ) : (
-          <div className="px-5 py-4 flex flex-col gap-4 pb-8">
-            <div className="flex flex-col gap-2">
-              {REASONS.map((r) => (
-                <button key={r.value} onClick={() => setReason(r.value)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all"
-                  style={reason === r.value
-                    ? { background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.4)" }
-                    : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                    style={{ borderColor: reason === r.value ? "#FF2D78" : "rgba(255,255,255,0.3)" }}>
-                    {reason === r.value && <div className="w-2 h-2 rounded-full" style={{ background: "#FF2D78" }} />}
-                  </div>
-                  <span className="text-white/80 text-sm">{r.label}</span>
-                </button>
-              ))}
-            </div>
-            <textarea value={comment} onChange={(e) => setComment(e.target.value)}
-              placeholder="Дополнительный комментарий (необязательно)" rows={3} maxLength={500}
-              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos resize-none" />
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <button onClick={submit} disabled={loading} className="btn-grad py-3.5 text-sm font-semibold disabled:opacity-50">
-              {loading ? "Отправляем..." : "Отправить жалобу"}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const PROFILES_FALLBACK = [
+const PROFILES_DEMO = [
   {
     id: 1,
     name: "Алина",
@@ -91,9 +24,43 @@ const PROFILES_FALLBACK = [
     verified: true,
     online: true,
   },
+  {
+    id: 2,
+    name: "Максим",
+    age: 28,
+    city: "Москва",
+    distance: "7 км",
+    bio: "Архитектор по призванию. Строю города и разрушаю стереотипы. Обожаю джаз и спонтанные вечера 🎷",
+    tags: ["Архитектура", "Джаз", "Спорт", "Готовка"],
+    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/f6e87c7a-8c99-4c42-a478-32f63cadb0d8.jpg",
+    verified: false,
+    online: false,
+  },
+  {
+    id: 3,
+    name: "Соня",
+    age: 26,
+    city: "Санкт-Петербург",
+    distance: "15 км",
+    bio: "Фотограф, влюблённая в детали. Ловлю красоту в обычном. Ищу того, кто умеет удивлять 📸",
+    tags: ["Фотография", "Искусство", "Книги", "Танцы"],
+    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/9e6ff21a-1da2-432f-882a-f0ee84125e09.jpg",
+    verified: true,
+    online: true,
+  },
+  {
+    id: 4,
+    name: "Дима",
+    age: 27,
+    city: "Москва",
+    distance: "2 км",
+    bio: "IT-разработчик, который умеет отдыхать. Велопрогулки, барбекю и хорошие компании — вот моя жизнь 🚲",
+    tags: ["IT", "Велоспорт", "Природа", "Музыка"],
+    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/93213dcb-e051-4766-9eb3-527ebd0b3c85.jpg",
+    verified: false,
+    online: true,
+  },
 ];
-
-type LocalProfile = (typeof PROFILES_FALLBACK)[0];
 
 // ─── SwipeCard ────────────────────────────────────────────────────────────────
 function SwipeCard({
@@ -206,57 +173,6 @@ function SwipeCard({
 }
 
 // ─── DiscoverScreen (static demo) ────────────────────────────────────────────
-const PROFILES_DEMO = [
-  {
-    id: 1,
-    name: "Алина",
-    age: 24,
-    city: "Москва",
-    distance: "3 км",
-    bio: "Люблю кофе, рассветы и случайные путешествия. Ищу человека, с которым можно потеряться в незнакомом городе ☕",
-    tags: ["Путешествия", "Кофе", "Йога", "Кино"],
-    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg",
-    verified: true,
-    online: true,
-  },
-  {
-    id: 2,
-    name: "Максим",
-    age: 28,
-    city: "Москва",
-    distance: "7 км",
-    bio: "Архитектор по призванию. Строю города и разрушаю стереотипы. Обожаю джаз и спонтанные вечера 🎷",
-    tags: ["Архитектура", "Джаз", "Спорт", "Готовка"],
-    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/f6e87c7a-8c99-4c42-a478-32f63cadb0d8.jpg",
-    verified: false,
-    online: false,
-  },
-  {
-    id: 3,
-    name: "Соня",
-    age: 26,
-    city: "Санкт-Петербург",
-    distance: "15 км",
-    bio: "Фотограф, влюблённая в детали. Ловлю красоту в обычном. Ищу того, кто умеет удивлять 📸",
-    tags: ["Фотография", "Искусство", "Книги", "Танцы"],
-    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/9e6ff21a-1da2-432f-882a-f0ee84125e09.jpg",
-    verified: true,
-    online: true,
-  },
-  {
-    id: 4,
-    name: "Дима",
-    age: 27,
-    city: "Москва",
-    distance: "2 км",
-    bio: "IT-разработчик, который умеет отдыхать. Велопрогулки, барбекю и хорошие компании — вот моя жизнь 🚲",
-    tags: ["IT", "Велоспорт", "Природа", "Музыка"],
-    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/93213dcb-e051-4766-9eb3-527ebd0b3c85.jpg",
-    verified: false,
-    online: true,
-  },
-];
-
 export function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
   const [cards, setCards] = useState(PROFILES_DEMO);
   const [likeAnim, setLikeAnim] = useState(false);
@@ -307,690 +223,6 @@ export function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
         )}
       </div>
     </div>
-  );
-}
-
-// ─── FilterScreen ─────────────────────────────────────────────────────────────
-export function FilterScreen({ initial, onApply, onClose }: {
-  initial: DiscoverParams;
-  onApply: (p: DiscoverParams) => void;
-  onClose: () => void;
-}) {
-  const [ageMin, setAgeMin] = useState(initial.age_min ?? 18);
-  const [ageMax, setAgeMax] = useState(initial.age_max ?? 60);
-  const [lookingFor, setLookingFor] = useState(initial.looking_for ?? "all");
-  const [country, setCountry] = useState(initial.country ?? "");
-  const [city, setCity] = useState(initial.city ?? "");
-  const [radius, setRadius] = useState(initial.radius_km ?? 0);
-  const [useGeo, setUseGeo] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [geoCoords, setGeoCoords] = useState<{ lat: number; lon: number } | null>(
-    initial.lat ? { lat: initial.lat, lon: initial.lon! } : null
-  );
-  const [onlineOnly, setOnlineOnly] = useState(initial.online_only ?? false);
-
-  const genders = [
-    { val: "female", label: "Девушек" },
-    { val: "male", label: "Парней" },
-    { val: "all", label: "Всех" },
-  ];
-
-  const requestGeo = () => {
-    if (!navigator.geolocation) return;
-    setGeoLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        setGeoCoords({ lat, lon });
-        setUseGeo(true);
-        if (radius === 0) setRadius(50);
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-          const data = await r.json();
-          const c = data.address?.country || "";
-          const ci = data.address?.city || data.address?.town || data.address?.village || "";
-          if (c) setCountry(c);
-          if (ci) setCity(ci);
-          profilesApi.updateGeo(lat, lon, c, ci).catch(() => {});
-        } catch (e: unknown) { void e; }
-        setGeoLoading(false);
-      },
-      () => setGeoLoading(false)
-    );
-  };
-
-  const apply = () => {
-    const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
-    if (city) p.city = city;
-    if (country) p.country = country;
-    if (onlineOnly) p.online_only = true;
-    if (useGeo && geoCoords && radius > 0) {
-      p.lat = geoCoords.lat;
-      p.lon = geoCoords.lon;
-      p.radius_km = radius;
-    }
-    onApply(p);
-  };
-
-  const reset = () => {
-    setAgeMin(18); setAgeMax(60); setLookingFor("all");
-    setCountry(""); setCity(""); setRadius(0);
-    setUseGeo(false); setOnlineOnly(false);
-  };
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-5 py-4">
-        <h2 className="text-white font-golos font-bold text-xl">Фильтры</h2>
-        <div className="flex items-center gap-3">
-          <button onClick={reset} className="text-white/40 text-xs hover:text-white/70 transition-colors">Сбросить</button>
-          <button onClick={onClose} className="text-white/50 hover:text-white"><Icon name="X" size={22} /></button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 flex flex-col gap-4 pb-4">
-        <div className="glass-card p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-white font-semibold text-sm">Возраст</span>
-            <span className="text-white/60 text-sm">{ageMin} – {ageMax} лет</span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <span className="text-white/40 text-xs w-6">от</span>
-              <input type="range" min={18} max={ageMax} value={ageMin}
-                onChange={(e) => setAgeMin(+e.target.value)} className="flex-1 accent-pink-500" />
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-white/40 text-xs w-6">до</span>
-              <input type="range" min={ageMin} max={80} value={ageMax}
-                onChange={(e) => setAgeMax(+e.target.value)} className="flex-1 accent-pink-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-card p-4">
-          <span className="text-white font-semibold text-sm block mb-3">Кого ищешь</span>
-          <div className="grid grid-cols-3 gap-2">
-            {genders.map((g) => (
-              <button key={g.val} onClick={() => setLookingFor(g.val)}
-                className="py-2.5 rounded-xl text-sm font-medium transition-all"
-                style={lookingFor === g.val
-                  ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button onClick={() => setOnlineOnly((v) => !v)}
-          className="glass-card p-4 flex items-center justify-between w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-            <span className="text-white font-semibold text-sm">Только онлайн</span>
-          </div>
-          <div className="w-11 h-6 rounded-full transition-all relative flex-shrink-0"
-            style={{ background: onlineOnly ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.12)" }}>
-            <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow"
-              style={{ left: onlineOnly ? "calc(100% - 22px)" : "2px" }} />
-          </div>
-        </button>
-
-        <div className="glass-card p-4 flex flex-col gap-3">
-          <span className="text-white font-semibold text-sm flex items-center gap-2">
-            <Icon name="Globe" size={15} className="text-white/50" />Местоположение
-          </span>
-          <input value={country} onChange={(e) => setCountry(e.target.value)}
-            placeholder="Страна (например: Россия)"
-            className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
-          <input value={city} onChange={(e) => setCity(e.target.value)}
-            placeholder="Город (например: Москва)"
-            className="w-full bg-white/10 text-white placeholder-white/30 rounded-xl px-3 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
-        </div>
-
-        <div className="glass-card p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="text-white font-semibold text-sm flex items-center gap-2">
-              <Icon name="LocateFixed" size={15} className="text-white/50" />Рядом со мной
-            </span>
-            <button onClick={requestGeo} disabled={geoLoading}
-              className="btn-grad px-3 py-1.5 text-xs flex items-center gap-1.5 disabled:opacity-50">
-              {geoLoading
-                ? <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />Определяем...</>
-                : geoCoords
-                ? <><Icon name="Check" size={12} className="text-white" />Обновить</>
-                : <><Icon name="Navigation" size={12} className="text-white" />Моя геопозиция</>}
-            </button>
-          </div>
-          {geoCoords && (
-            <>
-              <button onClick={() => setUseGeo((v) => !v)}
-                className="flex items-center justify-between w-full">
-                <span className="text-white/60 text-xs">Использовать геопозицию</span>
-                <div className="w-10 h-5 rounded-full transition-all relative flex-shrink-0"
-                  style={{ background: useGeo ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.12)" }}>
-                  <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow"
-                    style={{ left: useGeo ? "calc(100% - 18px)" : "2px" }} />
-                </div>
-              </button>
-              {useGeo && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-white/50 text-xs">Радиус поиска</span>
-                    <span className="text-white/70 text-xs font-semibold">{radius} км</span>
-                  </div>
-                  <input type="range" min={5} max={500} step={5} value={radius}
-                    onChange={(e) => setRadius(+e.target.value)} className="w-full accent-pink-500" />
-                  <div className="flex justify-between text-white/30 text-[10px] mt-1">
-                    <span>5 км</span><span>500 км</span>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-          {!geoCoords && (
-            <p className="text-white/30 text-xs">Разреши доступ к геолокации, чтобы искать людей рядом</p>
-          )}
-        </div>
-      </div>
-
-      <div className="px-5 py-4">
-        <button onClick={apply} className="btn-grad w-full py-3.5 text-base font-semibold">
-          Применить фильтры
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── ProfileMenuSheet ─────────────────────────────────────────────────────────
-function ProfileMenuSheet({ profile, onClose, onReport }: {
-  profile: Profile; onClose: () => void; onReport: () => void;
-}) {
-  const [note, setNote] = useState("");
-  const [showNote, setShowNote] = useState(false);
-  const [blocked, setBlocked] = useState(false);
-  const [videoBlocked, setVideoBlocked] = useState(false);
-  const [toast, setToast] = useState("");
-
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
-
-  const shareProfile = () => {
-    const url = `${window.location.origin}/?user=${profile.id}`;
-    if (navigator.share) navigator.share({ title: profile.name, url });
-    else { navigator.clipboard?.writeText(url); showToast("Ссылка скопирована!"); }
-    onClose();
-  };
-
-  const items = [
-    {
-      icon: "Ban", label: blocked ? "Разблокировать" : "Заблокировать профиль",
-      sub: blocked ? "Снять блокировку" : "Пользователь не увидит тебя",
-      danger: !blocked,
-      action: () => { setBlocked(v => !v); showToast(blocked ? "Разблокировано" : "Профиль заблокирован"); }
-    },
-    {
-      icon: "VideoOff", label: videoBlocked ? "Разрешить видеочаты" : "Блокировать видеочаты",
-      sub: videoBlocked ? "Видеозвонки снова доступны" : "Запретить входящие видеозвонки",
-      danger: false,
-      action: () => { setVideoBlocked(v => !v); showToast(videoBlocked ? "Видеочаты разрешены" : "Видеочаты заблокированы"); }
-    },
-    {
-      icon: "Flag", label: "Пожаловаться",
-      sub: "Сообщить о нарушении правил",
-      danger: true,
-      action: () => { onClose(); setTimeout(onReport, 100); }
-    },
-    {
-      icon: "StickyNote", label: "Добавить заметку",
-      sub: "Личная заметка — видна только тебе",
-      danger: false,
-      action: () => setShowNote(true)
-    },
-    {
-      icon: "Share2", label: "Поделиться профилем",
-      sub: "Отправить ссылку на анкету",
-      danger: false,
-      action: shareProfile
-    },
-  ];
-
-  if (showNote) return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => setShowNote(false)}>
-      <div className="w-full max-w-sm animate-slide-up"
-        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
-        onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 pt-5 pb-3"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <h3 className="text-white font-bold text-sm">Заметка о {profile.name}</h3>
-          <button onClick={() => setShowNote(false)}><Icon name="X" size={18} className="text-white/40" /></button>
-        </div>
-        <div className="px-5 py-4 flex flex-col gap-3 pb-8">
-          <textarea value={note} onChange={e => setNote(e.target.value)}
-            placeholder="Личная заметка — видна только тебе..." rows={4} maxLength={300}
-            className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos resize-none" />
-          <button onClick={() => { showToast("Заметка сохранена!"); setShowNote(false); onClose(); }}
-            className="btn-grad py-3 text-sm font-semibold">Сохранить</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }} onClick={onClose}>
-      <div className="w-full max-w-sm animate-slide-up"
-        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
-        onClick={e => e.stopPropagation()}>
-        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1" style={{ background: "rgba(255,255,255,0.18)" }} />
-        <div className="flex items-center gap-3 px-5 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <img src={profile.photo_url || PROFILES_FALLBACK[0].photo} className="w-9 h-9 rounded-full object-cover" />
-          <div>
-            <p className="text-white font-semibold text-sm">{profile.name}{profile.age ? `, ${profile.age}` : ""}</p>
-            <p className="text-white/40 text-xs">{profile.city || ""}</p>
-          </div>
-        </div>
-        <div className="flex flex-col pb-8">
-          {items.map((item) => (
-            <button key={item.label} onClick={item.action}
-              className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/5 transition-colors text-left">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: item.danger ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.07)" }}>
-                <Icon name={item.icon as "Ban"|"VideoOff"|"Flag"|"StickyNote"|"Share2"} size={18}
-                  style={{ color: item.danger ? "#F87171" : "rgba(255,255,255,0.6)" }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold" style={{ color: item.danger ? "#F87171" : "white" }}>{item.label}</p>
-                <p className="text-white/35 text-xs mt-0.5">{item.sub}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-        {toast && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-white text-sm font-medium z-[80]"
-            style={{ background: "rgba(30,20,50,0.95)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            {toast}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── DiscoverProfileModal ─────────────────────────────────────────────────────
-export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onGoToChats }: {
-  profile: Profile; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void;
-}) {
-  const [liked, setLiked] = useState(false);
-  const [liking, setLiking] = useState(false);
-  const [matchId, setMatchId] = useState<number | null>(null);
-  const [showReport, setShowReport] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showMsgInput, setShowMsgInput] = useState(false);
-  const [msgText, setMsgText] = useState("");
-  const [sendingMsg, setSendingMsg] = useState(false);
-  const [msgSent, setMsgSent] = useState(false);
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [photoIdx, setPhotoIdx] = useState(0);
-  const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [photoTab, setPhotoTab] = useState<"public" | "private">("public");
-  const [privateReqSent, setPrivateReqSent] = useState(false);
-  const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
-  const [profileData, setProfileData] = useState<{
-    bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
-  }>({ followers: 0, following: 0 });
-
-  const mainPhoto = profile.photo_url || PROFILES_FALLBACK[0].photo;
-
-  // Загрузить данные профиля + галерею фото
-  useEffect(() => {
-    import("@/lib/api").then(({ postsApi, profilesApi }) => {
-      const profileReq = postsApi.getUserProfile(profile.id)
-        .then(d => {
-          const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
-          setProfileData({
-            bio: d.profile.bio,
-            tags: d.profile.tags as string[],
-            followers: p.followers ?? 0,
-            following: p.following ?? 0,
-            created_at: p.created_at,
-          });
-        })
-        .catch(() => {});
-
-      const galleryReq = profilesApi.getUserProfilePhotos(profile.id)
-        .then(r => {
-          setGalleryPhotos(r.photos);
-          const urls = r.photos.map(p => p.photo_url);
-          setPhotos([mainPhoto, ...urls].slice(0, 9));
-        })
-        .catch(() => setPhotos([mainPhoto]));
-
-      Promise.all([profileReq, galleryReq]).finally(() => setLoadingPhotos(false));
-    });
-  }, [profile.id]);
-
-  const currentPhoto = photos.length > 0 ? photos[photoIdx] : mainPhoto;
-  const totalPhotos = photos.length || 1;
-
-  const handleLike = async () => {
-    if (liked || liking) return;
-    setLiking(true);
-    try {
-      const res = await likesApi.send(profile.id);
-      setLiked(true);
-      if (res.match && res.match_id) {
-        setMatchId(res.match_id);
-        const { messagesApi } = await import("@/lib/api");
-        await messagesApi.send(res.match_id, `❤️ ${profile.name}, ты мне понравилась!`).catch(() => {});
-      }
-    } catch (e) { void e; }
-    finally { setLiking(false); }
-    onLike(profile);
-  };
-
-  const handleOpenChat = async () => {
-    if (matchId && onOpenChat) { onOpenChat(matchId); return; }
-    const { matchesApi } = await import("@/lib/api");
-    const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
-    const m = data.matches.find(x => x.partner_id === profile.id);
-    if (m && onOpenChat) { onOpenChat(m.match_id); return; }
-    // Матча нет — показываем поле ввода
-    setShowMsgInput(true);
-  };
-
-  const handleSendMsg = async () => {
-    if (!msgText.trim() || sendingMsg) return;
-    setSendingMsg(true);
-    try {
-      const { messagesApi } = await import("@/lib/api");
-      const res = await messagesApi.sendDirect(profile.id, msgText.trim());
-      setMsgSent(true);
-      setMsgText("");
-      setMatchId(res.match_id);
-      setTimeout(() => {
-        setShowMsgInput(false);
-        if (onOpenChat) onOpenChat(res.match_id);
-      }, 800);
-    } catch (e) { void e; }
-    finally { setSendingMsg(false); }
-  };
-
-  // Свайп/тап влево-вправо для смены фото
-  const touchStartY = useRef(0);
-  const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const dy = touchStartY.current - e.changedTouches[0].clientY;
-    if (dy > 40 && photoIdx < totalPhotos - 1) setPhotoIdx(i => i + 1);
-    if (dy < -40 && photoIdx > 0) setPhotoIdx(i => i - 1);
-  };
-
-  return (
-    <>
-      {showReport && <ReportModal userId={profile.id} userName={profile.name} onClose={() => setShowReport(false)} />}
-      {showMenu && (
-        <ProfileMenuSheet
-          profile={profile}
-          onClose={() => setShowMenu(false)}
-          onReport={() => setShowReport(true)}
-        />
-      )}
-
-      {/* Шит: написать сообщение */}
-      {showMsgInput && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
-          onClick={() => setShowMsgInput(false)}>
-          <div className="w-full max-w-sm px-4 pb-8 animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="rounded-3xl p-5 flex flex-col gap-4"
-              style={{ background: "rgba(22,16,32,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <div className="flex items-center gap-3">
-                <img src={profile.photo_url || ""} className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                  style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
-                <div>
-                  <p className="text-white font-semibold text-sm">{profile.name}</p>
-                  <p className="text-white/40 text-xs">Первое сообщение</p>
-                </div>
-              </div>
-              {msgSent ? (
-                <div className="flex items-center justify-center gap-2 py-2">
-                  <Icon name="Check" size={18} className="text-green-400" />
-                  <span className="text-white text-sm font-semibold">Сообщение отправлено!</span>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    value={msgText}
-                    onChange={e => setMsgText(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleSendMsg()}
-                    placeholder={`Напиши ${profile.name}...`}
-                    className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos"
-                  />
-                  <button onClick={handleSendMsg} disabled={sendingMsg || !msgText.trim()}
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                    {sendingMsg
-                      ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      : <Icon name="Send" size={18} className="text-white" />}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="absolute inset-0 z-30 flex flex-col" style={{ background: "var(--spark-dark)" }}>
-        {/* Фото — листается вверх/вниз */}
-        <div className="relative flex-shrink-0" style={{ height: "58%" }}
-          onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-          <img src={currentPhoto} className="w-full h-full object-cover transition-opacity duration-300"
-            key={currentPhoto} />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 45%, var(--spark-dark) 100%)" }} />
-
-          {/* Индикаторы фото */}
-          {totalPhotos > 1 && (
-            <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 px-4">
-              {photos.map((_, i) => (
-                <div key={i} className="h-1 rounded-full transition-all flex-1"
-                  style={{ background: i === photoIdx ? "white" : "rgba(255,255,255,0.35)", maxWidth: 60 }} />
-              ))}
-            </div>
-          )}
-
-          {/* Навигация тап по зонам */}
-          {photoIdx > 0 && (
-            <button onClick={() => setPhotoIdx(i => i - 1)}
-              className="absolute left-0 top-0 bottom-0 w-1/3" />
-          )}
-          {photoIdx < totalPhotos - 1 && (
-            <button onClick={() => setPhotoIdx(i => i + 1)}
-              className="absolute right-0 top-0 bottom-0 w-1/3" />
-          )}
-
-          {/* Кнопки верх */}
-          <button onClick={onClose} className="absolute top-4 left-4 glass-card p-2.5 z-10">
-            <Icon name="ChevronLeft" size={20} className="text-white" />
-          </button>
-          <button onClick={() => setShowMenu(true)} className="absolute top-4 right-4 glass-card p-2.5 z-10">
-            <Icon name="MoreVertical" size={20} className="text-white/80" />
-          </button>
-
-          {/* Кнопки на фото: лайк + сообщение */}
-          <div className="absolute bottom-5 right-4 flex flex-col gap-2.5 z-10">
-            <button onClick={handleLike} disabled={liked}
-              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
-              style={{ background: liked ? "rgba(255,45,120,0.9)" : "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-              <Icon name="Heart" size={22} style={{ color: liked ? "white" : "#FF2D78", fill: liked ? "white" : "transparent" }} />
-            </button>
-            <button onClick={handleOpenChat}
-              className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
-              style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-              <Icon name="MessageCircle" size={20} className="text-white" />
-            </button>
-          </div>
-
-          {/* Стрелка вверх если есть ещё фото */}
-          {!loadingPhotos && totalPhotos > 1 && photoIdx < totalPhotos - 1 && (
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 opacity-60">
-              <Icon name="ChevronUp" size={16} className="text-white animate-bounce" />
-              <span className="text-white text-[10px]">ещё фото</span>
-            </div>
-          )}
-        </div>
-
-        {/* Инфо */}
-        <div className="flex-1 overflow-y-auto pb-4 flex flex-col gap-0">
-
-          {/* Имя + онлайн */}
-          <div className="flex items-start justify-between px-5 pt-3 pb-3">
-            <div>
-              <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
-                {profile.name}{profile.age ? `, ${profile.age}` : ""}
-                {profile.verified && <span className="text-blue-400 text-base">✓</span>}
-              </h2>
-              {profile.city && (
-                <p className="text-white/60 text-sm flex items-center gap-1 mt-0.5">
-                  <Icon name="MapPin" size={13} />{profile.city}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-1">
-              {profile.online && <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80]" />}
-              <span className="text-white/50 text-xs">{profile.online ? "онлайн" : ""}</span>
-            </div>
-          </div>
-
-          {/* Вкладки Фото / Приватное фото */}
-          <div className="flex gap-2 px-5 pb-3">
-            <button onClick={() => setPhotoTab("public")}
-              className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
-              style={photoTab === "public"
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
-              📷 Фото
-            </button>
-            <button onClick={() => setPhotoTab("private")}
-              className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
-              style={photoTab === "private"
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
-              🔒 Приватное
-            </button>
-          </div>
-
-          {/* Содержимое вкладки */}
-          {photoTab === "public" ? (
-            <div className="px-5 pb-3">
-              {loadingPhotos ? (
-                <div className="flex justify-center py-6">
-                  <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
-                </div>
-              ) : galleryPhotos.length > 0 ? (
-                <div className="grid grid-cols-3 gap-1.5">
-                  {galleryPhotos.map((ph) => (
-                    <div key={ph.id} className="aspect-square rounded-xl overflow-hidden">
-                      <img src={ph.photo_url} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-white/30 text-xs text-center py-4">Публичных фото нет</p>
-              )}
-            </div>
-          ) : (
-            <div className="px-5 pb-3">
-              {!privateReqSent ? (
-                <div className="glass-card p-5 flex flex-col items-center gap-3 text-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(255,45,120,0.12)" }}>
-                    <Icon name="Lock" size={22} className="text-pink-400" />
-                  </div>
-                  <p className="text-white font-semibold text-sm">Приватные фото закрыты</p>
-                  <p className="text-white/40 text-xs leading-relaxed">
-                    Отправь запрос — {profile.name} решит, открыть ли тебе доступ
-                  </p>
-                  <button onClick={() => setPrivateReqSent(true)}
-                    className="btn-grad px-6 py-2.5 text-sm font-semibold w-full">
-                    Запросить доступ
-                  </button>
-                </div>
-              ) : (
-                <div className="glass-card p-5 flex flex-col items-center gap-2 text-center">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(74,222,128,0.12)" }}>
-                    <Icon name="Check" size={20} className="text-green-400" />
-                  </div>
-                  <p className="text-white font-semibold text-sm">Запрос отправлен</p>
-                  <p className="text-white/40 text-xs">Ожидаем ответа от {profile.name}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* О себе */}
-          <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <p className="text-white/40 text-xs uppercase tracking-widest mt-3 mb-2">О себе</p>
-            {(profileData.bio || profile.bio) ? (
-              <p className="text-white/80 text-sm leading-relaxed">
-                {profileData.bio || profile.bio}
-              </p>
-            ) : (
-              <p className="text-white/25 text-sm italic">Нет информации</p>
-            )}
-            {(profileData.tags || (profile.tags as string[]))?.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {((profileData.tags || profile.tags) as string[]).map((tag) => (
-                  <span key={tag} className="glass-card px-3 py-1 text-white/60 text-xs rounded-full">{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Подписчики / Подписки */}
-          <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex gap-4 mt-3">
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-white font-bold text-lg">{profileData.followers}</span>
-                <span className="text-white/40 text-xs">Подписчики</span>
-              </div>
-              <div className="w-px" style={{ background: "rgba(255,255,255,0.1)" }} />
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-white font-bold text-lg">{profileData.following}</span>
-                <span className="text-white/40 text-xs">Подписки</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Дата регистрации */}
-          {profileData.created_at && (
-            <div className="px-5 pb-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-white/25 text-xs mt-3 flex items-center gap-1.5">
-                <Icon name="Calendar" size={12} />
-                На LoveBloom с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Кнопки снизу */}
-        <div className="px-5 pb-6 pt-2 flex gap-3 flex-shrink-0">
-          <button onClick={onClose}
-            className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
-            <Icon name="X" size={18} />Пропустить
-          </button>
-          <button onClick={handleLike} disabled={liked}
-            className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
-            style={{ opacity: liked ? 0.7 : 1 }}>
-            <Icon name="Heart" size={18} className="text-white" />
-            {liked ? "Лайкнуто!" : "Лайкнуть"}
-          </button>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -1082,18 +314,33 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
 
         {(filters.city || filters.country || filters.online_only || filters.radius_km) && (
           <div className="px-4 pb-2 flex gap-2 flex-wrap">
-            {filters.online_only && <span className="glass-card px-2.5 py-1 text-green-400 text-xs flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-400" />Онлайн</span>}
-            {filters.city && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="MapPin" size={10} />{filters.city}</span>}
-            {filters.country && !filters.city && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="Globe" size={10} />{filters.country}</span>}
-            {filters.radius_km && <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1"><Icon name="Navigation" size={10} />{filters.radius_km} км</span>}
+            {filters.city && (
+              <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1">
+                <Icon name="MapPin" size={10} />{filters.city}
+              </span>
+            )}
+            {filters.country && !filters.city && (
+              <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1">
+                <Icon name="Globe" size={10} />{filters.country}
+              </span>
+            )}
+            {filters.online_only && (
+              <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400" />онлайн
+              </span>
+            )}
+            {filters.radius_km && (
+              <span className="glass-card px-2.5 py-1 text-white/60 text-xs flex items-center gap-1">
+                <Icon name="LocateFixed" size={10} />{filters.radius_km} км
+              </span>
+            )}
           </div>
         )}
 
         <div className="flex-1 overflow-y-auto">
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full gap-4">
-              <div className="w-12 h-12 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
-              <p className="text-white/40 text-sm">Ищем анкеты...</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
             </div>
           )}
           {!loading && profiles.length === 0 && (
