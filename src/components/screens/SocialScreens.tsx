@@ -697,6 +697,112 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
 }
 
 // ─── RealChatScreen ───────────────────────────────────────────────────────────
+// ─── Утилита: рендер специального сообщения ───────────────────────────────────
+function renderMsgContent(text: string, out: boolean) {
+  // Исчезающее фото: __VANISH__<url>
+  if (text.startsWith("__VANISH__")) {
+    const url = text.slice(10);
+    return (
+      <VanishPhoto url={url} out={out} />
+    );
+  }
+  // Локация: __LOC__<lat>,<lon>
+  if (text.startsWith("__LOC__")) {
+    const coords = text.slice(7);
+    const [lat, lon] = coords.split(",");
+    const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
+    return (
+      <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
+        <div className="w-48 h-28 rounded-xl overflow-hidden relative"
+          style={{ background: "rgba(255,255,255,0.08)" }}>
+          <img
+            src={`https://static-maps.yandex.ru/1.x/?ll=${lon},${lat}&z=14&size=300,180&l=map&pt=${lon},${lat},pm2rdl`}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute inset-0 flex items-end p-2">
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.5)" }}>
+              <Icon name="MapPin" size={12} className="text-pink-400" />
+              <span className="text-white text-[11px] font-medium">Открыть карту</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    );
+  }
+  // Видеочат: __VCALL__<accepted|pending>
+  if (text.startsWith("__VCALL__")) {
+    const status = text.slice(9);
+    return (
+      <div className="flex items-center gap-2 px-1">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: status === "accepted" ? "rgba(74,222,128,0.2)" : "rgba(255,45,120,0.2)" }}>
+          <Icon name="Video" size={16} className={status === "accepted" ? "text-green-400" : "text-pink-400"} />
+        </div>
+        <span className="text-sm">{status === "accepted" ? "Видеозвонок принят ✓" : "Запрос видеозвонка 📹"}</span>
+      </div>
+    );
+  }
+  // Награда: __AWARD__<emoji>
+  if (text.startsWith("__AWARD__")) {
+    const emoji = text.slice(9);
+    return (
+      <div className="flex flex-col items-center gap-1 py-1 px-3">
+        <span className="text-4xl">{emoji}</span>
+        <span className="text-xs text-white/60">{out ? "Ты отправил награду" : "Тебе вручена награда!"}</span>
+      </div>
+    );
+  }
+  return <span>{text}</span>;
+}
+
+// ─── Исчезающее фото ──────────────────────────────────────────────────────────
+function VanishPhoto({ url, out }: { url: string; out: boolean }) {
+  const [visible, setVisible] = useState(true);
+  const [opened, setOpened] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(60);
+
+  useEffect(() => {
+    if (!opened) return;
+    const timer = setInterval(() => {
+      setSecondsLeft(s => {
+        if (s <= 1) { clearInterval(timer); setVisible(false); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [opened]);
+
+  if (!visible) {
+    return <span className="text-white/40 text-sm italic">🔥 Фото исчезло</span>;
+  }
+  if (!opened && !out) {
+    return (
+      <button onClick={() => setOpened(true)}
+        className="flex items-center gap-2 px-1">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(255,45,120,0.2)" }}>
+          <Icon name="Timer" size={16} className="text-pink-400" />
+        </div>
+        <span className="text-sm">Исчезающее фото — нажми чтобы открыть</span>
+      </button>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="w-48 h-48 rounded-xl overflow-hidden relative">
+        <img src={url} className="w-full h-full object-cover" />
+        {opened && (
+          <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
+            style={{ background: "rgba(0,0,0,0.6)" }}>
+            🔥 {secondsLeft}с
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; currentUserId: number; onBack: () => void }) {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -706,6 +812,10 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [deleting, setDeleting] = useState<number | null>(null);
   const [showPlus, setShowPlus] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showVanishPicker, setShowVanishPicker] = useState(false);
+  const [vanishPhotos, setVanishPhotos] = useState<{ id: number; photo_url: string }[]>([]);
+  const [showAwardPicker, setShowAwardPicker] = useState(false);
+  const [geoLoading, setGeoLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -750,6 +860,35 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
     setShowPlus(false);
     sendSystem(`📷 [Фото]`);
     e.target.value = "";
+  };
+
+  // Исчезающее фото — загружаем галерею профиля
+  const openVanishPicker = () => {
+    import("@/lib/api").then(({ profilesApi }) => {
+      profilesApi.listProfilePhotos().then(r => setVanishPhotos(r.photos));
+    });
+    setShowVanishPicker(true);
+    setShowPlus(false);
+  };
+
+  const sendVanishPhoto = async (photoUrl: string) => {
+    setShowVanishPicker(false);
+    await sendSystem(`__VANISH__${photoUrl}`);
+  };
+
+  // Локация
+  const sendLocation = () => {
+    setShowPlus(false);
+    if (!navigator.geolocation) return;
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        await sendSystem(`__LOC__${pos.coords.latitude},${pos.coords.longitude}`);
+        setGeoLoading(false);
+      },
+      () => setGeoLoading(false),
+      { timeout: 8000 }
+    );
   };
 
   const handleDelete = async (msg: Message) => {
@@ -844,7 +983,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
               onTouchMove={cancelHold}>
               <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
                 style={{ cursor: "pointer" }}>
-                {msg.text}
+                {renderMsgContent(msg.text, msg.out)}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">
                 {new Date(msg.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
@@ -859,19 +998,21 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="grid grid-cols-3 gap-2 pt-3 pb-1">
               {[
-                { icon: "Camera", label: "Камера", action: () => cameraRef.current?.click() },
-                { icon: "Image", label: "Галерея", action: () => fileRef.current?.click() },
-                { icon: "Timer", label: "Исчезающее", action: () => sendSystem("🔥 [Исчезающее фото 0/1]") },
-                { icon: "MapPin", label: "Локация", action: () => sendSystem("📍 Моя локация") },
-                { icon: "Video", label: "Видеочат", action: () => sendSystem("📹 Запрос видеочата") },
-                { icon: "Trophy", label: "Награда", action: () => sendSystem("🏆 Награда для тебя!") },
-              ].map(({ icon, label, action }) => (
-                <button key={label} onClick={action}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
+                { icon: "Camera", label: "Камера", action: () => { cameraRef.current?.click(); setShowPlus(false); } },
+                { icon: "Image", label: "Галерея", action: () => { fileRef.current?.click(); setShowPlus(false); } },
+                { icon: "Timer", label: "Исчезающее", action: openVanishPicker },
+                { icon: "MapPin", label: "Локация", action: sendLocation, loading: geoLoading },
+                { icon: "Video", label: "Видеочат", action: () => sendSystem("__VCALL__pending") },
+                { icon: "Trophy", label: "Награда", action: () => { setShowAwardPicker(true); setShowPlus(false); } },
+              ].map(({ icon, label, action, loading }) => (
+                <button key={label} onClick={action} disabled={loading}
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
                   style={{ background: "rgba(255,255,255,0.07)" }}>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center"
                     style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.2),rgba(155,89,182,0.2))" }}>
-                    <Icon name={icon} size={20} style={{ color: "#FF2D78" }} />
+                    {loading
+                      ? <Icon name="Loader2" size={20} className="animate-spin" style={{ color: "#FF2D78" }} />
+                      : <Icon name={icon} size={20} style={{ color: "#FF2D78" }} />}
                   </div>
                   <span className="text-white/60 text-[11px]">{label}</span>
                 </button>
@@ -933,6 +1074,70 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           </button>
         </div>
       </div>
+
+      {/* Пикер исчезающего фото */}
+      {showVanishPicker && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
+          onClick={() => setShowVanishPicker(false)}>
+          <div className="w-full max-w-sm animate-slide-up pb-6 px-4"
+            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between py-4">
+              <p className="text-white font-semibold">Выбери исчезающее фото</p>
+              <button onClick={() => setShowVanishPicker(false)}>
+                <Icon name="X" size={20} className="text-white/50" />
+              </button>
+            </div>
+            {vanishPhotos.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8">
+                <Icon name="Image" size={32} className="text-white/20" />
+                <p className="text-white/40 text-sm text-center">В галерее нет фото. Добавь фото в профиле.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 pb-2">
+                {vanishPhotos.map(p => (
+                  <button key={p.id} onClick={() => sendVanishPhoto(p.photo_url)}
+                    className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-all relative">
+                    <img src={p.photo_url} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.3)" }}>
+                      <Icon name="Timer" size={20} className="text-pink-400" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Пикер наград */}
+      {showAwardPicker && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
+          onClick={() => setShowAwardPicker(false)}>
+          <div className="w-full max-w-sm animate-slide-up pb-6 px-4"
+            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between py-4">
+              <p className="text-white font-semibold">Выбери награду</p>
+              <button onClick={() => setShowAwardPicker(false)}>
+                <Icon name="X" size={20} className="text-white/50" />
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-3 pb-2">
+              {["🏆","💎","👑","🌹","⭐","🎯","🔥","💋","🦋","✨","🎁","🥇"].map(emoji => (
+                <button key={emoji} onClick={() => { sendSystem(`__AWARD__${emoji}`); setShowAwardPicker(false); }}
+                  className="aspect-square rounded-2xl flex items-center justify-center text-3xl active:scale-90 transition-all"
+                  style={{ background: "rgba(255,255,255,0.07)" }}>
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
