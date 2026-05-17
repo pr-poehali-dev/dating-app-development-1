@@ -711,19 +711,22 @@ function renderMsgContent(text: string, out: boolean) {
   if (text.startsWith("__LOC__")) {
     const coords = text.slice(7);
     const [lat, lon] = coords.split(",");
-    const mapUrl = `https://maps.google.com/?q=${lat},${lon}`;
+    const mapUrl = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
+    const tileUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=14&size=300x180&maptype=mapnik&markers=${lat},${lon},red-dot`;
     return (
       <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1">
-        <div className="w-48 h-28 rounded-xl overflow-hidden relative"
-          style={{ background: "rgba(255,255,255,0.08)" }}>
-          <img
-            src={`https://static-maps.yandex.ru/1.x/?ll=${lon},${lat}&z=14&size=300,180&l=map&pt=${lon},${lat},pm2rdl`}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        <div className="rounded-xl overflow-hidden relative" style={{ width: 200, height: 120, background: "rgba(255,255,255,0.08)" }}>
+          <img src={tileUrl} className="w-full h-full object-cover"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.style.display = "none";
+              const parent = img.parentElement;
+              if (parent) parent.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:rgba(255,255,255,0.5);font-size:12px"><svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 24 24' fill='none' stroke='#FF2D78' stroke-width='2'><path d='M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z'/><circle cx='12' cy='10' r='3'/></svg><span>${lat.slice(0,7)}, ${lon.slice(0,7)}</span></div>`;
+            }}
           />
           <div className="absolute inset-0 flex items-end p-2">
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.5)" }}>
-              <Icon name="MapPin" size={12} className="text-pink-400" />
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: "rgba(0,0,0,0.55)" }}>
+              <Icon name="MapPin" size={11} className="text-pink-400" />
               <span className="text-white text-[11px] font-medium">Открыть карту</span>
             </div>
           </div>
@@ -895,14 +898,20 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   // Локация
   const sendLocation = () => {
     setShowPlus(false);
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      sendSystem("📍 Геолокация недоступна");
+      return;
+    }
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         await sendSystem(`__LOC__${pos.coords.latitude},${pos.coords.longitude}`);
         setGeoLoading(false);
       },
-      () => setGeoLoading(false),
+      () => {
+        setGeoLoading(false);
+        sendSystem("📍 Доступ к геолокации запрещён. Разреши в настройках браузера (🔒 в адресной строке).");
+      },
       { timeout: 8000 }
     );
   };
