@@ -16,6 +16,8 @@ function FilterSheet({ filters, onApply, onClose }: {
   const [lookingFor, setLookingFor] = useState(filters.looking_for ?? "all");
   const [onlineOnly, setOnlineOnly] = useState(filters.online_only ?? false);
   const [city, setCity] = useState(filters.city ?? "");
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoError, setGeoError] = useState("");
 
   const apply = () => {
     const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
@@ -113,23 +115,44 @@ function FilterSheet({ filters, onApply, onClose }: {
                 placeholder="Например: Москва"
                 className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-xl px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
               <button
+                disabled={geoLoading}
                 onClick={() => {
-                  if (!navigator.geolocation) return;
-                  navigator.geolocation.getCurrentPosition(async (pos) => {
-                    try {
-                      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
-                      const d = await r.json();
-                      const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
-                      if (detected) setCity(detected);
-                    } catch { /* ignore */ }
-                  });
+                  setGeoError("");
+                  if (!navigator.geolocation) {
+                    setGeoError("Геолокация не поддерживается");
+                    return;
+                  }
+                  setGeoLoading(true);
+                  navigator.geolocation.getCurrentPosition(
+                    async (pos) => {
+                      try {
+                        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
+                        const d = await r.json();
+                        const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
+                        if (detected) setCity(detected);
+                        else setGeoError("Город не найден");
+                      } catch {
+                        setGeoError("Ошибка запроса");
+                      } finally {
+                        setGeoLoading(false);
+                      }
+                    },
+                    () => {
+                      setGeoError("Доступ запрещён");
+                      setGeoLoading(false);
+                    },
+                    { timeout: 8000 }
+                  );
                 }}
                 title="Определить город автоматически"
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 disabled:opacity-50"
                 style={{ background: "rgba(255,45,120,0.15)", border: "1px solid rgba(255,45,120,0.3)" }}>
-                <Icon name="Navigation" size={18} className="text-pink-400" />
+                {geoLoading
+                  ? <Icon name="Loader2" size={18} className="text-pink-400 animate-spin" />
+                  : <Icon name="Navigation" size={18} className="text-pink-400" />}
               </button>
             </div>
+            {geoError && <p className="text-red-400 text-xs mt-1.5">{geoError}</p>}
           </div>
         </div>
 
