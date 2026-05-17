@@ -302,10 +302,6 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="px-4 pt-4 pb-2 flex-shrink-0">
-          <div className="mb-3">
-            <h2 className="text-white font-golos font-bold text-2xl">Люди</h2>
-          </div>
-
           {/* Search bar */}
           <div className="flex gap-2">
             <div className="relative flex-1">

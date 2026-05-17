@@ -282,6 +282,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
             <img src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/51fe4ec6-6465-42e1-b1ed-df2cd706037f.jpg" className="w-8 h-8 rounded-xl object-cover" />
             <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
           </div>
+
           <button
             onClick={() => onOpenFilter(filters, handleApplyFilters)}
             className="relative glass-card px-3 py-2 flex items-center gap-2 text-white/80 text-sm">
