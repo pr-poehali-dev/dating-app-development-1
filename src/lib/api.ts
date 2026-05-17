@@ -154,6 +154,12 @@ export const profilesApi = {
       method: "POST",
       body: JSON.stringify({ photo_id }),
     }),
+
+  uploadCover: (image: string, content_type: string) =>
+    req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
+      method: "POST",
+      body: JSON.stringify({ image, content_type }),
+    }),
 };
 
 // ─── Verify ───────────────────────────────────────────────────────────────────
@@ -369,6 +375,7 @@ export interface User {
   created_at?: string;
   followers?: number;
   following?: number;
+  cover_url?: string;
 }
 
 export interface Profile {

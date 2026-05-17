@@ -276,6 +276,29 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        if action == 'upload_cover':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"covers/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            cur.execute("UPDATE users SET cover_url = %s WHERE id = %s", (cdn_url, me['id']))
+            conn.commit()
+            return resp(200, {'ok': True, 'cover_url': cdn_url})
+
         # Фото галереи другого пользователя
         if action == 'user_profile_photos':
             uid = int(params.get('user_id', 0))

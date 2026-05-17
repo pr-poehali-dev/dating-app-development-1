@@ -21,16 +21,21 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   onVerify: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
   const [localPhoto, setLocalPhoto] = useState(currentUser.photo_url || "");
+  const [localCover, setLocalCover] = useState(currentUser.cover_url || "");
   const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
-    if (currentUser.photo_url && !photoUploading) {
-      setLocalPhoto(currentUser.photo_url);
-    }
+    if (currentUser.photo_url && !photoUploading) setLocalPhoto(currentUser.photo_url);
   }, [currentUser.photo_url, photoUploading]);
+
+  useEffect(() => {
+    if (currentUser.cover_url && !coverUploading) setLocalCover(currentUser.cover_url);
+  }, [currentUser.cover_url, coverUploading]);
 
   const [settingsScreen, setSettingsScreen] = useState<
     null | "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help"
@@ -43,31 +48,15 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [galleryDeleteId, setGalleryDeleteId] = useState<number | null>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  // Тип загружаемого фото в секции «Фото»: cover | avatar | gallery
+  const [photoUploadMode, setPhotoUploadMode] = useState<"cover" | "avatar" | "gallery">("avatar");
+
   useEffect(() => {
     if ((activeTab as string) === "photos") {
       setGalleryLoading(true);
       profilesApi.listProfilePhotos().then(r => { setGalleryPhotos(r.photos); }).finally(() => setGalleryLoading(false));
     }
   }, [activeTab]);
-
-  const handleGalleryAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-    if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const base64 = ev.target?.result as string;
-      setGalleryUploading(true);
-      try {
-        const res = await profilesApi.addProfilePhoto(base64, file.type);
-        setGalleryPhotos(prev => [res.photo, ...prev]);
-      } finally {
-        setGalleryUploading(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleGalleryDelete = async (id: number) => {
     setGalleryDeleteId(id);
@@ -79,9 +68,47 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     }
   };
 
-  const handlePhotoClick = () => fileInputRef.current?.click();
+  // Универсальный обработчик выбора фото в секции «Фото»
+  const handlePhotoSectionFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      if (photoUploadMode === "cover") {
+        setCoverUploading(true);
+        setLocalCover(base64);
+        try {
+          const res = await profilesApi.uploadCover(base64, file.type);
+          setLocalCover(`${res.cover_url}?t=${Date.now()}`);
+          onProfileUpdate({ cover_url: res.cover_url });
+        } catch { setLocalCover(currentUser.cover_url || ""); }
+        finally { setCoverUploading(false); }
+      } else if (photoUploadMode === "avatar") {
+        setPhotoUploading(true);
+        setLocalPhoto(base64);
+        try {
+          const res = await profilesApi.uploadPhoto(base64, file.type);
+          setLocalPhoto(`${res.photo_url}?t=${Date.now()}`);
+          onPhotoUpdate(res.photo_url);
+        } catch { setLocalPhoto(currentUser.photo_url || ""); }
+        finally { setPhotoUploading(false); }
+      } else {
+        // gallery
+        setGalleryUploading(true);
+        try {
+          const res = await profilesApi.addProfilePhoto(base64, file.type);
+          setGalleryPhotos(prev => [res.photo, ...prev]);
+        } finally { setGalleryUploading(false); }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Загрузка аватара по клику прямо на фото (без открытия секции Фото)
+  const handleAvatarDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setPhotoError("");
@@ -94,21 +121,21 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
       setPhotoUploading(true);
       try {
         const res = await profilesApi.uploadPhoto(base64, file.type);
-        const freshUrl = `${res.photo_url}?t=${Date.now()}`;
-        setLocalPhoto(freshUrl);
+        setLocalPhoto(`${res.photo_url}?t=${Date.now()}`);
         onPhotoUpdate(res.photo_url);
       } catch (err: unknown) {
         setPhotoError(err instanceof Error ? err.message : "Ошибка загрузки");
         setLocalPhoto(currentUser.photo_url || "");
-      } finally {
-        setPhotoUploading(false);
-      }
+      } finally { setPhotoUploading(false); }
     };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
 
   const displayPhoto = localPhoto || FALLBACK_PHOTO;
+
+  // Максимум доп. фото: 1 бесплатно + 4 с подпиской
+  const maxGallery = currentUser.premium ? 5 : 1;
 
   return (
     <>
@@ -117,7 +144,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
       )}
 
       <div className="flex flex-col h-full overflow-y-auto">
-        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+        {/* Шапка */}
+        <div className="px-5 pt-5 pb-3 flex items-center justify-between flex-shrink-0">
           <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
           <div className="flex items-center gap-2">
             <button onClick={() => setEditOpen(true)}
@@ -161,24 +189,58 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           </div>
         </div>
 
-        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+        {/* Скрытые инпуты */}
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarDirectUpload} />
+        <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSectionFile} />
+        <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSectionFile} />
 
         <div className="flex flex-col items-center px-5 mb-5">
 
-          {/* Фото профиля */}
-          <div className="relative mb-3" onClick={handlePhotoClick} style={{ cursor: "pointer" }}>
-            <img src={displayPhoto} className="w-28 h-28 rounded-full object-cover transition-opacity"
-              style={{ boxShadow: "0 0 0 3px #FF2D78", opacity: photoUploading ? 0.5 : 1 }} />
-            {photoUploading ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          {/* Фото профиля + аватар */}
+          <div className="relative mb-3 w-full">
+            {/* Фон / обложка */}
+            <div className="w-full h-32 rounded-2xl overflow-hidden relative"
+              style={{ background: localCover ? undefined : "linear-gradient(135deg,#1a0030,#3d0060)" }}>
+              {localCover && (
+                <img src={localCover} className="w-full h-full object-cover"
+                  style={{ opacity: coverUploading ? 0.5 : 1 }} />
+              )}
+              {coverUploading && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                </div>
+              )}
+              {!coverUploading && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute top-2 right-2 glass-card px-2 py-1.5 flex items-center gap-1.5 text-white/70 text-xs"
+                  style={{ backdropFilter: "blur(8px)" }}>
+                  <Icon name="ImagePlus" size={13} />
+                  Фон
+                </button>
+              )}
+            </div>
+
+            {/* Аватар поверх обложки */}
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
+              <div className="relative" onClick={() => fileInputRef.current?.click()} style={{ cursor: "pointer" }}>
+                <img src={displayPhoto} className="w-24 h-24 rounded-full object-cover transition-opacity"
+                  style={{ boxShadow: "0 0 0 3px #FF2D78", border: "3px solid var(--spark-dark,#0f0a1a)", opacity: photoUploading ? 0.5 : 1 }} />
+                {photoUploading ? (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full">
+                    <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  </div>
+                ) : (
+                  <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad shadow-lg">
+                    <Icon name="Camera" size={12} className="text-white" />
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center btn-grad shadow-lg">
-                <Icon name="Camera" size={14} className="text-white" />
-              </div>
-            )}
+            </div>
           </div>
+
+          {/* Отступ под аватар */}
+          <div className="h-12" />
           {photoError && <p className="text-red-400 text-xs mb-1 text-center">{photoError}</p>}
 
           <h3 className="text-white font-bold text-xl mt-1">
@@ -188,11 +250,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           {currentUser.username && (
             <p className="text-white/40 text-sm font-mono mt-0.5">@{currentUser.username}</p>
           )}
-          <p className="text-white/50 text-sm flex items-center gap-1 mt-0.5">
-            <Icon name="MapPin" size={13} />{currentUser.city || "Город не указан"}
-          </p>
 
-          {/* Фото / Приватное фото */}
+          {/* Кнопки Фото / Приватное фото */}
           <div className="grid grid-cols-2 gap-2 w-full mt-4">
             <button onClick={() => setActiveTab(v => v === "photos" ? null : "photos" as never)}
               className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
@@ -227,43 +286,114 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </div>
           </div>
 
-          {/* Галерея фото */}
+          {/* ── Секция ФОТО ─────────────────────────────────────────── */}
           {(activeTab as string) === "photos" && (
-            <div className="w-full mt-3">
-              <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleGalleryAdd} />
-              {galleryLoading ? (
-                <div className="flex justify-center py-8">
-                  <Icon name="Loader2" size={28} className="text-white/30 animate-spin" />
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-1.5">
-                  {galleryPhotos.map(photo => (
-                    <div key={photo.id} className="aspect-square rounded-xl overflow-hidden relative group">
-                      <img src={photo.photo_url} className="w-full h-full object-cover" />
-                      <button
-                        onClick={() => handleGalleryDelete(photo.id)}
-                        disabled={galleryDeleteId === photo.id}
-                        className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        style={{ background: "rgba(0,0,0,0.6)" }}>
-                        {galleryDeleteId === photo.id
-                          ? <Icon name="Loader2" size={12} className="text-white animate-spin" />
-                          : <Icon name="X" size={12} className="text-white" />}
-                      </button>
-                    </div>
-                  ))}
-                  {galleryPhotos.length < 9 && (
+            <div className="w-full mt-3 flex flex-col gap-3">
+
+              {/* Фото на фон (обложка) */}
+              <div className="glass-card p-3">
+                <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Фото на фон</p>
+                <div className="flex gap-2 items-center">
+                  {/* Превью обложки */}
+                  <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 relative"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    {localCover
+                      ? <img src={localCover} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center">
+                          <Icon name="Image" size={20} className="text-white/20" />
+                        </div>}
+                    {coverUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1.5">
                     <button
-                      onClick={() => galleryInputRef.current?.click()}
-                      disabled={galleryUploading}
-                      className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 disabled:opacity-50"
-                      style={{ border: "2px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}>
-                      {galleryUploading
-                        ? <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
-                        : <><Icon name="Plus" size={24} className="text-white/30" /><span className="text-white/30 text-[10px]">Добавить</span></>}
+                      onClick={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
+                      disabled={coverUploading}
+                      className="btn-grad py-2 text-xs font-semibold rounded-xl disabled:opacity-50">
+                      {localCover ? "Изменить фон" : "Загрузить фон"}
                     </button>
-                  )}
+                    {localCover && (
+                      <button
+                        onClick={() => { setLocalCover(""); onProfileUpdate({ cover_url: "" }); profilesApi.updateMe({ cover_url: "" } as never).catch(() => {}); }}
+                        className="glass-card py-2 text-xs text-white/50 rounded-xl">
+                        Удалить фон
+                      </button>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Фото профиля (аватар) */}
+              <div className="glass-card p-3">
+                <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Фото профиля</p>
+                <div className="flex gap-2 items-center">
+                  <img src={displayPhoto} className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                    style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
+                  <button
+                    onClick={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
+                    disabled={photoUploading}
+                    className="flex-1 btn-grad py-2 text-xs font-semibold rounded-xl disabled:opacity-50">
+                    Изменить фото
+                  </button>
+                </div>
+              </div>
+
+              {/* Дополнительные фото */}
+              <div className="glass-card p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-white/50 text-xs uppercase tracking-widest">Дополнительные фото</p>
+                  <span className="text-white/30 text-xs">{galleryPhotos.length}/{maxGallery}</span>
+                </div>
+                {galleryLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {galleryPhotos.map(photo => (
+                      <div key={photo.id} className="aspect-square rounded-xl overflow-hidden relative group">
+                        <img src={photo.photo_url} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => handleGalleryDelete(photo.id)}
+                          disabled={galleryDeleteId === photo.id}
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          style={{ background: "rgba(0,0,0,0.6)" }}>
+                          {galleryDeleteId === photo.id
+                            ? <Icon name="Loader2" size={12} className="text-white animate-spin" />
+                            : <Icon name="X" size={12} className="text-white" />}
+                        </button>
+                      </div>
+                    ))}
+                    {galleryPhotos.length < maxGallery && (
+                      <button
+                        onClick={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
+                        disabled={galleryUploading}
+                        className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 disabled:opacity-50"
+                        style={{ border: "2px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}>
+                        {galleryUploading
+                          ? <Icon name="Loader2" size={22} className="text-white/30 animate-spin" />
+                          : <><Icon name="Plus" size={22} className="text-white/30" /><span className="text-white/30 text-[10px]">Добавить</span></>}
+                      </button>
+                    )}
+                    {galleryPhotos.length >= maxGallery && !currentUser.premium && (
+                      <button onClick={onPremium}
+                        className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all"
+                        style={{ border: "2px dashed rgba(255,45,120,0.3)", background: "rgba(255,45,120,0.05)" }}>
+                        <Icon name="Crown" size={18} className="text-pink-400" />
+                        <span className="text-pink-400 text-[9px] font-semibold text-center leading-tight">Premium<br/>+4 фото</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+                {!currentUser.premium && (
+                  <p className="text-white/25 text-[10px] mt-2 text-center">
+                    С подпиской можно добавить ещё 4 фото
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -283,19 +413,20 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </div>
           )}
 
-          {/* Рост, вес, пол, статус */}
-          <div className="glass-card w-full mt-4 flex items-center">
+          {/* Рост, вес, пол, статус, город */}
+          <div className="glass-card w-full mt-4 flex items-center flex-wrap">
             {[
               { label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
               { label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
               { label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
-              { label: "Статус", value: currentUser.relationship_status === "single" ? "Свободен" : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : "—", icon: "Heart" },
+              { label: "Статус", value: currentUser.relationship_status === "single" ? "Своб." : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : "—", icon: "Heart" },
+              { label: "Город",  value: currentUser.city || "—", icon: "MapPin" },
             ].map(({ label, value, icon }, i, arr) => (
-              <div key={label} className="flex-1 flex flex-col items-center py-3 gap-0.5 relative">
+              <div key={label} className="flex-1 flex flex-col items-center py-3 gap-0.5 relative" style={{ minWidth: "20%" }}>
                 {i < arr.length - 1 && <div className="absolute right-0 top-2 bottom-2 w-px" style={{ background: "rgba(255,255,255,0.08)" }} />}
-                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"} size={14} className="text-white/40" />
-                <span className="text-white font-bold text-sm leading-tight">{value}</span>
-                <span className="text-white/40 text-[10px]">{label}</span>
+                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"|"MapPin"} size={13} className="text-white/40" />
+                <span className="text-white font-bold text-xs leading-tight text-center truncate w-full px-1">{value}</span>
+                <span className="text-white/40 text-[9px]">{label}</span>
               </div>
             ))}
           </div>
