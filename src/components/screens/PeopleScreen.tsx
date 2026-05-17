@@ -152,7 +152,13 @@ function FilterSheet({ filters, onApply, onClose }: {
                   : <Icon name="Navigation" size={18} className="text-pink-400" />}
               </button>
             </div>
-            {geoError && <p className="text-red-400 text-xs mt-1.5">{geoError}</p>}
+            {geoError && (
+              <p className="text-red-400 text-xs mt-1.5">
+                {geoError === "Доступ запрещён"
+                  ? "Разреши доступ к геолокации в настройках браузера (🔒 слева от адресной строки)"
+                  : geoError}
+              </p>
+            )}
           </div>
         </div>
 
