@@ -136,6 +136,21 @@ export const profilesApi = {
       method: "POST",
       body: JSON.stringify({ image, content_type }),
     }),
+
+  listProfilePhotos: () =>
+    req<{ ok: boolean; photos: { id: number; photo_url: string; created_at: string }[] }>("profiles", "profile_photos_list", { method: "GET" }),
+
+  addProfilePhoto: (image: string, content_type: string) =>
+    req<{ ok: boolean; photo: { id: number; photo_url: string; created_at: string } }>("profiles", "profile_photo_add", {
+      method: "POST",
+      body: JSON.stringify({ image, content_type }),
+    }),
+
+  deleteProfilePhoto: (photo_id: number) =>
+    req<{ ok: boolean }>("profiles", "profile_photo_delete", {
+      method: "POST",
+      body: JSON.stringify({ photo_id }),
+    }),
 };
 
 // ─── Verify ───────────────────────────────────────────────────────────────────

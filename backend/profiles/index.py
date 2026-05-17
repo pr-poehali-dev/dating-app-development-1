@@ -260,6 +260,52 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        # Список фото галереи профиля
+        if action == 'profile_photos_list':
+            cur.execute("SELECT id, photo_url, created_at FROM profile_photos WHERE user_id = %s AND is_hidden = FALSE ORDER BY created_at DESC", (me['id'],))
+            rows = cur.fetchall()
+            photos = [{'id': r[0], 'photo_url': r[1], 'created_at': str(r[2])} for r in rows]
+            return resp(200, {'ok': True, 'photos': photos})
+
+        # Добавить фото в галерею профиля
+        if action == 'profile_photo_add':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            cur.execute("SELECT COUNT(*) FROM profile_photos WHERE user_id = %s AND is_hidden = FALSE", (me['id'],))
+            if cur.fetchone()[0] >= 9:
+                return resp(400, {'error': 'Максимум 9 фото в галерее'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"gallery/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            cur.execute("INSERT INTO profile_photos (user_id, photo_url) VALUES (%s, %s) RETURNING id, created_at", (me['id'], cdn_url))
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'photo': {'id': row[0], 'photo_url': cdn_url, 'created_at': str(row[1])}})
+
+        # Удалить фото из галереи профиля (мягкое удаление)
+        if action == 'profile_photo_delete':
+            body = json.loads(event.get('body') or '{}')
+            photo_id = int(body.get('photo_id', 0))
+            cur.execute("SELECT id FROM profile_photos WHERE id = %s AND user_id = %s AND is_hidden = FALSE", (photo_id, me['id']))
+            if not cur.fetchone():
+                return resp(404, {'error': 'Фото не найдено'})
+            cur.execute("UPDATE profile_photos SET is_hidden = TRUE WHERE id = %s AND user_id = %s", (photo_id, me['id']))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # Профиль пользователя по id
         if action == 'user_profile':
             uid = int(params.get('user_id', 0))

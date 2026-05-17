@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS profile_photos (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  photo_url TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);

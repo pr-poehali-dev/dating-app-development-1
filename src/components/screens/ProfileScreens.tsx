@@ -400,7 +400,49 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [settingsScreen, setSettingsScreen] = useState<
     null | "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help"
   >(null);
-  const [activeTab, setActiveTab] = useState<null | "settings" | "stats" | "shop">(null);
+  const [activeTab, setActiveTab] = useState<null | "settings" | "stats" | "shop" | "photos" | "private">(null);
+
+  const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryDeleteId, setGalleryDeleteId] = useState<number | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if ((activeTab as string) === "photos") {
+      setGalleryLoading(true);
+      profilesApi.listProfilePhotos().then(r => { setGalleryPhotos(r.photos); }).finally(() => setGalleryLoading(false));
+    }
+  }, [activeTab]);
+
+  const handleGalleryAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      setGalleryUploading(true);
+      try {
+        const res = await profilesApi.addProfilePhoto(base64, file.type);
+        setGalleryPhotos(prev => [res.photo, ...prev]);
+      } finally {
+        setGalleryUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGalleryDelete = async (id: number) => {
+    setGalleryDeleteId(id);
+    try {
+      await profilesApi.deleteProfilePhoto(id);
+      setGalleryPhotos(prev => prev.filter(p => p.id !== id));
+    } finally {
+      setGalleryDeleteId(null);
+    }
+  };
 
   const handlePhotoClick = () => fileInputRef.current?.click();
 
@@ -572,16 +614,38 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           {/* Галерея фото */}
           {(activeTab as string) === "photos" && (
             <div className="w-full mt-3">
-              {currentUser.photo_url ? (
-                <div className="grid grid-cols-3 gap-1">
-                  <div className="aspect-square rounded-xl overflow-hidden">
-                    <img src={currentUser.photo_url} className="w-full h-full object-cover" />
-                  </div>
+              <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleGalleryAdd} />
+              {galleryLoading ? (
+                <div className="flex justify-center py-8">
+                  <Icon name="Loader2" size={28} className="text-white/30 animate-spin" />
                 </div>
               ) : (
-                <div className="glass-card p-6 flex flex-col items-center gap-2 text-center">
-                  <Icon name="Image" size={28} className="text-white/20" />
-                  <p className="text-white/30 text-sm">Нет фото. Нажми на аватар чтобы добавить.</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {galleryPhotos.map(photo => (
+                    <div key={photo.id} className="aspect-square rounded-xl overflow-hidden relative group">
+                      <img src={photo.photo_url} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => handleGalleryDelete(photo.id)}
+                        disabled={galleryDeleteId === photo.id}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ background: "rgba(0,0,0,0.6)" }}>
+                        {galleryDeleteId === photo.id
+                          ? <Icon name="Loader2" size={12} className="text-white animate-spin" />
+                          : <Icon name="X" size={12} className="text-white" />}
+                      </button>
+                    </div>
+                  ))}
+                  {galleryPhotos.length < 9 && (
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      disabled={galleryUploading}
+                      className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 disabled:opacity-50"
+                      style={{ border: "2px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}>
+                      {galleryUploading
+                        ? <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
+                        : <><Icon name="Plus" size={24} className="text-white/30" /><span className="text-white/30 text-[10px]">Добавить</span></>}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
