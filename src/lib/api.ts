@@ -328,6 +328,17 @@ export const messagesApi = {
       method: "POST",
       body: JSON.stringify({ message_id }),
     }),
+
+  signalSend: (match_id: number, signal_type: string, payload: string) =>
+    req<{ ok: boolean }>("messages", "signal_send", {
+      method: "POST",
+      body: JSON.stringify({ match_id, signal_type, payload }),
+    }),
+
+  signalPoll: (match_id: number) =>
+    req<{ signals: { id: number; from_user_id: number; signal_type: string; payload: string }[] }>(
+      "messages", "signal_poll", {}, { match_id: String(match_id) }
+    ),
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────

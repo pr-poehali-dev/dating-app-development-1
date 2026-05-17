@@ -119,6 +119,49 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'match_id': match_id, 'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1])})
 
+        # WebRTC сигналинг: отправить сигнал (offer/answer/ice)
+        if action == 'signal_send':
+            body = json.loads(event.get('body') or '{}')
+            match_id = int(body.get('match_id', 0))
+            signal_type = body.get('signal_type', '')
+            payload = body.get('payload', '')
+            if not match_id or not signal_type or not payload:
+                return resp(400, {'error': 'match_id, signal_type, payload обязательны'})
+            cur.execute(
+                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+            )
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нет доступа'})
+            cur.execute(
+                "INSERT INTO webrtc_signals (match_id, from_user_id, signal_type, payload) VALUES (%s, %s, %s, %s) RETURNING id",
+                (match_id, me['id'], signal_type, payload)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # WebRTC сигналинг: получить новые сигналы (polling)
+        if action == 'signal_poll':
+            match_id = int(params.get('match_id', 0))
+            cur.execute(
+                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+            )
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нет доступа'})
+            cur.execute(
+                "SELECT id, from_user_id, signal_type, payload FROM webrtc_signals WHERE match_id = %s AND from_user_id != %s AND is_consumed = FALSE ORDER BY created_at ASC",
+                (match_id, me['id'])
+            )
+            rows = cur.fetchall()
+            signals = [{'id': r[0], 'from_user_id': r[1], 'signal_type': r[2], 'payload': r[3]} for r in rows]
+            if rows:
+                ids = [r[0] for r in rows]
+                cur.execute(
+                    "UPDATE webrtc_signals SET is_consumed = TRUE WHERE id = ANY(%s)",
+                    (ids,)
+                )
+                conn.commit()
+            return resp(200, {'signals': signals})
+
         if action == 'delete':
             body = json.loads(event.get('body') or '{}')
             msg_id = int(body.get('message_id', 0))

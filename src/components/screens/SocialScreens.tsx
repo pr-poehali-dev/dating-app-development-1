@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { matchesApi, likesApi, messagesApi, postsApi, liveApi, type User, type Match, type Message, type LikedBy, type Post, type PostComment, type LiveStream, type LiveMessage } from "@/lib/api";
 import { ReportModal } from "@/components/screens/SwipeScreens";
+import VideoCall from "@/components/VideoCall";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -816,6 +817,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [vanishPhotos, setVanishPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [showAwardPicker, setShowAwardPicker] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
+  const [videoCall, setVideoCall] = useState<{ isInitiator: boolean } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -833,6 +835,20 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       if (m) { setPartnerName(m.name); setPartnerPhoto(m.photo_url || FALLBACK_PHOTO); }
     }).catch(() => {});
   }, [matchId]);
+
+  // Polling входящих видеозвонков
+  useEffect(() => {
+    if (videoCall) return;
+    const interval = setInterval(async () => {
+      try {
+        const { signals } = await messagesApi.signalPoll(matchId);
+        if (signals.some(s => s.signal_type === "offer")) {
+          setVideoCall({ isInitiator: false });
+        }
+      } catch { /* ignore */ }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [matchId, videoCall]);
 
   const send = async () => {
     if (!input.trim()) return;
@@ -1002,7 +1018,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 { icon: "Image", label: "Галерея", action: () => { fileRef.current?.click(); setShowPlus(false); } },
                 { icon: "Timer", label: "Исчезающее", action: openVanishPicker },
                 { icon: "MapPin", label: "Локация", action: sendLocation, loading: geoLoading },
-                { icon: "Video", label: "Видеочат", action: () => sendSystem("__VCALL__pending") },
+                { icon: "Video", label: "Видеочат", action: () => { setShowPlus(false); setVideoCall({ isInitiator: true }); } },
                 { icon: "Trophy", label: "Награда", action: () => { setShowAwardPicker(true); setShowPlus(false); } },
               ].map(({ icon, label, action, loading }) => (
                 <button key={label} onClick={action} disabled={loading}
@@ -1074,6 +1090,17 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           </button>
         </div>
       </div>
+
+      {/* Видеозвонок */}
+      {videoCall && (
+        <VideoCall
+          matchId={matchId}
+          partnerName={partnerName}
+          partnerPhoto={partnerPhoto}
+          isInitiator={videoCall.isInitiator}
+          onClose={() => setVideoCall(null)}
+        />
+      )}
 
       {/* Пикер исчезающего фото */}
       {showVanishPicker && (
