@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { postsApi, liveApi, type Post, type PostComment, type LiveStream, type User } from "@/lib/api";
+import { postsApi, liveApi, type Post, type PostComment, type LiveStream, type User, type Profile } from "@/lib/api";
+import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 
 // ─── DeleteConfirm ────────────────────────────────────────────────────────────
 function DeleteConfirm({ onConfirm, onCancel, loading }: {
@@ -174,12 +175,13 @@ function CommentSheet({ post, onClose }: { post: Post; onClose: () => void }) {
 }
 
 // ─── PostCard ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
+function PostCard({ post, currentUserId, onLike, onComment, onDelete, onProfileClick }: {
   post: Post;
   currentUserId: number;
   onLike: (p: Post) => void;
   onComment: (p: Post) => void;
   onDelete: (p: Post) => void;
+  onProfileClick: (profile: Profile) => void;
 }) {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [count, setCount] = useState(post.likes_count);
@@ -263,11 +265,13 @@ function PostCard({ post, currentUserId, onLike, onComment, onDelete }: {
       <div className="flex flex-col" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         {/* Author row */}
         <div className="flex items-center gap-3 px-4 py-3">
-          <div className="relative">
+          <button
+            className="relative"
+            onClick={() => onProfileClick({ id: post.user_id, name: post.author_name, photo_url: post.author_photo } as Profile)}>
             <img src={post.author_photo || FALLBACK_PHOTO}
               className="w-9 h-9 rounded-full object-cover"
               style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
-          </div>
+          </button>
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm">{post.author_name}</p>
             <p className="text-white/40 text-[10px]">{timeAgo(post.created_at)}</p>
@@ -373,6 +377,7 @@ export function HomeScreen({ currentUser, onGoLive }: {
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [showStoryMsg, setShowStoryMsg] = useState(false);
+  const [viewProfile, setViewProfile] = useState<Profile | null>(null);
 
   // Публикация фото прямо с главного экрана
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -428,6 +433,14 @@ export function HomeScreen({ currentUser, onGoLive }: {
 
   return (
     <>
+      {viewProfile && (
+        <DiscoverProfileModal
+          profile={viewProfile}
+          onClose={() => setViewProfile(null)}
+          onLike={() => {}}
+        />
+      )}
+
       {/* Скрытый input для выбора файла */}
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
 
@@ -530,6 +543,7 @@ export function HomeScreen({ currentUser, onGoLive }: {
                     onLike={handleLike}
                     onComment={(p) => setCommentPost(p)}
                     onDelete={(p) => setPosts((prev) => prev.filter((x) => x.id !== p.id))}
+                    onProfileClick={setViewProfile}
                   />
                 ))
               )}
