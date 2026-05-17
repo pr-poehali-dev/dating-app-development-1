@@ -213,12 +213,23 @@ def handler(event: dict, context) -> dict:
 
         if action == 'update_me':
             body = json.loads(event.get('body') or '{}')
-            allowed = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'gender', 'looking_for', 'height', 'weight', 'relationship_status']
+            scalar = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'gender', 'looking_for', 'height', 'weight', 'relationship_status']
             fields, values = [], []
-            for key in allowed:
+            for key in scalar:
                 if key in body:
                     fields.append(f"{key} = %s")
                     values.append(body[key])
+            # tags — передаём как PostgreSQL text[]
+            if 'tags' in body:
+                tags_val = body['tags']
+                if isinstance(tags_val, list):
+                    # Строим литерал вида ARRAY['a','b']
+                    safe_tags = [str(t).replace("'", "''") for t in tags_val]
+                    arr_literal = "ARRAY[" + ",".join(f"'{t}'" for t in safe_tags) + "]" if safe_tags else "ARRAY[]::text[]"
+                    fields.append(f"tags = {arr_literal}")
+                else:
+                    fields.append("tags = %s")
+                    values.append(tags_val)
             # username — отдельно с проверкой уникальности
             if 'username' in body:
                 uname = body['username'].strip().lower()[:50]
@@ -233,8 +244,13 @@ def handler(event: dict, context) -> dict:
                     values.append(uname)
             if fields:
                 values.append(me['id'])
-                cur.execute(f"UPDATE users SET {', '.join(fields)} WHERE id = %s", values)
-                conn.commit()
+                try:
+                    cur.execute(f"UPDATE users SET {', '.join(fields)} WHERE id = %s", values)
+                    conn.commit()
+                except Exception as e:
+                    conn.rollback()
+                    print(f"[update_me error] {e}")
+                    return resp(500, {'error': f'Ошибка сохранения: {str(e)}'})
             return resp(200, {'ok': True})
 
         if action == 'upload_photo':
