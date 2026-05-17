@@ -604,15 +604,16 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           )}
 
           {/* Рост, вес, пол, статус */}
-          <div className="grid grid-cols-4 gap-2 w-full mt-4">
+          <div className="glass-card w-full mt-4 flex items-center">
             {[
               { label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
               { label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
               { label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
               { label: "Статус", value: currentUser.relationship_status === "single" ? "Свободен" : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : "—", icon: "Heart" },
-            ].map(({ label, value, icon }) => (
-              <div key={label} className="glass-card p-2.5 flex flex-col items-center gap-1">
-                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"} size={15} className="text-white/40" />
+            ].map(({ label, value, icon }, i, arr) => (
+              <div key={label} className="flex-1 flex flex-col items-center py-3 gap-0.5 relative">
+                {i < arr.length - 1 && <div className="absolute right-0 top-2 bottom-2 w-px" style={{ background: "rgba(255,255,255,0.08)" }} />}
+                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"} size={14} className="text-white/40" />
                 <span className="text-white font-bold text-sm leading-tight">{value}</span>
                 <span className="text-white/40 text-[10px]">{label}</span>
               </div>
