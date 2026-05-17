@@ -140,6 +140,9 @@ export const profilesApi = {
   listProfilePhotos: () =>
     req<{ ok: boolean; photos: { id: number; photo_url: string; created_at: string }[] }>("profiles", "profile_photos_list", { method: "GET" }),
 
+  getUserProfilePhotos: (user_id: number) =>
+    req<{ ok: boolean; photos: { id: number; photo_url: string }[] }>("profiles", "user_profile_photos", { method: "GET" }, { user_id: String(user_id) }),
+
   addProfilePhoto: (image: string, content_type: string) =>
     req<{ ok: boolean; photo: { id: number; photo_url: string; created_at: string } }>("profiles", "profile_photo_add", {
       method: "POST",

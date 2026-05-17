@@ -637,19 +637,18 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [photoTab, setPhotoTab] = useState<"public" | "private">("public");
   const [privateReqSent, setPrivateReqSent] = useState(false);
+  const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [profileData, setProfileData] = useState<{
     bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
   }>({ followers: 0, following: 0 });
 
   const mainPhoto = profile.photo_url || PROFILES_FALLBACK[0].photo;
 
-  // Загрузить посты пользователя + доп данные профиля
+  // Загрузить данные профиля + галерею фото
   useEffect(() => {
-    import("@/lib/api").then(({ postsApi }) => {
-      postsApi.getUserProfile(profile.id)
+    import("@/lib/api").then(({ postsApi, profilesApi }) => {
+      const profileReq = postsApi.getUserProfile(profile.id)
         .then(d => {
-          const postPhotos = d.posts.slice(0, 2).map(p => p.photo_url);
-          setPhotos([mainPhoto, ...postPhotos].slice(0, 3));
           const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
           setProfileData({
             bio: d.profile.bio,
@@ -659,8 +658,17 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
             created_at: p.created_at,
           });
         })
-        .catch(() => setPhotos([mainPhoto]))
-        .finally(() => setLoadingPhotos(false));
+        .catch(() => {});
+
+      const galleryReq = profilesApi.getUserProfilePhotos(profile.id)
+        .then(r => {
+          setGalleryPhotos(r.photos);
+          const urls = r.photos.map(p => p.photo_url);
+          setPhotos([mainPhoto, ...urls].slice(0, 9));
+        })
+        .catch(() => setPhotos([mainPhoto]));
+
+      Promise.all([profileReq, galleryReq]).finally(() => setLoadingPhotos(false));
     });
   }, [profile.id]);
 
@@ -877,11 +885,15 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
           {/* Содержимое вкладки */}
           {photoTab === "public" ? (
             <div className="px-5 pb-3">
-              {photos.length > 1 ? (
-                <div className="grid grid-cols-3 gap-1">
-                  {photos.map((ph, i) => (
-                    <div key={i} className="aspect-square rounded-xl overflow-hidden">
-                      <img src={ph} className="w-full h-full object-cover" />
+              {loadingPhotos ? (
+                <div className="flex justify-center py-6">
+                  <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
+                </div>
+              ) : galleryPhotos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {galleryPhotos.map((ph) => (
+                    <div key={ph.id} className="aspect-square rounded-xl overflow-hidden">
+                      <img src={ph.photo_url} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>

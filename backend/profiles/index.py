@@ -260,6 +260,14 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        # Фото галереи другого пользователя
+        if action == 'user_profile_photos':
+            uid = int(params.get('user_id', 0))
+            cur.execute("SELECT id, photo_url FROM profile_photos WHERE user_id = %s AND is_hidden = FALSE ORDER BY created_at DESC", (uid,))
+            rows = cur.fetchall()
+            photos = [{'id': r[0], 'photo_url': r[1]} for r in rows]
+            return resp(200, {'ok': True, 'photos': photos})
+
         # Список фото галереи профиля
         if action == 'profile_photos_list':
             cur.execute("SELECT id, photo_url, created_at FROM profile_photos WHERE user_id = %s AND is_hidden = FALSE ORDER BY created_at DESC", (me['id'],))
