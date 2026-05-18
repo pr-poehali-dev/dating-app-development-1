@@ -431,9 +431,17 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
                       {/* Name + age */}
                       {!isLocked && (
                         <div className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5">
-                          <p className="text-white text-[11px] font-semibold leading-tight truncate">
-                            {p.name}{p.age ? `, ${p.age}` : ""}
-                          </p>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <p className="text-white text-[11px] font-semibold leading-tight truncate">
+                              {p.name}{p.age ? `, ${p.age}` : ""}
+                            </p>
+                            {p.premium && (
+                              <span className="text-[8px] px-1 py-0.5 rounded-full font-bold leading-none flex-shrink-0"
+                                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
+                                ✨
+                              </span>
+                            )}
+                          </div>
                           {p.city && (
                             <p className="text-white/50 text-[9px] truncate">{p.city}</p>
                           )}

@@ -140,6 +140,12 @@ function SwipeCard({
               <Icon name="Check" size={12} className="text-white" />
             </div>
           )}
+          {profile.premium && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none"
+              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
+              ✨ GOLD
+            </span>
+          )}
           {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_6px_#00E676]" />}
         </div>
         <div className="flex items-center gap-1 text-white/70 text-sm mb-3">

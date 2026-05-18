@@ -388,6 +388,7 @@ export interface Profile {
   tags?: string[];
   verified?: boolean;
   online?: boolean;
+  premium?: boolean;
 }
 
 export interface LikedBy {

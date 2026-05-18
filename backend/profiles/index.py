@@ -181,14 +181,14 @@ def handler(event: dict, context) -> dict:
 
             where_clause = " AND ".join(conditions)
             cur.execute(f"""
-                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username{geo_select}
+                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium{geo_select}
                 FROM users u
                 WHERE {where_clause}
                 ORDER BY {geo_order}
                 LIMIT 60
             """)
             rows = cur.fetchall()
-            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username']
+            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium']
             if geo_select:
                 cols.append('distance_km')
             profiles_list = []
