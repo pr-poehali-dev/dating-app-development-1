@@ -8,8 +8,13 @@ export { VerifyScreen, AdminVerifyScreen } from "@/components/screens/VerifyScre
 
 import { EditProfileModal } from "@/components/screens/EditProfileModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
+import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
+import { ProfilePhotoSection } from "@/components/screens/profile/ProfilePhotoSection";
+import { ProfileStatsBar } from "@/components/screens/profile/ProfileStatsBar";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
+type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private";
+type StatKey = "height" | "weight" | "gender" | "status" | "city";
 
 // ─── RealProfileScreen ────────────────────────────────────────────────────────
 export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, onProfileUpdate, onVerify }: {
@@ -22,6 +27,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
   const [photoUploading, setPhotoUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [photoError, setPhotoError] = useState("");
@@ -37,22 +44,18 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     if (currentUser.cover_url && !coverUploading) setLocalCover(currentUser.cover_url);
   }, [currentUser.cover_url, coverUploading]);
 
-  const [settingsScreen, setSettingsScreen] = useState<
-    null | "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help"
-  >(null);
-  const [activeTab, setActiveTab] = useState<null | "settings" | "stats" | "shop" | "photos" | "private">(null);
+  const [settingsScreen, setSettingsScreen] = useState<null | SettingsScreen>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>(null);
 
   const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
   const [galleryDeleteId, setGalleryDeleteId] = useState<number | null>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
 
-  // Тип загружаемого фото в секции «Фото»: cover | avatar | gallery
   const [photoUploadMode, setPhotoUploadMode] = useState<"cover" | "avatar" | "gallery">("avatar");
 
   useEffect(() => {
-    if ((activeTab as string) === "photos") {
+    if (activeTab === "photos") {
       setGalleryLoading(true);
       profilesApi.listProfilePhotos().then(r => { setGalleryPhotos(r.photos); }).finally(() => setGalleryLoading(false));
     }
@@ -96,7 +99,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         } catch { setLocalPhoto(currentUser.photo_url || ""); }
         finally { setPhotoUploading(false); }
       } else {
-        // gallery
         setGalleryUploading(true);
         try {
           const res = await profilesApi.addProfilePhoto(base64, file.type);
@@ -107,7 +109,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     reader.readAsDataURL(file);
   };
 
-  // Загрузка аватара по клику прямо на фото (без открытия секции Фото)
+  // Загрузка аватара по клику прямо на фото
   const handleAvatarDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -132,16 +134,11 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     e.target.value = "";
   };
 
-  const displayPhoto = localPhoto || FALLBACK_PHOTO;
-
-  // Максимум доп. фото: 1 бесплатно + 4 с подпиской
-  const maxGallery = currentUser.premium ? 5 : 1;
-
   // Редактирование статов
-  const [statEdit, setStatEdit] = useState<null | "height" | "weight" | "gender" | "status" | "city">(null);
+  const [statEdit, setStatEdit] = useState<StatKey | null>(null);
   const [statValue, setStatValue] = useState("");
 
-  const openStat = (key: typeof statEdit) => {
+  const openStat = (key: StatKey) => {
     if (key === "height") setStatValue(String(currentUser.height || ""));
     else if (key === "weight") setStatValue(String(currentUser.weight || ""));
     else if (key === "gender") setStatValue(currentUser.gender || "");
@@ -172,392 +169,78 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
       )}
 
       <div className="flex flex-col h-full overflow-y-auto">
-        {/* Шапка */}
-        <div className="px-5 pt-5 pb-3 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-white font-golos font-bold text-2xl">Профиль</h2>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setEditOpen(true)}
-              className="glass-card px-3 py-1.5 flex items-center gap-1.5 text-white/70 text-sm hover:text-white transition-colors">
-              <Icon name="Pencil" size={14} />Изменить
-            </button>
-            <div className="relative">
-              <button onClick={() => setActiveTab(v => v === "settings" ? null : "settings")}
-                className="glass-card p-2 flex items-center justify-center transition-colors"
-                style={activeTab === "settings" ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" } : {}}>
-                <Icon name="MoreVertical" size={18} className="text-white/70" />
-              </button>
-              {activeTab === "settings" && (
-                <div className="absolute right-0 top-10 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[220px]"
-                  style={{ background: "rgba(22,16,36,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                  {[
-                    { icon: "BadgeCheck", label: currentUser.verified ? "✓ Верифицирован" : "Верификация", action: () => { onVerify(); setActiveTab(null); }, accent: currentUser.verified ? "blue" : "" },
-                    { icon: "User",       label: "Настройки аккаунта",   action: () => { setSettingsScreen("account"); setActiveTab(null); } },
-                    { icon: "Shield",     label: "Конфиденциальность",   action: () => { setSettingsScreen("privacy"); setActiveTab(null); } },
-                    { icon: "Lock",       label: "Приватные фото",       action: () => { setSettingsScreen("private_photos"); setActiveTab(null); } },
-                    { icon: "Ban",        label: "Заблокированные",      action: () => { setSettingsScreen("blocked"); setActiveTab(null); } },
-                    { icon: "Bell",       label: "Уведомления",          action: () => { setSettingsScreen("notifications"); setActiveTab(null); } },
-                    { icon: "Palette",    label: "Внешний вид",          action: () => { setSettingsScreen("appearance"); setActiveTab(null); } },
-                    { icon: "Volume2",    label: "Звуки",                action: () => { setSettingsScreen("sounds"); setActiveTab(null); } },
-                    { icon: "Video",      label: "Видеочат",             action: () => { setSettingsScreen("videochat"); setActiveTab(null); } },
-                    { icon: "HelpCircle", label: "Помощь и поддержка",  action: () => { setSettingsScreen("help"); setActiveTab(null); } },
-                    { icon: "LogOut",     label: "Выйти",                action: () => { onLogout(); setActiveTab(null); }, danger: true },
-                  ].map(({ icon, label, action, danger, accent }, i, arr) => (
-                    <button key={label} onClick={action}
-                      className="flex items-center gap-3 px-4 py-3 w-full hover:bg-white/5 transition-colors text-left"
-                      style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                      <Icon name={icon as "BadgeCheck"|"User"|"Shield"|"Lock"|"Ban"|"Bell"|"Palette"|"Volume2"|"Video"|"HelpCircle"|"LogOut"} size={16}
-                        className={danger ? "text-red-400" : accent === "blue" ? "text-blue-400" : "text-white/50"} />
-                      <span className={`${danger ? "text-red-400" : accent === "blue" ? "text-blue-400" : "text-white/80"} text-sm flex-1`}>{label}</span>
-                      {!danger && <Icon name="ChevronRight" size={13} className="text-white/20" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+
+        {/* Шапка с меню */}
+        <ProfileTopBar
+          activeTab={activeTab}
+          currentUser={currentUser}
+          onEditOpen={() => setEditOpen(true)}
+          onTabChange={setActiveTab}
+          onSettingsScreen={(s) => setSettingsScreen(s)}
+          onLogout={onLogout}
+          onVerify={onVerify}
+        />
 
         {/* Скрытые инпуты */}
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleAvatarDirectUpload} />
         <input ref={coverInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSectionFile} />
         <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSectionFile} />
 
-        <div className="flex flex-col items-center px-5 mb-5">
+        {/* Обложка, аватар, ник, имя, кнопки фото, Premium-баннер */}
+        <ProfileHeader
+          currentUser={currentUser}
+          localPhoto={localPhoto}
+          localCover={localCover}
+          photoUploading={photoUploading}
+          coverUploading={coverUploading}
+          photoError={photoError}
+          activeTab={activeTab}
+          onEditOpen={() => setEditOpen(true)}
+          onAvatarClick={() => fileInputRef.current?.click()}
+          onCoverClick={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
+          onTabChange={setActiveTab}
+          onSettingsScreen={(s) => setSettingsScreen(s)}
+          onLogout={onLogout}
+          onVerify={onVerify}
+          onPremium={onPremium}
+        />
 
-          {/* Фото профиля + аватар */}
-          <div className="relative mb-3 w-full">
-            {/* Фон / обложка */}
-            <div className="w-full h-32 rounded-2xl overflow-hidden relative"
-              style={{ background: localCover ? undefined : "linear-gradient(135deg,#1a0030,#3d0060)" }}>
-              {localCover && (
-                <img src={localCover} className="w-full h-full object-cover"
-                  style={{ opacity: coverUploading ? 0.5 : 1 }} />
-              )}
-              {coverUploading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                </div>
-              )}
-              {!coverUploading && (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute top-2 right-2 glass-card px-2 py-1.5 flex items-center gap-1.5 text-white/70 text-xs"
-                  style={{ backdropFilter: "blur(8px)" }}>
-                  <Icon name="ImagePlus" size={13} />
-                  Фон
-                </button>
-              )}
-            </div>
+        <div className="flex flex-col items-center px-5">
+          {/* Секция Фото / Приватные фото */}
+          <ProfilePhotoSection
+            currentUser={currentUser}
+            localPhoto={localPhoto}
+            localCover={localCover}
+            photoUploading={photoUploading}
+            coverUploading={coverUploading}
+            galleryPhotos={galleryPhotos}
+            galleryLoading={galleryLoading}
+            galleryUploading={galleryUploading}
+            galleryDeleteId={galleryDeleteId}
+            onCoverUpload={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
+            onCoverDelete={() => {
+              setLocalCover("");
+              onProfileUpdate({ cover_url: "" });
+              profilesApi.updateMe({ cover_url: "" } as never).catch(() => {});
+            }}
+            onAvatarUpload={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
+            onGalleryAdd={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
+            onGalleryDelete={handleGalleryDelete}
+            onPremium={onPremium}
+            onSettingsPrivate={() => setSettingsScreen("private_photos")}
+            activeTab={activeTab as string | null}
+          />
 
-            {/* Аватар поверх обложки */}
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-              <div className="relative" onClick={() => fileInputRef.current?.click()} style={{ cursor: "pointer" }}>
-                <img src={displayPhoto} className="w-24 h-24 rounded-full object-cover transition-opacity"
-                  style={{ boxShadow: "0 0 0 3px #FF2D78", border: "3px solid var(--spark-dark,#0f0a1a)", opacity: photoUploading ? 0.5 : 1 }} />
-                {photoUploading ? (
-                  <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                    <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  </div>
-                ) : (
-                  <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full flex items-center justify-center btn-grad shadow-lg">
-                    <Icon name="Camera" size={12} className="text-white" />
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Отступ под аватар */}
-          <div className="h-12" />
-          {photoError && <p className="text-red-400 text-xs mb-1 text-center">{photoError}</p>}
-
-          <div className="flex items-center gap-1.5 mt-1">
-            {currentUser.username && (
-              <p className="text-white/40 text-xs font-mono">@{currentUser.username}</p>
-            )}
-            {currentUser.premium && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
-                ✨ GOLD
-              </span>
-            )}
-          </div>
-          <h3 className="text-white font-bold text-xl mt-0.5">
-            {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
-            {currentUser.verified && <span className="ml-1.5 text-blue-400 text-base">✓</span>}
-          </h3>
-
-          {/* Кнопки Фото / Приватное фото */}
-          <div className="grid grid-cols-2 gap-2 w-full mt-4">
-            <button onClick={() => setActiveTab(v => v === "photos" ? null : "photos" as never)}
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
-              style={(activeTab as string) === "photos"
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
-                : { background: "rgba(255,255,255,0.08)" }}>
-              <Icon name="Image" size={18} className={(activeTab as string) === "photos" ? "text-white" : "text-white/60"} />
-              <span className={`text-sm font-semibold ${(activeTab as string) === "photos" ? "text-white" : "text-white/60"}`}>Фото</span>
-            </button>
-            <button onClick={() => setActiveTab(v => v === "private" ? null : "private" as never)}
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
-              style={(activeTab as string) === "private"
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
-                : { background: "rgba(255,255,255,0.08)" }}>
-              <Icon name="Lock" size={18} className={(activeTab as string) === "private" ? "text-white" : "text-white/60"} />
-              <span className={`text-sm font-semibold ${(activeTab as string) === "private" ? "text-white" : "text-white/60"}`}>Приватное фото</span>
-            </button>
-          </div>
-
-          {/* Premium баннер */}
-          <div className="w-full mt-3 p-4 rounded-2xl cursor-pointer"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-white font-bold">LoveBloom Premium</span>
-                  <span className="premium-badge">✨ GOLD</span>
-                </div>
-                <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
-              </div>
-              <Icon name="ChevronRight" size={20} className="text-white" />
-            </div>
-          </div>
-
-          {/* ── Секция ФОТО ─────────────────────────────────────────── */}
-          {(activeTab as string) === "photos" && (
-            <div className="w-full mt-3 flex flex-col gap-3">
-
-              {/* Фото на фон (обложка) */}
-              <div className="glass-card p-3">
-                <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Фото на фон</p>
-                <div className="flex gap-2 items-center">
-                  {/* Превью обложки */}
-                  <div className="w-20 h-14 rounded-xl overflow-hidden flex-shrink-0 relative"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                    {localCover
-                      ? <img src={localCover} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full flex items-center justify-center">
-                          <Icon name="Image" size={20} className="text-white/20" />
-                        </div>}
-                    {coverUploading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    <button
-                      onClick={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
-                      disabled={coverUploading}
-                      className="btn-grad py-2 text-xs font-semibold rounded-xl disabled:opacity-50">
-                      {localCover ? "Изменить фон" : "Загрузить фон"}
-                    </button>
-                    {localCover && (
-                      <button
-                        onClick={() => { setLocalCover(""); onProfileUpdate({ cover_url: "" }); profilesApi.updateMe({ cover_url: "" } as never).catch(() => {}); }}
-                        className="glass-card py-2 text-xs text-white/50 rounded-xl">
-                        Удалить фон
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Фото профиля (аватар) */}
-              <div className="glass-card p-3">
-                <p className="text-white/50 text-xs uppercase tracking-widest mb-2">Фото профиля</p>
-                <div className="flex gap-2 items-center">
-                  <img src={displayPhoto} className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-                    style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
-                  <button
-                    onClick={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
-                    disabled={photoUploading}
-                    className="flex-1 btn-grad py-2 text-xs font-semibold rounded-xl disabled:opacity-50">
-                    Изменить фото
-                  </button>
-                </div>
-              </div>
-
-              {/* Дополнительные фото */}
-              <div className="glass-card p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-white/50 text-xs uppercase tracking-widest">Дополнительные фото</p>
-                  <span className="text-white/30 text-xs">{galleryPhotos.length}/{maxGallery}</span>
-                </div>
-                {galleryLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {galleryPhotos.map(photo => (
-                      <div key={photo.id} className="aspect-square rounded-xl overflow-hidden relative group">
-                        <img src={photo.photo_url} className="w-full h-full object-cover" />
-                        <button
-                          onClick={() => handleGalleryDelete(photo.id)}
-                          disabled={galleryDeleteId === photo.id}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ background: "rgba(0,0,0,0.6)" }}>
-                          {galleryDeleteId === photo.id
-                            ? <Icon name="Loader2" size={12} className="text-white animate-spin" />
-                            : <Icon name="X" size={12} className="text-white" />}
-                        </button>
-                      </div>
-                    ))}
-                    {galleryPhotos.length < maxGallery && (
-                      <button
-                        onClick={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
-                        disabled={galleryUploading}
-                        className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 disabled:opacity-50"
-                        style={{ border: "2px dashed rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.04)" }}>
-                        {galleryUploading
-                          ? <Icon name="Loader2" size={22} className="text-white/30 animate-spin" />
-                          : <><Icon name="Plus" size={22} className="text-white/30" /><span className="text-white/30 text-[10px]">Добавить</span></>}
-                      </button>
-                    )}
-                    {galleryPhotos.length >= maxGallery && !currentUser.premium && (
-                      <button onClick={onPremium}
-                        className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1 active:scale-95 transition-all"
-                        style={{ border: "2px dashed rgba(255,45,120,0.3)", background: "rgba(255,45,120,0.05)" }}>
-                        <Icon name="Crown" size={18} className="text-pink-400" />
-                        <span className="text-pink-400 text-[9px] font-semibold text-center leading-tight">Premium<br/>+4 фото</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-                {!currentUser.premium && (
-                  <p className="text-white/25 text-[10px] mt-2 text-center">
-                    С подпиской можно добавить ещё 4 фото
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Приватные фото */}
-          {(activeTab as string) === "private" && (
-            <div className="w-full mt-3 glass-card p-5 flex flex-col items-center gap-2 text-center">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,45,120,0.12)" }}>
-                <Icon name="Lock" size={22} className="text-pink-400" />
-              </div>
-              <p className="text-white font-semibold text-sm">Приватный альбом</p>
-              <p className="text-white/40 text-xs">Добавь фото — они будут видны только тем, кому ты откроешь доступ</p>
-              <button onClick={() => setSettingsScreen("private_photos")}
-                className="btn-grad px-5 py-2 text-xs font-semibold mt-1">
-                Настроить доступ
-              </button>
-            </div>
-          )}
-
-          {/* Рост, вес, пол, статус, город */}
-          <div className="glass-card w-full mt-4 flex items-center flex-wrap">
-            {([
-              { key: "height", label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
-              { key: "weight", label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
-              { key: "gender", label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
-              { key: "status", label: "Статус", value: currentUser.relationship_status === "single" ? "Своб." : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : currentUser.relationship_status === "open" ? "Откр." : currentUser.relationship_status === "hidden" ? "Скрыт" : "—", icon: "Heart" },
-              { key: "city",   label: "Город",  value: currentUser.city || "—", icon: "MapPin" },
-            ] as { key: "height"|"weight"|"gender"|"status"|"city"; label: string; value: string; icon: string }[]).map(({ key, label, value, icon }, i, arr) => (
-              <button key={label} onClick={() => openStat(key)}
-                className="flex-1 flex flex-col items-center py-3 gap-0.5 relative active:bg-white/5 transition-colors rounded-2xl"
-                style={{ minWidth: "20%" }}>
-                {i < arr.length - 1 && <div className="absolute right-0 top-2 bottom-2 w-px" style={{ background: "rgba(255,255,255,0.08)" }} />}
-                <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"|"MapPin"} size={13} className="text-white/40" />
-                <span className="text-white font-bold text-xs leading-tight text-center truncate w-full px-1">{value}</span>
-                <span className="text-white/40 text-[9px]">{label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Попап редактирования стата */}
-          {statEdit && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center"
-              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-              onClick={() => setStatEdit(null)}>
-              <div className="w-full max-w-sm rounded-t-3xl p-5 pb-8 flex flex-col gap-4"
-                style={{ background: "var(--spark-dark2,#1a1030)" }}
-                onClick={e => e.stopPropagation()}>
-
-                <div className="flex items-center justify-between">
-                  <h4 className="text-white font-bold text-base">
-                    {statEdit === "height" && "Рост"}
-                    {statEdit === "weight" && "Вес"}
-                    {statEdit === "gender" && "Пол"}
-                    {statEdit === "status" && "Статус"}
-                    {statEdit === "city" && "Город"}
-                  </h4>
-                  <button onClick={() => setStatEdit(null)} className="text-white/40 hover:text-white">
-                    <Icon name="X" size={20} />
-                  </button>
-                </div>
-
-                {(statEdit === "height" || statEdit === "weight") && (
-                  <input
-                    type="number"
-                    value={statValue}
-                    onChange={e => setStatValue(e.target.value)}
-                    placeholder={statEdit === "height" ? "Рост в см (напр. 175)" : "Вес в кг (напр. 70)"}
-                    min={statEdit === "height" ? 100 : 30}
-                    max={statEdit === "height" ? 250 : 300}
-                    className="w-full rounded-2xl px-4 py-3 text-white text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
-                    autoFocus
-                  />
-                )}
-
-                {statEdit === "gender" && (
-                  <div className="grid grid-cols-2 gap-2">
-                    {[{ v: "male", l: "Мужской" }, { v: "female", l: "Женский" }].map(({ v, l }) => (
-                      <button key={v} onClick={() => setStatValue(v)}
-                        className="py-3 rounded-2xl text-sm font-semibold transition-all"
-                        style={statValue === v
-                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                          : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {statEdit === "status" && (
-                  <div className="flex flex-col gap-2">
-                    {[
-                      { v: "hidden",      l: "Не показывать" },
-                      { v: "single",      l: "Свободен" },
-                      { v: "searching",   l: "В поиске" },
-                      { v: "complicated", l: "Всё сложно" },
-                      { v: "open",        l: "В свободных отношениях" },
-                    ].map(({ v, l }) => (
-                      <button key={v} onClick={() => setStatValue(v)}
-                        className="py-3 px-4 rounded-2xl text-sm font-semibold text-left transition-all"
-                        style={statValue === v
-                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                          : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {statEdit === "city" && (
-                  <input
-                    type="text"
-                    value={statValue}
-                    onChange={e => setStatValue(e.target.value)}
-                    placeholder="Например: Москва"
-                    maxLength={60}
-                    className="w-full rounded-2xl px-4 py-3 text-white text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors"
-                    style={{ background: "rgba(255,255,255,0.08)" }}
-                    autoFocus
-                  />
-                )}
-
-                <button onClick={saveStat} className="btn-grad py-3 rounded-2xl font-semibold text-sm">
-                  Сохранить
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Рост / Вес / Пол / Статус / Город */}
+          <ProfileStatsBar
+            currentUser={currentUser}
+            statEdit={statEdit}
+            statValue={statValue}
+            onOpen={openStat}
+            onClose={() => setStatEdit(null)}
+            onValueChange={setStatValue}
+            onSave={saveStat}
+          />
 
           {/* Подписчики и подписки */}
           <div className="glass-card w-full mt-3 flex items-center">
@@ -576,9 +259,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           {activeTab === "stats" && (
             <div className="w-full mt-3 glass-card p-4 flex flex-col gap-3">
               {[
-                { label: "Просмотры профиля за неделю", value: "—", icon: "Eye", color: "#9B59B6" },
-                { label: "Лайки получено",              value: "—", icon: "Heart", color: "#FF2D78" },
-                { label: "Совпадения",                  value: "—", icon: "Zap", color: "#FF8C42" },
+                { label: "Просмотры профиля за неделю", value: "—", icon: "Eye",           color: "#9B59B6" },
+                { label: "Лайки получено",              value: "—", icon: "Heart",         color: "#FF2D78" },
+                { label: "Совпадения",                  value: "—", icon: "Zap",           color: "#FF8C42" },
                 { label: "Сообщений отправлено",        value: "—", icon: "MessageCircle", color: "#3B82F6" },
               ].map(({ label, value, icon, color }) => (
                 <div key={label} className="flex items-center gap-3">
@@ -598,10 +281,10 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           {activeTab === "shop" && (
             <div className="w-full mt-3 flex flex-col gap-2">
               {[
-                { icon: "Crown",  label: "Premium подписка",  desc: "Безлимитные лайки и приоритет",  price: "от 249 ₽/мес", action: onPremium, grad: true },
-                { icon: "Star",   label: "Суперлайки × 10",   desc: "Выдели себя среди остальных",    price: "199 ₽",         action: onPremium, grad: false },
-                { icon: "Zap",    label: "Буст профиля",      desc: "Топ показов на 30 минут",        price: "99 ₽",          action: onPremium, grad: false },
-                { icon: "Eye",    label: "Режим инкогнито",   desc: "Просматривай анонимно",          price: "149 ₽",         action: onPremium, grad: false },
+                { icon: "Crown", label: "Premium подписка",  desc: "Безлимитные лайки и приоритет",  price: "от 249 ₽/мес", action: onPremium, grad: true },
+                { icon: "Star",  label: "Суперлайки × 10",   desc: "Выдели себя среди остальных",    price: "199 ₽",         action: onPremium, grad: false },
+                { icon: "Zap",   label: "Буст профиля",      desc: "Топ показов на 30 минут",        price: "99 ₽",          action: onPremium, grad: false },
+                { icon: "Eye",   label: "Режим инкогнито",   desc: "Просматривай анонимно",          price: "149 ₽",         action: onPremium, grad: false },
               ].map(({ icon, label, desc, price, action, grad }) => (
                 <button key={label} onClick={action}
                   className="glass-card p-4 flex items-center gap-3 text-left w-full active:scale-[0.98] transition-all">
@@ -620,7 +303,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           )}
         </div>
 
-        <div className="mx-5 glass-card p-4 mb-4">
+        {/* О себе */}
+        <div className="mx-5 glass-card p-4 mb-4 mt-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
             <button onClick={() => setEditOpen(true)} className="text-white/40 hover:text-white transition-colors">
@@ -650,7 +334,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             <Icon name="Calendar" size={13} className="text-white/25" />
             <span className="text-white/25 text-xs">
               Присоединился {(() => {
-                const d = new Date(currentUser.created_at);
+                const d = new Date(currentUser.created_at!);
                 const now = new Date();
                 const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
                 if (months === 0) return "менее месяца назад";
