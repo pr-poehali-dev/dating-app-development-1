@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { postsApi, liveApi, type Post, type LiveStream, type User, type Profile } from "@/lib/api";
+import { postsApi, liveApi, notificationsApi, type Post, type LiveStream, type User, type Profile } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { LiveBadge, TrendingBadge, CreateMenu } from "@/components/screens/HomeFeedWidgets";
 import { CommentSheet } from "@/components/screens/HomeCommentSheet";
 import { PostCard } from "@/components/screens/HomePostCard";
+import { NotificationsSheet } from "@/components/screens/NotificationsSheet";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
@@ -21,6 +22,8 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   const [showCreate, setShowCreate] = useState(false);
   const [showStoryMsg, setShowStoryMsg] = useState(false);
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -32,6 +35,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
       postsApi.getFeed().then((d) => setPosts(d.posts)).catch(() => {}),
       liveApi.list().then((d) => setStreams(d.streams)).catch(() => {}),
     ]).finally(() => setLoading(false));
+    notificationsApi.unreadCount().then(d => setUnreadCount(d.unread_count)).catch(() => {});
   }, []);
 
   const handleLike = async (post: Post) => {
@@ -134,6 +138,12 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
           </div>
         </div>
       )}
+      {showNotifs && (
+        <NotificationsSheet
+          onClose={() => setShowNotifs(false)}
+          onOpenChat={onOpenChat}
+        />
+      )}
 
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -143,11 +153,24 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
               className="w-8 h-8 rounded-xl object-cover" />
             <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
           </div>
-          <button onClick={() => setShowCreate(true)}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
-            <Icon name="Plus" size={20} className="text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowCreate(true)}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+              <Icon name="Plus" size={20} className="text-white" />
+            </button>
+            <button onClick={() => { setShowNotifs(true); setUnreadCount(0); }}
+              className="relative w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <Icon name="Bell" size={18} className="text-white/80" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full flex items-center justify-center text-white text-[9px] font-bold px-1"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">

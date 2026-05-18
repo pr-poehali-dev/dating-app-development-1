@@ -1,0 +1,11 @@
+{
+  "tests": [
+    {
+      "name": "Unread count",
+      "method": "GET",
+      "path": "/?action=unread_count",
+      "expectedStatus": 401,
+      "bodyMatcher": "none"
+    }
+  ]
+}

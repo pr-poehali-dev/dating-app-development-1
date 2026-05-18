@@ -5,6 +5,7 @@ const URLS = {
   matches: "https://functions.poehali.dev/ae9c2fc5-07a8-415c-9bf6-9318d8101a4d",
   messages: "https://functions.poehali.dev/dc1a6137-a066-4ec4-8081-52ac7b0b1530",
   admin: "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18",
+  notifications: "https://functions.poehali.dev/5249d7a9-31e2-4ab5-a2da-6b72346e5de4",
 };
 
 function getToken(): string {
@@ -326,6 +327,24 @@ export const likesApi = {
     }),
 
   getLikedMe: () => req<{ liked_me: LikedBy[]; total: number }>("likes", "liked_me"),
+};
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export interface Notification {
+  type: "like" | "super_like" | "message" | "view";
+  from_user_id: number;
+  name: string;
+  photo_url?: string;
+  text?: string;
+  match_id?: number;
+  created_at: string;
+}
+
+export const notificationsApi = {
+  list: () => req<{ notifications: Notification[]; unread_count: number }>("notifications", "list"),
+  unreadCount: () => req<{ unread_count: number; messages: number; likes: number }>("notifications", "unread_count"),
+  markRead: () => req<{ ok: boolean }>("notifications", "mark_read", { method: "POST" }),
+  trackView: (user_id: number) => req<{ ok: boolean }>("notifications", "track_view", { method: "POST", body: JSON.stringify({ user_id }) }),
 };
 
 // ─── Matches ─────────────────────────────────────────────────────────────────
