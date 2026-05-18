@@ -137,6 +137,34 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   // Максимум доп. фото: 1 бесплатно + 4 с подпиской
   const maxGallery = currentUser.premium ? 5 : 1;
 
+  // Редактирование статов
+  const [statEdit, setStatEdit] = useState<null | "height" | "weight" | "gender" | "status" | "city">(null);
+  const [statValue, setStatValue] = useState("");
+
+  const openStat = (key: typeof statEdit) => {
+    if (key === "height") setStatValue(String(currentUser.height || ""));
+    else if (key === "weight") setStatValue(String(currentUser.weight || ""));
+    else if (key === "gender") setStatValue(currentUser.gender || "");
+    else if (key === "status") setStatValue(currentUser.relationship_status || "");
+    else if (key === "city") setStatValue(currentUser.city || "");
+    setStatEdit(key);
+  };
+
+  const saveStat = async () => {
+    if (!statEdit) return;
+    const payload: Partial<User> = {};
+    if (statEdit === "height") payload.height = statValue ? Number(statValue) : undefined;
+    else if (statEdit === "weight") payload.weight = statValue ? Number(statValue) : undefined;
+    else if (statEdit === "gender") payload.gender = statValue || undefined;
+    else if (statEdit === "status") payload.relationship_status = statValue || undefined;
+    else if (statEdit === "city") payload.city = statValue.trim() || undefined;
+    try {
+      await profilesApi.updateMe(payload);
+      onProfileUpdate(payload);
+    } catch { /* ignore */ }
+    setStatEdit(null);
+  };
+
   return (
     <>
       {editOpen && (
@@ -423,21 +451,113 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {/* Рост, вес, пол, статус, город */}
           <div className="glass-card w-full mt-4 flex items-center flex-wrap">
-            {[
-              { label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
-              { label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
-              { label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
-              { label: "Статус", value: currentUser.relationship_status === "single" ? "Своб." : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : "—", icon: "Heart" },
-              { label: "Город",  value: currentUser.city || "—", icon: "MapPin" },
-            ].map(({ label, value, icon }, i, arr) => (
-              <div key={label} className="flex-1 flex flex-col items-center py-3 gap-0.5 relative" style={{ minWidth: "20%" }}>
+            {([
+              { key: "height", label: "Рост",   value: currentUser.height ? `${currentUser.height} см` : "—", icon: "Ruler" },
+              { key: "weight", label: "Вес",    value: currentUser.weight ? `${currentUser.weight} кг` : "—", icon: "Weight" },
+              { key: "gender", label: "Пол",    value: currentUser.gender === "female" ? "Жен" : currentUser.gender === "male" ? "Муж" : "—", icon: "User" },
+              { key: "status", label: "Статус", value: currentUser.relationship_status === "single" ? "Своб." : currentUser.relationship_status === "taken" ? "Занят" : currentUser.relationship_status === "complicated" ? "Слож." : currentUser.relationship_status === "open" ? "Откр." : currentUser.relationship_status === "hidden" ? "Скрыт" : "—", icon: "Heart" },
+              { key: "city",   label: "Город",  value: currentUser.city || "—", icon: "MapPin" },
+            ] as { key: "height"|"weight"|"gender"|"status"|"city"; label: string; value: string; icon: string }[]).map(({ key, label, value, icon }, i, arr) => (
+              <button key={label} onClick={() => openStat(key)}
+                className="flex-1 flex flex-col items-center py-3 gap-0.5 relative active:bg-white/5 transition-colors rounded-2xl"
+                style={{ minWidth: "20%" }}>
                 {i < arr.length - 1 && <div className="absolute right-0 top-2 bottom-2 w-px" style={{ background: "rgba(255,255,255,0.08)" }} />}
                 <Icon name={icon as "Ruler"|"Weight"|"User"|"Heart"|"MapPin"} size={13} className="text-white/40" />
                 <span className="text-white font-bold text-xs leading-tight text-center truncate w-full px-1">{value}</span>
                 <span className="text-white/40 text-[9px]">{label}</span>
-              </div>
+              </button>
             ))}
           </div>
+
+          {/* Попап редактирования стата */}
+          {statEdit && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center"
+              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+              onClick={() => setStatEdit(null)}>
+              <div className="w-full max-w-sm rounded-t-3xl p-5 pb-8 flex flex-col gap-4"
+                style={{ background: "var(--spark-dark2,#1a1030)" }}
+                onClick={e => e.stopPropagation()}>
+
+                <div className="flex items-center justify-between">
+                  <h4 className="text-white font-bold text-base">
+                    {statEdit === "height" && "Рост"}
+                    {statEdit === "weight" && "Вес"}
+                    {statEdit === "gender" && "Пол"}
+                    {statEdit === "status" && "Статус"}
+                    {statEdit === "city" && "Город"}
+                  </h4>
+                  <button onClick={() => setStatEdit(null)} className="text-white/40 hover:text-white">
+                    <Icon name="X" size={20} />
+                  </button>
+                </div>
+
+                {(statEdit === "height" || statEdit === "weight") && (
+                  <input
+                    type="number"
+                    value={statValue}
+                    onChange={e => setStatValue(e.target.value)}
+                    placeholder={statEdit === "height" ? "Рост в см (напр. 175)" : "Вес в кг (напр. 70)"}
+                    min={statEdit === "height" ? 100 : 30}
+                    max={statEdit === "height" ? 250 : 300}
+                    className="w-full rounded-2xl px-4 py-3 text-white text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors"
+                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    autoFocus
+                  />
+                )}
+
+                {statEdit === "gender" && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ v: "male", l: "Мужской" }, { v: "female", l: "Женский" }].map(({ v, l }) => (
+                      <button key={v} onClick={() => setStatValue(v)}
+                        className="py-3 rounded-2xl text-sm font-semibold transition-all"
+                        style={statValue === v
+                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                          : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {statEdit === "status" && (
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { v: "hidden",      l: "Не показывать" },
+                      { v: "single",      l: "Свободен" },
+                      { v: "searching",   l: "В поиске" },
+                      { v: "complicated", l: "Всё сложно" },
+                      { v: "open",        l: "В свободных отношениях" },
+                    ].map(({ v, l }) => (
+                      <button key={v} onClick={() => setStatValue(v)}
+                        className="py-3 px-4 rounded-2xl text-sm font-semibold text-left transition-all"
+                        style={statValue === v
+                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                          : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)" }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {statEdit === "city" && (
+                  <input
+                    type="text"
+                    value={statValue}
+                    onChange={e => setStatValue(e.target.value)}
+                    placeholder="Например: Москва"
+                    maxLength={60}
+                    className="w-full rounded-2xl px-4 py-3 text-white text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors"
+                    style={{ background: "rgba(255,255,255,0.08)" }}
+                    autoFocus
+                  />
+                )}
+
+                <button onClick={saveStat} className="btn-grad py-3 rounded-2xl font-semibold text-sm">
+                  Сохранить
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Подписчики и подписки */}
           <div className="glass-card w-full mt-3 flex items-center">
