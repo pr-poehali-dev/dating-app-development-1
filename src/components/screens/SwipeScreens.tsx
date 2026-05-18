@@ -148,11 +148,34 @@ function SwipeCard({
           )}
           {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_6px_#00E676]" />}
         </div>
-        <div className="flex items-center gap-1 text-white/70 text-sm mb-3">
+        <div className="flex items-center gap-1 text-white/70 text-sm mb-2">
           <Icon name="MapPin" size={13} />
           <span>{profile.city} · {profile.distance}</span>
         </div>
-        <p className="text-white/80 text-sm leading-relaxed mb-3 line-clamp-2">{profile.bio}</p>
+        {(profile.height || profile.weight || profile.relationship_status) && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {profile.height && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white/70"
+                style={{ background: "rgba(255,255,255,0.1)" }}>
+                <Icon name="Ruler" size={10} className="text-white/50" />{profile.height} см
+              </span>
+            )}
+            {profile.weight && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white/70"
+                style={{ background: "rgba(255,255,255,0.1)" }}>
+                <Icon name="Weight" size={10} className="text-white/50" />{profile.weight} кг
+              </span>
+            )}
+            {profile.relationship_status && profile.relationship_status !== "hidden" && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white/70"
+                style={{ background: "rgba(255,255,255,0.1)" }}>
+                <Icon name="Heart" size={10} className="text-white/50" />
+                {profile.relationship_status === "single" ? "Свободен" : profile.relationship_status === "searching" ? "В поиске" : profile.relationship_status === "complicated" ? "Всё сложно" : profile.relationship_status === "open" ? "Своб. отношения" : ""}
+              </span>
+            )}
+          </div>
+        )}
+        <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">{profile.bio}</p>
         <div className="flex flex-wrap gap-1.5">
           {profile.tags.map((tag) => <span key={tag} className="tag-pill">{tag}</span>)}
         </div>

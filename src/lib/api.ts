@@ -389,6 +389,9 @@ export interface Profile {
   verified?: boolean;
   online?: boolean;
   premium?: boolean;
+  height?: number;
+  weight?: number;
+  relationship_status?: string;
 }
 
 export interface LikedBy {
