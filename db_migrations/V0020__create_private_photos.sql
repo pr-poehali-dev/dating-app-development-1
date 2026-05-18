@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS private_photos (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    photo_url TEXT NOT NULL,
+    is_hidden BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

@@ -353,6 +353,57 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # Список приватных фото
+        if action == 'private_photos_list':
+            cur.execute(
+                "SELECT id, photo_url, created_at FROM private_photos WHERE user_id = %s AND is_hidden = FALSE ORDER BY created_at DESC",
+                (me['id'],)
+            )
+            photos = [{'id': r[0], 'photo_url': r[1], 'created_at': str(r[2])} for r in cur.fetchall()]
+            return resp(200, {'ok': True, 'photos': photos})
+
+        # Добавить приватное фото (лимит: 1 бесплатно, 2 с подпиской)
+        if action == 'private_photo_add':
+            body = json.loads(event.get('body') or '{}')
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            # Проверка лимита
+            cur.execute("SELECT COUNT(*) FROM private_photos WHERE user_id = %s AND is_hidden = FALSE", (me['id'],))
+            count = cur.fetchone()[0]
+            limit = 2 if me['premium'] else 1
+            if count >= limit:
+                return resp(403, {'error': 'limit', 'limit': limit, 'premium': me['premium']})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"private_photos/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            cur.execute("INSERT INTO private_photos (user_id, photo_url) VALUES (%s, %s) RETURNING id, created_at", (me['id'], cdn_url))
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'photo': {'id': row[0], 'photo_url': cdn_url, 'created_at': str(row[1])}})
+
+        # Удалить приватное фото
+        if action == 'private_photo_delete':
+            body = json.loads(event.get('body') or '{}')
+            photo_id = int(body.get('photo_id', 0))
+            cur.execute("SELECT id FROM private_photos WHERE id = %s AND user_id = %s AND is_hidden = FALSE", (photo_id, me['id']))
+            if not cur.fetchone():
+                return resp(404, {'error': 'Фото не найдено'})
+            cur.execute("UPDATE private_photos SET is_hidden = TRUE WHERE id = %s AND user_id = %s", (photo_id, me['id']))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # Мои подписчики (кто лайкнул меня)
         if action == 'my_followers':
             cur.execute(
