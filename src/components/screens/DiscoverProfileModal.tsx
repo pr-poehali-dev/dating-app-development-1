@@ -19,10 +19,13 @@ export const PROFILES_FALLBACK = [
 ];
 
 // ─── DiscoverProfileModal ─────────────────────────────────────────────────────
-export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onGoToChats }: {
-  profile: Profile; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void;
+export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose, onLike, onOpenChat, onGoToChats }: {
+  profile: Profile; profiles?: Profile[]; profileIndex?: number; onClose: () => void; onLike: (p: Profile) => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void;
 }) {
-  const [liked, setLiked] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(profileIndex ?? 0);
+  const currentProfile = (profiles && profiles[currentIdx]) || profile;
+  const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
+  const liked = likedSet.has(currentProfile.id);
   const [liking, setLiking] = useState(false);
   const [matchId, setMatchId] = useState<number | null>(null);
   const [showReport, setShowReport] = useState(false);
@@ -41,11 +44,19 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
     bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
   }>({ followers: 0, following: 0 });
 
-  const mainPhoto = profile.photo_url || PROFILES_FALLBACK[0].photo;
+  const mainPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
 
   useEffect(() => {
+    setPhotos([]);
+    setGalleryPhotos([]);
+    setPhotoIdx(0);
+    setLoadingPhotos(true);
+    setProfileData({ followers: 0, following: 0 });
+    setPrivateReqSent(false);
+    setPhotoTab("public");
+    setMatchId(null);
     import("@/lib/api").then(({ postsApi, profilesApi }) => {
-      const profileReq = postsApi.getUserProfile(profile.id)
+      const profileReq = postsApi.getUserProfile(currentProfile.id)
         .then(d => {
           const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
           setProfileData({
@@ -58,17 +69,18 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
         })
         .catch(() => {});
 
-      const galleryReq = profilesApi.getUserProfilePhotos(profile.id)
+      const cPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
+      const galleryReq = profilesApi.getUserProfilePhotos(currentProfile.id)
         .then(r => {
           setGalleryPhotos(r.photos);
           const urls = r.photos.map(p => p.photo_url);
-          setPhotos([mainPhoto, ...urls].slice(0, 9));
+          setPhotos([cPhoto, ...urls].slice(0, 9));
         })
-        .catch(() => setPhotos([mainPhoto]));
+        .catch(() => setPhotos([cPhoto]));
 
       Promise.all([profileReq, galleryReq]).finally(() => setLoadingPhotos(false));
     });
-  }, [profile.id]);
+  }, [currentProfile.id]);
 
   const currentPhoto = photos.length > 0 ? photos[photoIdx] : mainPhoto;
   const totalPhotos = photos.length || 1;
@@ -77,23 +89,30 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
     if (liked || liking) return;
     setLiking(true);
     try {
-      const res = await likesApi.send(profile.id);
-      setLiked(true);
+      const res = await likesApi.send(currentProfile.id);
+      setLikedSet(prev => new Set([...prev, currentProfile.id]));
       if (res.match && res.match_id) {
         setMatchId(res.match_id);
-        const { messagesApi } = await import("@/lib/api");
-        await messagesApi.send(res.match_id, `❤️ ${profile.name}, ты мне понравилась!`).catch(() => {});
       }
     } catch (e) { void e; }
     finally { setLiking(false); }
-    onLike(profile);
+    onLike(currentProfile);
+  };
+
+  const handleSkip = () => {
+    if (profiles && currentIdx < profiles.length - 1) {
+      setCurrentIdx(i => i + 1);
+      setMatchId(null);
+    } else {
+      onClose();
+    }
   };
 
   const handleOpenChat = async () => {
     if (matchId && onOpenChat) { onOpenChat(matchId); return; }
     const { matchesApi } = await import("@/lib/api");
     const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
-    const m = data.matches.find(x => x.partner_id === profile.id);
+    const m = data.matches.find(x => x.partner_id === currentProfile.id);
     if (m && onOpenChat) { onOpenChat(m.match_id); return; }
     setShowMsgInput(true);
   };
@@ -103,7 +122,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
     setSendingMsg(true);
     try {
       const { messagesApi } = await import("@/lib/api");
-      const res = await messagesApi.sendDirect(profile.id, msgText.trim());
+      const res = await messagesApi.sendDirect(currentProfile.id, msgText.trim());
       setMsgSent(true);
       setMsgText("");
       setMatchId(res.match_id);
@@ -127,10 +146,10 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
 
   return (
     <>
-      {showReport && <ReportModal userId={profile.id} userName={profile.name} onClose={() => setShowReport(false)} />}
+      {showReport && <ReportModal userId={currentProfile.id} userName={currentProfile.name} onClose={() => setShowReport(false)} />}
       {showMenu && (
         <ProfileMenuSheet
-          profile={profile}
+          profile={currentProfile}
           onClose={() => setShowMenu(false)}
           onReport={() => setShowReport(true)}
         />
@@ -144,10 +163,10 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
             <div className="rounded-3xl p-5 flex flex-col gap-4"
               style={{ background: "rgba(22,16,32,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div className="flex items-center gap-3">
-                <img src={profile.photo_url || ""} className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                <img src={currentProfile.photo_url || ""} className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                   style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
                 <div>
-                  <p className="text-white font-semibold text-sm">{profile.name}</p>
+                  <p className="text-white font-semibold text-sm">{currentProfile.name}</p>
                   <p className="text-white/40 text-xs">Первое сообщение</p>
                 </div>
               </div>
@@ -163,7 +182,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
                     value={msgText}
                     onChange={e => setMsgText(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && handleSendMsg()}
-                    placeholder={`Напиши ${profile.name}...`}
+                    placeholder={`Напиши ${currentProfile.name}...`}
                     className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos"
                   />
                   <button onClick={handleSendMsg} disabled={sendingMsg || !msgText.trim()}
@@ -238,18 +257,18 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
           <div className="flex items-start justify-between px-5 pt-3 pb-3">
             <div>
               <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
-                {profile.name}{profile.age ? `, ${profile.age}` : ""}
-                {profile.verified && <span className="text-blue-400 text-base">✓</span>}
+                {currentProfile.name}{currentProfile.age ? `, ${currentProfile.age}` : ""}
+                {currentProfile.verified && <span className="text-blue-400 text-base">✓</span>}
               </h2>
-              {profile.city && (
+              {currentProfile.city && (
                 <p className="text-white/60 text-sm flex items-center gap-1 mt-0.5">
-                  <Icon name="MapPin" size={13} />{profile.city}
+                  <Icon name="MapPin" size={13} />{currentProfile.city}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-1">
-              {profile.online && <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80]" />}
-              <span className="text-white/50 text-xs">{profile.online ? "онлайн" : ""}</span>
+              {currentProfile.online && <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80]" />}
+              <span className="text-white/50 text-xs">{currentProfile.online ? "онлайн" : ""}</span>
             </div>
           </div>
 
@@ -298,7 +317,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
                   </div>
                   <p className="text-white font-semibold text-sm">Приватные фото закрыты</p>
                   <p className="text-white/40 text-xs leading-relaxed">
-                    Отправь запрос — {profile.name} решит, открыть ли тебе доступ
+                    Отправь запрос — {currentProfile.name} решит, открыть ли тебе доступ
                   </p>
                   <button onClick={() => setPrivateReqSent(true)}
                     className="btn-grad px-6 py-2.5 text-sm font-semibold w-full">
@@ -312,7 +331,7 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
                     <Icon name="Check" size={20} className="text-green-400" />
                   </div>
                   <p className="text-white font-semibold text-sm">Запрос отправлен</p>
-                  <p className="text-white/40 text-xs">Ожидаем ответа от {profile.name}</p>
+                  <p className="text-white/40 text-xs">Ожидаем ответа от {currentProfile.name}</p>
                 </div>
               )}
             </div>
@@ -320,16 +339,16 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
 
           <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
             <p className="text-white/40 text-xs uppercase tracking-widest mt-3 mb-2">О себе</p>
-            {(profileData.bio || profile.bio) ? (
+            {(profileData.bio || currentProfile.bio) ? (
               <p className="text-white/80 text-sm leading-relaxed">
-                {profileData.bio || profile.bio}
+                {profileData.bio || currentProfile.bio}
               </p>
             ) : (
               <p className="text-white/25 text-sm italic">Нет информации</p>
             )}
-            {(profileData.tags || (profile.tags as string[]))?.length > 0 && (
+            {(profileData.tags || (currentProfile.tags as string[]))?.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3">
-                {((profileData.tags || profile.tags) as string[]).map((tag) => (
+                {((profileData.tags || currentProfile.tags) as string[]).map((tag) => (
                   <span key={tag} className="glass-card px-3 py-1 text-white/60 text-xs rounded-full">{tag}</span>
                 ))}
               </div>
@@ -361,14 +380,16 @@ export function DiscoverProfileModal({ profile, onClose, onLike, onOpenChat, onG
         </div>
 
         <div className="px-5 pb-6 pt-2 flex gap-3 flex-shrink-0">
-          <button onClick={onClose}
+          <button onClick={handleSkip}
             className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
-            <Icon name="X" size={18} />Пропустить
+            <Icon name="ChevronRight" size={18} />Пропустить
           </button>
-          <button onClick={handleLike} disabled={liked}
+          <button onClick={handleLike} disabled={liked || liking}
             className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
             style={{ opacity: liked ? 0.7 : 1 }}>
-            <Icon name="Heart" size={18} className="text-white" />
+            {liking
+              ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              : <Icon name="Heart" size={18} className="text-white" />}
             {liked ? "Лайкнуто!" : "Лайкнуть"}
           </button>
         </div>

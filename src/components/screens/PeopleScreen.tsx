@@ -229,6 +229,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   const [filters, setFilters] = useState<DiscoverParams>({});
   const [activeTab, setActiveTab] = useState<"all" | "online" | "new">("all");
   const [selected, setSelected] = useState<Profile | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
@@ -284,6 +285,8 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
       {selected && (
         <DiscoverProfileModal
           profile={selected}
+          profiles={profiles}
+          profileIndex={selectedIdx}
           onClose={() => setSelected(null)}
           onLike={(p) => setLikedIds((prev) => new Set([...prev, p.id]))}
           onOpenChat={(matchId) => { setSelected(null); onOpenChat?.(matchId); }}
@@ -382,7 +385,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
 
                   return (
                     <button key={p.id}
-                      onClick={() => isLocked ? onPremium?.() : setSelected(p)}
+                      onClick={() => isLocked ? onPremium?.() : (setSelected(p), setSelectedIdx(idx))}
                       className="relative aspect-square overflow-hidden group">
                       <img src={photo}
                         className="w-full h-full object-cover transition-transform duration-200 group-active:scale-95"

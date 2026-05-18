@@ -263,6 +263,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Profile | null>(null);
+  const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<DiscoverParams>({});
@@ -302,7 +303,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
   return (
     <>
       {selected && (
-        <DiscoverProfileModal profile={selected} onClose={() => setSelected(null)} onLike={handleLike} />
+        <DiscoverProfileModal profile={selected} profiles={profiles} profileIndex={selectedIdx} onClose={() => setSelected(null)} onLike={handleLike} />
       )}
 
       <div className="flex flex-col h-full">
@@ -386,11 +387,11 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
           )}
           {!loading && profiles.length > 0 && (
             <div className="grid grid-cols-3 gap-0.5">
-              {profiles.map((p) => {
+              {profiles.map((p, idx) => {
                 const photo = p.photo_url || PROFILES_FALLBACK[0].photo;
                 const isLiked = likedIds.has(p.id);
                 return (
-                  <button key={p.id} onClick={() => setSelected(p)}
+                  <button key={p.id} onClick={() => { setSelected(p); setSelectedIdx(idx); }}
                     className="relative aspect-square overflow-hidden group">
                     <img src={photo} className="w-full h-full object-cover transition-transform group-active:scale-95" />
                     <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, rgba(0,0,0,0.75) 100%)" }} />
