@@ -155,6 +155,12 @@ export const profilesApi = {
       body: JSON.stringify({ photo_id }),
     }),
 
+  getFollowers: () =>
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_followers", { method: "GET" }),
+
+  getFollowing: () =>
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_following", { method: "GET" }),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",

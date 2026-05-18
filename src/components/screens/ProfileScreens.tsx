@@ -11,10 +11,12 @@ import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
 import { ProfilePhotoSection } from "@/components/screens/profile/ProfilePhotoSection";
 import { ProfileStatsBar } from "@/components/screens/profile/ProfileStatsBar";
+import { FollowersModal } from "@/components/screens/profile/FollowersModal";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private";
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
+type FollowTab = "followers" | "following";
 
 // ─── RealProfileScreen ────────────────────────────────────────────────────────
 export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, onProfileUpdate, onVerify }: {
@@ -135,6 +137,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   };
 
   // Редактирование статов
+  const [followModal, setFollowModal] = useState<FollowTab | null>(null);
   const [statEdit, setStatEdit] = useState<StatKey | null>(null);
   const [statValue, setStatValue] = useState("");
 
@@ -244,16 +247,22 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {/* Подписчики и подписки */}
           <div className="glass-card w-full mt-3 flex items-center">
-            <div className="flex-1 flex flex-col items-center py-3">
+            <button onClick={() => setFollowModal("followers")}
+              className="flex-1 flex flex-col items-center py-3 active:bg-white/5 transition-colors rounded-l-2xl">
               <span className="text-white font-bold text-xl">{currentUser.followers ?? 0}</span>
               <span className="text-white/40 text-xs mt-0.5">Подписчики</span>
-            </div>
+            </button>
             <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.08)" }} />
-            <div className="flex-1 flex flex-col items-center py-3">
+            <button onClick={() => setFollowModal("following")}
+              className="flex-1 flex flex-col items-center py-3 active:bg-white/5 transition-colors rounded-r-2xl">
               <span className="text-white font-bold text-xl">{currentUser.following ?? 0}</span>
               <span className="text-white/40 text-xs mt-0.5">Подписки</span>
-            </div>
+            </button>
           </div>
+
+          {followModal && (
+            <FollowersModal initialTab={followModal} onClose={() => setFollowModal(null)} />
+          )}
 
           {/* Панель: Статистика */}
           {activeTab === "stats" && (
