@@ -243,9 +243,17 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           <div className="h-12" />
           {photoError && <p className="text-red-400 text-xs mb-1 text-center">{photoError}</p>}
 
-          {currentUser.username && (
-            <p className="text-white/40 text-xs font-mono mt-1">@{currentUser.username}</p>
-          )}
+          <div className="flex items-center gap-1.5 mt-1">
+            {currentUser.username && (
+              <p className="text-white/40 text-xs font-mono">@{currentUser.username}</p>
+            )}
+            {currentUser.premium && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
+                ✨ GOLD
+              </span>
+            )}
+          </div>
           <h3 className="text-white font-bold text-xl mt-0.5">
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
             {currentUser.verified && <span className="ml-1.5 text-blue-400 text-base">✓</span>}
