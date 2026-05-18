@@ -45,7 +45,7 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
       onClick={onClose}>
       <div className="mt-auto w-full max-h-[85vh] flex flex-col rounded-t-3xl overflow-hidden"
-        style={{ background: "rgba(18,12,28,0.98)", border: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}
         onClick={e => e.stopPropagation()}>
 
         {/* Handle */}

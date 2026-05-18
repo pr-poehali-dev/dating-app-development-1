@@ -178,7 +178,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onClick={() => setShowMsgInput(false)}>
           <div className="w-full max-w-sm px-4 pb-8 animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="rounded-3xl p-5 flex flex-col gap-4"
-              style={{ background: "rgba(22,16,32,0.98)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              style={{ background: "var(--spark-card)", border: "1px solid var(--spark-input-border)" }}>
               <div className="flex items-center gap-3">
                 <img src={currentProfile.photo_url || ""} className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                   style={{ border: "2px solid rgba(255,45,120,0.5)" }} />

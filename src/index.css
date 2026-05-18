@@ -37,6 +37,13 @@
     --spark-dark2: #231d35;
     --spark-glass: rgba(255, 255, 255, 0.08);
     --spark-glass-border: rgba(255, 255, 255, 0.15);
+    --spark-card: rgba(18, 12, 28, 0.98);
+    --spark-divider: rgba(255, 255, 255, 0.08);
+    --spark-input: rgba(255, 255, 255, 0.1);
+    --spark-input-border: rgba(255, 255, 255, 0.1);
+    --spark-text: #ffffff;
+    --spark-text-sub: rgba(255, 255, 255, 0.5);
+    --spark-overlay: rgba(0, 0, 0, 0.7);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -66,6 +73,13 @@ html.light {
   --spark-dark2: #e4e0f2;
   --spark-glass: rgba(0, 0, 0, 0.04);
   --spark-glass-border: rgba(0, 0, 0, 0.1);
+  --spark-card: rgba(255, 255, 255, 0.95);
+  --spark-divider: rgba(0, 0, 0, 0.07);
+  --spark-input: rgba(0, 0, 0, 0.06);
+  --spark-input-border: rgba(0, 0, 0, 0.1);
+  --spark-text: #1a1625;
+  --spark-text-sub: rgba(26, 22, 37, 0.5);
+  --spark-overlay: rgba(100, 80, 140, 0.35);
 }
 
 /* App shell */
@@ -187,6 +201,145 @@ html.light .nav-item {
 html.light .nav-item.active {
   color: #1a1625;
   background: rgba(0, 0, 0, 0.08);
+}
+
+/* Шторки и модалы */
+html.light [style*="rgba(18,12,28"],
+html.light [style*="rgba(18, 12, 28"],
+html.light [style*="rgba(22,16,32"],
+html.light [style*="rgba(22, 16, 32"],
+html.light [style*="rgba(15,10,26"],
+html.light [style*="rgba(15, 10, 26"] {
+  background: var(--spark-card) !important;
+}
+
+/* Разделители */
+html.light [style*="rgba(255,255,255,0.08)"],
+html.light [style*="rgba(255, 255, 255, 0.08)"] {
+  background: var(--spark-divider) !important;
+}
+html.light [style*="rgba(255,255,255,0.1)"],
+html.light [style*="rgba(255, 255, 255, 0.1)"] {
+  background: var(--spark-divider) !important;
+}
+html.light [style*="rgba(255,255,255,0.07)"],
+html.light [style*="rgba(255, 255, 255, 0.07)"] {
+  background: var(--spark-divider) !important;
+}
+
+/* Инпуты */
+html.light input,
+html.light textarea {
+  background: var(--spark-input) !important;
+  color: var(--spark-text) !important;
+  border-color: var(--spark-input-border) !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--spark-text-sub) !important;
+}
+
+/* Фон экранов с var(--spark-dark) */
+html.light [style*="var(--spark-dark)"] {
+  background: var(--spark-dark) !important;
+}
+html.light [style*="var(--spark-dark2)"] {
+  background: var(--spark-dark2) !important;
+}
+
+/* Плейсхолдеры в светлой теме */
+html.light .text-white\/30.italic {
+  color: rgba(26, 22, 37, 0.3) !important;
+}
+
+/* Тег-пилюли */
+html.light .tag-pill {
+  background: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(26, 22, 37, 0.15) !important;
+  color: rgba(26, 22, 37, 0.75) !important;
+}
+
+/* Пузыри сообщений */
+html.light .msg-bubble-in {
+  background: rgba(0, 0, 0, 0.07) !important;
+  color: #1a1625 !important;
+}
+
+/* Сообщения в чате — пузырь входящего */
+html.light .bg-white\/8,
+html.light [style*="background: rgba(255,255,255,0.08)"],
+html.light [style*="background: rgba(255, 255, 255, 0.08)"] {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Убираем белый текст на белом фоне в кнопках без градиента */
+html.light
+  button:not([style*="gradient"]):not([style*="FF2D78"]):not([style*="9B59B6"])
+  .text-white {
+  color: #1a1625 !important;
+}
+
+/* Градиентный текст сохраняем */
+html.light .grad-text {
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Фон app-bg::before/after в светлой теме — мягче */
+html.light .app-bg::before {
+  background: radial-gradient(
+    circle,
+    rgba(255, 45, 120, 0.08) 0%,
+    transparent 70%
+  );
+}
+html.light .app-bg::after {
+  background: radial-gradient(
+    circle,
+    rgba(123, 94, 167, 0.1) 0%,
+    transparent 70%
+  );
+}
+
+/* Скролл-бар в светлой теме */
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Блюр-фон для модалов */
+html.light [style*="rgba(0,0,0,0.6)"],
+html.light [style*="rgba(0, 0, 0, 0.6)"],
+html.light [style*="rgba(0,0,0,0.7)"],
+html.light [style*="rgba(0, 0, 0, 0.7)"],
+html.light [style*="rgba(0,0,0,0.8)"],
+html.light [style*="rgba(0, 0, 0, 0.8)"] {
+  background: var(--spark-overlay) !important;
+}
+
+/* Chat message input bar */
+html.light [style*="var(--spark-dark2)"] {
+  background: var(--spark-dark2) !important;
+}
+
+/* Premium badge */
+html.light .premium-badge {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* Кнопки со стеклянным фоном */
+html.light .glass-card button,
+html.light button.glass-card {
+  color: #1a1625;
+}
+
+/* Иконки белые → тёмные */
+html.light svg {
+  color: inherit;
+}
+
+/* Анимированный спиннер */
+html.light .border-t-transparent {
+  border-top-color: transparent !important;
 }
 
 /* Gradient text */
