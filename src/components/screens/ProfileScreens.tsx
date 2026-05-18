@@ -209,7 +209,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         />
 
         <div className="flex flex-col items-center px-5">
-          {/* Секция Фото / Приватные фото */}
+
+          {/* 1. Фото / Приватные фото */}
           <ProfilePhotoSection
             currentUser={currentUser}
             localPhoto={localPhoto}
@@ -234,7 +235,47 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             activeTab={activeTab as string | null}
           />
 
-          {/* Рост / Вес / Пол / Статус / Город */}
+          {/* 2. Premium баннер */}
+          <div className="w-full mt-3 p-4 rounded-2xl cursor-pointer"
+            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-white font-bold">LoveBloom Premium</span>
+                  <span className="premium-badge">✨ GOLD</span>
+                </div>
+                <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
+              </div>
+              <Icon name="ChevronRight" size={20} className="text-white" />
+            </div>
+          </div>
+
+          {/* 3. О себе */}
+          <div className="glass-card w-full p-4 mt-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
+              <button onClick={() => setEditOpen(true)} className="text-white/40 hover:text-white transition-colors">
+                <Icon name="Pencil" size={14} />
+              </button>
+            </div>
+            <p className="text-white/70 text-sm leading-relaxed">
+              {currentUser.bio || (
+                <span className="text-white/30 italic">Расскажи о себе — нажми «Изменить»</span>
+              )}
+            </p>
+            {(currentUser.tags || []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
+              </div>
+            )}
+            {!(currentUser.tags || []).length && (
+              <button onClick={() => setEditOpen(true)} className="tag-pill border-dashed opacity-50 mt-3">
+                + Добавить интересы
+              </button>
+            )}
+          </div>
+
+          {/* 4. Рост / Вес / Пол / Статус / Город */}
           <ProfileStatsBar
             currentUser={currentUser}
             statEdit={statEdit}
@@ -245,7 +286,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onSave={saveStat}
           />
 
-          {/* Подписчики и подписки */}
+          {/* 5. Подписчики и подписки */}
           <div className="glass-card w-full mt-3 flex items-center">
             <button onClick={() => setFollowModal("followers")}
               className="flex-1 flex flex-col items-center py-3 active:bg-white/5 transition-colors rounded-l-2xl">
@@ -262,6 +303,26 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {followModal && (
             <FollowersModal initialTab={followModal} onClose={() => setFollowModal(null)} />
+          )}
+
+          {/* 6. Дата регистрации */}
+          {currentUser.created_at && (
+            <div className="flex items-center justify-center gap-1.5 mt-4 mb-2">
+              <Icon name="Calendar" size={13} className="text-white/25" />
+              <span className="text-white/25 text-xs">
+                Присоединился {(() => {
+                  const d = new Date(currentUser.created_at!);
+                  const now = new Date();
+                  const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
+                  if (months === 0) return "менее месяца назад";
+                  if (months === 1) return "1 месяц назад";
+                  if (months < 5) return `${months} месяца назад`;
+                  if (months < 12) return `${months} месяцев назад`;
+                  const years = Math.floor(months / 12);
+                  return years === 1 ? "1 год назад" : `${years} года назад`;
+                })()}
+              </span>
+            </div>
           )}
 
           {/* Панель: Статистика */}
@@ -311,66 +372,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </div>
           )}
         </div>
-
-        {/* Premium баннер */}
-        <div className="mx-5 w-full mt-3 p-4 rounded-2xl cursor-pointer"
-          style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-white font-bold">LoveBloom Premium</span>
-                <span className="premium-badge">✨ GOLD</span>
-              </div>
-              <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
-            </div>
-            <Icon name="ChevronRight" size={20} className="text-white" />
-          </div>
-        </div>
-
-        {/* О себе */}
-        <div className="mx-5 glass-card p-4 mb-4 mt-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
-            <button onClick={() => setEditOpen(true)} className="text-white/40 hover:text-white transition-colors">
-              <Icon name="Pencil" size={14} />
-            </button>
-          </div>
-          <p className="text-white/70 text-sm leading-relaxed">
-            {currentUser.bio || (
-              <span className="text-white/30 italic">Расскажи о себе — нажми «Изменить»</span>
-            )}
-          </p>
-          {(currentUser.tags || []).length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
-            </div>
-          )}
-          {!(currentUser.tags || []).length && (
-            <button onClick={() => setEditOpen(true)} className="tag-pill border-dashed opacity-50 mt-3">
-              + Добавить интересы
-            </button>
-          )}
-        </div>
-
-        {/* Дата регистрации */}
-        {currentUser.created_at && (
-          <div className="flex items-center justify-center gap-1.5 mb-4">
-            <Icon name="Calendar" size={13} className="text-white/25" />
-            <span className="text-white/25 text-xs">
-              Присоединился {(() => {
-                const d = new Date(currentUser.created_at!);
-                const now = new Date();
-                const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
-                if (months === 0) return "менее месяца назад";
-                if (months === 1) return "1 месяц назад";
-                if (months < 5) return `${months} месяца назад`;
-                if (months < 12) return `${months} месяцев назад`;
-                const years = Math.floor(months / 12);
-                return years === 1 ? "1 год назад" : `${years} года назад`;
-              })()}
-            </span>
-          </div>
-        )}
 
         <div className="h-6" />
       </div>
