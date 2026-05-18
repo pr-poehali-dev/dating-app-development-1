@@ -18,6 +18,7 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [reported, setReported] = useState(false);
 
@@ -120,8 +121,18 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
 
         {/* Photo */}
         <div className="relative" onDoubleClick={handleLike}>
-          <img src={post.photo_url} className="w-full object-cover" style={{ maxHeight: 400 }} />
+          <img src={post.photo_url} className="w-full object-cover cursor-pointer" style={{ maxHeight: 400 }} onClick={() => setLightbox(true)} />
         </div>
+
+        {/* Lightbox */}
+        {lightbox && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm" onClick={() => setLightbox(false)}>
+            <img src={post.photo_url} className="max-w-full max-h-full object-contain" />
+            <button className="absolute top-4 right-4 text-white/60 hover:text-white" onClick={() => setLightbox(false)}>
+              <Icon name="X" size={28} />
+            </button>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="px-4 pt-3 pb-1 flex items-center gap-5">
