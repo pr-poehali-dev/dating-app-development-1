@@ -66,6 +66,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showForgot, setShowForgot] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -111,9 +112,16 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         )}
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email"
           className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
-        <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" type="password"
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+        <div className="relative">
+          <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль"
+            type={showPassword ? "text" : "password"}
+            onKeyDown={(e) => e.key === "Enter" && submit()}
+            className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 pr-11 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+          <button type="button" onClick={() => setShowPassword(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors">
+            <Icon name={showPassword ? "EyeOff" : "Eye"} size={18} />
+          </button>
+        </div>
 
         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
