@@ -54,15 +54,25 @@ def handler(event: dict, context) -> dict:
             cur.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cur.fetchone():
                 return resp(400, {'error': 'Email уже занят'})
+            import re
+            base_username = re.sub(r'[^a-z0-9_]', '', name.lower().replace(' ', '_'))[:20] or 'user'
+            candidate = base_username
+            suffix = 1
+            while True:
+                cur.execute("SELECT id FROM users WHERE username = %s", (candidate,))
+                if not cur.fetchone():
+                    break
+                candidate = f"{base_username}{suffix}"
+                suffix += 1
             cur.execute(
-                "INSERT INTO users (email, password_hash, name) VALUES (%s, %s, %s) RETURNING id",
-                (email, hash_password(password), name)
+                "INSERT INTO users (email, password_hash, name, username) VALUES (%s, %s, %s, %s) RETURNING id",
+                (email, hash_password(password), name, candidate)
             )
             user_id = cur.fetchone()[0]
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
             conn.commit()
-            return resp(200, {'token': new_token, 'user': {'id': user_id, 'name': name, 'email': email}})
+            return resp(200, {'token': new_token, 'user': {'id': user_id, 'name': name, 'email': email, 'username': candidate}})
 
         if action == 'login':
             email = body.get('email', '').strip().lower()

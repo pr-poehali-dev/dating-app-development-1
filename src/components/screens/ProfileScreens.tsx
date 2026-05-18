@@ -243,13 +243,13 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           <div className="h-12" />
           {photoError && <p className="text-red-400 text-xs mb-1 text-center">{photoError}</p>}
 
-          <h3 className="text-white font-bold text-xl mt-1">
+          {currentUser.username && (
+            <p className="text-white/40 text-xs font-mono mt-1">@{currentUser.username}</p>
+          )}
+          <h3 className="text-white font-bold text-xl mt-0.5">
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
             {currentUser.verified && <span className="ml-1.5 text-blue-400 text-base">✓</span>}
           </h3>
-          {currentUser.username && (
-            <p className="text-white/40 text-sm font-mono mt-0.5">@{currentUser.username}</p>
-          )}
 
           {/* Кнопки Фото / Приватное фото */}
           <div className="grid grid-cols-2 gap-2 w-full mt-4">

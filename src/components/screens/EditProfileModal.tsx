@@ -10,6 +10,7 @@ export function EditProfileModal({ user, onSave, onClose }: {
   onClose: () => void;
 }) {
   const [name, setName] = useState(user.name || "");
+  const [username, setUsername] = useState(user.username || "");
   const [age, setAge] = useState(String(user.age || ""));
   const [city, setCity] = useState(user.city || "");
   const [bio, setBio] = useState(user.bio || "");
@@ -27,6 +28,7 @@ export function EditProfileModal({ user, onSave, onClose }: {
     setSaving(true);
     const payload: Partial<User> = {
       name: name.trim(),
+      username: user.premium ? username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || undefined : undefined,
       age: age ? Number(age) : undefined,
       city: city.trim(),
       bio: bio.trim(),
@@ -68,6 +70,35 @@ export function EditProfileModal({ user, onSave, onClose }: {
             <label className="text-white/50 text-xs uppercase tracking-widest block mb-2">Имя</label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Твоё имя" maxLength={50}
               className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-white/50 text-xs uppercase tracking-widest">Ник</label>
+              {!user.premium && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
+                  ✨ Premium
+                </span>
+              )}
+            </div>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm">@</span>
+              <input
+                value={username}
+                onChange={(e) => user.premium && setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())}
+                placeholder={user.username || "username"}
+                maxLength={30}
+                disabled={!user.premium}
+                className="w-full pl-8 pr-4 py-3 rounded-2xl text-sm font-mono outline-none border transition-colors"
+                style={user.premium
+                  ? { background: "rgba(255,255,255,0.1)", color: "white", borderColor: "rgba(255,255,255,0.1)" }
+                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)", borderColor: "rgba(255,255,255,0.06)", cursor: "not-allowed" }}
+              />
+            </div>
+            {!user.premium && (
+              <p className="text-white/25 text-[11px] mt-1.5">Смена ника доступна с Premium-подпиской</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
