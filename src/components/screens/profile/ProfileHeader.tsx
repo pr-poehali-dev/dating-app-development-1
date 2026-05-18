@@ -121,20 +121,6 @@ export function ProfileHeader({
         </button>
       </div>
 
-      {/* Premium баннер */}
-      <div className="w-full mt-3 p-4 rounded-2xl cursor-pointer"
-        style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold">LoveBloom Premium</span>
-              <span className="premium-badge">✨ GOLD</span>
-            </div>
-            <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
-          </div>
-          <Icon name="ChevronRight" size={20} className="text-white" />
-        </div>
-      </div>
     </div>
   );
 }
