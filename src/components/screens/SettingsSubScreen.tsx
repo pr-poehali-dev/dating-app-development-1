@@ -16,8 +16,21 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [saved, setSaved] = useState(false);
 
   const [notif, setNotif] = useState({ matches: true, messages: true, likes: true, promo: false });
-  const [appear, setAppear] = useState({ darkMode: true, compactCards: false, showAge: true });
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
+  const [appear, setAppear] = useState({ compactCards: false, showAge: true });
   const [sounds, setSounds] = useState({ messages: true, matches: true, notifications: true });
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
   const [video, setVideo] = useState({ autoAccept: false, blurBg: true, mirrorCamera: true });
   const [privacy, setPrivacy] = useState({ showOnline: true, showDistance: true, readReceipts: true, searchable: true });
 
@@ -189,7 +202,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         {screen === "appearance" && (
           <div className="mx-5 glass-card overflow-hidden">
             <Row label="Тёмная тема" sub="Тёмный фон интерфейса">
-              <Toggle value={appear.darkMode} onChange={() => setAppear(a => ({ ...a, darkMode: !a.darkMode }))} />
+              <Toggle value={isDark} onChange={toggleTheme} />
             </Row>
             <Row label="Компактные карточки" sub="Меньше информации на карточке">
               <Toggle value={appear.compactCards} onChange={() => setAppear(a => ({ ...a, compactCards: !a.compactCards }))} />

@@ -60,12 +60,21 @@
   }
 }
 
+/* ── Light theme overrides ── */
+html.light {
+  --spark-dark: #f0eef8;
+  --spark-dark2: #e4e0f2;
+  --spark-glass: rgba(0, 0, 0, 0.04);
+  --spark-glass-border: rgba(0, 0, 0, 0.1);
+}
+
 /* App shell */
 .app-bg {
   background: var(--spark-dark);
   min-height: 100dvh;
   position: relative;
   overflow: hidden;
+  transition: background 0.3s ease;
 }
 
 .app-bg::before {
@@ -102,10 +111,82 @@
 
 /* Glass card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--spark-glass);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--spark-glass-border);
   border-radius: 24px;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+
+/* Light theme text adjustments */
+html.light .glass-card {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+}
+html.light .text-white {
+  color: #1a1625 !important;
+}
+html.light .text-white\/85 {
+  color: rgba(26, 22, 37, 0.85) !important;
+}
+html.light .text-white\/80 {
+  color: rgba(26, 22, 37, 0.8) !important;
+}
+html.light .text-white\/70 {
+  color: rgba(26, 22, 37, 0.7) !important;
+}
+html.light .text-white\/60 {
+  color: rgba(26, 22, 37, 0.6) !important;
+}
+html.light .text-white\/50 {
+  color: rgba(26, 22, 37, 0.5) !important;
+}
+html.light .text-white\/40 {
+  color: rgba(26, 22, 37, 0.4) !important;
+}
+html.light .text-white\/35 {
+  color: rgba(26, 22, 37, 0.35) !important;
+}
+html.light .text-white\/30 {
+  color: rgba(26, 22, 37, 0.3) !important;
+}
+html.light .text-white\/25 {
+  color: rgba(26, 22, 37, 0.25) !important;
+}
+html.light .text-white\/20 {
+  color: rgba(26, 22, 37, 0.2) !important;
+}
+html.light .bg-white\/5 {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+html.light .bg-white\/8 {
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+html.light .bg-white\/10 {
+  background: rgba(0, 0, 0, 0.07) !important;
+}
+html.light .bg-white\/12 {
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+html.light .bg-white\/15 {
+  background: rgba(0, 0, 0, 0.09) !important;
+}
+html.light .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html.light .border-white\/8 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+html.light .border-white\/10 {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.light .nav-item {
+  color: rgba(26, 22, 37, 0.4);
+}
+html.light .nav-item.active {
+  color: #1a1625;
+  background: rgba(0, 0, 0, 0.08);
 }
 
 /* Gradient text */
