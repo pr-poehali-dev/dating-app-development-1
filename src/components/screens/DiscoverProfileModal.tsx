@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { likesApi, type Profile } from "@/lib/api";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
@@ -28,6 +28,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const liked = likedSet.has(currentProfile.id);
   const [liking, setLiking] = useState(false);
   const [matchId, setMatchId] = useState<number | null>(null);
+  const [swipeAnim, setSwipeAnim] = useState<"idle" | "left" | "right">("idle");
   const [showReport, setShowReport] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showMsgInput, setShowMsgInput] = useState(false);
@@ -94,18 +95,34 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       if (res.match && res.match_id) {
         setMatchId(res.match_id);
       }
+      onLike(currentProfile);
+      animateThen("right", () => {
+        if (profiles && currentIdx < profiles.length - 1) {
+          setCurrentIdx(i => i + 1);
+          setMatchId(null);
+        }
+      });
     } catch (e) { void e; }
     finally { setLiking(false); }
-    onLike(currentProfile);
   };
 
+  const animateThen = useCallback((dir: "left" | "right", cb: () => void) => {
+    setSwipeAnim(dir);
+    setTimeout(() => {
+      cb();
+      setSwipeAnim("idle");
+    }, 280);
+  }, []);
+
   const handleSkip = () => {
-    if (profiles && currentIdx < profiles.length - 1) {
-      setCurrentIdx(i => i + 1);
-      setMatchId(null);
-    } else {
-      onClose();
-    }
+    animateThen("left", () => {
+      if (profiles && currentIdx < profiles.length - 1) {
+        setCurrentIdx(i => i + 1);
+        setMatchId(null);
+      } else {
+        onClose();
+      }
+    });
   };
 
   const handleOpenChat = async () => {
@@ -199,7 +216,15 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         </div>
       )}
 
-      <div className="absolute inset-0 z-30 flex flex-col" style={{ background: "var(--spark-dark)" }}>
+      <div
+        className="absolute inset-0 z-30 flex flex-col"
+        style={{
+          background: "var(--spark-dark)",
+          transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
+          transform: swipeAnim === "left" ? "translateX(-110%)" : swipeAnim === "right" ? "translateX(110%)" : "translateX(0)",
+          opacity: swipeAnim === "idle" ? 1 : 0,
+        }}
+      >
         <div className="relative flex-shrink-0" style={{ height: "58%" }}
           onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           <img src={currentPhoto} className="w-full h-full object-cover transition-opacity duration-300"
