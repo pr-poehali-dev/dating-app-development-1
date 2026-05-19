@@ -8,42 +8,17 @@ const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68
 export function VerifyScreen({ onClose }: { onClose: () => void }) {
   const [status, setStatus] = useState<VerifyStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState<"main" | "email" | "selfie">("main");
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [step, setStep] = useState<"main" | "selfie">("main");
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     verifyApi.getStatus()
-      .then((s) => { setStatus(s); if (s.email) setEmail(s.email); })
+      .then((s) => { setStatus(s); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  const sendCode = async () => {
-    if (!email.includes("@")) return setMsg("Введи корректный email");
-    setSending(true); setMsg("");
-    try { await verifyApi.sendEmailCode(email); setCodeSent(true); setMsg("Код отправлен на " + email); }
-    catch (e: unknown) { setMsg(e instanceof Error ? e.message : "Ошибка"); }
-    finally { setSending(false); }
-  };
-
-  const confirmCode = async () => {
-    if (code.length < 6) return setMsg("Введи 6-значный код");
-    setSending(true); setMsg("");
-    try {
-      await verifyApi.confirmEmailCode(email, code);
-      setMsg("Email подтверждён!");
-      const s = await verifyApi.getStatus();
-      setStatus(s); setStep("main");
-    }
-    catch (e: unknown) { setMsg(e instanceof Error ? e.message : "Неверный код"); }
-    finally { setSending(false); }
-  };
 
   const handleSelfie = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -96,28 +71,11 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
           <div className="glass-card p-4 flex flex-col gap-3">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                style={{ background: status?.email_verified ? "rgba(59,130,246,0.2)" : "rgba(255,255,255,0.1)", color: status?.email_verified ? "#3B82F6" : "white" }}>
-                {status?.email_verified ? "✓" : "1"}
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-semibold text-sm">Подтверди email</p>
-                <p className="text-white/50 text-xs">{status?.email_verified ? `${status.email} — подтверждён` : "Получи код на почту"}</p>
-              </div>
-              {!status?.email_verified && (
-                <button onClick={() => { setStep("email"); setMsg(""); }}
-                  className="btn-grad px-3 py-1.5 text-xs font-semibold">Начать</button>
-              )}
-            </div>
-          </div>
-
-          <div className="glass-card p-4 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                 style={{
                   background: status?.selfie_status === "approved" ? "rgba(59,130,246,0.2)" : status?.selfie_status === "pending" ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.1)",
                   color: status?.selfie_status === "approved" ? "#3B82F6" : status?.selfie_status === "pending" ? "#F59E0B" : "white"
                 }}>
-                {status?.selfie_status === "approved" ? "✓" : status?.selfie_status === "pending" ? "⏳" : "2"}
+                {status?.selfie_status === "approved" ? "✓" : status?.selfie_status === "pending" ? "⏳" : "📸"}
               </div>
               <div className="flex-1">
                 <p className="text-white font-semibold text-sm">Селфи с жестом</p>
@@ -130,7 +88,7 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
               </div>
               {(!status?.selfie_status || status.selfie_status === "rejected") && (
                 <button onClick={() => { setStep("selfie"); setMsg(""); }}
-                  className="glass-card px-3 py-1.5 text-xs text-white/70">Загрузить</button>
+                  className="btn-grad px-3 py-1.5 text-xs font-semibold">Загрузить</button>
               )}
             </div>
           </div>
@@ -143,35 +101,6 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
           )}
 
           {msg && <p className="text-center text-sm" style={{ color: msg.includes("!") ? "#4ADE80" : "#FB7185" }}>{msg}</p>}
-        </div>
-
-      ) : step === "email" ? (
-        <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-4 pb-6">
-          <div className="glass-card p-4 flex flex-col gap-4">
-            <p className="text-white font-semibold text-sm">Введи email для подтверждения</p>
-            <input value={email} onChange={(e) => setEmail(e.target.value.toLowerCase())}
-              placeholder="example@mail.com" type="email"
-              className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
-            {!codeSent ? (
-              <button onClick={sendCode} disabled={sending}
-                className="btn-grad py-3 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-                {sending ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Отправляем...</> : "Отправить код"}
-              </button>
-            ) : (
-              <>
-                <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="6-значный код"
-                  maxLength={6} inputMode="numeric"
-                  className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos text-center text-xl tracking-widest" />
-                <button onClick={confirmCode} disabled={sending}
-                  className="btn-grad py-3 text-sm font-semibold disabled:opacity-50">
-                  {sending ? "Проверяем..." : "Подтвердить"}
-                </button>
-                <button onClick={sendCode} className="text-white/40 text-xs text-center">Отправить повторно</button>
-              </>
-            )}
-            {msg && <p className="text-center text-xs" style={{ color: msg.includes("отправлен") || msg.includes("!") ? "#4ADE80" : "#FB7185" }}>{msg}</p>}
-          </div>
-          <button onClick={() => setStep("main")} className="text-white/40 text-sm text-center">← Назад</button>
         </div>
 
       ) : (
