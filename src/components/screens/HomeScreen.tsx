@@ -7,6 +7,19 @@ import { CommentSheet } from "@/components/screens/HomeCommentSheet";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NotificationsSheet } from "@/components/screens/NotificationsSheet";
 
+const HEART_IMG = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/2a03b199-ae6e-4313-a7a8-2ef9ad85308e.jpg";
+
+const GIFTS = [
+  { id: 1,  name: "Сердце",        image: HEART_IMG, price: 15  },
+  { id: 2,  name: "Большое сердце",image: HEART_IMG, price: 50  },
+  { id: 3,  name: "Горящее сердце",image: HEART_IMG, price: 99  },
+  { id: 4,  name: "Золотое сердце",image: HEART_IMG, price: 199 },
+  { id: 5,  name: "Алмазное сердце",image: HEART_IMG, price: 499 },
+  { id: 6,  name: "Вечное сердце", image: HEART_IMG, price: 999 },
+  { id: 7,  name: "Редкое сердце", image: HEART_IMG, price: 2499 },
+  { id: 8,  name: "Легендарное",   image: HEART_IMG, price: 4999 },
+];
+
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   currentUser: User;
@@ -24,6 +37,9 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
   const [showNotifs, setShowNotifs] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showGifts, setShowGifts] = useState(false);
+  const [giftBuying, setGiftBuying] = useState<number | null>(null);
+  const [giftDone, setGiftDone] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -159,6 +175,11 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
               style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
               <Icon name="Plus" size={20} className="text-white" />
             </button>
+            <button onClick={() => setShowGifts(true)}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <Icon name="Gift" size={18} className="text-white/80" />
+            </button>
             <button onClick={() => { setShowNotifs(true); setUnreadCount(0); }}
               className="relative w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90"
               style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
@@ -218,6 +239,77 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
           )}
         </div>
       </div>
+
+      {/* Модал подарков */}
+      {showGifts && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
+          onClick={() => setShowGifts(false)}>
+          <div className="rounded-t-3xl flex flex-col max-h-[85dvh]"
+            style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+            </div>
+
+            {/* Заголовок */}
+            <div className="flex items-center justify-between px-5 pb-3 pt-1 flex-shrink-0">
+              <div>
+                <p className="text-white font-bold text-lg">Подарки</p>
+                <p className="text-white/40 text-xs mt-0.5">Все подарки — платные</p>
+              </div>
+              <button onClick={() => setShowGifts(false)} className="text-white/40">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+
+            {/* Сетка подарков */}
+            <div className="overflow-y-auto px-4 pb-8">
+              <div className="grid grid-cols-4 gap-3">
+                {GIFTS.map((gift) => (
+                  <button key={gift.id} onClick={() => { setGiftBuying(gift.id); setGiftDone(null); }}
+                    className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all active:scale-95"
+                    style={{ background: giftBuying === gift.id ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.05)", border: giftBuying === gift.id ? "1px solid rgba(255,45,120,0.4)" : "1px solid rgba(255,255,255,0.08)" }}>
+                    <img src={gift.image} alt={gift.name} className="w-14 h-14 object-contain" />
+                    <p className="text-white/80 text-xs font-semibold leading-tight text-center">{gift.name}</p>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                      {gift.price} ⭐
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Панель покупки */}
+              {giftBuying !== null && (() => {
+                const gift = GIFTS.find(g => g.id === giftBuying)!;
+                return (
+                  <div className="mt-4 rounded-2xl p-4 flex items-center gap-4"
+                    style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)" }}>
+                    <img src={gift.image} className="w-12 h-12 object-contain flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm">{gift.name}</p>
+                      <p className="text-white/40 text-xs">{gift.price} звёзд</p>
+                    </div>
+                    {giftDone === giftBuying ? (
+                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: "rgba(74,222,128,0.15)" }}>
+                        <Icon name="Check" size={14} className="text-green-400" />
+                        <span className="text-green-400 text-xs font-semibold">Отправлено!</span>
+                      </div>
+                    ) : (
+                      <button onClick={() => setGiftDone(giftBuying)}
+                        className="btn-grad px-4 py-2 text-xs font-bold text-white rounded-xl flex-shrink-0">
+                        Купить
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
