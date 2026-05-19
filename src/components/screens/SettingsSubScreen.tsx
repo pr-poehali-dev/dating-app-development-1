@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type User } from "@/lib/api";
 
@@ -9,6 +9,19 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) closeMenu();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen, closeMenu]);
+
   const [name, setName] = useState(currentUser.name || "");
   const [email, setEmail] = useState(currentUser.email || "");
   const [username, setUsername] = useState(currentUser.username || "");
@@ -129,6 +142,31 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
           <Icon name="ChevronLeft" size={20} className="text-white" />
         </button>
         <h2 className="text-white font-golos font-bold text-xl flex-1">{titles[screen]}</h2>
+        {screen === "account" && (
+          <div className="relative" ref={menuRef}>
+            <button onClick={() => setMenuOpen(v => !v)} className="glass-card p-2">
+              <Icon name="MoreVertical" size={20} className="text-white" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-50 shadow-xl"
+                style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}>
+                {[
+                  { icon: "RotateCcw", label: "Восстановить покупки", danger: false },
+                  { icon: "KeyRound",  label: "Сменить пароль",       danger: false },
+                  { icon: "LogOut",    label: "Выйти",                danger: false },
+                  { icon: "Trash2",    label: "Удалить аккаунт",      danger: true  },
+                ].map(({ icon, label, danger }) => (
+                  <button key={label} onClick={closeMenu}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5 border-b border-white/5 last:border-0"
+                    style={{ color: danger ? "#EF4444" : "var(--spark-text, white)" }}>
+                    <Icon name={icon} size={16} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto pb-8">
