@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, type User } from "@/lib/api";
+import { profilesApi, authApi, type User } from "@/lib/api";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
-export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose }: {
+export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium }: {
   screen: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
   currentUser: User;
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
+  onLogout?: () => void;
+  onPremium?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -21,6 +23,35 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen, closeMenu]);
+
+  const [pwModal, setPwModal] = useState(false);
+  const [pwSent, setPwSent] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [menuMsg, setMenuMsg] = useState("");
+
+  const handleResetPassword = async () => {
+    if (!currentUser.email) return;
+    setPwLoading(true);
+    try {
+      await authApi.resetPassword(currentUser.email);
+      setPwSent(true);
+    } catch { setMenuMsg("Ошибка отправки письма"); }
+    finally { setPwLoading(false); }
+  };
+
+  const handleLogout = async () => {
+    closeMenu();
+    await authApi.logout();
+    onLogout?.();
+  };
+
+  const handleDeleteAccount = async () => {
+    closeMenu();
+    setDeleteConfirm(false);
+    await authApi.logout();
+    onLogout?.();
+  };
 
   const [name, setName] = useState(currentUser.name || "");
   const [email, setEmail] = useState(currentUser.email || "");
@@ -154,12 +185,12 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
               <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden z-50 shadow-xl"
                 style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}>
                 {[
-                  { icon: "RotateCcw", label: "Восстановить покупки", danger: false },
-                  { icon: "KeyRound",  label: "Сменить пароль",       danger: false },
-                  { icon: "LogOut",    label: "Выйти",                danger: false },
-                  { icon: "Trash2",    label: "Удалить аккаунт",      danger: true  },
-                ].map(({ icon, label, danger }) => (
-                  <button key={label} onClick={closeMenu}
+                  { icon: "RotateCcw", label: "Восстановить покупки", danger: false, action: () => { closeMenu(); onPremium?.(); } },
+                  { icon: "KeyRound",  label: "Сменить пароль",       danger: false, action: () => { closeMenu(); setPwSent(false); setMenuMsg(""); setPwModal(true); } },
+                  { icon: "LogOut",    label: "Выйти",                danger: false, action: handleLogout },
+                  { icon: "Trash2",    label: "Удалить аккаунт",      danger: true,  action: () => { closeMenu(); setDeleteConfirm(true); } },
+                ].map(({ icon, label, danger, action }) => (
+                  <button key={label} onClick={action}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5 border-b border-white/5 last:border-0"
                     style={{ color: danger ? "#EF4444" : "var(--spark-text, white)" }}>
                     <Icon name={icon} size={16} />
@@ -206,7 +237,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
                 ) : (
                   <div className="flex items-center justify-between">
                     <span className="text-white/50 text-sm font-mono">@lovebloom_1</span>
-                    <button className="text-xs px-3 py-1.5 rounded-xl font-semibold"
+                    <button onClick={onPremium} className="text-xs px-3 py-1.5 rounded-xl font-semibold"
                       style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
                       Изменить
                     </button>
@@ -400,6 +431,53 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
           </div>
         )}
       </div>
+
+      {/* Модал смены пароля */}
+      {pwModal && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}>
+          <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4" style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}>
+            <div className="flex items-center justify-between">
+              <p className="text-white font-bold text-lg">Сменить пароль</p>
+              <button onClick={() => setPwModal(false)} className="text-white/40"><Icon name="X" size={20} /></button>
+            </div>
+            {pwSent ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <Icon name="MailCheck" size={40} className="text-green-400" />
+                <p className="text-white/80 text-sm text-center">Письмо со ссылкой для сброса пароля отправлено на <span className="text-white font-semibold">{currentUser.email}</span></p>
+              </div>
+            ) : (
+              <>
+                <p className="text-white/50 text-sm leading-relaxed">Мы отправим письмо на <span className="text-white/80">{currentUser.email}</span> со ссылкой для сброса пароля.</p>
+                {menuMsg && <p className="text-red-400 text-xs text-center">{menuMsg}</p>}
+                <button onClick={handleResetPassword} disabled={pwLoading}
+                  className="btn-grad py-3 text-sm font-semibold text-white rounded-2xl disabled:opacity-50 flex items-center justify-center gap-2">
+                  {pwLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Отправляем...</> : "Отправить письмо"}
+                </button>
+              </>
+            )}
+            <button onClick={() => setPwModal(false)} className="text-white/40 text-sm text-center">Закрыть</button>
+          </div>
+        </div>
+      )}
+
+      {/* Модал подтверждения удаления */}
+      {deleteConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-6" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}>
+          <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4" style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}>
+            <div className="flex items-center justify-between">
+              <p className="text-white font-bold text-lg">Удалить аккаунт?</p>
+              <button onClick={() => setDeleteConfirm(false)} className="text-white/40"><Icon name="X" size={20} /></button>
+            </div>
+            <p className="text-white/50 text-sm leading-relaxed">Все твои данные, совпадения и сообщения будут безвозвратно удалены. Это действие нельзя отменить.</p>
+            <button onClick={handleDeleteAccount}
+              className="py-3 text-sm font-semibold rounded-2xl flex items-center justify-center"
+              style={{ background: "rgba(239,68,68,0.15)", color: "#EF4444", border: "1px solid rgba(239,68,68,0.3)" }}>
+              Да, удалить аккаунт
+            </button>
+            <button onClick={() => setDeleteConfirm(false)} className="text-white/40 text-sm text-center">Отмена</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

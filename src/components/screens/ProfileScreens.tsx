@@ -383,6 +383,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             currentUser={currentUser}
             onProfileUpdate={onProfileUpdate}
             onClose={() => setSettingsScreen(null)}
+            onLogout={onLogout}
+            onPremium={onPremium}
           />
         </div>
       )}
