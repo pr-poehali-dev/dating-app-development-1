@@ -121,13 +121,16 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
 
   const saveAccount = async () => {
     setUsernameError("");
-    if (username && !/^[a-z0-9_.]{3,50}$/.test(username)) {
+    if (currentUser.premium && username && !/^[a-z0-9_.]{3,50}$/.test(username)) {
       setUsernameError("Только латиница, цифры, _ и . (3-50 символов)");
       return;
     }
     try {
-      await profilesApi.updateMe({ name, username: username || undefined } as Parameters<typeof profilesApi.updateMe>[0]);
-      onProfileUpdate({ name, username: username || undefined });
+      const updateData = currentUser.premium
+        ? { name, username: username || undefined }
+        : { name };
+      await profilesApi.updateMe(updateData as Parameters<typeof profilesApi.updateMe>[0]);
+      onProfileUpdate(updateData);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e: unknown) {
@@ -180,15 +183,35 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
                   placeholder="Твоё имя" />
               </div>
               <div className="px-4 py-3 border-b border-white/5">
-                <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Имя пользователя</p>
-                <div className="flex items-center gap-1">
-                  <span className="text-white/30 text-sm">@</span>
-                  <input value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameError(""); }}
-                    className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30 font-mono"
-                    placeholder="username" maxLength={50} />
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-white/40 text-xs uppercase tracking-widest">Имя пользователя</p>
+                  {!currentUser.premium && (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                      Premium
+                    </span>
+                  )}
                 </div>
-                {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
-                <p className="text-white/25 text-xs mt-1">Только a-z, 0-9, _ и . (3–50 символов)</p>
+                {currentUser.premium ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <span className="text-white/30 text-sm">@</span>
+                      <input value={username} onChange={(e) => { setUsername(e.target.value.toLowerCase()); setUsernameError(""); }}
+                        className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30 font-mono"
+                        placeholder="username" maxLength={50} />
+                    </div>
+                    {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
+                    <p className="text-white/25 text-xs mt-1">Только a-z, 0-9, _ и . (3–50 символов)</p>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-white/50 text-sm font-mono">@lovebloom_1</span>
+                    <button className="text-xs px-3 py-1.5 rounded-xl font-semibold"
+                      style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
+                      Изменить
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="px-4 py-3">
                 <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Электронная почта</p>
