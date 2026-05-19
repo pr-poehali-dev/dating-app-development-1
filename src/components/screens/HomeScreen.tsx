@@ -7,18 +7,23 @@ import { CommentSheet } from "@/components/screens/HomeCommentSheet";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NotificationsSheet } from "@/components/screens/NotificationsSheet";
 
-const HEART_IMG = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/2a03b199-ae6e-4313-a7a8-2ef9ad85308e.jpg";
-
 const GIFTS = [
-  { id: 1,  name: "Сердце",        image: HEART_IMG, price: 15  },
-  { id: 2,  name: "Большое сердце",image: HEART_IMG, price: 50  },
-  { id: 3,  name: "Горящее сердце",image: HEART_IMG, price: 99  },
-  { id: 4,  name: "Золотое сердце",image: HEART_IMG, price: 199 },
-  { id: 5,  name: "Алмазное сердце",image: HEART_IMG, price: 499 },
-  { id: 6,  name: "Вечное сердце", image: HEART_IMG, price: 999 },
-  { id: 7,  name: "Редкое сердце", image: HEART_IMG, price: 2499 },
-  { id: 8,  name: "Легендарное",   image: HEART_IMG, price: 4999 },
+  { id: 1, name: "Сердце",          image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/780e6930-f6c2-484f-8716-da3b5ca80beb.jpg", price: 15,   anim: "gift-float",   rarity: "common"    },
+  { id: 2, name: "Большое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/e62bd618-810d-4ffa-b5e1-ea527a2f7789.jpg", price: 50,   anim: "gift-pulse",   rarity: "common"    },
+  { id: 3, name: "Горящее сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/b8900760-8ca5-478d-82f9-327e733021fd.jpg", price: 99,   anim: "gift-shake",   rarity: "rare"      },
+  { id: 4, name: "Золотое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/75602fbe-4c21-48fa-afbb-923e6c13d49b.jpg", price: 199,  anim: "gift-spin",    rarity: "rare"      },
+  { id: 5, name: "Алмазное сердце", image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/b68af420-0d63-4408-9a54-ffd67695f558.jpg", price: 499,  anim: "gift-sparkle", rarity: "epic"      },
+  { id: 6, name: "Вечное сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/35a1f4c7-e749-461d-92b8-8577c293b692.jpg", price: 999,  anim: "gift-glow",    rarity: "epic"      },
+  { id: 7, name: "Редкое сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/20fb165f-5299-495f-b4d3-c8d5d8bcbbd5.jpg", price: 2499, anim: "gift-orbit",   rarity: "legendary" },
+  { id: 8, name: "Легендарное",     image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/0a1a97c7-4ae8-4de5-8b84-9d9020be8067.jpg", price: 4999, anim: "gift-rainbow",  rarity: "legendary" },
 ];
+
+const RARITY_STYLE: Record<string, { label: string; border: string; bg: string; text: string }> = {
+  common:    { label: "",           border: "rgba(255,255,255,0.08)", bg: "rgba(255,255,255,0.04)", text: "" },
+  rare:      { label: "Редкий",     border: "rgba(99,179,237,0.4)",   bg: "rgba(99,179,237,0.07)",  text: "#63B3ED" },
+  epic:      { label: "Эпический",  border: "rgba(159,122,234,0.5)",  bg: "rgba(159,122,234,0.08)", text: "#9F7AEA" },
+  legendary: { label: "Легендарный",border: "rgba(237,137,54,0.6)",   bg: "rgba(237,137,54,0.1)",   text: "#ED8936" },
+};
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
@@ -266,30 +271,50 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
 
             {/* Сетка подарков */}
             <div className="overflow-y-auto px-4 pb-8">
-              <div className="grid grid-cols-4 gap-3">
-                {GIFTS.map((gift) => (
-                  <button key={gift.id} onClick={() => { setGiftBuying(gift.id); setGiftDone(null); }}
-                    className="flex flex-col items-center gap-1.5 p-2 rounded-2xl transition-all active:scale-95"
-                    style={{ background: giftBuying === gift.id ? "rgba(255,45,120,0.15)" : "rgba(255,255,255,0.05)", border: giftBuying === gift.id ? "1px solid rgba(255,45,120,0.4)" : "1px solid rgba(255,255,255,0.08)" }}>
-                    <img src={gift.image} alt={gift.name} className="w-14 h-14 object-contain" />
-                    <p className="text-white/80 text-xs font-semibold leading-tight text-center">{gift.name}</p>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
-                      {gift.price} ⭐
-                    </span>
-                  </button>
-                ))}
+              <div className="grid grid-cols-4 gap-2.5">
+                {GIFTS.map((gift) => {
+                  const rs = RARITY_STYLE[gift.rarity];
+                  const selected = giftBuying === gift.id;
+                  return (
+                    <button key={gift.id} onClick={() => { setGiftBuying(gift.id); setGiftDone(null); }}
+                      className="flex flex-col items-center gap-1 p-2 rounded-2xl transition-all active:scale-90 relative overflow-hidden"
+                      style={{
+                        background: selected ? rs.bg : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${selected ? rs.border : "rgba(255,255,255,0.08)"}`,
+                        boxShadow: selected && gift.rarity !== "common" ? `0 0 12px ${rs.border}` : "none",
+                      }}>
+                      {rs.label && (
+                        <span className="absolute top-1 left-1 text-[8px] font-bold px-1 py-0.5 rounded-md leading-none"
+                          style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.border}` }}>
+                          {rs.label}
+                        </span>
+                      )}
+                      <div className={`w-14 h-14 flex items-center justify-center ${gift.anim}`}>
+                        <img src={gift.image} alt={gift.name} className="w-full h-full object-contain drop-shadow-lg" />
+                      </div>
+                      <p className="text-white/80 text-[10px] font-semibold leading-tight text-center line-clamp-2">{gift.name}</p>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                        style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                        {gift.price} ⭐
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Панель покупки */}
               {giftBuying !== null && (() => {
                 const gift = GIFTS.find(g => g.id === giftBuying)!;
+                const rs = RARITY_STYLE[gift.rarity];
                 return (
-                  <div className="mt-4 rounded-2xl p-4 flex items-center gap-4"
-                    style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)" }}>
-                    <img src={gift.image} className="w-12 h-12 object-contain flex-shrink-0" />
+                  <div className="mt-3 rounded-2xl p-4 flex items-center gap-4"
+                    style={{ background: rs.bg || "rgba(255,45,120,0.08)", border: `1px solid ${rs.border || "rgba(255,45,120,0.2)"}` }}>
+                    <div className={`w-14 h-14 flex-shrink-0 ${gift.anim}`}>
+                      <img src={gift.image} className="w-full h-full object-contain" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-semibold text-sm">{gift.name}</p>
+                      {rs.label && <p className="text-xs font-bold mt-0.5" style={{ color: rs.text }}>{rs.label}</p>}
                       <p className="text-white/40 text-xs">{gift.price} звёзд</p>
                     </div>
                     {giftDone === giftBuying ? (
@@ -299,7 +324,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                       </div>
                     ) : (
                       <button onClick={() => setGiftDone(giftBuying)}
-                        className="btn-grad px-4 py-2 text-xs font-bold text-white rounded-xl flex-shrink-0">
+                        className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0">
                         Купить
                       </button>
                     )}
