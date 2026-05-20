@@ -7,11 +7,11 @@
       "expectedStatus": 200
     },
     {
-      "name": "POST returns non-200 without secrets",
+      "name": "Missing amount returns 400",
       "method": "POST",
       "path": "/",
       "body": {"description": "test", "return_url": "https://example.com"},
-      "expectedStatus": 500
+      "expectedStatus": 400
     }
   ]
 }

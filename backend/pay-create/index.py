@@ -112,7 +112,8 @@ def handler(event: dict, context) -> dict:
         cur = conn.cursor()
         cur.execute(
             "INSERT INTO orders (order_number, user_name, user_email, amount, status, payment_url, order_comment) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            "VALUES (%s, %s, %s, %s, %s, %s, %s) "
+            "ON CONFLICT (order_number) DO UPDATE SET status = EXCLUDED.status, payment_url = EXCLUDED.payment_url",
             (
                 payment_id,
                 metadata.get('user_name', 'Пользователь'),
