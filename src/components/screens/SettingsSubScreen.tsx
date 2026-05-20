@@ -40,7 +40,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     setBlocksLoading(true);
     blocksApi.list()
       .then(d => setBlocks(d.blocks))
-      .catch(() => {})
+      .catch(e => console.error("blocks_list error:", e))
       .finally(() => setBlocksLoading(false));
   }, [screen]);
 

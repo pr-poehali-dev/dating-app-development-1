@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { authApi, type Profile } from "@/lib/api";
+import { authApi, blocksApi, type Profile } from "@/lib/api";
 
 const PROFILES_FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -104,7 +104,17 @@ export function ProfileMenuSheet({ profile, onClose, onReport }: {
       icon: "Ban", label: blocked ? "Разблокировать" : "Заблокировать профиль",
       sub: blocked ? "Снять блокировку" : "Пользователь не увидит тебя",
       danger: !blocked,
-      action: () => { setBlocked(v => !v); showToast(blocked ? "Разблокировано" : "Профиль заблокирован"); }
+      action: () => {
+        const wasBlocked = blocked;
+        setBlocked(v => !v);
+        if (wasBlocked) {
+          blocksApi.unblock(profile.id).catch(() => setBlocked(true));
+          showToast("Разблокировано");
+        } else {
+          blocksApi.block(profile.id).catch(() => setBlocked(false));
+          showToast("Профиль заблокирован");
+        }
+      }
     },
     {
       icon: "VideoOff", label: videoBlocked ? "Разрешить видеочаты" : "Блокировать видеочаты",
