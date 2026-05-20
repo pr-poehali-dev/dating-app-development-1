@@ -7,11 +7,18 @@
       "expectedStatus": 200
     },
     {
-      "name": "Missing params returns 400",
+      "name": "Missing payment id returns 400",
       "method": "POST",
       "path": "/",
-      "body": {},
+      "body": {"event": "payment.succeeded", "object": {}},
       "expectedStatus": 400
+    },
+    {
+      "name": "Valid webhook returns 200",
+      "method": "POST",
+      "path": "/",
+      "body": {"event": "payment.succeeded", "object": {"id": "test-payment-id", "status": "succeeded"}},
+      "expectedStatus": 200
     }
   ]
 }

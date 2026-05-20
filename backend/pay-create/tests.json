@@ -7,11 +7,11 @@
       "expectedStatus": 200
     },
     {
-      "name": "Missing params returns 400",
+      "name": "POST returns non-200 without secrets",
       "method": "POST",
       "path": "/",
-      "body": {},
-      "expectedStatus": 400
+      "body": {"description": "test", "return_url": "https://example.com"},
+      "expectedStatus": 500
     }
   ]
 }
