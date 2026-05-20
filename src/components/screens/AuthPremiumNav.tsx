@@ -226,16 +226,19 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
             setPaying(true); setError("");
             try {
               const plan = plans[selected];
-              const res = await fetch("https://functions.poehali.dev/2198b7bb-a193-4ee9-b5e4-95e2f8f55549", {
+              const res = await fetch("https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   amount: plan.amount,
-                  user_name: currentUser.name,
+                  description: `LoveBloom Premium — ${plan.label}`,
                   user_email: currentUser.email,
-                  user_id: currentUser.id,
-                  plan: plan.plan,
-                  cart_items: [{ id: plan.plan, name: `LoveBloom Premium — ${plan.label}`, price: plan.amount, quantity: 1 }],
+                  return_url: window.location.origin + "/?payment=success",
+                  metadata: {
+                    user_id: String(currentUser.id),
+                    user_name: currentUser.name,
+                    plan: plan.plan,
+                  },
                 }),
               });
               const data = await res.json();
@@ -255,7 +258,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
             ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
             : `Оплатить ${plans[selected].total || plans[selected].price}`}
         </button>
-        <p className="text-white/30 text-xs text-center mt-3">Безопасная оплата через Robokassa</p>
+        <p className="text-white/30 text-xs text-center mt-3">Безопасная оплата через ЮKassa</p>
       </div>
     </div>
   );

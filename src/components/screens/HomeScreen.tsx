@@ -6,6 +6,9 @@ import { LiveBadge, TrendingBadge, CreateMenu } from "@/components/screens/HomeF
 import { CommentSheet } from "@/components/screens/HomeCommentSheet";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NotificationsSheet } from "@/components/screens/NotificationsSheet";
+import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
+
+const PAY_CREATE_URL = "https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef";
 
 const GIFTS = [
   { id: 1, name: "Сердце",          image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/780e6930-f6c2-484f-8716-da3b5ca80beb.jpg", price: 15,   anim: "gift-float",   rarity: "common"    },
@@ -45,6 +48,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   const [showGifts, setShowGifts] = useState(false);
   const [giftBuying, setGiftBuying] = useState<number | null>(null);
   const [giftDone, setGiftDone] = useState<number | null>(null);
+  const { pay: payGift, loading: giftPaying } = useYookassa(PAY_CREATE_URL);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -320,12 +324,21 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                     {giftDone === giftBuying ? (
                       <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: "rgba(74,222,128,0.15)" }}>
                         <Icon name="Check" size={14} className="text-green-400" />
-                        <span className="text-green-400 text-xs font-semibold">Отправлено!</span>
+                        <span className="text-green-400 text-xs font-semibold">Оплачено!</span>
                       </div>
                     ) : (
-                      <button onClick={() => setGiftDone(giftBuying)}
-                        className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0">
-                        Купить
+                      <button
+                        disabled={giftPaying}
+                        onClick={() => payGift({
+                          amount: gift.price,
+                          description: `Подарок «${gift.name}»`,
+                          returnUrl: window.location.origin + "/?payment=success",
+                          metadata: { gift_id: String(gift.id), gift_name: gift.name },
+                        }).then(r => { if (r?.paymentUrl) setGiftDone(giftBuying); })}
+                        className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-60 flex items-center gap-1.5">
+                        {giftPaying
+                          ? <><Icon name="Loader2" size={13} className="animate-spin" />Ждите...</>
+                          : "Купить"}
                       </button>
                     )}
                   </div>
