@@ -557,6 +557,22 @@ function adminReq<T>(action: string, options: RequestInit = {}, token: string, e
   });
 }
 
+// ─── Blocks ──────────────────────────────────────────────────────────────────
+export interface BlockedUser {
+  id: number;
+  name: string;
+  photo_url?: string;
+  age?: number;
+  blocked_at: string;
+}
+
+export const blocksApi = {
+  list: () => req<{ blocks: BlockedUser[] }>("profiles", "blocks_list"),
+  block: (user_id: number) => req<{ ok: boolean }>("profiles", "block_user", { method: "POST", body: JSON.stringify({ user_id }) }),
+  unblock: (user_id: number) => req<{ ok: boolean }>("profiles", "unblock_user", { method: "POST", body: JSON.stringify({ user_id }) }),
+};
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
 export const adminApi = {
   stats: (token: string) => adminReq<AdminStats>('stats', {}, token),
 

@@ -679,6 +679,46 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── БЛОКИРОВКИ ─────────────────────────────────────────────────────────
+
+        # Список заблокированных
+        if action == 'blocks_list':
+            cur.execute("""
+                SELECT b.blocked_id, u.name, u.photo_url, u.age, b.created_at
+                FROM user_blocks b
+                JOIN users u ON u.id = b.blocked_id
+                WHERE b.blocker_id = %s
+                ORDER BY b.created_at DESC
+            """, (me['id'],))
+            cols = ['id', 'name', 'photo_url', 'age', 'blocked_at']
+            return resp(200, {'blocks': [dict(zip(cols, r)) for r in cur.fetchall()]})
+
+        # Заблокировать пользователя
+        if action == 'block_user':
+            body = json.loads(event.get('body') or '{}')
+            target_id = int(body.get('user_id', 0))
+            if not target_id or target_id == me['id']:
+                return resp(400, {'error': 'Неверный user_id'})
+            cur.execute(
+                "INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (me['id'], target_id)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # Разблокировать пользователя
+        if action == 'unblock_user':
+            body = json.loads(event.get('body') or '{}')
+            target_id = int(body.get('user_id', 0))
+            if not target_id:
+                return resp(400, {'error': 'Неверный user_id'})
+            cur.execute(
+                "DELETE FROM user_blocks WHERE blocker_id = %s AND blocked_id = %s",
+                (me['id'], target_id)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
