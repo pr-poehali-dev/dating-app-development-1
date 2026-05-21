@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type Profile } from "@/lib/api";
 
@@ -24,6 +25,13 @@ interface ProfileInfoSectionProps {
   onLike: () => void;
 }
 
+const RS_LABEL: Record<string, string> = {
+  single: "Свободен",
+  searching: "В поиске",
+  complicated: "Всё сложно",
+  open: "Своб. отношения",
+};
+
 export function ProfileInfoSection({
   currentProfile,
   profileData,
@@ -38,11 +46,13 @@ export function ProfileInfoSection({
   onSkip,
   onLike,
 }: ProfileInfoSectionProps) {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   return (
     <div className="flex-1 overflow-y-auto pb-4 flex flex-col gap-0">
 
       {/* Имя и онлайн */}
-      <div className="flex items-start justify-between px-5 pt-3 pb-3">
+      <div className="flex items-start justify-between px-5 pt-3 pb-2">
         <div>
           <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
             {currentProfile.name}{currentProfile.age ? `, ${currentProfile.age}` : ""}
@@ -59,6 +69,31 @@ export function ProfileInfoSection({
           <span className="text-white/50 text-xs">{currentProfile.online ? "онлайн" : ""}</span>
         </div>
       </div>
+
+      {/* Рост / Вес / Статус */}
+      {(currentProfile.height || currentProfile.weight || (currentProfile.relationship_status && currentProfile.relationship_status !== "hidden")) && (
+        <div className="flex flex-wrap gap-1.5 px-5 pb-3">
+          {currentProfile.height && (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
+              style={{ background: "rgba(255,255,255,0.1)" }}>
+              <Icon name="Ruler" size={11} className="text-white/50" />{currentProfile.height} см
+            </span>
+          )}
+          {currentProfile.weight && (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
+              style={{ background: "rgba(255,255,255,0.1)" }}>
+              <Icon name="Weight" size={11} className="text-white/50" />{currentProfile.weight} кг
+            </span>
+          )}
+          {currentProfile.relationship_status && currentProfile.relationship_status !== "hidden" && RS_LABEL[currentProfile.relationship_status] && (
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
+              style={{ background: "rgba(255,255,255,0.1)" }}>
+              <Icon name="Heart" size={11} className="text-white/50" />
+              {RS_LABEL[currentProfile.relationship_status]}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Вкладки фото */}
       <div className="flex gap-2 px-5 pb-3">
@@ -88,9 +123,10 @@ export function ProfileInfoSection({
           ) : galleryPhotos.length > 0 ? (
             <div className="grid grid-cols-3 gap-1.5">
               {galleryPhotos.map((ph) => (
-                <div key={ph.id} className="aspect-square rounded-xl overflow-hidden">
+                <button key={ph.id} className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-transform"
+                  onClick={() => setLightboxUrl(ph.photo_url)}>
                   <img src={ph.photo_url} className="w-full h-full object-cover" />
-                </div>
+                </button>
               ))}
             </div>
           ) : (
@@ -148,7 +184,7 @@ export function ProfileInfoSection({
 
       {/* Подписчики */}
       <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex gap-4 mt-3">
+        <div className="flex justify-center gap-8 mt-3">
           <div className="flex flex-col items-center gap-0.5">
             <span className="text-white font-bold text-lg">{profileData.followers}</span>
             <span className="text-white/40 text-xs">Подписчики</span>
@@ -186,6 +222,21 @@ export function ProfileInfoSection({
           {liked ? "Лайкнуто!" : "Лайкнуть"}
         </button>
       </div>
+
+      {/* Lightbox просмотр фото */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}
+          onClick={() => setLightboxUrl(null)}>
+          <button className="absolute top-5 right-5 glass-card p-2.5 z-10"
+            onClick={() => setLightboxUrl(null)}>
+            <Icon name="X" size={20} className="text-white" />
+          </button>
+          <img src={lightboxUrl} className="max-w-full max-h-full object-contain rounded-2xl"
+            style={{ maxWidth: "95vw", maxHeight: "90dvh" }}
+            onClick={e => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 }
