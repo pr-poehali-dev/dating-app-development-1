@@ -11,14 +11,14 @@ import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 const PAY_CREATE_URL = "https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef";
 
 const GIFTS = [
-  { id: 1, name: "Сердце",          image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/780e6930-f6c2-484f-8716-da3b5ca80beb.jpg", price: 15,   anim: "gift-float",   rarity: "common"    },
-  { id: 2, name: "Большое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/e62bd618-810d-4ffa-b5e1-ea527a2f7789.jpg", price: 50,   anim: "gift-pulse",   rarity: "common"    },
-  { id: 3, name: "Горящее сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/b8900760-8ca5-478d-82f9-327e733021fd.jpg", price: 99,   anim: "gift-shake",   rarity: "rare"      },
-  { id: 4, name: "Золотое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/75602fbe-4c21-48fa-afbb-923e6c13d49b.jpg", price: 199,  anim: "gift-spin",    rarity: "rare"      },
-  { id: 5, name: "Алмазное сердце", image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/b68af420-0d63-4408-9a54-ffd67695f558.jpg", price: 499,  anim: "gift-sparkle", rarity: "epic"      },
-  { id: 6, name: "Вечное сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/35a1f4c7-e749-461d-92b8-8577c293b692.jpg", price: 999,  anim: "gift-glow",    rarity: "epic"      },
-  { id: 7, name: "Редкое сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/20fb165f-5299-495f-b4d3-c8d5d8bcbbd5.jpg", price: 2499, anim: "gift-orbit",   rarity: "legendary" },
-  { id: 8, name: "Легендарное",     image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/0a1a97c7-4ae8-4de5-8b84-9d9020be8067.jpg", price: 4999, anim: "gift-rainbow",  rarity: "legendary" },
+  { id: 1, name: "Сердце",          image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/ef6746fe-a013-4a1f-b13c-ee4ba77cbdde.jpg", price: 15,   anim: "gift-float",   rarity: "common"    },
+  { id: 2, name: "Большое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/d5101150-851d-4fac-a845-1e0a6b6e8760.jpg", price: 50,   anim: "gift-pulse",   rarity: "common"    },
+  { id: 3, name: "Горящее сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/c0e7fc43-5495-4222-a90e-684e88902504.jpg", price: 99,   anim: "gift-shake",   rarity: "rare"      },
+  { id: 4, name: "Золотое сердце",  image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/c4594718-6b05-4ca3-903f-ab3346f3b42f.jpg", price: 199,  anim: "gift-spin",    rarity: "rare"      },
+  { id: 5, name: "Алмазное сердце", image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1291e5c7-6a4e-45a1-b12a-06e5e6e36f83.jpg", price: 499,  anim: "gift-sparkle", rarity: "epic"      },
+  { id: 6, name: "Вечное сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/52df7ba0-ca4a-49b1-a508-dd3763897e6b.jpg", price: 999,  anim: "gift-glow",    rarity: "epic"      },
+  { id: 7, name: "Редкое сердце",   image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/80e59208-77ae-4950-86cf-1bd322436e12.jpg", price: 2499, anim: "gift-orbit",   rarity: "legendary" },
+  { id: 8, name: "Легендарное",     image: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/fb7a829f-4921-426d-83cf-c0b2729d4cf7.jpg", price: 4999, anim: "gift-rainbow", rarity: "legendary" },
 ];
 
 const RARITY_STYLE: Record<string, { label: string; border: string; bg: string; text: string }> = {
@@ -281,22 +281,22 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                   const selected = giftBuying === gift.id;
                   return (
                     <button key={gift.id} onClick={() => { setGiftBuying(gift.id); setGiftDone(null); }}
-                      className="flex flex-col items-center gap-1 p-2 rounded-2xl transition-all active:scale-90 relative overflow-hidden"
+                      className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all active:scale-90 relative overflow-hidden"
                       style={{
-                        background: selected ? rs.bg : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${selected ? rs.border : "rgba(255,255,255,0.08)"}`,
-                        boxShadow: selected && gift.rarity !== "common" ? `0 0 12px ${rs.border}` : "none",
+                        background: selected ? rs.bg : "rgba(255,255,255,0.05)",
+                        border: `1px solid ${selected ? rs.border : "rgba(255,255,255,0.1)"}`,
+                        boxShadow: selected ? `0 0 18px ${rs.border}, inset 0 0 12px ${rs.bg}` : "none",
                       }}>
                       {rs.label && (
-                        <span className="absolute top-1 left-1 text-[8px] font-bold px-1 py-0.5 rounded-md leading-none"
+                        <span className="absolute top-1 left-1 text-[7px] font-bold px-1 py-0.5 rounded-md leading-none"
                           style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.border}` }}>
                           {rs.label}
                         </span>
                       )}
-                      <div className={`w-14 h-14 flex items-center justify-center ${gift.anim}`}>
-                        <img src={gift.image} alt={gift.name} className="w-full h-full object-contain drop-shadow-lg" />
+                      <div className={`w-16 h-16 flex items-center justify-center ${gift.anim}`}>
+                        <img src={gift.image} alt={gift.name} className="w-full h-full object-contain" style={{ borderRadius: 8 }} />
                       </div>
-                      <p className="text-white/80 text-[10px] font-semibold leading-tight text-center line-clamp-2">{gift.name}</p>
+                      <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2">{gift.name}</p>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                         style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
                         {gift.price} ⭐
