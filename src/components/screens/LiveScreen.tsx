@@ -193,6 +193,8 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const [showSettings, setShowSettings] = useState(false);
   const [showTools, setShowTools] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [switchingCamera, setSwitchingCamera] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -268,11 +270,29 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     loadStreams();
   };
 
+  const handleFlipCamera = async () => {
+    if (switchingCamera || !streamRef.current) return;
+    setSwitchingCamera(true);
+    const nextFacing = facingMode === "user" ? "environment" : "user";
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: nextFacing }, audio: true });
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = newStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+        videoRef.current.play().catch(() => {});
+      }
+      setFacingMode(nextFacing);
+    } catch (e: unknown) { void e; }
+    setSwitchingCamera(false);
+  };
+
   const handleStartStream = async () => {
     if (!streamTitle.trim()) return;
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
       streamRef.current = mediaStream;
+      setFacingMode("user");
       const res = await liveApi.start(streamTitle.trim());
       setIsStreaming(true);
       setShowStart(false);
@@ -324,7 +344,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
                   }}
                   autoPlay muted playsInline
                   className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
+                  style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none", transition: "transform 0.3s" }}
                 />
               : <div className="flex flex-col items-center gap-2">
                   <img src={activeStream.author_photo || FALLBACK_PHOTO} className="w-20 h-20 rounded-full object-cover border-4 border-pink-500" />
@@ -339,10 +359,20 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
                 <Icon name="Eye" size={11} />{activeStream.viewers_count}
               </span>
             </div>
-            <button onClick={handleLeave}
-              className="glass-card px-3 py-1.5 text-white/70 text-xs flex items-center gap-1.5">
-              <Icon name="X" size={13} />{isStreaming ? "Завершить" : "Выйти"}
-            </button>
+            <div className="flex items-center gap-2">
+              {isStreaming && (
+                <button onClick={handleFlipCamera} disabled={switchingCamera}
+                  className="glass-card w-8 h-8 flex items-center justify-center"
+                  style={{ opacity: switchingCamera ? 0.5 : 1, transition: "opacity 0.2s" }}>
+                  <Icon name="RefreshCw" size={14} className="text-white/80"
+                    style={{ transform: switchingCamera ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.4s ease" }} />
+                </button>
+              )}
+              <button onClick={handleLeave}
+                className="glass-card px-3 py-1.5 text-white/70 text-xs flex items-center gap-1.5">
+                <Icon name="X" size={13} />{isStreaming ? "Завершить" : "Выйти"}
+              </button>
+            </div>
           </div>
           <div className="absolute bottom-3 left-4">
             <p className="text-white font-semibold text-sm">{activeStream.title}</p>
