@@ -47,6 +47,8 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   const [unreadCount, setUnreadCount] = useState(0);
   const [showGifts, setShowGifts] = useState(false);
   const [giftBuying, setGiftBuying] = useState<number | null>(null);
+  const [giftPreview, setGiftPreview] = useState<number | null>(null);
+  const [giftRecipient, setGiftRecipient] = useState<"self" | "user">("self");
   const [giftDone, setGiftDone] = useState<number | null>(null);
   const { pay: payGift, loading: giftPaying } = useYookassa(PAY_CREATE_URL);
 
@@ -249,10 +251,82 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
         </div>
       </div>
 
+      {/* Превью подарка */}
+      {giftPreview !== null && (() => {
+        const gift = GIFTS.find(g => g.id === giftPreview)!;
+        const rs = RARITY_STYLE[gift.rarity];
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center px-6"
+            style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(12px)" }}
+            onClick={() => setGiftPreview(null)}>
+            <div className="w-full max-w-xs rounded-3xl p-6 flex flex-col items-center gap-4 animate-scale-in"
+              style={{ background: "var(--spark-card)", border: `1px solid ${rs.border}`, boxShadow: `0 0 40px ${rs.border}` }}
+              onClick={e => e.stopPropagation()}>
+              <div className={`w-36 h-36 ${gift.anim}`}>
+                <img src={gift.image} alt={gift.name} className="w-full h-full object-contain" style={{ borderRadius: 12 }} />
+              </div>
+              <div className="text-center">
+                <p className="text-white font-bold text-xl">{gift.name}</p>
+                {rs.label && <p className="text-sm font-bold mt-1" style={{ color: rs.text }}>{rs.label}</p>}
+                <p className="text-white/40 text-sm mt-1">{gift.price} звёзд</p>
+              </div>
+
+              {/* Выбор получателя */}
+              <div className="w-full rounded-2xl overflow-hidden flex"
+                style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+                <button onClick={() => setGiftRecipient("self")}
+                  className="flex-1 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+                  style={{ background: giftRecipient === "self" ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "transparent", color: giftRecipient === "self" ? "white" : "rgba(255,255,255,0.45)" }}>
+                  <Icon name="User" size={14} />Себе
+                </button>
+                <button onClick={() => setGiftRecipient("user")}
+                  className="flex-1 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
+                  style={{ background: giftRecipient === "user" ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "transparent", color: giftRecipient === "user" ? "white" : "rgba(255,255,255,0.45)", borderLeft: "1px solid rgba(255,255,255,0.12)" }}>
+                  <Icon name="Heart" size={14} />Пользователю
+                </button>
+              </div>
+
+              {giftRecipient === "user" && (
+                <div className="w-full rounded-2xl px-4 py-3 text-sm text-white/50 flex items-center gap-2"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <Icon name="Info" size={14} className="flex-shrink-0" />
+                  Откройте профиль пользователя и нажмите «Подарить» там
+                </div>
+              )}
+
+              {giftDone === giftPreview ? (
+                <div className="w-full py-3 rounded-2xl flex items-center justify-center gap-2"
+                  style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)" }}>
+                  <Icon name="Check" size={16} className="text-green-400" />
+                  <span className="text-green-400 font-semibold">Подарок куплен!</span>
+                </div>
+              ) : (
+                <button
+                  disabled={giftPaying || giftRecipient === "user"}
+                  onClick={() => payGift({
+                    amount: gift.price,
+                    description: `Подарок себе «${gift.name}»`,
+                    returnUrl: window.location.origin + "/?payment=success",
+                    metadata: { gift_id: String(gift.id), gift_name: gift.name, recipient: "self" },
+                  }).then(r => { if (r?.paymentUrl) setGiftDone(giftPreview); })}
+                  className="w-full btn-grad py-3.5 font-bold text-white rounded-2xl disabled:opacity-50 flex items-center justify-center gap-2">
+                  {giftPaying
+                    ? <><Icon name="Loader2" size={16} className="animate-spin" />Обработка...</>
+                    : giftRecipient === "user"
+                      ? <><Icon name="Heart" size={16} />Откройте профиль пользователя</>
+                      : <><Icon name="ShoppingBag" size={16} />Купить за {gift.price} ⭐</>}
+                </button>
+              )}
+              <button onClick={() => setGiftPreview(null)} className="text-white/30 text-sm">Закрыть</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Модал подарков */}
       {showGifts && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }}
-          onClick={() => setShowGifts(false)}>
+          onClick={() => { setShowGifts(false); setGiftBuying(null); }}>
           <div className="rounded-t-3xl flex flex-col max-h-[85dvh]"
             style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}
             onClick={e => e.stopPropagation()}>
@@ -266,9 +340,9 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
             <div className="flex items-center justify-between px-5 pb-3 pt-1 flex-shrink-0">
               <div>
                 <p className="text-white font-bold text-lg">Подарки</p>
-                <p className="text-white/40 text-xs mt-0.5">Все подарки — платные</p>
+                <p className="text-white/40 text-xs mt-0.5">Нажми для просмотра • держи для выбора</p>
               </div>
-              <button onClick={() => setShowGifts(false)} className="text-white/40">
+              <button onClick={() => { setShowGifts(false); setGiftBuying(null); }} className="text-white/40">
                 <Icon name="X" size={20} />
               </button>
             </div>
@@ -280,7 +354,8 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                   const rs = RARITY_STYLE[gift.rarity];
                   const selected = giftBuying === gift.id;
                   return (
-                    <button key={gift.id} onClick={() => { setGiftBuying(gift.id); setGiftDone(null); }}
+                    <button key={gift.id}
+                      onClick={() => { setGiftBuying(gift.id); setGiftDone(null); setGiftPreview(gift.id); setGiftRecipient("self"); }}
                       className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl transition-all active:scale-90 relative overflow-hidden"
                       style={{
                         background: selected ? rs.bg : "rgba(255,255,255,0.05)",
@@ -305,45 +380,6 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                   );
                 })}
               </div>
-
-              {/* Панель покупки */}
-              {giftBuying !== null && (() => {
-                const gift = GIFTS.find(g => g.id === giftBuying)!;
-                const rs = RARITY_STYLE[gift.rarity];
-                return (
-                  <div className="mt-3 rounded-2xl p-4 flex items-center gap-4"
-                    style={{ background: rs.bg || "rgba(255,45,120,0.08)", border: `1px solid ${rs.border || "rgba(255,45,120,0.2)"}` }}>
-                    <div className={`w-14 h-14 flex-shrink-0 ${gift.anim}`}>
-                      <img src={gift.image} className="w-full h-full object-contain" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-sm">{gift.name}</p>
-                      {rs.label && <p className="text-xs font-bold mt-0.5" style={{ color: rs.text }}>{rs.label}</p>}
-                      <p className="text-white/40 text-xs">{gift.price} звёзд</p>
-                    </div>
-                    {giftDone === giftBuying ? (
-                      <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: "rgba(74,222,128,0.15)" }}>
-                        <Icon name="Check" size={14} className="text-green-400" />
-                        <span className="text-green-400 text-xs font-semibold">Оплачено!</span>
-                      </div>
-                    ) : (
-                      <button
-                        disabled={giftPaying}
-                        onClick={() => payGift({
-                          amount: gift.price,
-                          description: `Подарок «${gift.name}»`,
-                          returnUrl: window.location.origin + "/?payment=success",
-                          metadata: { gift_id: String(gift.id), gift_name: gift.name },
-                        }).then(r => { if (r?.paymentUrl) setGiftDone(giftBuying); })}
-                        className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-60 flex items-center gap-1.5">
-                        {giftPaying
-                          ? <><Icon name="Loader2" size={13} className="animate-spin" />Ждите...</>
-                          : "Купить"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
             </div>
           </div>
         </div>
