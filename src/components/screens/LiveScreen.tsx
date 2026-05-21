@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { liveApi, type User, type LiveStream, type LiveMessage } from "@/lib/api";
 
@@ -192,7 +192,10 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const [tabSearch, setTabSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showTools, setShowTools] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const loadStreams = () => {
     liveApi.list()
@@ -202,6 +205,10 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   };
 
   useEffect(() => { loadStreams(); }, []);
+
+  useEffect(() => {
+    return () => { stopCamera(); };
+  }, [stopCamera]);
 
   useEffect(() => {
     if (!activeStream) { if (pollRef.current) clearInterval(pollRef.current); return; }
@@ -235,11 +242,23 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     try { await liveApi.join(stream.id); } catch (e: unknown) { void e; }
   };
 
+  const stopCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
   const handleLeave = async () => {
     if (!activeStream) return;
+    setLeaving(true);
+    await new Promise((r) => setTimeout(r, 350));
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     const streamId = activeStream.id;
+    stopCamera();
     setActiveStream(null); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
+    setLeaving(false);
     if (isStreaming) {
       setIsStreaming(false);
       try { await liveApi.end(); } catch (e: unknown) { void e; }
@@ -252,6 +271,8 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const handleStartStream = async () => {
     if (!streamTitle.trim()) return;
     try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+      streamRef.current = mediaStream;
       const res = await liveApi.start(streamTitle.trim());
       setIsStreaming(true);
       setShowStart(false);
@@ -287,17 +308,24 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   // ── Активный просмотр трансляции ──────────────────────────────────────────
   if (activeStream) {
     return (
-      <div className="flex flex-col h-full relative" style={{ background: "#0a0014" }}>
+      <div className="flex flex-col h-full relative"
+        style={{ background: "#0a0014", opacity: leaving ? 0 : 1, transform: leaving ? "scale(0.97)" : "scale(1)", transition: "opacity 0.35s ease, transform 0.35s ease" }}>
         <div className="relative flex-shrink-0" style={{ height: "45%" }}>
-          <div className="w-full h-full flex items-center justify-center"
+          <div className="w-full h-full flex items-center justify-center overflow-hidden"
             style={{ background: "linear-gradient(135deg,#1a0030,#2d0050)" }}>
             {isStreaming
-              ? <div className="flex flex-col items-center gap-3">
-                  <div className="w-16 h-16 rounded-full btn-grad flex items-center justify-center">
-                    <Icon name="Video" size={28} className="text-white" />
-                  </div>
-                  <p className="text-white/60 text-sm">Вы ведёте трансляцию</p>
-                </div>
+              ? <video
+                  ref={(el) => {
+                    videoRef.current = el;
+                    if (el && streamRef.current && !el.srcObject) {
+                      el.srcObject = streamRef.current;
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  autoPlay muted playsInline
+                  className="w-full h-full object-cover"
+                  style={{ transform: "scaleX(-1)" }}
+                />
               : <div className="flex flex-col items-center gap-2">
                   <img src={activeStream.author_photo || FALLBACK_PHOTO} className="w-20 h-20 rounded-full object-cover border-4 border-pink-500" />
                   <p className="text-white font-semibold">{activeStream.author_name}</p>
