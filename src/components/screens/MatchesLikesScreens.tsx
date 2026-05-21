@@ -50,7 +50,13 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
                   <span className="text-white font-semibold text-sm">{m.name}{m.age ? `, ${m.age}` : ""}</span>
                   <span className="text-white/40 text-xs">{m.last_msg_time ? new Date(m.last_msg_time).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }) : ""}</span>
                 </div>
-                <p className="text-white/50 text-sm truncate mt-0.5">{m.last_msg || "Совпадение! Напиши первым 👋"}</p>
+                <p className="text-white/50 text-sm truncate mt-0.5">
+                  {!m.last_msg
+                    ? "Совпадение! Напиши первым 👋"
+                    : (m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i))
+                      ? "📷 Фото"
+                      : m.last_msg}
+                </p>
               </div>
               {m.unread_count > 0 && (
                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0"
