@@ -162,6 +162,9 @@ export const profilesApi = {
   getFollowing: () =>
     req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_following", { method: "GET" }),
 
+  getUserFollowers: (user_id: number) =>
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "user_followers", { method: "GET" }, { user_id: String(user_id) }),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",

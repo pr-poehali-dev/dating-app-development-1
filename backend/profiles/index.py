@@ -430,6 +430,19 @@ def handler(event: dict, context) -> dict:
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'ok': True, 'users': users})
 
+        # Подписчики другого пользователя (публично)
+        if action == 'user_followers':
+            uid = int(params.get('user_id', 0))
+            cur.execute(
+                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
+                "FROM likes l JOIN users u ON u.id = l.from_user_id "
+                "WHERE l.to_user_id = %s ORDER BY l.created_at DESC",
+                (uid,)
+            )
+            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
+            users = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'ok': True, 'users': users})
+
         # Профиль пользователя по id
         if action == 'user_profile':
             uid = int(params.get('user_id', 0))

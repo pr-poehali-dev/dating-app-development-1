@@ -23,6 +23,7 @@ interface ProfileInfoSectionProps {
   onPrivateReqSent: () => void;
   onSkip: () => void;
   onLike: () => void;
+  onViewFollowers?: () => void;
 }
 
 const RS_LABEL: Record<string, string> = {
@@ -45,6 +46,7 @@ export function ProfileInfoSection({
   onPrivateReqSent,
   onSkip,
   onLike,
+  onViewFollowers,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -182,18 +184,17 @@ export function ProfileInfoSection({
         )}
       </div>
 
-      {/* Подписчики */}
+      {/* Подписчики (только — подписки скрыты от других) */}
       <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex justify-center gap-8 mt-3">
-          <div className="flex flex-col items-center gap-0.5">
+        <div className="flex justify-center mt-3">
+          <button
+            onClick={onViewFollowers}
+            disabled={!onViewFollowers}
+            className="flex flex-col items-center gap-0.5 px-6 py-2 rounded-2xl transition-all active:scale-95"
+            style={{ background: onViewFollowers ? "rgba(255,255,255,0.05)" : "transparent" }}>
             <span className="text-white font-bold text-lg">{profileData.followers}</span>
             <span className="text-white/40 text-xs">Подписчики</span>
-          </div>
-          <div className="w-px" style={{ background: "rgba(255,255,255,0.1)" }} />
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-white font-bold text-lg">{profileData.following}</span>
-            <span className="text-white/40 text-xs">Подписки</span>
-          </div>
+          </button>
         </div>
       </div>
 
