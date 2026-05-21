@@ -35,7 +35,11 @@ export function useYookassa(apiUrl: string) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Ошибка создания платежа');
-      return data as YookassaResult;
+      return {
+        paymentId: data.paymentId ?? data.payment_id,
+        paymentUrl: data.paymentUrl ?? data.payment_url,
+        status: data.status,
+      } as YookassaResult;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Неизвестная ошибка');
       return null;
