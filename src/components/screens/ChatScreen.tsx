@@ -11,6 +11,7 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   const [visible, setVisible] = useState(true);
   const [opened, setOpened] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(60);
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
     if (!opened || out) return;
@@ -33,30 +34,48 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   }
 
   return (
-    <div className="relative">
-      {opened || out ? (
-        <img src={url} className="rounded-xl object-cover" style={{ maxWidth: 200, maxHeight: 200 }} />
-      ) : (
-        <div
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer active:scale-95 transition-all"
-          style={{ background: "rgba(255,45,120,0.15)", border: "1.5px solid rgba(255,45,120,0.4)" }}
-          onClick={() => !out && setOpened(true)}>
-          <div className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
-            <Icon name="Timer" size={20} className="text-pink-400" />
+    <>
+      <div className="relative">
+        {opened || out ? (
+          <img src={url} className="rounded-xl object-cover cursor-pointer active:scale-95 transition-transform"
+            style={{ maxWidth: 200, maxHeight: 200 }}
+            onClick={() => setLightbox(true)} />
+        ) : (
+          <div
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer active:scale-95 transition-all"
+            style={{ background: "rgba(255,45,120,0.15)", border: "1.5px solid rgba(255,45,120,0.4)" }}
+            onClick={() => !out && setOpened(true)}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
+              <Icon name="Timer" size={20} className="text-pink-400" />
+            </div>
+            <span className="text-white text-xs font-medium">
+              {out ? "Нажми чтобы посмотреть" : "Нажми чтобы открыть"}
+            </span>
           </div>
-          <span className="text-white text-xs font-medium">
-            {out ? "Нажми чтобы посмотреть" : "Нажми чтобы открыть"}
-          </span>
+        )}
+        {opened && !out && (
+          <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
+            style={{ background: "rgba(0,0,0,0.65)" }}>
+            🔥 {secondsLeft}с
+          </div>
+        )}
+      </div>
+
+      {lightbox && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.93)", backdropFilter: "blur(14px)" }}
+          onClick={() => setLightbox(false)}>
+          <button className="absolute top-5 right-5 glass-card p-2.5"
+            onClick={() => setLightbox(false)}>
+            <Icon name="X" size={20} className="text-white" />
+          </button>
+          <img src={url} className="rounded-2xl object-contain"
+            style={{ maxWidth: "95vw", maxHeight: "90dvh" }}
+            onClick={e => e.stopPropagation()} />
         </div>
       )}
-      {opened && !out && (
-        <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
-          style={{ background: "rgba(0,0,0,0.65)" }}>
-          🔥 {secondsLeft}с
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
