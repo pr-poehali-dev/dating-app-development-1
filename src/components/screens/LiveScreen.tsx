@@ -187,6 +187,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const [showStart, setShowStart] = useState(false);
   const [streamTitle, setStreamTitle] = useState("");
   const [lastMsgId, setLastMsgId] = useState(0);
+  const lastMsgIdRef = useRef(0);
   const [activeTab, setActiveTab] = useState("popular");
   const [tabSearch, setTabSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -206,15 +207,21 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     if (!activeStream) { if (pollRef.current) clearInterval(pollRef.current); return; }
     const poll = async () => {
       try {
-        const res = await liveApi.poll(activeStream.id, lastMsgId);
+        const res = await liveApi.poll(activeStream.id, lastMsgIdRef.current);
         if (res.stream.status === 'ended' && !isStreaming) {
-          setActiveStream(null); setChatMsgs([]); setLastMsgId(0);
+          setActiveStream(null); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
           loadStreams(); return;
         }
         setActiveStream((prev) => prev ? { ...prev, viewers_count: res.stream.viewers_count, hearts_count: res.stream.hearts_count } : prev);
         if (res.messages.length > 0) {
-          setChatMsgs((prev) => [...prev, ...res.messages]);
-          setLastMsgId(res.messages[res.messages.length - 1].id);
+          const newId = res.messages[res.messages.length - 1].id;
+          lastMsgIdRef.current = newId;
+          setLastMsgId(newId);
+          setChatMsgs((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id));
+            const fresh = res.messages.filter((m: LiveMessage) => !existingIds.has(m.id));
+            return fresh.length > 0 ? [...prev, ...fresh] : prev;
+          });
         }
       } catch (e: unknown) { void e; }
     };
@@ -224,19 +231,21 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   }, [activeStream?.id, isStreaming]);
 
   const handleJoin = async (stream: LiveStream) => {
-    setActiveStream(stream); setChatMsgs([]); setLastMsgId(0);
+    setActiveStream(stream); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     try { await liveApi.join(stream.id); } catch (e: unknown) { void e; }
   };
 
   const handleLeave = async () => {
     if (!activeStream) return;
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    const streamId = activeStream.id;
+    setActiveStream(null); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     if (isStreaming) {
-      await liveApi.end();
       setIsStreaming(false);
+      try { await liveApi.end(); } catch (e: unknown) { void e; }
     } else {
-      try { await liveApi.leave(activeStream.id); } catch (e: unknown) { void e; }
+      try { await liveApi.leave(streamId); } catch (e: unknown) { void e; }
     }
-    setActiveStream(null); setChatMsgs([]); setLastMsgId(0);
     loadStreams();
   };
 
@@ -248,7 +257,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
       setShowStart(false);
       setStreamTitle("");
       setActiveStream(res.stream);
-      setChatMsgs([]); setLastMsgId(0);
+      setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     } catch (e: unknown) { void e; }
   };
 
@@ -266,8 +275,12 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     const text = chatInput.trim(); setChatInput("");
     try {
       const res = await liveApi.chat(activeStream.id, text);
-      setChatMsgs((prev) => [...prev, res.message]);
+      lastMsgIdRef.current = res.message.id;
       setLastMsgId(res.message.id);
+      setChatMsgs((prev) => {
+        if (prev.some((m) => m.id === res.message.id)) return prev;
+        return [...prev, res.message];
+      });
     } catch (e: unknown) { void e; }
   };
 
