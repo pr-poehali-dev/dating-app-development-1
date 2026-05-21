@@ -195,6 +195,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const [leaving, setLeaving] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [switchingCamera, setSwitchingCamera] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -268,6 +269,12 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
       try { await liveApi.leave(streamId); } catch (e: unknown) { void e; }
     }
     loadStreams();
+  };
+
+  const handleToggleMic = () => {
+    if (!streamRef.current) return;
+    streamRef.current.getAudioTracks().forEach((t) => { t.enabled = micMuted; });
+    setMicMuted((v) => !v);
   };
 
   const handleFlipCamera = async () => {
@@ -361,12 +368,19 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
             </div>
             <div className="flex items-center gap-2">
               {isStreaming && (
-                <button onClick={handleFlipCamera} disabled={switchingCamera}
-                  className="glass-card w-8 h-8 flex items-center justify-center"
-                  style={{ opacity: switchingCamera ? 0.5 : 1, transition: "opacity 0.2s" }}>
-                  <Icon name="RefreshCw" size={14} className="text-white/80"
-                    style={{ transform: switchingCamera ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.4s ease" }} />
-                </button>
+                <>
+                  <button onClick={handleToggleMic}
+                    className="w-8 h-8 flex items-center justify-center rounded-full"
+                    style={{ background: micMuted ? "rgba(239,68,68,0.85)" : "rgba(255,255,255,0.15)", transition: "background 0.2s" }}>
+                    <Icon name={micMuted ? "MicOff" : "Mic"} size={14} className="text-white" />
+                  </button>
+                  <button onClick={handleFlipCamera} disabled={switchingCamera}
+                    className="glass-card w-8 h-8 flex items-center justify-center"
+                    style={{ opacity: switchingCamera ? 0.5 : 1, transition: "opacity 0.2s" }}>
+                    <Icon name="RefreshCw" size={14} className="text-white/80"
+                      style={{ transform: switchingCamera ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.4s ease" }} />
+                  </button>
+                </>
               )}
               <button onClick={handleLeave}
                 className="glass-card px-3 py-1.5 text-white/70 text-xs flex items-center gap-1.5">
