@@ -141,7 +141,9 @@ def handler(event: dict, context) -> dict:
 
             conditions = [f"u.id != {me['id']}",
                           f"(u.age IS NULL OR u.age BETWEEN {age_min} AND {age_max})",
-                          f"u.id NOT IN (SELECT to_user_id FROM likes WHERE from_user_id = {me['id']})"]
+                          f"u.id NOT IN (SELECT to_user_id FROM likes WHERE from_user_id = {me['id']})",
+                          f"u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = {me['id']})",
+                          f"u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = {me['id']})"]
 
             if looking_for == 'female':
                 conditions.append("u.gender = 'female'")

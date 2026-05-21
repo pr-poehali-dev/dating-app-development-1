@@ -84,10 +84,18 @@ def handler(event: dict, context) -> dict:
             if not text:
                 return resp(400, {'error': 'Пустое сообщение'})
             cur.execute(
-                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+                f"SELECT id, user1_id, user2_id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
             )
-            if not cur.fetchone():
+            match_row = cur.fetchone()
+            if not match_row:
                 return resp(403, {'error': 'Нет доступа'})
+            partner_id = match_row[2] if match_row[1] == me['id'] else match_row[1]
+            cur.execute(
+                "SELECT 1 FROM user_blocks WHERE (blocker_id=%s AND blocked_id=%s) OR (blocker_id=%s AND blocked_id=%s)",
+                (me['id'], partner_id, partner_id, me['id'])
+            )
+            if cur.fetchone():
+                return resp(403, {'error': 'Пользователь заблокирован'})
             cur.execute(
                 "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
                 (match_id, me['id'], text)
@@ -105,6 +113,13 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'to_user_id и text обязательны'})
             if to_user_id == me['id']:
                 return resp(400, {'error': 'Нельзя писать самому себе'})
+            # Проверяем блокировку
+            cur.execute(
+                "SELECT 1 FROM user_blocks WHERE (blocker_id=%s AND blocked_id=%s) OR (blocker_id=%s AND blocked_id=%s)",
+                (me['id'], to_user_id, to_user_id, me['id'])
+            )
+            if cur.fetchone():
+                return resp(403, {'error': 'Пользователь заблокирован'})
             # Ищем существующий матч
             u1, u2 = min(me['id'], to_user_id), max(me['id'], to_user_id)
             cur.execute("SELECT id FROM matches WHERE user1_id = %s AND user2_id = %s", (u1, u2))

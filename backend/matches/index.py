@@ -63,7 +63,10 @@ def handler(event: dict, context) -> dict:
                     m.created_at
                 FROM matches m
                 JOIN users u ON u.id = CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END
-                WHERE m.user1_id = {uid} OR m.user2_id = {uid}
+                WHERE (m.user1_id = {uid} OR m.user2_id = {uid})
+                AND CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END NOT IN (
+                    SELECT blocked_id FROM user_blocks WHERE blocker_id = {uid}
+                )
                 ORDER BY COALESCE(
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1),
                     m.created_at
