@@ -365,7 +365,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                           {rs.label}
                         </span>
                       )}
-                      <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={54} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
+                      <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={54} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={selected} />
                       <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">{gift.name}</p>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
                         style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>

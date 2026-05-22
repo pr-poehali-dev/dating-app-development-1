@@ -472,6 +472,33 @@ def handler(event: dict, context) -> dict:
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'ok': True, 'users': users})
 
+        # Отправить тикет в поддержку
+        if action == 'support_send':
+            body = json.loads(event.get('body') or '{}')
+            message = body.get('message', '').strip()
+            if not message or len(message) < 5:
+                return resp(400, {'error': 'Сообщение слишком короткое'})
+            if len(message) > 2000:
+                return resp(400, {'error': 'Сообщение слишком длинное (макс. 2000 символов)'})
+            cur.execute(
+                "INSERT INTO support_tickets (user_id, message) VALUES (%s, %s) RETURNING id, created_at",
+                (me['id'], message)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'ticket_id': row[0], 'created_at': str(row[1])})
+
+        # Мои тикеты поддержки
+        if action == 'support_my_tickets':
+            cur.execute(
+                "SELECT id, message, reply, status, created_at, replied_at "
+                "FROM support_tickets WHERE user_id = %s ORDER BY created_at DESC LIMIT 20",
+                (me['id'],)
+            )
+            cols = ['id', 'message', 'reply', 'status', 'created_at', 'replied_at']
+            tickets = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'ok': True, 'tickets': tickets})
+
         # Подписаться / отписаться на обновления пользователя
         if action == 'subscribe_toggle':
             body = json.loads(event.get('body') or '{}')

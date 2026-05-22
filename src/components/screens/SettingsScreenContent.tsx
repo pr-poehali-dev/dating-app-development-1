@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { type User, type BlockedUser } from "@/lib/api";
+import { type User, type BlockedUser, profilesApi } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
 
 type PrivatePhoto = { id: number; photo_url: string; created_at: string };
@@ -110,9 +110,23 @@ export function SettingsScreenContent({
 }: SettingsScreenContentProps) {
   const privateInputRef = useRef<HTMLInputElement>(null);
   const [helpSub, setHelpSub] = useState<"" | "support" | "faq" | "rules" | "privacy">("");
-  // Сбрасываем подэкран при смене основного экрана
   const prevScreen = useRef(screen);
   if (prevScreen.current !== screen) { prevScreen.current = screen; if (helpSub !== "") setHelpSub(""); }
+
+  // Support chat state
+  type Ticket = { id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null };
+  const [supportMsg, setSupportMsg] = useState("");
+  const [supportSending, setSupportSending] = useState(false);
+  const [supportSent, setSupportSent] = useState(false);
+  const [supportTickets, setSupportTickets] = useState<Ticket[]>([]);
+  const [supportLoading, setSupportLoading] = useState(false);
+
+  useEffect(() => {
+    if (helpSub === "support") {
+      setSupportLoading(true);
+      profilesApi.supportMyTickets().then(r => setSupportTickets(r.tickets)).catch(() => {}).finally(() => setSupportLoading(false));
+    }
+  }, [helpSub]);
 
   return (
     <div className="flex-1 overflow-y-auto pb-8">
@@ -396,34 +410,99 @@ export function SettingsScreenContent({
           <button onClick={() => setHelpSub("")} className="flex items-center gap-2 text-white/50 text-sm mb-1 -ml-1">
             <Icon name="ChevronLeft" size={18} /> Назад
           </button>
-          <div className="glass-card p-5 flex flex-col gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.12)" }}>
-                <Icon name="MessageCircle" size={24} className="text-pink-400" />
+
+          {/* Шапка */}
+          <div className="flex items-center gap-3 px-1">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.12)" }}>
+              <Icon name="MessageCircle" size={20} className="text-pink-400" />
+            </div>
+            <div>
+              <p className="text-white font-bold">Поддержка LoveBloom</p>
+              <p className="text-white/40 text-xs">Ответим на ваш вопрос</p>
+            </div>
+          </div>
+
+          {/* История обращений */}
+          {supportLoading && (
+            <div className="flex justify-center py-6"><Icon name="Loader2" size={24} className="text-white/30 animate-spin" /></div>
+          )}
+          {!supportLoading && supportTickets.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-wide px-1">Ваши обращения</p>
+              {supportTickets.map(t => (
+                <div key={t.id} className="glass-card p-4 flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(255,45,120,0.12)" }}>
+                      <Icon name="User" size={13} className="text-pink-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white/80 text-sm leading-relaxed">{t.message}</p>
+                      <p className="text-white/30 text-[11px] mt-1">{new Date(t.created_at).toLocaleDateString("ru", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                  </div>
+                  {t.reply ? (
+                    <div className="flex items-start gap-3 pl-2"
+                      style={{ borderLeft: "2px solid rgba(255,45,120,0.3)" }}>
+                      <div className="flex-1">
+                        <p className="text-pink-300 text-xs font-semibold mb-1">Ответ поддержки</p>
+                        <p className="text-white/70 text-sm leading-relaxed">{t.reply}</p>
+                        <p className="text-white/30 text-[11px] mt-1">{t.replied_at ? new Date(t.replied_at).toLocaleDateString("ru", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : ""}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(255,200,0,0.08)" }}>
+                      <Icon name="Clock" size={13} className="text-yellow-400/70" />
+                      <p className="text-yellow-400/70 text-xs">Ожидает ответа</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Форма нового обращения */}
+          <div className="glass-card p-4 flex flex-col gap-3">
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Новое обращение</p>
+            {supportSent ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "rgba(74,222,128,0.15)" }}>
+                  <Icon name="Check" size={22} className="text-green-400" />
+                </div>
+                <p className="text-white font-semibold">Сообщение отправлено!</p>
+                <p className="text-white/40 text-sm text-center">Мы ответим как можно скорее. Ответ появится выше.</p>
+                <button onClick={() => { setSupportSent(false); setSupportMsg(""); }}
+                  className="text-pink-400 text-sm font-semibold">Написать ещё</button>
               </div>
-              <div>
-                <p className="text-white font-bold">Поддержка LoveBloom</p>
-                <p className="text-white/40 text-xs">Ответим в течение 24 часов</p>
-              </div>
-            </div>
-            <div className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Email</p>
-              <a href="mailto:support@lovebloom.app" className="text-pink-400 font-semibold">support@lovebloom.app</a>
-            </div>
-            <div className="rounded-2xl p-4 flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Telegram</p>
-              <a href="https://t.me/lovebloom_support" target="_blank" rel="noopener noreferrer" className="text-pink-400 font-semibold">@lovebloom_support</a>
-            </div>
-            <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-white/60 text-xs font-semibold uppercase tracking-wide">Время работы</p>
-              <p className="text-white/80 text-sm">Пн–Пт: 9:00 – 21:00 МСК</p>
-              <p className="text-white/80 text-sm">Сб–Вс: 10:00 – 18:00 МСК</p>
-            </div>
-            <a href="mailto:support@lovebloom.app"
-              className="btn-grad w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2">
-              <Icon name="Send" size={16} />
-              Написать письмо
-            </a>
+            ) : (
+              <>
+                <textarea
+                  value={supportMsg}
+                  onChange={e => setSupportMsg(e.target.value)}
+                  placeholder="Опишите вашу проблему или вопрос..."
+                  rows={4}
+                  className="w-full rounded-2xl px-4 py-3 text-sm text-white placeholder-white/30 outline-none resize-none"
+                  style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                />
+                <p className="text-white/25 text-xs text-right">{supportMsg.length}/2000</p>
+                <button
+                  disabled={supportSending || supportMsg.trim().length < 5}
+                  onClick={async () => {
+                    setSupportSending(true);
+                    try {
+                      const r = await profilesApi.supportSend(supportMsg.trim());
+                      if (r.ok) {
+                        setSupportSent(true);
+                        setSupportTickets(prev => [{ id: r.ticket_id, message: supportMsg.trim(), reply: null, status: "open", created_at: r.created_at, replied_at: null }, ...prev]);
+                      }
+                    } catch { void 0; } finally { setSupportSending(false); }
+                  }}
+                  className="btn-grad w-full py-3 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50">
+                  {supportSending
+                    ? <><Icon name="Loader2" size={15} className="animate-spin" />Отправка...</>
+                    : <><Icon name="Send" size={15} />Написать письмо</>}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

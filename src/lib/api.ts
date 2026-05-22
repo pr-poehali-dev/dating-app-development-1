@@ -174,6 +174,12 @@ export const profilesApi = {
   uploadAudio: (audio: string, content_type: string) =>
     req<{ ok: boolean; url: string }>("profiles", "upload_audio", { method: "POST", body: JSON.stringify({ audio, content_type }) }),
 
+  supportSend: (message: string) =>
+    req<{ ok: boolean; ticket_id: number; created_at: string }>("profiles", "support_send", { method: "POST", body: JSON.stringify({ message }) }),
+
+  supportMyTickets: () =>
+    req<{ ok: boolean; tickets: { id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null }[] }>("profiles", "support_my_tickets"),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",
@@ -614,4 +620,12 @@ export const adminApi = {
 
   verifReject: (token: string, id: number, reason: string) =>
     adminReq<{ ok: boolean }>('verif_reject', { method: 'POST', body: JSON.stringify({ id, reason }) }, token),
+
+  supportTickets: (token: string, status = 'open') =>
+    adminReq<{ tickets: { id: number; user_id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null; user_name: string; user_photo: string | null }[] }>(
+      'support_tickets', {}, token, { status }
+    ),
+
+  supportReply: (token: string, ticket_id: number, reply: string) =>
+    adminReq<{ ok: boolean }>('support_reply', { method: 'POST', body: JSON.stringify({ ticket_id, reply }) }, token),
 };

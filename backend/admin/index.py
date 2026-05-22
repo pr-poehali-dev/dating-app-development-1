@@ -209,6 +209,38 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Тикеты поддержки (список) ──
+        if action == 'support_tickets':
+            status_filter = params.get('status', 'open')
+            cur.execute("""
+                SELECT t.id, t.user_id, t.message, t.reply, t.status,
+                       t.created_at, t.replied_at,
+                       u.name, u.photo_url
+                FROM support_tickets t
+                JOIN users u ON u.id = t.user_id
+                WHERE t.status = %s
+                ORDER BY t.created_at DESC
+                LIMIT 100
+            """, (status_filter,))
+            rows = cur.fetchall()
+            cols = ['id','user_id','message','reply','status','created_at','replied_at','user_name','user_photo']
+            tickets = [dict(zip(cols, r)) for r in rows]
+            return resp(200, {'tickets': tickets})
+
+        # ── Ответить на тикет ──
+        if action == 'support_reply':
+            ticket_id = body.get('ticket_id')
+            reply_text = body.get('reply', '').strip()
+            if not ticket_id or not reply_text:
+                return resp(400, {'error': 'ticket_id и reply обязательны'})
+            cur.execute("""
+                UPDATE support_tickets
+                SET reply = %s, status = 'closed', replied_at = NOW()
+                WHERE id = %s
+            """, (reply_text, ticket_id))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

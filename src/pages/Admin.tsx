@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { adminApi, type AdminUser, type AdminReport, type AdminVerifRequest, type AdminStats } from "@/lib/api";
 
-type Tab = "stats" | "users" | "verif" | "reports";
+type Tab = "stats" | "users" | "verif" | "reports" | "support";
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
@@ -338,6 +338,124 @@ function ReportsTab({ token }: { token: string }) {
   );
 }
 
+// ─── SupportTab ───────────────────────────────────────────────────────────────
+function SupportTab({ token }: { token: string }) {
+  type Ticket = { id: number; user_id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null; user_name: string; user_photo: string | null };
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"open"|"closed">("open");
+  const [replyText, setReplyText] = useState<Record<number, string>>({});
+  const [replying, setReplying] = useState<number | null>(null);
+  const [done, setDone] = useState<number[]>([]);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    adminApi.supportTickets(token, statusFilter).then(r => setTickets(r.tickets)).catch(() => {}).finally(() => setLoading(false));
+  }, [token, statusFilter]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const sendReply = async (id: number) => {
+    const text = (replyText[id] || "").trim();
+    if (!text) return;
+    setReplying(id);
+    try {
+      await adminApi.supportReply(token, id, text);
+      setDone(d => [...d, id]);
+      setTickets(prev => prev.map(t => t.id === id ? { ...t, reply: text, status: "closed" } : t));
+    } catch { void 0; } finally { setReplying(null); }
+  };
+
+  const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-bold text-lg">Обращения в поддержку</h3>
+        <div className="flex gap-2">
+          {(["open","closed"] as const).map(s => (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+              style={statusFilter === s
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+              {s === "open" ? "Открытые" : "Закрытые"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && <div className="flex justify-center py-10"><div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin"/></div>}
+      {!loading && tickets.length === 0 && (
+        <div className="flex flex-col items-center gap-2 py-12">
+          <Icon name="MessageCircle" size={36} className="text-white/15" />
+          <p className="text-white/30 text-sm">{statusFilter === "open" ? "Открытых обращений нет" : "Закрытых обращений нет"}</p>
+        </div>
+      )}
+      {!loading && tickets.map(t => (
+        <div key={t.id} className="rounded-2xl p-4 flex flex-col gap-3"
+          style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${t.status === "closed" ? "rgba(74,222,128,0.2)" : "rgba(255,45,120,0.2)"}` }}>
+          <div className="flex items-start gap-3">
+            <img src={t.user_photo || FALLBACK} className="w-9 h-9 rounded-full object-cover flex-shrink-0"/>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-white font-semibold text-sm">{t.user_name}</p>
+                <span className="text-white/30 text-xs">#{t.id}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={t.status === "closed"
+                    ? { background: "rgba(74,222,128,0.15)", color: "#4ADE80" }
+                    : { background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
+                  {t.status === "closed" ? "Закрыт" : "Открыт"}
+                </span>
+              </div>
+              <p className="text-white/30 text-xs">{new Date(t.created_at).toLocaleString("ru")}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)" }}>
+            <p className="text-white/80 text-sm leading-relaxed">{t.message}</p>
+          </div>
+
+          {t.reply && (
+            <div className="rounded-xl px-4 py-3" style={{ background: "rgba(74,222,128,0.07)", border: "1px solid rgba(74,222,128,0.2)" }}>
+              <p className="text-green-400 text-xs font-semibold mb-1">Ответ поддержки</p>
+              <p className="text-white/70 text-sm leading-relaxed">{t.reply}</p>
+            </div>
+          )}
+
+          {t.status === "open" && !done.includes(t.id) && (
+            <div className="flex gap-2">
+              <textarea
+                value={replyText[t.id] || ""}
+                onChange={e => setReplyText(r => ({ ...r, [t.id]: e.target.value }))}
+                placeholder="Написать ответ..."
+                rows={2}
+                className="flex-1 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none resize-none"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
+              />
+              <button
+                disabled={!(replyText[t.id] || "").trim() || replying === t.id}
+                onClick={() => sendReply(t.id)}
+                className="px-4 py-2 rounded-xl text-white text-sm font-semibold flex-shrink-0 disabled:opacity-40 flex items-center gap-1.5"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                {replying === t.id
+                  ? <Icon name="Loader2" size={15} className="animate-spin"/>
+                  : <><Icon name="Send" size={15}/>Ответить</>}
+              </button>
+            </div>
+          )}
+          {done.includes(t.id) && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(74,222,128,0.12)" }}>
+              <Icon name="Check" size={14} className="text-green-400"/>
+              <p className="text-green-400 text-xs font-semibold">Ответ отправлен</p>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 function Spinner() {
   return (
@@ -364,10 +482,11 @@ export default function Admin() {
   if (!token) return <AdminLogin onLogin={handleLogin} />;
 
   const tabs: { id: Tab; label: string; icon: string }[] = [
-    { id: "stats", label: "Статистика", icon: "BarChart2" },
-    { id: "users", label: "Пользователи", icon: "Users" },
-    { id: "verif", label: "Верификация", icon: "BadgeCheck" },
-    { id: "reports", label: "Жалобы", icon: "Flag" },
+    { id: "stats",   label: "Статистика",    icon: "BarChart2" },
+    { id: "users",   label: "Пользователи",  icon: "Users" },
+    { id: "verif",   label: "Верификация",   icon: "BadgeCheck" },
+    { id: "reports", label: "Жалобы",        icon: "Flag" },
+    { id: "support", label: "Поддержка",     icon: "MessageCircle" },
   ];
 
   return (
@@ -403,10 +522,11 @@ export default function Admin() {
 
       {/* Content */}
       <div className="px-6 py-4">
-        {tab === "stats" && <StatsTab token={token} />}
-        {tab === "users" && <UsersTab token={token} />}
-        {tab === "verif" && <VerifTab token={token} />}
+        {tab === "stats"   && <StatsTab token={token} />}
+        {tab === "users"   && <UsersTab token={token} />}
+        {tab === "verif"   && <VerifTab token={token} />}
         {tab === "reports" && <ReportsTab token={token} />}
+        {tab === "support" && <SupportTab token={token} />}
       </div>
     </div>
   );
