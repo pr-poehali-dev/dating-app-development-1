@@ -108,30 +108,43 @@ export function LiveStreamList({
               <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
             </div>
           )}
-          {!loading && streams.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
-              <div className="text-5xl">📡</div>
-              <p className="text-white/50 text-sm text-center">Нет активных трансляций.<br />Выйди в эфир первым!</p>
-            </div>
-          )}
-          {streams.map((s) => (
-            <button key={s.id} onClick={() => onJoin(s)}
-              className="glass-card p-4 flex items-center gap-3 w-full text-left">
-              <div className="relative flex-shrink-0">
-                <img src={s.author_photo || FALLBACK_PHOTO} className="w-14 h-14 rounded-full object-cover" />
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">LIVE</div>
+          {!loading && (() => {
+            let filtered = [...streams];
+            if (activeTab === "search" && tabSearch.trim()) {
+              const q = tabSearch.toLowerCase();
+              filtered = filtered.filter(s => s.title.toLowerCase().includes(q) || s.author_name.toLowerCase().includes(q));
+            } else if (activeTab === "popular") {
+              filtered = filtered.sort((a, b) => (b.viewers_count + b.hearts_count) - (a.viewers_count + a.hearts_count));
+            } else if (activeTab === "new") {
+              filtered = filtered.sort((a, b) => new Date(b.started_at || 0).getTime() - new Date(a.started_at || 0).getTime());
+            } else if (activeTab === "rating") {
+              filtered = filtered.sort((a, b) => b.hearts_count - a.hearts_count);
+            }
+            if (filtered.length === 0) return (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="text-5xl">📡</div>
+                <p className="text-white/50 text-sm text-center">Нет активных трансляций.<br />Выйди в эфир первым!</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm truncate">{s.title}</p>
-                <p className="text-white/50 text-xs">{s.author_name}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-white/40 text-xs flex items-center gap-1"><Icon name="Eye" size={11} />{s.viewers_count}</span>
-                  <span className="text-white/40 text-xs flex items-center gap-1">❤️ {s.hearts_count}</span>
+            );
+            return filtered.map((s) => (
+              <button key={s.id} onClick={() => onJoin(s)}
+                className="glass-card p-4 flex items-center gap-3 w-full text-left">
+                <div className="relative flex-shrink-0">
+                  <img src={s.author_photo || FALLBACK_PHOTO} className="w-14 h-14 rounded-full object-cover" />
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">LIVE</div>
                 </div>
-              </div>
-              <Icon name="ChevronRight" size={16} className="text-white/30 flex-shrink-0" />
-            </button>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-sm truncate">{s.title}</p>
+                  <p className="text-white/50 text-xs">{s.author_name}</p>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-white/40 text-xs flex items-center gap-1"><Icon name="Eye" size={11} />{s.viewers_count}</span>
+                    <span className="text-white/40 text-xs flex items-center gap-1">❤️ {s.hearts_count}</span>
+                  </div>
+                </div>
+                <Icon name="ChevronRight" size={16} className="text-white/30 flex-shrink-0" />
+              </button>
+            ));
+          })()}
         </div>
 
         {/* Нижняя панель */}

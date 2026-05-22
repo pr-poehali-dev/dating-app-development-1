@@ -90,7 +90,16 @@ def handler(event: dict, context) -> dict:
             )
             new_photos = [{'type': 'new_photo', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3]), 'ref_id': r[4]} for r in cur.fetchall()]
 
-            all_notifs = sorted(likes + msgs + views + new_photos, key=lambda x: x['created_at'], reverse=True)
+            # Новые подписчики
+            cur.execute(
+                "SELECT n.from_user_id, u.name, u.photo_url, n.created_at "
+                "FROM notifications n JOIN users u ON u.id = n.from_user_id "
+                "WHERE n.user_id = %s AND n.type = 'subscription' ORDER BY n.created_at DESC LIMIT 20",
+                (me['id'],)
+            )
+            subscriptions = [{'type': 'subscription', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
+
+            all_notifs = sorted(likes + msgs + views + new_photos + subscriptions, key=lambda x: x['created_at'], reverse=True)
 
             # Считаем непрочитанные лайки и просмотры
             cur.execute(

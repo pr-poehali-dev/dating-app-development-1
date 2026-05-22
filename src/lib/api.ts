@@ -349,7 +349,7 @@ export const likesApi = {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export interface Notification {
-  type: "like" | "super_like" | "message" | "view" | "new_photo";
+  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription";
   from_user_id: number;
   name: string;
   photo_url?: string;

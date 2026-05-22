@@ -33,7 +33,6 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="px-5 pt-5 pb-3">
         <h2 className="text-white font-golos font-bold text-2xl">Сообщения</h2>
-        <p className="text-white/40 text-sm mt-0.5">{matches.length} совпадений</p>
       </div>
       <div className="px-5 flex-1">
         <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Сообщения</p>
@@ -53,9 +52,19 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
                 <p className="text-white/50 text-sm truncate mt-0.5">
                   {!m.last_msg
                     ? "Совпадение! Напиши первым 👋"
-                    : (m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i))
-                      ? "📷 Фото"
-                      : m.last_msg}
+                    : m.last_msg.startsWith("__AUDIO__")
+                      ? "🎤 Голосовое сообщение"
+                      : m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i)
+                        ? "📷 Фото"
+                        : m.last_msg === "__REQUEST_PHOTO__"
+                          ? "🔐 Запрос доступа к фото"
+                          : m.last_msg === "__GRANT_PHOTO__"
+                            ? "🖼️ Открыт доступ к фото"
+                            : m.last_msg.startsWith("__LOC__")
+                              ? "📍 Геолокация"
+                              : m.last_msg.startsWith("__GIFT__")
+                                ? "🎁 Подарок"
+                                : m.last_msg}
                 </p>
               </div>
               {m.unread_count > 0 && (

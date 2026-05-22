@@ -17,14 +17,24 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "super_like") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(155,89,182,0.15)" }}><Icon name="Star" size={13} style={{ color: "#9B59B6" }} /></div>;
   if (type === "message") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.15)" }}><Icon name="MessageCircle" size={13} style={{ color: "#3B82F6" }} /></div>;
   if (type === "new_photo") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,200,0,0.15)" }}><Icon name="ImagePlus" size={13} style={{ color: "#FFCA28" }} /></div>;
+  if (type === "subscription") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,200,0,0.15)" }}><Icon name="Star" size={13} style={{ color: "#FBBF24" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
 function notifText(n: Notification) {
   if (n.type === "like") return "лайкнул(а) тебя";
   if (n.type === "super_like") return "поставил(а) суперлайк ⭐";
-  if (n.type === "message") return n.text ? `написал(а): ${n.text.slice(0, 40)}${n.text.length > 40 ? "…" : ""}` : "написал(а) тебе";
+  if (n.type === "message") {
+    if (!n.text) return "написал(а) тебе";
+    if (n.text.startsWith("__AUDIO__")) return "🎤 Голосовое сообщение";
+    if (n.text.startsWith("__VANISH__") || n.text.match(/\.(jpg|jpeg|png|gif|webp)/i)) return "📷 Фото";
+    if (n.text === "__REQUEST_PHOTO__") return "🔐 Запрашивает доступ к фото";
+    if (n.text === "__GRANT_PHOTO__") return "🖼️ Открыл(а) доступ к фото";
+    if (n.text.startsWith("__LOC__")) return "📍 Геолокация";
+    return `написал(а): ${n.text.slice(0, 40)}${n.text.length > 40 ? "…" : ""}`;
+  }
   if (n.type === "new_photo") return "добавил(а) новое фото 📷";
+  if (n.type === "subscription") return "подписался(ась) на тебя ⭐";
   return "просматривал(а) твой профиль";
 }
 

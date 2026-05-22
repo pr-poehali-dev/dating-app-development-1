@@ -484,7 +484,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 { icon: "Timer", label: "Исчезающее", action: openVanishPicker },
                 { icon: "MapPin", label: "Локация", action: sendLocation, loading: geoLoading },
                 { icon: "Video", label: "Видеочат", action: () => { setShowPlus(false); setVideoCall({ isInitiator: true }); } },
-                { icon: "Trophy", label: "Награда", action: () => { setShowAwardPicker(true); setShowPlus(false); } },
+                { icon: "Gift", label: "Подарок", action: () => { setShowAwardPicker(true); setShowPlus(false); } },
               ].map(({ icon, label, action, loading }) => (
                 <button key={label} onClick={action} disabled={loading}
                   className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50"

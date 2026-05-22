@@ -26,6 +26,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isStreamingRef = useRef(false);
 
   const loadStreams = () => {
     liveApi.list()
@@ -53,7 +54,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     const poll = async () => {
       try {
         const res = await liveApi.poll(activeStream.id, lastMsgIdRef.current);
-        if (res.stream.status === 'ended' && !isStreaming) {
+        if (res.stream.status === 'ended' && !isStreamingRef.current) {
           setActiveStream(null); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
           loadStreams(); return;
         }
@@ -73,7 +74,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     poll();
     pollRef.current = setInterval(poll, 3000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [activeStream?.id, isStreaming]);
+  }, [activeStream?.id]);
 
   void lastMsgId;
 
@@ -91,7 +92,8 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     stopCamera();
     setActiveStream(null); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     setLeaving(false);
-    if (isStreaming) {
+    if (isStreamingRef.current) {
+      isStreamingRef.current = false;
       setIsStreaming(false);
       try { await liveApi.end(); } catch (e: unknown) { void e; }
     } else {
@@ -130,6 +132,7 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
       streamRef.current = mediaStream;
       setFacingMode("user");
       const res = await liveApi.start(streamTitle.trim());
+      isStreamingRef.current = true;
       setIsStreaming(true);
       setShowStart(false);
       setStreamTitle("");

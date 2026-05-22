@@ -512,6 +512,11 @@ def handler(event: dict, context) -> dict:
             else:
                 cur.execute("INSERT INTO user_subscriptions (subscriber_id, target_id) VALUES (%s, %s)", (me['id'], target_id))
                 subscribed = True
+                # Уведомление о новом подписчике
+                cur.execute(
+                    "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'subscription', %s)",
+                    (target_id, me['id'])
+                )
             conn.commit()
             return resp(200, {'ok': True, 'subscribed': subscribed})
 
