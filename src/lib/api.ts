@@ -165,6 +165,12 @@ export const profilesApi = {
   getUserFollowers: (user_id: number) =>
     req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "user_followers", { method: "GET" }, { user_id: String(user_id) }),
 
+  subscribeToggle: (target_id: number) =>
+    req<{ ok: boolean; subscribed: boolean }>("profiles", "subscribe_toggle", { method: "POST", body: JSON.stringify({ target_id }) }),
+
+  subscriptionStatus: (target_id: number) =>
+    req<{ subscribed: boolean }>("profiles", "subscription_status", { method: "GET" }, { target_id: String(target_id) }),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",
@@ -334,12 +340,13 @@ export const likesApi = {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export interface Notification {
-  type: "like" | "super_like" | "message" | "view";
+  type: "like" | "super_like" | "message" | "view" | "new_photo";
   from_user_id: number;
   name: string;
   photo_url?: string;
   text?: string;
   match_id?: number;
+  ref_id?: number;
   created_at: string;
 }
 

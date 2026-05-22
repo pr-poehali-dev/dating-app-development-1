@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { matchesApi, messagesApi, type Message, type Profile } from "@/lib/api";
+import { matchesApi, messagesApi, profilesApi, type Message, type Profile } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
 
@@ -190,7 +190,14 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       .catch(() => {});
     matchesApi.getAll().then((d) => {
       const m = d.matches.find((x) => x.match_id === matchId);
-      if (m) { setPartnerName(m.name); setPartnerPhoto(m.photo_url || FALLBACK_PHOTO); setPartnerId(m.partner_id); }
+      if (m) {
+        setPartnerName(m.name);
+        setPartnerPhoto(m.photo_url || FALLBACK_PHOTO);
+        setPartnerId(m.partner_id);
+        profilesApi.subscriptionStatus(m.partner_id)
+          .then(r => setSubscribed(r.subscribed))
+          .catch(() => {});
+      }
     }).catch(() => {});
   }, [matchId]);
 
@@ -353,7 +360,12 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           </button>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => { setSubscribed(s => !s); }}
+              onClick={() => {
+                if (!partnerId) return;
+                const next = !subscribed;
+                setSubscribed(next);
+                profilesApi.subscribeToggle(partnerId).then(r => setSubscribed(r.subscribed)).catch(() => setSubscribed(!next));
+              }}
               className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
               style={{ background: subscribed ? "rgba(255,200,0,0.15)" : "rgba(255,255,255,0.06)" }}
               title="Подписаться на обновления">

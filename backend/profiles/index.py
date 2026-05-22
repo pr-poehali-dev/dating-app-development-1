@@ -341,6 +341,14 @@ def handler(event: dict, context) -> dict:
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             cur.execute("INSERT INTO profile_photos (user_id, photo_url) VALUES (%s, %s) RETURNING id, created_at", (me['id'], cdn_url))
             row = cur.fetchone()
+            # Уведомить подписчиков
+            cur.execute("SELECT subscriber_id FROM user_subscriptions WHERE target_id=%s", (me['id'],))
+            subs = [r[0] for r in cur.fetchall()]
+            for sub_id in subs:
+                cur.execute(
+                    "INSERT INTO notifications (user_id, type, from_user_id, ref_id) VALUES (%s, %s, %s, %s)",
+                    (sub_id, 'new_photo', me['id'], row[0])
+                )
             conn.commit()
             return resp(200, {'ok': True, 'photo': {'id': row[0], 'photo_url': cdn_url, 'created_at': str(row[1])}})
 
@@ -442,6 +450,28 @@ def handler(event: dict, context) -> dict:
             cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'ok': True, 'users': users})
+
+        # Подписаться / отписаться на обновления пользователя
+        if action == 'subscribe_toggle':
+            body = json.loads(event.get('body') or '{}')
+            target_id = int(body.get('target_id', 0))
+            if not target_id or target_id == me['id']:
+                return resp(400, {'error': 'Некорректный target_id'})
+            cur.execute("SELECT id FROM user_subscriptions WHERE subscriber_id=%s AND target_id=%s", (me['id'], target_id))
+            if cur.fetchone():
+                cur.execute("DELETE FROM user_subscriptions WHERE subscriber_id=%s AND target_id=%s", (me['id'], target_id))
+                subscribed = False
+            else:
+                cur.execute("INSERT INTO user_subscriptions (subscriber_id, target_id) VALUES (%s, %s)", (me['id'], target_id))
+                subscribed = True
+            conn.commit()
+            return resp(200, {'ok': True, 'subscribed': subscribed})
+
+        # Проверить статус подписки
+        if action == 'subscription_status':
+            target_id = int(params.get('target_id', 0))
+            cur.execute("SELECT id FROM user_subscriptions WHERE subscriber_id=%s AND target_id=%s", (me['id'], target_id))
+            return resp(200, {'subscribed': cur.fetchone() is not None})
 
         # Профиль пользователя по id
         if action == 'user_profile':

@@ -16,6 +16,7 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "like") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,45,120,0.15)" }}><Icon name="Heart" size={13} style={{ color: "#FF2D78" }} /></div>;
   if (type === "super_like") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(155,89,182,0.15)" }}><Icon name="Star" size={13} style={{ color: "#9B59B6" }} /></div>;
   if (type === "message") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.15)" }}><Icon name="MessageCircle" size={13} style={{ color: "#3B82F6" }} /></div>;
+  if (type === "new_photo") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,200,0,0.15)" }}><Icon name="ImagePlus" size={13} style={{ color: "#FFCA28" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
@@ -23,6 +24,7 @@ function notifText(n: Notification) {
   if (n.type === "like") return "лайкнул(а) тебя";
   if (n.type === "super_like") return "поставил(а) суперлайк ⭐";
   if (n.type === "message") return n.text ? `написал(а): ${n.text.slice(0, 40)}${n.text.length > 40 ? "…" : ""}` : "написал(а) тебе";
+  if (n.type === "new_photo") return "добавил(а) новое фото 📷";
   return "просматривал(а) твой профиль";
 }
 
