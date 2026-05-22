@@ -278,6 +278,27 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        if action == 'upload_audio':
+            body = json.loads(event.get('body') or '{}')
+            audio_data = body.get('audio', '')
+            content_type = body.get('content_type', 'audio/webm')
+            if not audio_data:
+                return resp(400, {'error': 'Нет аудио'})
+            if ',' in audio_data:
+                audio_data = audio_data.split(',', 1)[1]
+            audio_bytes = base64.b64decode(audio_data)
+            if len(audio_bytes) > 5 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 5 МБ)'})
+            ext = content_type.split('/')[-1].split(';')[0] or 'webm'
+            key = f"voice/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=audio_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            return resp(200, {'ok': True, 'url': cdn_url})
+
         if action == 'upload_cover':
             body = json.loads(event.get('body') or '{}')
             image_data = body.get('image', '')

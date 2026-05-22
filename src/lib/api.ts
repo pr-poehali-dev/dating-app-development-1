@@ -171,6 +171,9 @@ export const profilesApi = {
   subscriptionStatus: (target_id: number) =>
     req<{ subscribed: boolean }>("profiles", "subscription_status", { method: "GET" }, { target_id: String(target_id) }),
 
+  uploadAudio: (audio: string, content_type: string) =>
+    req<{ ok: boolean; url: string }>("profiles", "upload_audio", { method: "POST", body: JSON.stringify({ audio, content_type }) }),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",

@@ -143,6 +143,19 @@ export function renderMsgContent(text: string, out: boolean) {
       </div>
     );
   }
+  if (text.startsWith("__AUDIO__")) {
+    const url = text.slice(9);
+    return (
+      <div className="flex items-center gap-2 px-1 py-0.5 min-w-[180px]">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: out ? "rgba(255,255,255,0.15)" : "rgba(255,45,120,0.2)" }}>
+          <Icon name="Mic" size={15} className={out ? "text-white/80" : "text-pink-400"} />
+        </div>
+        <audio controls src={url} className="flex-1 h-8"
+          style={{ filter: "invert(1) sepia(1) saturate(0) brightness(1.5)", maxWidth: 160 }} />
+      </div>
+    );
+  }
   if (text === "__REQUEST_PHOTO__") {
     return (
       <div className="flex items-center gap-2 px-1 py-0.5">
@@ -176,6 +189,11 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [videoCall, setVideoCall] = useState<{ isInitiator: boolean } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordSecs, setRecordSecs] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -213,6 +231,48 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
     }, 2000);
     return () => clearInterval(interval);
   }, [matchId, videoCall]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg" });
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType });
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = (reader.result as string).split(",")[1];
+          try {
+            const up = await profilesApi.uploadAudio(base64, mr.mimeType);
+            if (up?.url) await sendSystem(`__AUDIO__${up.url}`);
+          } catch { void 0; }
+        };
+        reader.readAsDataURL(blob);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSecs(0);
+      recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
+    } catch {
+      alert("Нет доступа к микрофону. Разреши в настройках браузера.");
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+    setRecording(false);
+    setRecordSecs(0);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      if (cancel) {
+        mediaRecorderRef.current.ondataavailable = null;
+        mediaRecorderRef.current.onstop = () => { mediaRecorderRef.current?.stream?.getTracks().forEach(t => t.stop()); };
+      }
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   const send = async () => {
     if (!input.trim()) return;
@@ -470,27 +530,63 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
 
         <div className="px-4 py-3 flex items-center gap-2"
           style={{ borderTop: (showPlus || showEmoji) ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
-          <button onClick={() => { setShowPlus(v => !v); setShowEmoji(false); }}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
-            style={{
-              background: showPlus ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)",
-              border: "1.5px solid rgba(255,255,255,0.15)"
-            }}>
-            <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
-          </button>
-          <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            onFocus={() => { setShowPlus(false); setShowEmoji(false); }}
-            placeholder="Написать..."
-            className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
-          <button onClick={() => { setShowEmoji(v => !v); setShowPlus(false); }}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
-            style={{ background: showEmoji ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
-            {showEmoji ? <Icon name="X" size={16} className="text-white" /> : "😊"}
-          </button>
-          <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
-            <Icon name="Send" size={16} className="text-white" />
-          </button>
+
+          {recording ? (
+            /* ── Полоса записи ── */
+            <>
+              <button onClick={() => stopRecording(true)}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
+                <Icon name="Trash2" size={18} className="text-white/60" />
+              </button>
+              <div className="flex-1 flex items-center gap-2 rounded-full px-4 py-2.5"
+                style={{ background: "rgba(255,45,120,0.12)", border: "1.5px solid rgba(255,45,120,0.35)" }}>
+                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse" />
+                <span className="text-white/80 text-sm font-mono">
+                  {String(Math.floor(recordSecs / 60)).padStart(2, "0")}:{String(recordSecs % 60).padStart(2, "0")}
+                </span>
+                <span className="text-white/40 text-xs flex-1">Идёт запись...</span>
+              </div>
+              <button onClick={() => stopRecording(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                <Icon name="Send" size={16} className="text-white" />
+              </button>
+            </>
+          ) : (
+            /* ── Обычная панель ── */
+            <>
+              <button onClick={() => { setShowPlus(v => !v); setShowEmoji(false); }}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+                style={{
+                  background: showPlus ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)",
+                  border: "1.5px solid rgba(255,255,255,0.15)"
+                }}>
+                <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
+              </button>
+              <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && send()}
+                onFocus={() => { setShowPlus(false); setShowEmoji(false); }}
+                placeholder="Написать..."
+                className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
+              <button onClick={() => { setShowEmoji(v => !v); setShowPlus(false); }}
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
+                style={{ background: showEmoji ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
+                {showEmoji ? <Icon name="X" size={16} className="text-white" /> : "😊"}
+              </button>
+              {input.trim() ? (
+                <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0 active:scale-90 transition-all">
+                  <Icon name="Send" size={16} className="text-white" />
+                </button>
+              ) : (
+                <button onClick={startRecording}
+                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                  style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
+                  <Icon name="Mic" size={18} className="text-white/80" />
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
