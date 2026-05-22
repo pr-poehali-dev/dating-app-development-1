@@ -3,35 +3,37 @@ import GiftHeart from "./GiftHeart";
 import GiftRose from "./GiftRose";
 import GiftBear from "./GiftBear";
 import GiftRing from "./GiftRing";
+import GiftParticles from "./GiftParticles";
 
 type GiftCategory = "heart" | "rose" | "bear" | "ring";
-type AnimStyle = "float" | "pulse" | "shake" | "spin" | "sparkle" | "glow" | "orbit" | "rainbow" | "3d-rose" | "3d-bear" | "3d-ring" | "3d-rose-epic" | "3d-bear-glow" | "3d-ring-legend";
+type Rarity = "common" | "rare" | "epic" | "legendary";
 
 interface GiftItemProps {
   category: GiftCategory;
   variant: number;
   animKey: string;
   size?: number;
+  rarity?: Rarity;
 }
 
 const ANIM_MAP: Record<string, string> = {
-  "gift-float":        "gift-float",
-  "gift-pulse":        "gift-pulse",
-  "gift-shake":        "gift-shake",
-  "gift-spin":         "gift-spin",
-  "gift-sparkle":      "gift-sparkle",
-  "gift-glow":         "gift-glow",
-  "gift-orbit":        "gift-orbit",
-  "gift-rainbow":      "gift-rainbow",
-  "gift-3d-rose":      "gift-3d-rose",
-  "gift-3d-bear":      "gift-3d-bear",
-  "gift-3d-ring":      "gift-3d-ring",
-  "gift-3d-rose-epic": "gift-3d-rose-epic",
-  "gift-3d-bear-glow": "gift-3d-bear-glow",
+  "gift-float":         "gift-float",
+  "gift-pulse":         "gift-pulse",
+  "gift-shake":         "gift-shake",
+  "gift-spin":          "gift-spin",
+  "gift-sparkle":       "gift-sparkle",
+  "gift-glow":          "gift-glow",
+  "gift-orbit":         "gift-orbit",
+  "gift-rainbow":       "gift-rainbow",
+  "gift-3d-rose":       "gift-3d-rose",
+  "gift-3d-bear":       "gift-3d-bear",
+  "gift-3d-ring":       "gift-3d-ring",
+  "gift-3d-rose-epic":  "gift-3d-rose-epic",
+  "gift-3d-bear-glow":  "gift-3d-bear-glow",
   "gift-3d-ring-legend":"gift-3d-ring-legend",
 };
 
-export default function GiftItem({ category, variant, animKey, size = 56 }: GiftItemProps) {
+export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common" }: GiftItemProps) {
   const cssClass = ANIM_MAP[animKey] ?? "gift-float";
 
   const svgNode = useMemo(() => {
@@ -43,9 +45,35 @@ export default function GiftItem({ category, variant, animKey, size = 56 }: Gift
     }
   }, [category, variant, size]);
 
+  const hasParticles = rarity !== "common";
+
   return (
-    <div className={cssClass} style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      {svgNode}
+    <div
+      style={{
+        position: "relative",
+        width: size,
+        height: size,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {hasParticles && <GiftParticles rarity={rarity} size={size} />}
+      <div
+        className={cssClass}
+        style={{
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {svgNode}
+      </div>
     </div>
   );
 }

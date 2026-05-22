@@ -141,7 +141,7 @@ export function ProfileGiftSheet({
                       {rs.label}
                     </span>
                   )}
-                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} />
+                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
                   </p>
@@ -161,7 +161,7 @@ export function ProfileGiftSheet({
             return (
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
-                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} />
+                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
                   {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}
