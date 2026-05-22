@@ -2,41 +2,41 @@ import Icon from "@/components/ui/icon";
 
 export const GIFTS = [
   /* ─── Сердца ─── */
-  { id: 1,  name: "Сердечко",        emoji: "🩷", price: 49,    anim: "gift-float",      rarity: "common",    category: "heart" },
-  { id: 2,  name: "Большое сердце",  emoji: "❤️", price: 149,   anim: "gift-pulse",      rarity: "common",    category: "heart" },
-  { id: 3,  name: "Горящее сердце",  emoji: "❤️‍🔥", price: 299,   anim: "gift-shake",      rarity: "rare",      category: "heart" },
-  { id: 4,  name: "Золотое сердце",  emoji: "🧡", price: 599,   anim: "gift-spin",       rarity: "rare",      category: "heart" },
-  { id: 5,  name: "Алмазное сердце", emoji: "💙", price: 999,   anim: "gift-sparkle",    rarity: "epic",      category: "heart" },
-  { id: 6,  name: "Вечное сердце",   emoji: "💜", price: 1990,  anim: "gift-glow",       rarity: "epic",      category: "heart" },
-  { id: 7,  name: "Редкое сердце",   emoji: "🖤", price: 4990,  anim: "gift-orbit",      rarity: "legendary", category: "heart" },
-  { id: 8,  name: "Легендарное",     emoji: "💖", price: 9990,  anim: "gift-rainbow",    rarity: "legendary", category: "heart" },
+  { id: 1,  name: "Сердечко",        emoji: "🩷", price: 49,    anim: "gift-float",      rarity: "common",    category: "heart", variant: 0 },
+  { id: 2,  name: "Большое сердце",  emoji: "❤️", price: 149,   anim: "gift-pulse",      rarity: "common",    category: "heart", variant: 1 },
+  { id: 3,  name: "Горящее сердце",  emoji: "❤️‍🔥", price: 299,   anim: "gift-shake",      rarity: "rare",      category: "heart", variant: 2 },
+  { id: 4,  name: "Золотое сердце",  emoji: "🧡", price: 599,   anim: "gift-spin",       rarity: "rare",      category: "heart", variant: 3 },
+  { id: 5,  name: "Алмазное сердце", emoji: "💙", price: 999,   anim: "gift-sparkle",    rarity: "epic",      category: "heart", variant: 4 },
+  { id: 6,  name: "Вечное сердце",   emoji: "💜", price: 1990,  anim: "gift-glow",       rarity: "epic",      category: "heart", variant: 5 },
+  { id: 7,  name: "Редкое сердце",   emoji: "🖤", price: 4990,  anim: "gift-orbit",      rarity: "legendary", category: "heart", variant: 6 },
+  { id: 8,  name: "Легендарное",     emoji: "💖", price: 9990,  anim: "gift-rainbow",    rarity: "legendary", category: "heart", variant: 7 },
   /* ─── Розы ─── */
-  { id: 9,  name: "Роза",            emoji: "🌹", price: 99,    anim: "gift-3d-rose",    rarity: "common",    category: "rose" },
-  { id: 10, name: "Две розы",        emoji: "🌷", price: 199,   anim: "gift-float",      rarity: "common",    category: "rose" },
-  { id: 11, name: "Букет роз",       emoji: "💐", price: 399,   anim: "gift-3d-rose",    rarity: "rare",      category: "rose" },
-  { id: 12, name: "Алая роза",       emoji: "🌺", price: 699,   anim: "gift-pulse",      rarity: "rare",      category: "rose" },
-  { id: 13, name: "Золотая роза",    emoji: "🌸", price: 1290,  anim: "gift-3d-rose-epic", rarity: "epic",    category: "rose" },
-  { id: 14, name: "Вечная роза",     emoji: "🪷", price: 2490,  anim: "gift-sparkle",    rarity: "epic",      category: "rose" },
-  { id: 15, name: "Роза в хрустале", emoji: "🌹", price: 5990,  anim: "gift-rainbow",    rarity: "legendary", category: "rose" },
-  { id: 16, name: "Роза легенды",    emoji: "💮", price: 11990, anim: "gift-3d-rose-epic", rarity: "legendary", category: "rose" },
+  { id: 9,  name: "Роза",            emoji: "🌹", price: 99,    anim: "gift-3d-rose",      rarity: "common",    category: "rose", variant: 0 },
+  { id: 10, name: "Две розы",        emoji: "🌷", price: 199,   anim: "gift-float",        rarity: "common",    category: "rose", variant: 1 },
+  { id: 11, name: "Букет роз",       emoji: "💐", price: 399,   anim: "gift-3d-rose",      rarity: "rare",      category: "rose", variant: 2 },
+  { id: 12, name: "Алая роза",       emoji: "🌺", price: 699,   anim: "gift-pulse",        rarity: "rare",      category: "rose", variant: 3 },
+  { id: 13, name: "Золотая роза",    emoji: "🌸", price: 1290,  anim: "gift-3d-rose-epic", rarity: "epic",      category: "rose", variant: 4 },
+  { id: 14, name: "Вечная роза",     emoji: "🪷", price: 2490,  anim: "gift-sparkle",      rarity: "epic",      category: "rose", variant: 5 },
+  { id: 15, name: "Роза в хрустале", emoji: "🌹", price: 5990,  anim: "gift-rainbow",      rarity: "legendary", category: "rose", variant: 6 },
+  { id: 16, name: "Роза легенды",    emoji: "💮", price: 11990, anim: "gift-3d-rose-epic", rarity: "legendary", category: "rose", variant: 7 },
   /* ─── Медвежонки ─── */
-  { id: 17, name: "Мишка",           emoji: "🐻", price: 149,   anim: "gift-3d-bear",    rarity: "common",    category: "bear" },
-  { id: 18, name: "Мишка Тедди",     emoji: "🧸", price: 290,   anim: "gift-float",      rarity: "common",    category: "bear" },
-  { id: 19, name: "Мишка с сердцем", emoji: "🐻‍❄️", price: 490,   anim: "gift-3d-bear",    rarity: "rare",      category: "bear" },
-  { id: 20, name: "Панда",           emoji: "🐼", price: 890,   anim: "gift-pulse",      rarity: "rare",      category: "bear" },
-  { id: 21, name: "Мишка Эпик",      emoji: "🧸", price: 1690,  anim: "gift-3d-bear-glow", rarity: "epic",    category: "bear" },
-  { id: 22, name: "Золотой мишка",   emoji: "🐻", price: 3490,  anim: "gift-glow",       rarity: "epic",      category: "bear" },
-  { id: 23, name: "Мишка легенды",   emoji: "🐼", price: 6990,  anim: "gift-3d-bear-glow", rarity: "legendary", category: "bear" },
-  { id: 24, name: "Мишка навсегда",  emoji: "🧸", price: 12990, anim: "gift-rainbow",    rarity: "legendary", category: "bear" },
+  { id: 17, name: "Мишка",           emoji: "🐻", price: 149,   anim: "gift-3d-bear",      rarity: "common",    category: "bear", variant: 0 },
+  { id: 18, name: "Мишка Тедди",     emoji: "🧸", price: 290,   anim: "gift-float",        rarity: "common",    category: "bear", variant: 1 },
+  { id: 19, name: "Мишка с сердцем", emoji: "🐻‍❄️", price: 490,   anim: "gift-3d-bear",      rarity: "rare",      category: "bear", variant: 2 },
+  { id: 20, name: "Панда",           emoji: "🐼", price: 890,   anim: "gift-pulse",        rarity: "rare",      category: "bear", variant: 3 },
+  { id: 21, name: "Мишка Эпик",      emoji: "🧸", price: 1690,  anim: "gift-3d-bear-glow", rarity: "epic",      category: "bear", variant: 4 },
+  { id: 22, name: "Золотой мишка",   emoji: "🐻", price: 3490,  anim: "gift-glow",         rarity: "epic",      category: "bear", variant: 5 },
+  { id: 23, name: "Мишка легенды",   emoji: "🐼", price: 6990,  anim: "gift-3d-bear-glow", rarity: "legendary", category: "bear", variant: 6 },
+  { id: 24, name: "Мишка навсегда",  emoji: "🧸", price: 12990, anim: "gift-rainbow",      rarity: "legendary", category: "bear", variant: 7 },
   /* ─── Кольца ─── */
-  { id: 25, name: "Кольцо",          emoji: "💍", price: 199,   anim: "gift-3d-ring",    rarity: "common",    category: "ring" },
-  { id: 26, name: "Серебряное",      emoji: "🪬", price: 490,   anim: "gift-spin",       rarity: "common",    category: "ring" },
-  { id: 27, name: "Золотое кольцо",  emoji: "💛", price: 990,   anim: "gift-3d-ring",    rarity: "rare",      category: "ring" },
-  { id: 28, name: "С рубином",       emoji: "♦️", price: 1990,  anim: "gift-sparkle",    rarity: "rare",      category: "ring" },
-  { id: 29, name: "Бриллиант",       emoji: "💎", price: 3990,  anim: "gift-3d-ring-legend", rarity: "epic",  category: "ring" },
-  { id: 30, name: "Кольцо Эпик",     emoji: "💍", price: 7490,  anim: "gift-3d-ring",    rarity: "epic",      category: "ring" },
-  { id: 31, name: "Кольцо Вечности", emoji: "💎", price: 14990, anim: "gift-3d-ring-legend", rarity: "legendary", category: "ring" },
-  { id: 32, name: "Кольцо богов",    emoji: "✨", price: 24990, anim: "gift-rainbow",    rarity: "legendary", category: "ring" },
+  { id: 25, name: "Кольцо",          emoji: "💍", price: 199,   anim: "gift-3d-ring",        rarity: "common",    category: "ring", variant: 0 },
+  { id: 26, name: "Серебряное",      emoji: "🪬", price: 490,   anim: "gift-spin",           rarity: "common",    category: "ring", variant: 1 },
+  { id: 27, name: "Золотое кольцо",  emoji: "💛", price: 990,   anim: "gift-3d-ring",        rarity: "rare",      category: "ring", variant: 2 },
+  { id: 28, name: "С рубином",       emoji: "♦️", price: 1990,  anim: "gift-sparkle",        rarity: "rare",      category: "ring", variant: 3 },
+  { id: 29, name: "Бриллиант",       emoji: "💎", price: 3990,  anim: "gift-3d-ring-legend", rarity: "epic",      category: "ring", variant: 4 },
+  { id: 30, name: "Кольцо Эпик",     emoji: "💍", price: 7490,  anim: "gift-3d-ring",        rarity: "epic",      category: "ring", variant: 5 },
+  { id: 31, name: "Кольцо Вечности", emoji: "💎", price: 14990, anim: "gift-3d-ring-legend", rarity: "legendary", category: "ring", variant: 6 },
+  { id: 32, name: "Кольцо богов",    emoji: "✨", price: 24990, anim: "gift-rainbow",        rarity: "legendary", category: "ring", variant: 7 },
 ];
 
 const CATEGORIES = [
@@ -55,15 +55,8 @@ export const RARITY_STYLE: Record<string, { label: string; border: string; bg: s
 
 export const PAY_CREATE_URL = "https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef";
 
-function GiftEmoji({ emoji, anim, size = 52 }: { emoji: string; anim: string; size?: number }) {
-  return (
-    <div className={anim} style={{ width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <span style={{ fontSize: size * 0.72, lineHeight: 1, userSelect: "none" }}>{emoji}</span>
-    </div>
-  );
-}
-
 import { useState } from "react";
+import GiftItem from "@/components/gifts/GiftItem";
 
 interface ProfileGiftSheetProps {
   recipientName: string;
@@ -148,7 +141,7 @@ export function ProfileGiftSheet({
                       {rs.label}
                     </span>
                   )}
-                  <GiftEmoji emoji={gift.emoji} anim={gift.anim} size={52} />
+                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} />
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
                   </p>
@@ -168,7 +161,7 @@ export function ProfileGiftSheet({
             return (
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
-                <GiftEmoji emoji={gift.emoji} anim={gift.anim} size={56} />
+                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
                   {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}

@@ -8,6 +8,7 @@ import { PostCard } from "@/components/screens/HomePostCard";
 import { NotificationsSheet } from "@/components/screens/NotificationsSheet";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { GIFTS, RARITY_STYLE, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
+import GiftItem from "@/components/gifts/GiftItem";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
@@ -244,8 +245,8 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
             <div className="w-full max-w-xs rounded-3xl p-6 flex flex-col items-center gap-4 animate-scale-in"
               style={{ background: "var(--spark-card)", border: `1px solid ${rs.border}`, boxShadow: `0 0 40px ${rs.border}` }}
               onClick={e => e.stopPropagation()}>
-              <div className={`w-36 h-36 flex items-center justify-center ${gift.anim}`}>
-                <span style={{ fontSize: 96, lineHeight: 1 }}>{gift.emoji}</span>
+              <div className="w-36 h-36 flex items-center justify-center">
+                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={144} />
               </div>
               <div className="text-center">
                 <p className="text-white font-bold text-xl">{gift.name}</p>
@@ -364,9 +365,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                           {rs.label}
                         </span>
                       )}
-                      <div className={`w-14 h-14 flex items-center justify-center ${gift.anim}`}>
-                        <span style={{ fontSize: 40, lineHeight: 1 }}>{gift.emoji}</span>
-                      </div>
+                      <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={54} />
                       <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">{gift.name}</p>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
                         style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
