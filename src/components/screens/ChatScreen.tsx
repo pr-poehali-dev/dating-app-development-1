@@ -132,6 +132,28 @@ export function renderMsgContent(text: string, out: boolean) {
       </div>
     );
   }
+  if (text === "__GRANT_PHOTO__") {
+    return (
+      <div className="flex items-center gap-2 px-1 py-0.5">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(100,200,100,0.2)" }}>
+          <Icon name="ImagePlus" size={16} className="text-green-400" />
+        </div>
+        <span className="text-sm">{out ? "Ты открыл доступ к своим фото 🖼️" : "Открыл тебе доступ к своим фото 🖼️"}</span>
+      </div>
+    );
+  }
+  if (text === "__REQUEST_PHOTO__") {
+    return (
+      <div className="flex items-center gap-2 px-1 py-0.5">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(255,45,120,0.2)" }}>
+          <Icon name="Lock" size={16} className="text-pink-400" />
+        </div>
+        <span className="text-sm">{out ? "Ты запросил доступ к приватным фото 🔐" : "Запрашивает доступ к твоим приватным фото 🔐"}</span>
+      </div>
+    );
+  }
   return <span>{text}</span>;
 }
 
@@ -152,6 +174,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [showAwardPicker, setShowAwardPicker] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [videoCall, setVideoCall] = useState<{ isInitiator: boolean } | null>(null);
+  const [showChatMenu, setShowChatMenu] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -327,6 +351,29 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
               <p className="text-white/40 text-xs">Нажми для просмотра профиля</p>
             </div>
           </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setSubscribed(s => !s); }}
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
+              style={{ background: subscribed ? "rgba(255,200,0,0.15)" : "rgba(255,255,255,0.06)" }}
+              title="Подписаться на обновления">
+              <Icon name="Star" size={18} className={subscribed ? "text-yellow-400" : "text-white/50"} />
+            </button>
+            <button
+              onClick={() => setVideoCall({ isInitiator: true })}
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
+              style={{ background: "rgba(255,255,255,0.06)" }}
+              title="Видеозвонок">
+              <Icon name="Video" size={18} className="text-white/50" />
+            </button>
+            <button
+              onClick={() => setShowChatMenu(true)}
+              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
+              style={{ background: "rgba(255,255,255,0.06)" }}
+              title="Ещё">
+              <Icon name="MoreVertical" size={18} className="text-white/50" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
@@ -481,6 +528,57 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showChatMenu && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowChatMenu(false)}>
+          <div className="w-full max-w-sm pb-8 px-4"
+            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between py-4">
+              <p className="text-white font-semibold text-base">Действия</p>
+              <button onClick={() => setShowChatMenu(false)}>
+                <Icon name="X" size={20} className="text-white/50" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setShowChatMenu(false);
+                  sendSystem("__GRANT_PHOTO__");
+                }}
+                className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(100,200,100,0.15)" }}>
+                  <Icon name="ImagePlus" size={20} className="text-green-400" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm">Предоставить доступ к фото</p>
+                  <p className="text-white/40 text-xs mt-0.5">Открыть свои приватные фото для этого пользователя</p>
+                </div>
+              </button>
+              <button
+                onClick={() => {
+                  setShowChatMenu(false);
+                  sendSystem("__REQUEST_PHOTO__");
+                }}
+                className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.05)" }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,45,120,0.15)" }}>
+                  <Icon name="Lock" size={20} className="text-pink-400" />
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-sm">Запросить доступ к приватным фото</p>
+                  <p className="text-white/40 text-xs mt-0.5">Отправить запрос на просмотр приватного альбома</p>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}
