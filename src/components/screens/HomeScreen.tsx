@@ -10,12 +10,13 @@ import { HomeGiftSheet } from "@/components/screens/home/HomeGiftSheet";
 import { HomeGiftPreview } from "@/components/screens/home/HomeGiftPreview";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
-export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
+export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onPremium }: {
   currentUser: User;
   onGoLive: () => void;
   onGoPhotos?: () => void;
   onOpenChat?: (matchId: number) => void;
   onGoToChats?: () => void;
+  onPremium?: () => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
@@ -165,11 +166,13 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
           posts={posts}
           streams={streams}
           currentUserId={currentUser.id}
+          isPremium={!!currentUser.premium}
           onGoLive={onGoLive}
           onLike={handleLike}
           onComment={(p) => setCommentPost(p)}
           onDelete={(p) => setPosts((prev) => prev.filter((x) => x.id !== p.id))}
           onProfileClick={setViewProfile}
+          onPremium={() => onPremium?.()}
         />
       </div>
 
