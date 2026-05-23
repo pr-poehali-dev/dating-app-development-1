@@ -111,9 +111,9 @@ def handler(event: dict, context) -> dict:
         conn = psycopg2.connect(dsn)
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO orders (order_number, user_name, user_email, amount, status, payment_url, order_comment) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s) "
-            "ON CONFLICT (order_number) DO UPDATE SET status = EXCLUDED.status, payment_url = EXCLUDED.payment_url",
+            "INSERT INTO orders (order_number, user_name, user_email, amount, status, payment_url, order_comment, metadata) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb) "
+            "ON CONFLICT (order_number) DO UPDATE SET status = EXCLUDED.status, payment_url = EXCLUDED.payment_url, metadata = EXCLUDED.metadata",
             (
                 payment_id,
                 metadata.get('user_name', 'Пользователь'),
@@ -121,7 +121,8 @@ def handler(event: dict, context) -> dict:
                 float(amount),
                 status,
                 payment_url,
-                description
+                description,
+                json.dumps(metadata)
             )
         )
         conn.commit()

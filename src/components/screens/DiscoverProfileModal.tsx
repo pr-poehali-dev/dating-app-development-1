@@ -168,20 +168,31 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     if (!gift || giftPaying) return;
     setGiftPaying(true);
     try {
+      const senderToken = localStorage.getItem("spark_token") || "";
       const res = await fetch(PAY_CREATE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: gift.price,
           description: `Подарок «${gift.name}» для ${currentProfile.name}`,
-          returnUrl: window.location.origin + "/?payment=success",
-          metadata: { gift_id: String(gift.id), gift_name: gift.name, recipient_id: String(currentProfile.id) },
+          return_url: window.location.origin + "/?payment=success",
+          metadata: {
+            kind: "gift",
+            gift_id: String(gift.id),
+            gift_name: gift.name,
+            gift_emoji: gift.emoji,
+            gift_category: gift.category,
+            gift_variant: String(gift.variant),
+            gift_rarity: gift.rarity,
+            recipient_id: String(currentProfile.id),
+            sender_token: senderToken,
+          },
         }),
       });
       const data = await res.json();
-      if (data?.paymentUrl) {
+      if (data?.payment_url) {
         setGiftDone(giftId);
-        window.open(data.paymentUrl, "_blank");
+        window.open(data.payment_url, "_blank");
       }
     } catch (e) { void e; }
     finally { setGiftPaying(false); }
