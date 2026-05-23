@@ -1,6 +1,74 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { matchesApi, messagesApi, profilesApi, type Message, type Profile } from "@/lib/api";
+import { matchesApi, messagesApi, postsApi, profilesApi, type Message, type Profile } from "@/lib/api";
+
+// ─── Маппинг города → IANA часовой пояс ───────────────────────────────────────
+const CITY_TIMEZONES: Record<string, string> = {
+  "москва": "Europe/Moscow",
+  "санкт-петербург": "Europe/Moscow",
+  "санкт петербург": "Europe/Moscow",
+  "спб": "Europe/Moscow",
+  "питер": "Europe/Moscow",
+  "сочи": "Europe/Moscow",
+  "краснодар": "Europe/Moscow",
+  "ростов-на-дону": "Europe/Moscow",
+  "нижний новгород": "Europe/Moscow",
+  "казань": "Europe/Moscow",
+  "воронеж": "Europe/Moscow",
+  "волгоград": "Europe/Volgograd",
+  "самара": "Europe/Samara",
+  "ижевск": "Europe/Samara",
+  "саратов": "Europe/Saratov",
+  "ульяновск": "Europe/Ulyanovsk",
+  "астрахань": "Europe/Astrakhan",
+  "калининград": "Europe/Kaliningrad",
+  "уфа": "Asia/Yekaterinburg",
+  "екатеринбург": "Asia/Yekaterinburg",
+  "челябинск": "Asia/Yekaterinburg",
+  "пермь": "Asia/Yekaterinburg",
+  "тюмень": "Asia/Yekaterinburg",
+  "оренбург": "Asia/Yekaterinburg",
+  "омск": "Asia/Omsk",
+  "новосибирск": "Asia/Novosibirsk",
+  "барнаул": "Asia/Barnaul",
+  "томск": "Asia/Tomsk",
+  "кемерово": "Asia/Novokuznetsk",
+  "новокузнецк": "Asia/Novokuznetsk",
+  "красноярск": "Asia/Krasnoyarsk",
+  "норильск": "Asia/Krasnoyarsk",
+  "иркутск": "Asia/Irkutsk",
+  "улан-удэ": "Asia/Irkutsk",
+  "чита": "Asia/Chita",
+  "якутск": "Asia/Yakutsk",
+  "благовещенск": "Asia/Yakutsk",
+  "хабаровск": "Asia/Vladivostok",
+  "владивосток": "Asia/Vladivostok",
+  "магадан": "Asia/Magadan",
+  "сахалин": "Asia/Sakhalin",
+  "южно-сахалинск": "Asia/Sakhalin",
+  "петропавловск-камчатский": "Asia/Kamchatka",
+  "анадырь": "Asia/Anadyr",
+  "минск": "Europe/Minsk",
+  "киев": "Europe/Kiev",
+  "алматы": "Asia/Almaty",
+  "астана": "Asia/Almaty",
+  "нур-султан": "Asia/Almaty",
+  "ташкент": "Asia/Tashkent",
+  "бишкек": "Asia/Bishkek",
+  "ереван": "Asia/Yerevan",
+  "тбилиси": "Asia/Tbilisi",
+  "баку": "Asia/Baku",
+};
+
+function getTimezoneByCity(city?: string | null): string | undefined {
+  if (!city) return undefined;
+  const key = city.trim().toLowerCase();
+  if (CITY_TIMEZONES[key]) return CITY_TIMEZONES[key];
+  for (const [k, tz] of Object.entries(CITY_TIMEZONES)) {
+    if (key.includes(k)) return tz;
+  }
+  return undefined;
+}
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
 
@@ -191,6 +259,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [partnerName, setPartnerName] = useState("...");
   const [partnerPhoto, setPartnerPhoto] = useState(FALLBACK_PHOTO);
   const [partnerId, setPartnerId] = useState<number | null>(null);
+  const [partnerCity, setPartnerCity] = useState<string | null>(null);
   const [showPartnerProfile, setShowPartnerProfile] = useState(false);
   const [contextMsg, setContextMsg] = useState<Message | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -228,6 +297,9 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
         setPartnerId(m.partner_id);
         profilesApi.subscriptionStatus(m.partner_id)
           .then(r => setSubscribed(r.subscribed))
+          .catch(() => {});
+        postsApi.getUserProfile(m.partner_id)
+          .then(r => setPartnerCity(r.profile?.city || null))
           .catch(() => {});
       }
     }).catch(() => {});
@@ -482,7 +554,15 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 {renderMsgContent(msg.text, msg.out)}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">
-                {new Date(msg.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+                {(() => {
+                  const tz = getTimezoneByCity(partnerCity);
+                  const opts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+                  if (tz) opts.timeZone = tz;
+                  return new Date(msg.created_at).toLocaleTimeString("ru", opts);
+                })()}
+                {partnerCity && getTimezoneByCity(partnerCity) && (
+                  <span className="ml-1 text-white/20">· {partnerCity}</span>
+                )}
               </span>
             </div>
           ))}
