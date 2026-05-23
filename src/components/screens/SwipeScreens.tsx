@@ -69,12 +69,16 @@ function SwipeCard({
   onDislike,
   isTop,
   offset = 0,
+  compactCards = false,
+  showAge = true,
 }: {
   profile: LocalProfile;
   onLike: () => void;
   onDislike: () => void;
   isTop: boolean;
   offset?: number;
+  compactCards?: boolean;
+  showAge?: boolean;
 }) {
   const [drag, setDrag] = useState({ x: 0, y: 0, dragging: false });
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
@@ -134,7 +138,9 @@ function SwipeCard({
 
       <div className="absolute bottom-0 left-0 right-0 p-5">
         <div className="flex items-center gap-2 mb-1">
-          <h2 className="text-white font-golos font-bold text-3xl">{profile.name}, {profile.age}</h2>
+          <h2 className="text-white font-golos font-bold text-3xl">
+            {profile.name}{showAge && profile.age ? `, ${profile.age}` : ""}
+          </h2>
           {profile.verified && (
             <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
               <Icon name="Check" size={12} className="text-white" />
@@ -150,9 +156,9 @@ function SwipeCard({
         </div>
         <div className="flex items-center gap-1 text-white/70 text-sm mb-2">
           <Icon name="MapPin" size={13} />
-          <span>{profile.city} · {profile.distance}</span>
+          <span>{profile.city}{profile.distance ? ` · ${profile.distance}` : ""}</span>
         </div>
-        {(profile.height || profile.weight || profile.relationship_status) && (
+        {!compactCards && (profile.height || profile.weight || profile.relationship_status) && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {profile.height && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-white/70"
@@ -175,10 +181,12 @@ function SwipeCard({
             )}
           </div>
         )}
-        <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">{profile.bio}</p>
-        <div className="flex flex-wrap gap-1.5">
-          {profile.tags.map((tag) => <span key={tag} className="tag-pill">{tag}</span>)}
-        </div>
+        {!compactCards && <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">{profile.bio}</p>}
+        {!compactCards && (
+          <div className="flex flex-wrap gap-1.5">
+            {profile.tags.map((tag) => <span key={tag} className="tag-pill">{tag}</span>)}
+          </div>
+        )}
       </div>
 
       {isTop && (
@@ -201,10 +209,18 @@ function SwipeCard({
   );
 }
 
+function useAppearSettings() {
+  try {
+    const saved = localStorage.getItem("appear_settings");
+    return saved ? JSON.parse(saved) : { compactCards: false, showAge: true };
+  } catch { return { compactCards: false, showAge: true }; }
+}
+
 // ─── DiscoverScreen (static demo) ────────────────────────────────────────────
 export function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
   const [cards, setCards] = useState(PROFILES_DEMO);
   const [likeAnim, setLikeAnim] = useState(false);
+  const appear = useAppearSettings();
 
   const handleLike = () => {
     setLikeAnim(true);
@@ -239,6 +255,8 @@ export function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
               offset={cards.slice(0, 3).length - 1 - i}
               onLike={handleLike}
               onDislike={() => setCards((c) => c.slice(1))}
+              compactCards={appear.compactCards}
+              showAge={appear.showAge}
             />
           ))
         )}
@@ -262,6 +280,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
 }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const appear = useAppearSettings();
   const [selected, setSelected] = useState<Profile | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
@@ -397,13 +416,13 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
                     <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, rgba(0,0,0,0.75) 100%)" }} />
                     <div className="absolute bottom-0 left-0 right-0 px-1.5 pb-1.5">
                       <p className="text-white text-[10px] font-semibold truncate leading-tight">
-                        {p.name}{p.age ? `, ${p.age}` : ""}
+                        {p.name}{appear.showAge && p.age ? `, ${p.age}` : ""}
                         {p.verified && <span className="ml-0.5 text-blue-300">✓</span>}
                       </p>
-                      {(p as Profile & { username?: string }).username && (
+                      {!appear.compactCards && (p as Profile & { username?: string }).username && (
                         <p className="text-white/50 text-[9px] font-mono truncate">@{(p as Profile & { username?: string }).username}</p>
                       )}
-                      {(p as Profile & { distance_km?: number }).distance_km !== undefined && (
+                      {!appear.compactCards && (p as Profile & { distance_km?: number }).distance_km !== undefined && (
                         <p className="text-white/50 text-[9px]">{(p as Profile & { distance_km?: number }).distance_km} км</p>
                       )}
                     </div>
