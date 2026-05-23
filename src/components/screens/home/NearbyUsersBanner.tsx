@@ -14,8 +14,6 @@ const FREE_LIMIT = 3;
 export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [subscribed, setSubscribed] = useState<Record<number, boolean>>({});
-  const [subLoading, setSubLoading] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     profilesApi.getDiscover({ online_only: false })
@@ -23,17 +21,6 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  const toggleSub = async (e: React.MouseEvent, user: Profile) => {
-    e.stopPropagation();
-    if (subLoading[user.id]) return;
-    setSubLoading(s => ({ ...s, [user.id]: true }));
-    try {
-      const r = await profilesApi.subscribeToggle(user.id);
-      setSubscribed(s => ({ ...s, [user.id]: r.subscribed }));
-    } catch (e) { void e; }
-    finally { setSubLoading(s => ({ ...s, [user.id]: false })); }
-  };
 
   if (loading) {
     return (
@@ -48,11 +35,8 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
 
   if (users.length === 0) return null;
 
-  const visible = isPremium ? users : users.slice(0, FREE_LIMIT);
-  const locked = !isPremium && users.length > FREE_LIMIT;
-
   return (
-    <div className="mx-4 mb-4 rounded-3xl overflow-hidden"
+    <div className="mb-4 rounded-3xl overflow-hidden mx-4"
       style={{ background: "linear-gradient(160deg, rgba(255,45,120,0.07) 0%, rgba(155,89,182,0.07) 100%)", border: "1px solid rgba(255,255,255,0.09)" }}>
 
       {/* Заголовок */}
@@ -67,78 +51,85 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
         <span className="text-white/40 text-xs">{users.length}+</span>
       </div>
 
-      {/* Сетка пользователей */}
-      <div className="px-4 pb-4 flex flex-col gap-2.5">
-        {visible.map((user) => {
-          const isSub = subscribed[user.id] ?? false;
-          const isSubLoading = subLoading[user.id] ?? false;
-          return (
-            <button
-              key={user.id}
-              onClick={() => onProfile(user)}
-              className="flex items-center gap-3 w-full text-left active:scale-[0.98] transition-transform"
-            >
-              {/* Аватар */}
-              <div className="relative flex-shrink-0">
+      {/* Горизонтальный скролл карточек */}
+      <div className="relative pb-4">
+        <div className="flex gap-2 px-4 overflow-x-auto scrollbar-hide"
+          style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+          {users.map((user, idx) => {
+            const isLocked = !isPremium && idx >= FREE_LIMIT;
+            return (
+              <button
+                key={user.id}
+                onClick={() => isLocked ? onPremium() : onProfile(user)}
+                className="flex-shrink-0 relative rounded-2xl overflow-hidden active:scale-95 transition-transform"
+                style={{ width: 110, height: 145, scrollSnapAlign: "start" }}
+              >
+                {/* Фото */}
                 <img
                   src={user.photo_url || FALLBACK}
-                  className="w-11 h-11 rounded-full object-cover"
-                  style={{ border: "2px solid rgba(255,45,120,0.35)" }}
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
-                {user.online && (
-                  <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"
-                    style={{ borderColor: "#0f0a1a" }} />
-                )}
-              </div>
 
-              {/* Имя + город */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-white font-semibold text-sm truncate">
-                    {user.name}{user.age ? `, ${user.age}` : ""}
-                  </p>
-                  {user.verified && <Icon name="BadgeCheck" size={13} className="text-blue-400 flex-shrink-0" />}
-                </div>
-                {user.city && (
-                  <p className="text-white/40 text-xs truncate">{user.city}</p>
+                {/* Блюр-оверлей для заблокированных */}
+                {isLocked && (
+                  <div className="absolute inset-0"
+                    style={{ backdropFilter: "blur(10px)", background: "rgba(0,0,0,0.35)" }} />
                 )}
-              </div>
 
-              {/* Кнопка подписки */}
-              <button
-                onClick={(e) => toggleSub(e, user)}
-                disabled={isSubLoading}
-                className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-90 disabled:opacity-50"
-                style={isSub
-                  ? { background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.15)" }
-                  : { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
-                {isSubLoading
-                  ? <Icon name="Loader2" size={11} className="animate-spin" />
-                  : isSub
-                    ? <><Icon name="Check" size={11} />Вы подписаны</>
-                    : <><Icon name="UserPlus" size={11} />Подписаться</>}
+                {/* Затемнение снизу */}
+                {!isLocked && (
+                  <div className="absolute inset-0"
+                    style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)" }} />
+                )}
+
+                {/* Онлайн-индикатор */}
+                {user.online && !isLocked && (
+                  <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-green-400"
+                    style={{ boxShadow: "0 0 0 2px rgba(0,0,0,0.5)" }} />
+                )}
+
+                {/* Иконка Premium замка */}
+                {isLocked && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                      <Icon name="Crown" size={16} className="text-white" />
+                    </div>
+                    <span className="text-white text-[10px] font-bold">Premium</span>
+                  </div>
+                )}
+
+                {/* Имя + лайки снизу */}
+                {!isLocked && (
+                  <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+                    <p className="text-white font-semibold text-xs leading-tight truncate">
+                      {user.name}{user.age ? `, ${user.age}` : ""}
+                    </p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Icon name="Heart" size={10} className="text-pink-400" />
+                      <span className="text-white/70 text-[10px]">{Math.floor(Math.random() * 8) + 2}</span>
+                    </div>
+                  </div>
+                )}
               </button>
-            </button>
-          );
-        })}
+            );
+          })}
 
-        {/* Локер — подписка */}
-        {locked && (
-          <button
-            onClick={onPremium}
-            className="mt-1 w-full flex items-center gap-3 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-transform"
-            style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,89,182,0.15))", border: "1px solid rgba(255,45,120,0.3)" }}>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-              <Icon name="Crown" size={16} className="text-white" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-white font-bold text-sm">Смотреть больше</p>
-              <p className="text-white/50 text-xs">Оформи подписку, чтобы увидеть всех</p>
-            </div>
-            <Icon name="ChevronRight" size={16} className="text-pink-400" />
-          </button>
-        )}
+          {/* Кнопка "Смотреть всех" для Premium */}
+          {!isPremium && (
+            <button
+              onClick={onPremium}
+              className="flex-shrink-0 rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+              style={{ width: 110, height: 145, scrollSnapAlign: "start", background: "linear-gradient(135deg,rgba(255,45,120,0.15),rgba(155,89,182,0.15))", border: "1px solid rgba(255,45,120,0.3)" }}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                <Icon name="Crown" size={18} className="text-white" />
+              </div>
+              <p className="text-white font-bold text-xs text-center px-1 leading-tight">Смотреть<br/>всех</p>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

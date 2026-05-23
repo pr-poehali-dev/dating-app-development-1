@@ -54,7 +54,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [photoTab, setPhotoTab] = useState<"public" | "private">("public");
+  const [photoTab, setPhotoTab] = useState<"public" | "private" | "gifts">("public");
   const [privateReqSent, setPrivateReqSent] = useState(false);
   const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [profileData, setProfileData] = useState<{
@@ -295,6 +295,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onLike={handleLike}
           onViewFollowers={handleOpenFollowers}
           onViewGifts={handleOpenUserGifts}
+          onOpenGiftSheet={() => { setShowGiftSheet(true); setGiftSelected(null); setGiftDone(null); }}
         />
       </div>
 

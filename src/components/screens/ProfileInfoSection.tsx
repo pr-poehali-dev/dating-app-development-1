@@ -13,18 +13,19 @@ interface ProfileData {
 interface ProfileInfoSectionProps {
   currentProfile: Profile;
   profileData: ProfileData;
-  photoTab: "public" | "private";
+  photoTab: "public" | "private" | "gifts";
   loadingPhotos: boolean;
   galleryPhotos: { id: number; photo_url: string }[];
   privateReqSent: boolean;
   liked: boolean;
   liking: boolean;
-  onPhotoTabChange: (tab: "public" | "private") => void;
+  onPhotoTabChange: (tab: "public" | "private" | "gifts") => void;
   onPrivateReqSent: () => void;
   onSkip: () => void;
   onLike: () => void;
   onViewFollowers?: () => void;
   onViewGifts?: () => void;
+  onOpenGiftSheet?: () => void;
 }
 
 const RS_LABEL: Record<string, string> = {
@@ -49,6 +50,7 @@ export function ProfileInfoSection({
   onLike,
   onViewFollowers,
   onViewGifts,
+  onOpenGiftSheet,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -114,6 +116,13 @@ export function ProfileInfoSection({
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
             : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
           🔒 Приватное
+        </button>
+        <button onClick={() => { onPhotoTabChange("gifts"); onOpenGiftSheet?.(); }}
+          className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
+          style={photoTab === "gifts"
+            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+            : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
+          🎁 Подарки
         </button>
       </div>
 

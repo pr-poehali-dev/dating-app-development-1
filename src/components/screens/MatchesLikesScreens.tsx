@@ -35,7 +35,6 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
         <h2 className="text-white font-golos font-bold text-2xl">Сообщения</h2>
       </div>
       <div className="px-5 flex-1">
-        <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Сообщения</p>
         <div className="flex flex-col gap-1">
           {matches.map((m) => (
             <button key={m.match_id} onClick={() => onChat(m.match_id)}

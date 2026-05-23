@@ -1,6 +1,17 @@
 import Icon from "@/components/ui/icon";
 import { type Message } from "@/lib/api";
 
+function formatMsgPreview(text: string): string {
+  if (!text) return "";
+  if (text.startsWith("__AUDIO__")) return "🎤 Голосовое сообщение";
+  if (text.startsWith("__GIFT__")) return "🎁 Подарок";
+  if (text.startsWith("__VANISH__") || text.match(/\.(jpg|jpeg|png|gif|webp)/i)) return "📷 Фото";
+  if (text === "__REQUEST_PHOTO__") return "🔐 Запрос доступа к фото";
+  if (text === "__GRANT_PHOTO__") return "🖼️ Открыт доступ к фото";
+  if (text.startsWith("__LOC__")) return "📍 Геолокация";
+  return text;
+}
+
 // ─── Контекстное меню сообщения ───────────────────────────────────────────────
 interface ContextMenuProps {
   msg: Message;
@@ -9,6 +20,9 @@ interface ContextMenuProps {
 }
 
 export function ChatContextMenu({ msg, onDelete, onClose }: ContextMenuProps) {
+  const preview = formatMsgPreview(msg.text);
+  const isRaw = preview !== msg.text;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.6)" }}
@@ -16,10 +30,6 @@ export function ChatContextMenu({ msg, onDelete, onClose }: ContextMenuProps) {
       <div className="w-full max-w-sm animate-slide-up"
         style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <p className="text-white/40 text-xs mb-1.5">Сообщение</p>
-          <p className="text-white/80 text-sm line-clamp-3">{msg.text}</p>
-        </div>
         <button
           onClick={() => onDelete(msg)}
           className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
@@ -32,15 +42,17 @@ export function ChatContextMenu({ msg, onDelete, onClose }: ContextMenuProps) {
             <p className="text-white/30 text-xs">Удалится у обоих участников</p>
           </div>
         </button>
-        <button
-          onClick={() => { navigator.clipboard?.writeText(msg.text); onClose(); }}
-          className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(255,255,255,0.08)" }}>
-            <Icon name="Copy" size={18} className="text-white/60" />
-          </div>
-          <p className="text-white/80 font-semibold text-sm">Скопировать текст</p>
-        </button>
+        {!isRaw && (
+          <button
+            onClick={() => { navigator.clipboard?.writeText(msg.text); onClose(); }}
+            className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.08)" }}>
+              <Icon name="Copy" size={18} className="text-white/60" />
+            </div>
+            <p className="text-white/80 font-semibold text-sm">Скопировать текст</p>
+          </button>
+        )}
         <div className="px-5 pb-6 pt-1">
           <button onClick={onClose}
             className="w-full glass-card py-3 text-white/50 text-sm font-medium">
