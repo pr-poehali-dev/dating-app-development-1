@@ -839,6 +839,29 @@ def handler(event: dict, context) -> dict:
                 g['created_at'] = str(g['created_at'])
             return resp(200, {'ok': True, 'gifts': gifts})
 
+        # Подарки любого пользователя по user_id
+        if action == 'user_gifts':
+            target_id = int(params.get('user_id', 0) or 0)
+            if not target_id:
+                return resp(400, {'error': 'user_id обязателен'})
+            cur.execute("""
+                SELECT g.id, g.sender_id, g.gift_id, g.gift_name, g.gift_emoji,
+                       g.gift_category, g.gift_variant, g.gift_rarity, g.amount, g.created_at,
+                       u.name as sender_name, u.photo_url as sender_photo
+                FROM user_gifts g
+                LEFT JOIN users u ON u.id = g.sender_id
+                WHERE g.recipient_id = %s
+                ORDER BY g.created_at DESC
+                LIMIT 50
+            """, (target_id,))
+            cols = ['id', 'sender_id', 'gift_id', 'gift_name', 'gift_emoji',
+                    'gift_category', 'gift_variant', 'gift_rarity', 'amount', 'created_at',
+                    'sender_name', 'sender_photo']
+            gifts = [dict(zip(cols, r)) for r in cur.fetchall()]
+            for g in gifts:
+                g['created_at'] = str(g['created_at'])
+            return resp(200, {'ok': True, 'gifts': gifts})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

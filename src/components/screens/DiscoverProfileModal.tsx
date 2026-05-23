@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { likesApi, profilesApi, type Profile } from "@/lib/api";
+import { likesApi, profilesApi, type Profile, type MyGift } from "@/lib/api";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
 import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessageSheet";
 import { ProfilePhotoSection } from "@/components/screens/ProfilePhotoSection";
 import { ProfileInfoSection } from "@/components/screens/ProfileInfoSection";
+import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 
 export const PROFILES_FALLBACK = [
   {
@@ -43,6 +44,9 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [giftSelected, setGiftSelected] = useState<number | null>(null);
   const [giftDone, setGiftDone] = useState<number | null>(null);
   const [giftPaying, setGiftPaying] = useState(false);
+  const [showUserGifts, setShowUserGifts] = useState(false);
+  const [userGifts, setUserGifts] = useState<MyGift[]>([]);
+  const [userGiftsLoading, setUserGiftsLoading] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [followersList, setFollowersList] = useState<{ id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[]>([]);
   const [followersLoading, setFollowersLoading] = useState(false);
@@ -207,6 +211,15 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       .finally(() => setFollowersLoading(false));
   };
 
+  const handleOpenUserGifts = () => {
+    setShowUserGifts(true);
+    setUserGiftsLoading(true);
+    profilesApi.userGifts(currentProfile.id)
+      .then(r => setUserGifts(r.gifts))
+      .catch(() => setUserGifts([]))
+      .finally(() => setUserGiftsLoading(false));
+  };
+
   const touchStartY = useRef(0);
   const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -281,6 +294,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onSkip={handleSkip}
           onLike={handleLike}
           onViewFollowers={handleOpenFollowers}
+          onViewGifts={handleOpenUserGifts}
         />
       </div>
 
@@ -361,6 +375,34 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onSelectGift={setGiftSelected}
           onPayGift={handlePayGift}
         />
+      )}
+
+      {showUserGifts && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowUserGifts(false)}>
+          <div className="w-full max-w-sm rounded-t-3xl flex flex-col"
+            style={{ background: "var(--spark-dark2,#1a1030)", maxHeight: "75dvh" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <Icon name="Gift" size={18} style={{ color: "#FFD700" }} />
+                <p className="text-white font-bold text-base">Подарки {currentProfile.name}</p>
+              </div>
+              <button onClick={() => setShowUserGifts(false)} className="text-white/40">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-4 py-4 pb-8">
+              <GiftsGrid
+                gifts={userGifts}
+                loading={userGiftsLoading}
+                emptyText={`У ${currentProfile.name} пока нет подарков.\nБудь первым — подари что-нибудь!`}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

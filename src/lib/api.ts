@@ -203,6 +203,9 @@ export const profilesApi = {
 
   myGifts: () =>
     req<{ ok: boolean; gifts: MyGift[] }>("profiles", "my_gifts", { method: "GET" }),
+
+  userGifts: (user_id: number) =>
+    req<{ ok: boolean; gifts: MyGift[] }>("profiles", "user_gifts", { method: "GET" }, { user_id: String(user_id) }),
 };
 
 // ─── Verify ───────────────────────────────────────────────────────────────────
