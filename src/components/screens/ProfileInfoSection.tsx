@@ -29,6 +29,8 @@ interface ProfileInfoSectionProps {
   onOpenGiftSheet?: () => void;
   userGifts?: MyGift[];
   userGiftsLoading?: boolean;
+  isOwnProfile?: boolean;
+  onViewSubscriptions?: () => void;
 }
 
 const RS_LABEL: Record<string, string> = {
@@ -56,6 +58,8 @@ export function ProfileInfoSection({
   onOpenGiftSheet,
   userGifts = [],
   userGiftsLoading = false,
+  isOwnProfile = false,
+  onViewSubscriptions,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -214,7 +218,7 @@ export function ProfileInfoSection({
         )}
       </div>
 
-      {/* Подписчики и Подарки */}
+      {/* Подписчики и Подписки */}
       <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="flex justify-center gap-2 mt-3">
           <button
@@ -225,15 +229,17 @@ export function ProfileInfoSection({
             <span className="text-white font-bold text-lg">{profileData.followers}</span>
             <span className="text-white/40 text-xs">Подписчики</span>
           </button>
-          {onViewGifts && (
-            <button
-              onClick={onViewGifts}
-              className="flex flex-col items-center gap-0.5 px-6 py-2 rounded-2xl transition-all active:scale-95"
-              style={{ background: "rgba(255,200,0,0.08)", border: "1px solid rgba(255,200,0,0.2)" }}>
-              <Icon name="Gift" size={20} style={{ color: "#FFD700" }} />
-              <span className="text-white/60 text-xs">Подарки</span>
-            </button>
-          )}
+          <button
+            onClick={isOwnProfile ? onViewSubscriptions : undefined}
+            className="flex flex-col items-center gap-0.5 px-6 py-2 rounded-2xl transition-all"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              cursor: isOwnProfile ? "pointer" : "default",
+              opacity: isOwnProfile ? 1 : 0.5,
+            }}>
+            <Icon name="UserCheck" size={20} className="text-white/70" />
+            <span className="text-white/40 text-xs">Подписки</span>
+          </button>
         </div>
       </div>
 
