@@ -167,6 +167,20 @@ export function renderMsgContent(text: string, out: boolean) {
       </div>
     );
   }
+  if (text.startsWith("__GIFT__")) {
+    const payload = text.slice(8);
+    const [, giftName, giftEmoji] = payload.split("|");
+    return (
+      <div className="flex flex-col items-center gap-1 py-2 px-4 min-w-[140px]">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.25))" }}>
+          <span className="text-4xl">{giftEmoji || "🎁"}</span>
+        </div>
+        <span className="text-sm font-semibold text-white mt-1">{giftName || "Подарок"}</span>
+        <span className="text-[11px] text-white/60">{out ? "Ты отправил подарок 🎁" : "Тебе подарили 🎁"}</span>
+      </div>
+    );
+  }
   return <span>{text}</span>;
 }
 
