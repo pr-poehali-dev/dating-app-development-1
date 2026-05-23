@@ -133,7 +133,12 @@ export function ProfileInfoSection({
 
       {/* Галерея */}
       {photoTab === "gifts" ? (
-        <div className="px-5 pb-3">
+        <div className="px-5 pb-3 flex flex-col gap-3">
+          <button
+            onClick={onOpenGiftSheet}
+            className="w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 btn-grad active:scale-95 transition-transform">
+            🎁 Подарить {currentProfile.name}
+          </button>
           <GiftsGrid
             gifts={userGifts}
             loading={userGiftsLoading}
