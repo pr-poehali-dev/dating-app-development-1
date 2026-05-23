@@ -885,6 +885,33 @@ def handler(event: dict, context) -> dict:
                 g['created_at'] = str(g['created_at'])
             return resp(200, {'ok': True, 'gifts': gifts})
 
+        # ── Настройки уведомлений ──────────────────────────────────────────────
+        if action == 'get_notif_settings':
+            cur.execute(
+                "SELECT notif_matches, notif_messages, notif_likes, notif_promo FROM users WHERE id=%s",
+                (me['id'],)
+            )
+            row = cur.fetchone()
+            return resp(200, {
+                'matches': bool(row[0]) if row else True,
+                'messages': bool(row[1]) if row else True,
+                'likes': bool(row[2]) if row else True,
+                'promo': bool(row[3]) if row else False,
+            })
+
+        if action == 'update_notif_settings':
+            body = json.loads(event.get('body') or '{}')
+            fields, values = [], []
+            for key in ('matches', 'messages', 'likes', 'promo'):
+                if key in body:
+                    fields.append(f"notif_{key} = %s")
+                    values.append(bool(body[key]))
+            if fields:
+                values.append(me['id'])
+                cur.execute(f"UPDATE users SET {', '.join(fields)} WHERE id=%s", values)
+                conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

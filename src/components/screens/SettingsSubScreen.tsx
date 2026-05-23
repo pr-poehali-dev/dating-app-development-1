@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, authApi, blocksApi, type User, type BlockedUser } from "@/lib/api";
+import { profilesApi, authApi, blocksApi, notifSettingsApi, type User, type BlockedUser } from "@/lib/api";
 import { SettingsScreenContent } from "@/components/screens/SettingsScreenContent";
 import { PasswordModal, DeleteAccountModal } from "@/components/screens/SettingsModals";
 
@@ -85,6 +85,16 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [saved, setSaved] = useState(false);
 
   const [notif, setNotif] = useState({ matches: true, messages: true, likes: true, promo: false });
+
+  useEffect(() => {
+    notifSettingsApi.get().then(s => setNotif(s)).catch(() => {});
+  }, []);
+
+  const handleNotifToggle = (key: keyof typeof notif) => {
+    const next = { ...notif, [key]: !notif[key] };
+    setNotif(next);
+    notifSettingsApi.update({ [key]: next[key] }).catch(() => {});
+  };
   const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
   const [appear, setAppear] = useState({ compactCards: false, showAge: true });
   const [sounds, setSounds] = useState({ messages: true, matches: true, notifications: true });
@@ -226,7 +236,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         privacy={privacy}
         onPrivacyToggle={(key) => setPrivacy(p => ({ ...p, [key]: !p[key] }))}
         notif={notif}
-        onNotifToggle={(key) => setNotif(n => ({ ...n, [key]: !n[key] }))}
+        onNotifToggle={handleNotifToggle}
         isDark={isDark}
         appear={appear}
         onToggleTheme={toggleTheme}

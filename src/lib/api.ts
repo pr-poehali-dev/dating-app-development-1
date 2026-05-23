@@ -356,7 +356,7 @@ export const likesApi = {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export interface Notification {
-  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription";
+  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription" | "match";
   from_user_id: number;
   name: string;
   photo_url?: string;
@@ -372,6 +372,12 @@ export const notificationsApi = {
   markRead: () => req<{ ok: boolean }>("notifications", "mark_read", { method: "POST" }),
   trackView: (user_id: number) => req<{ ok: boolean }>("notifications", "track_view", { method: "POST", body: JSON.stringify({ user_id }) }),
   clearAll: () => req<{ ok: boolean }>("notifications", "clear_all", { method: "POST" }),
+};
+
+export const notifSettingsApi = {
+  get: () => req<{ matches: boolean; messages: boolean; likes: boolean; promo: boolean }>("profiles", "get_notif_settings"),
+  update: (settings: { matches?: boolean; messages?: boolean; likes?: boolean; promo?: boolean }) =>
+    req<{ ok: boolean }>("profiles", "update_notif_settings", { method: "POST", body: JSON.stringify(settings) }),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────
