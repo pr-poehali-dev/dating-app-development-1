@@ -50,9 +50,9 @@ def handler(event: dict, context) -> dict:
         cur = conn.cursor()
 
         if action == 'list':
-            # Загружаем настройки уведомлений пользователя
+            # Загружаем настройки уведомлений и дату очистки
             cur.execute(
-                "SELECT notif_matches, notif_messages, notif_likes, notif_promo FROM users WHERE id=%s",
+                "SELECT notif_matches, notif_messages, notif_likes, notif_promo, notifications_cleared_at FROM users WHERE id=%s",
                 (me['id'],)
             )
             ns = cur.fetchone()
@@ -60,79 +60,86 @@ def handler(event: dict, context) -> dict:
             notif_messages = bool(ns[1]) if ns else True
             notif_likes    = bool(ns[2]) if ns else True
             notif_promo    = bool(ns[3]) if ns else False
+            cleared_at     = ns[4] if ns else None
 
             all_notifs = []
+            # Фильтр по дате очистки
+            clr = cleared_at
+            clr_filter = "AND l.created_at > %s" if clr else ""
+            clr_filter_mt = "AND mt.created_at > %s" if clr else ""
+            clr_filter_m = "AND m.created_at > %s" if clr else ""
+            clr_filter_n = "AND n.created_at > %s" if clr else ""
 
             # Лайки (управляются notif_likes)
             if notif_likes:
-                cur.execute(
+                q = (
                     "SELECT u.id, u.name, u.photo_url, l.created_at, l.is_super "
                     "FROM likes l JOIN users u ON u.id = l.from_user_id "
-                    "WHERE l.to_user_id = %s ORDER BY l.created_at DESC LIMIT 30",
-                    (me['id'],)
+                    f"WHERE l.to_user_id = %s {clr_filter} ORDER BY l.created_at DESC LIMIT 30"
                 )
+                cur.execute(q, (me['id'], clr) if clr else (me['id'],))
                 all_notifs += [{'type': 'super_like' if r[4] else 'like', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
             # Новые совпадения — matches из таблицы matches (управляются notif_matches)
             if notif_matches:
-                cur.execute(
+                q = (
                     "SELECT u.id, u.name, u.photo_url, mt.created_at "
                     "FROM matches mt "
                     "JOIN users u ON u.id = CASE WHEN mt.user1_id=%s THEN mt.user2_id ELSE mt.user1_id END "
-                    "WHERE (mt.user1_id=%s OR mt.user2_id=%s) ORDER BY mt.created_at DESC LIMIT 20",
-                    (me['id'], me['id'], me['id'])
+                    f"WHERE (mt.user1_id=%s OR mt.user2_id=%s) {clr_filter_mt} ORDER BY mt.created_at DESC LIMIT 20"
                 )
+                cur.execute(q, (me['id'], me['id'], me['id'], clr) if clr else (me['id'], me['id'], me['id']))
                 all_notifs += [{'type': 'match', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
             # Новые сообщения (управляются notif_messages)
             if notif_messages:
-                cur.execute(
+                q = (
                     "SELECT u.id, u.name, u.photo_url, m.text, m.created_at, mt.id "
                     "FROM messages m "
                     "JOIN matches mt ON mt.id = m.match_id "
                     "JOIN users u ON u.id = m.sender_id "
-                    "WHERE (mt.user1_id = %s OR mt.user2_id = %s) "
-                    "AND m.sender_id != %s AND m.read_at IS NULL "
-                    "ORDER BY m.created_at DESC LIMIT 20",
-                    (me['id'], me['id'], me['id'])
+                    f"WHERE (mt.user1_id = %s OR mt.user2_id = %s) "
+                    f"AND m.sender_id != %s AND m.read_at IS NULL {clr_filter_m} "
+                    "ORDER BY m.created_at DESC LIMIT 20"
                 )
+                cur.execute(q, (me['id'], me['id'], me['id'], clr) if clr else (me['id'], me['id'], me['id']))
                 all_notifs += [{'type': 'message', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'text': r[3], 'created_at': str(r[4]), 'match_id': r[5]} for r in cur.fetchall()]
 
             # Просмотры профиля (всегда показываем — отдельная настройка)
-            cur.execute(
+            q = (
                 "SELECT n.from_user_id, u.name, u.photo_url, n.created_at "
                 "FROM notifications n JOIN users u ON u.id = n.from_user_id "
-                "WHERE n.user_id = %s AND n.type = 'view' ORDER BY n.created_at DESC LIMIT 20",
-                (me['id'],)
+                f"WHERE n.user_id = %s AND n.type = 'view' {clr_filter_n} ORDER BY n.created_at DESC LIMIT 20"
             )
+            cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             all_notifs += [{'type': 'view', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
             # Новые фото от подписок (управляются notif_promo — подписки)
             if notif_promo:
-                cur.execute(
+                q = (
                     "SELECT n.from_user_id, u.name, u.photo_url, n.created_at, n.ref_id "
                     "FROM notifications n JOIN users u ON u.id = n.from_user_id "
-                    "WHERE n.user_id = %s AND n.type = 'new_photo' ORDER BY n.created_at DESC LIMIT 20",
-                    (me['id'],)
+                    f"WHERE n.user_id = %s AND n.type = 'new_photo' {clr_filter_n} ORDER BY n.created_at DESC LIMIT 20"
                 )
+                cur.execute(q, (me['id'], clr) if clr else (me['id'],))
                 all_notifs += [{'type': 'new_photo', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3]), 'ref_id': r[4]} for r in cur.fetchall()]
 
             # Новые подписчики (управляются notif_matches — активность)
             if notif_matches:
-                cur.execute(
+                q = (
                     "SELECT n.from_user_id, u.name, u.photo_url, n.created_at "
                     "FROM notifications n JOIN users u ON u.id = n.from_user_id "
-                    "WHERE n.user_id = %s AND n.type = 'subscription' ORDER BY n.created_at DESC LIMIT 20",
-                    (me['id'],)
+                    f"WHERE n.user_id = %s AND n.type = 'subscription' {clr_filter_n} ORDER BY n.created_at DESC LIMIT 20"
                 )
+                cur.execute(q, (me['id'], clr) if clr else (me['id'],))
                 all_notifs += [{'type': 'subscription', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
             # Уведомления верификации (всегда показываем)
-            cur.execute(
+            q = (
                 "SELECT n.type, n.created_at FROM notifications n "
-                "WHERE n.user_id = %s AND n.type IN ('verif_approved', 'verif_rejected') ORDER BY n.created_at DESC LIMIT 5",
-                (me['id'],)
+                f"WHERE n.user_id = %s AND n.type IN ('verif_approved', 'verif_rejected') {clr_filter_n} ORDER BY n.created_at DESC LIMIT 5"
             )
+            cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             for r in cur.fetchall():
                 label = "LoveBloom" if r[0] == 'verif_approved' else "LoveBloom"
                 all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': label, 'photo_url': None, 'created_at': str(r[1])})
@@ -186,6 +193,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'clear_all':
             cur.execute("DELETE FROM notifications WHERE user_id = %s", (me['id'],))
+            cur.execute("UPDATE users SET notifications_cleared_at = NOW() WHERE id = %s", (me['id'],))
             conn.commit()
             return resp(200, {'ok': True})
 
