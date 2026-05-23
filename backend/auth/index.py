@@ -107,6 +107,12 @@ def handler(event: dict, context) -> dict:
             user['followers'] = cur.fetchone()[0]
             cur.execute("SELECT COUNT(*) FROM likes WHERE from_user_id = %s", (user_id,))
             user['following'] = cur.fetchone()[0]
+            # Email verification status
+            cur.execute(
+                "SELECT COUNT(*) FROM email_codes WHERE user_id = %s AND used = TRUE",
+                (user_id,)
+            )
+            user['email_verified'] = cur.fetchone()[0] > 0
             return resp(200, {'user': user})
 
         if action == 'logout':

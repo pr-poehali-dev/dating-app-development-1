@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { type User, type BlockedUser } from "@/lib/api";
+import { type User, type BlockedUser, verifyApi } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
 
 type PrivatePhoto = { id: number; photo_url: string; created_at: string };
@@ -92,6 +92,33 @@ export function SettingsAccountPanel({
 }: Props) {
   const privateInputRef = useRef<HTMLInputElement>(null);
 
+  // Email verification state
+  const [emailStep, setEmailStep] = useState<"idle" | "sent" | "done">("idle");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailConfirming, setEmailConfirming] = useState(false);
+  const [emailError, setEmailError] = useState("");
+
+  const handleSendCode = async () => {
+    if (!currentUser.email) return;
+    setEmailSending(true); setEmailError("");
+    try {
+      await verifyApi.sendEmailCode(currentUser.email);
+      setEmailStep("sent");
+    } catch { setEmailError("Ошибка отправки. Попробуй снова."); }
+    finally { setEmailSending(false); }
+  };
+
+  const handleConfirmCode = async () => {
+    if (!emailCode.trim() || !currentUser.email) return;
+    setEmailConfirming(true); setEmailError("");
+    try {
+      await verifyApi.confirmEmailCode(currentUser.email, emailCode.trim());
+      setEmailStep("done");
+    } catch { setEmailError("Неверный или истёкший код."); }
+    finally { setEmailConfirming(false); }
+  };
+
   return (
     <>
       {/* ── Аккаунт ── */}
@@ -136,9 +163,68 @@ export function SettingsAccountPanel({
               )}
             </div>
             <div className="px-4 py-3">
-              <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Электронная почта</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-white/40 text-xs uppercase tracking-widest">Электронная почта</p>
+                {(currentUser.email_verified || emailStep === "done") ? (
+                  <span className="text-xs font-semibold text-green-400 flex items-center gap-1">
+                    <Icon name="CheckCircle" size={12} />Подтверждена
+                  </span>
+                ) : (
+                  <span className="text-xs text-white/30">Не подтверждена</span>
+                )}
+              </div>
               <input value={currentUser.email || ""} readOnly type="email"
-                className="w-full bg-transparent text-white text-sm outline-none placeholder-white/30 opacity-60" />
+                className="w-full bg-transparent text-white text-sm outline-none placeholder-white/30 opacity-70" />
+
+              {/* Блок подтверждения */}
+              {!currentUser.email_verified && emailStep !== "done" && (
+                <div className="mt-3">
+                  {emailStep === "idle" && (
+                    <button
+                      onClick={handleSendCode}
+                      disabled={emailSending}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all disabled:opacity-50"
+                      style={{ background: "rgba(255,45,120,0.12)", color: "#FF2D78" }}>
+                      {emailSending
+                        ? <><Icon name="Loader2" size={12} className="animate-spin" />Отправка...</>
+                        : <><Icon name="Mail" size={12} />Подтвердить почту</>}
+                    </button>
+                  )}
+                  {emailStep === "sent" && (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-white/50 text-xs">Код отправлен на {currentUser.email}</p>
+                      <div className="flex gap-2">
+                        <input
+                          value={emailCode}
+                          onChange={e => { setEmailCode(e.target.value); setEmailError(""); }}
+                          placeholder="Введи 6-значный код"
+                          maxLength={6}
+                          type="number"
+                          className="flex-1 bg-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none border border-white/15 focus:border-pink-500/60 font-mono tracking-widest placeholder-white/30"
+                        />
+                        <button
+                          onClick={handleConfirmCode}
+                          disabled={emailConfirming || emailCode.length < 6}
+                          className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50 flex items-center gap-1"
+                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                          {emailConfirming
+                            ? <Icon name="Loader2" size={13} className="animate-spin" />
+                            : "OK"}
+                        </button>
+                      </div>
+                      <button onClick={() => setEmailStep("idle")} className="text-white/30 text-xs text-left">
+                        Отправить снова
+                      </button>
+                    </div>
+                  )}
+                  {emailError && <p className="text-red-400 text-xs mt-1">{emailError}</p>}
+                </div>
+              )}
+              {emailStep === "done" && (
+                <p className="text-green-400 text-xs mt-2 flex items-center gap-1">
+                  <Icon name="CheckCircle" size={12} />Почта успешно подтверждена!
+                </p>
+              )}
             </div>
           </div>
           <button onClick={onSaveAccount}

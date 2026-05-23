@@ -473,6 +473,7 @@ export interface User {
   followers?: number;
   following?: number;
   cover_url?: string;
+  email_verified?: boolean;
 }
 
 export interface Profile {
