@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { likesApi, profilesApi, type Profile, type MyGift } from "@/lib/api";
+import { likesApi, profilesApi, notificationsApi, type Profile, type MyGift } from "@/lib/api";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
 import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessageSheet";
@@ -73,6 +73,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     setPhotoTab("public");
     setMatchId(null);
     import("@/lib/api").then(({ postsApi, profilesApi }) => {
+      notificationsApi.trackView(currentProfile.id).catch(() => {});
       const profileReq = postsApi.getUserProfile(currentProfile.id)
         .then(d => {
           const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };

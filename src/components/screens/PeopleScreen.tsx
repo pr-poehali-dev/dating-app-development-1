@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { profilesApi, notificationsApi, type Profile, type DiscoverParams, type Notification } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
@@ -173,41 +173,109 @@ function FilterSheet({ filters, onApply, onClose }: {
 }
 
 // ─── ProfileViewersSheet ──────────────────────────────────────────────────────
-function ProfileViewersSheet({ onClose }: { onClose: () => void }) {
+function ProfileViewersSheet({ isPremium, onClose, onPremium }: {
+  isPremium?: boolean;
+  onClose: () => void;
+  onPremium?: () => void;
+}) {
+  const [viewers, setViewers] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    notificationsApi.list()
+      .then(d => {
+        const views = d.notifications.filter(n => n.type === "view");
+        setViewers(views);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  function timeAgo(iso: string) {
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return "только что";
+    if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;
+    return `${Math.floor(diff / 86400)} д назад`;
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
       onClick={onClose}>
       <div className="w-full max-w-sm animate-slide-up"
-        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0", maxHeight: "75dvh", display: "flex", flexDirection: "column" }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1" style={{ background: "rgba(255,255,255,0.18)" }} />
-        <div className="flex items-center justify-between px-5 py-3"
+        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.18)" }} />
+        <div className="flex items-center justify-between px-5 py-3 flex-shrink-0"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <h3 className="text-white font-bold text-base flex items-center gap-2">
-            <Icon name="Eye" size={18} className="text-white/60" />Кто смотрел профиль
+            <Icon name="Eye" size={18} className="text-white/60" />
+            Кто смотрел профиль
+            {viewers.length > 0 && <span className="text-white/40 text-sm font-normal">· {viewers.length}</span>}
           </h3>
           <button onClick={onClose}><Icon name="X" size={20} className="text-white/50" /></button>
         </div>
-        <div className="flex flex-col items-center justify-center py-14 gap-3 px-6">
-          <div className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,45,120,0.12)" }}>
-            <Icon name="Eye" size={28} className="text-pink-400" />
-          </div>
-          <p className="text-white font-semibold text-center">Просмотры профиля</p>
-          <p className="text-white/40 text-sm text-center leading-relaxed">
-            Пока никто не смотрел твой профиль. Заполни анкету и добавь фото — это привлечёт больше внимания!
-          </p>
-          <div className="mt-2 p-3 rounded-2xl w-full text-center"
-            style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.2)" }}>
-            <p className="text-pink-400 text-xs font-semibold">✨ Premium</p>
-            <p className="text-white/50 text-xs mt-0.5">С Premium видно, кто именно смотрел</p>
-          </div>
-        </div>
-        <div className="px-5 pb-8">
-          <button onClick={onClose} className="glass-card w-full py-3 text-white/60 text-sm font-semibold">
-            Закрыть
-          </button>
+
+        <div className="overflow-y-auto flex-1 px-5 py-3 pb-6">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+            </div>
+          ) : viewers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,45,120,0.12)" }}>
+                <Icon name="Eye" size={28} className="text-pink-400" />
+              </div>
+              <p className="text-white font-semibold text-center">Просмотров пока нет</p>
+              <p className="text-white/40 text-sm text-center leading-relaxed">
+                Заполни анкету и добавь фото — это привлечёт больше внимания!
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {!isPremium && (
+                <button onClick={() => { onClose(); onPremium?.(); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl mb-1"
+                  style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.25)" }}>
+                  <Icon name="Crown" size={18} className="text-pink-400 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="text-pink-400 text-xs font-bold">✨ Premium — узнай кто смотрел</p>
+                    <p className="text-white/40 text-xs">С подпиской видно имя и фото каждого</p>
+                  </div>
+                </button>
+              )}
+              {viewers.map((v, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl"
+                  style={{ background: "rgba(255,255,255,0.05)" }}>
+                  {/* Аватар: блюр для не-Premium */}
+                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
+                    <img
+                      src={v.photo_url || FALLBACK_PHOTO}
+                      className="w-full h-full object-cover"
+                      style={!isPremium ? { filter: "blur(8px)", transform: "scale(1.1)" } : {}}
+                    />
+                    {!isPremium && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Icon name="Lock" size={14} className="text-white/80" />
+                      </div>
+                    )}
+                  </div>
+                  {/* Имя: скрыто для не-Premium */}
+                  <div className="flex-1 min-w-0">
+                    {isPremium ? (
+                      <p className="text-white font-semibold text-sm truncate">{v.name}</p>
+                    ) : (
+                      <div className="h-4 w-24 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                    )}
+                    <p className="text-white/35 text-xs mt-0.5">{timeAgo(v.created_at)}</p>
+                  </div>
+                  <Icon name="Eye" size={14} className="text-white/20 flex-shrink-0" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -232,6 +300,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
+  const [viewersCount, setViewersCount] = useState(0);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -244,6 +313,12 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   }, []);
 
   useEffect(() => { load({}); }, [load]);
+
+  useEffect(() => {
+    notificationsApi.list()
+      .then(d => setViewersCount(d.notifications.filter(n => n.type === "view").length))
+      .catch(() => {});
+  }, []);
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -300,7 +375,13 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
           onClose={() => setShowFilters(false)}
         />
       )}
-      {showViewers && <ProfileViewersSheet onClose={() => setShowViewers(false)} />}
+      {showViewers && (
+        <ProfileViewersSheet
+          isPremium={isPremium}
+          onClose={() => setShowViewers(false)}
+          onPremium={onPremium}
+        />
+      )}
 
       <div className="flex flex-col h-full">
         {/* Header */}
@@ -332,10 +413,12 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
             <button onClick={() => setShowViewers(true)}
               className="relative glass-card p-2.5 flex items-center justify-center flex-shrink-0">
               <Icon name="Eye" size={20} className="text-white/60" />
-              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                0
-              </div>
+              {viewersCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                  {viewersCount > 9 ? "9+" : viewersCount}
+                </div>
+              )}
             </button>
           </div>
 
