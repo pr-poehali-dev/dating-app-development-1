@@ -127,6 +127,16 @@ def handler(event: dict, context) -> dict:
                 )
                 all_notifs += [{'type': 'subscription', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
+            # Уведомления верификации (всегда показываем)
+            cur.execute(
+                "SELECT n.type, n.created_at FROM notifications n "
+                "WHERE n.user_id = %s AND n.type IN ('verif_approved', 'verif_rejected') ORDER BY n.created_at DESC LIMIT 5",
+                (me['id'],)
+            )
+            for r in cur.fetchall():
+                label = "LoveBloom" if r[0] == 'verif_approved' else "LoveBloom"
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': label, 'photo_url': None, 'created_at': str(r[1])})
+
             all_notifs = sorted(all_notifs, key=lambda x: x['created_at'], reverse=True)
 
             # Считаем непрочитанные

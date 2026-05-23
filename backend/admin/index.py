@@ -72,16 +72,31 @@ def handler(event: dict, context) -> dict:
             pending_reports = cur.fetchone()[0]
             cur.execute("SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'")
             pending_verif = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE premium = TRUE")
+            premium_users = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM user_gifts")
+            total_gifts = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM support_tickets WHERE status = 'open'")
+            open_tickets = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '30 days'")
+            new_month = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM messages WHERE created_at > NOW() - INTERVAL '24 hours'")
+            messages_today = cur.fetchone()[0]
             return resp(200, {
                 'total_users': total_users,
                 'online_users': online_users,
                 'new_today': new_today,
                 'new_week': new_week,
+                'new_month': new_month,
                 'total_likes': total_likes,
                 'total_matches': total_matches,
                 'total_messages': total_messages,
+                'messages_today': messages_today,
                 'active_sessions': active_sessions,
                 'verified_users': verified_users,
+                'premium_users': premium_users,
+                'total_gifts': total_gifts,
+                'open_tickets': open_tickets,
                 'pending_reports': pending_reports,
                 'pending_verif': pending_verif,
             })
@@ -161,9 +176,19 @@ def handler(event: dict, context) -> dict:
         if action == 'resolve_report':
             report_id = body.get('report_id')
             new_status = body.get('status', 'resolved')
+            ban_user = body.get('ban_user', False)
             if not report_id:
                 return resp(400, {'error': 'report_id обязателен'})
-            cur.execute("UPDATE reports SET status = %s WHERE id = %s", (new_status, report_id))
+            cur.execute("UPDATE reports SET status = %s, resolved_at = NOW() WHERE id = %s", (new_status, report_id))
+            if ban_user:
+                cur.execute("SELECT reported_id FROM reports WHERE id = %s", (report_id,))
+                rep_row = cur.fetchone()
+                if rep_row:
+                    cur.execute(
+                        "INSERT INTO banned_users (user_id, reason) VALUES (%s, %s) ON CONFLICT (user_id) DO NOTHING",
+                        (rep_row[0], 'Нарушение правил сообщества')
+                    )
+                    cur.execute("UPDATE sessions SET expires_at = NOW() WHERE user_id = %s", (rep_row[0],))
             conn.commit()
             return resp(200, {'ok': True})
 
@@ -191,8 +216,22 @@ def handler(event: dict, context) -> dict:
             if not row:
                 return resp(404, {'error': 'Заявка не найдена'})
             user_id = row[0]
-            cur.execute("UPDATE verification_requests SET status = 'approved' WHERE id = %s", (req_id,))
+            cur.execute("UPDATE verification_requests SET status = 'approved', reviewed_at = NOW() WHERE id = %s", (req_id,))
             cur.execute("UPDATE users SET verified = TRUE WHERE id = %s", (user_id,))
+            # Уведомление в колокольчик
+            cur.execute(
+                "INSERT INTO notifications (user_id, type, from_user_id, read) VALUES (%s, 'verif_approved', NULL, FALSE)",
+                (user_id,)
+            )
+            # Системное сообщение в первый матч пользователя (или просто уведомление)
+            cur.execute("SELECT id FROM matches WHERE user1_id=%s OR user2_id=%s LIMIT 1", (user_id, user_id))
+            match_row = cur.fetchone()
+            if match_row:
+                system_text = "✅ Поздравляем! Ваш профиль прошёл верификацию. Теперь на вашем профиле отображается значок ✓, который подтверждает, что вы реальный человек. Это повышает доверие других пользователей!"
+                cur.execute(
+                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+                    (match_row[0], user_id, system_text)
+                )
             conn.commit()
             return resp(200, {'ok': True})
 
@@ -202,10 +241,30 @@ def handler(event: dict, context) -> dict:
             reason = body.get('reason', '')
             if not req_id:
                 return resp(400, {'error': 'id обязателен'})
+            cur.execute("SELECT user_id FROM verification_requests WHERE id = %s", (req_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Заявка не найдена'})
+            user_id = row[0]
             cur.execute(
-                "UPDATE verification_requests SET status = 'rejected', reject_reason = %s WHERE id = %s",
-                (reason, req_id)
+                "UPDATE verification_requests SET status = 'rejected', reject_reason = %s, reviewed_at = NOW() WHERE id = %s",
+                (reason or None, req_id)
             )
+            # Уведомление в колокольчик
+            cur.execute(
+                "INSERT INTO notifications (user_id, type, from_user_id, read) VALUES (%s, 'verif_rejected', NULL, FALSE)",
+                (user_id,)
+            )
+            # Системное сообщение
+            cur.execute("SELECT id FROM matches WHERE user1_id=%s OR user2_id=%s LIMIT 1", (user_id, user_id))
+            match_row = cur.fetchone()
+            if match_row:
+                reject_msg = reason or "Фото не соответствует требованиям"
+                system_text = f"❌ К сожалению, ваша заявка на верификацию была отклонена.\nПричина: {reject_msg}\n\nВы можете подать заявку повторно — сделайте чёткое селфи при хорошем освещении с поднятым большим пальцем."
+                cur.execute(
+                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+                    (match_row[0], user_id, system_text)
+                )
             conn.commit()
             return resp(200, {'ok': True})
 

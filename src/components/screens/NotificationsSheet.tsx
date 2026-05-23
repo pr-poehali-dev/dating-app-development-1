@@ -19,6 +19,8 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "new_photo") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,200,0,0.15)" }}><Icon name="ImagePlus" size={13} style={{ color: "#FFCA28" }} /></div>;
   if (type === "subscription") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,200,0,0.15)" }}><Icon name="Star" size={13} style={{ color: "#FBBF24" }} /></div>;
   if (type === "match") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,45,120,0.15)" }}><Icon name="Zap" size={13} style={{ color: "#FF2D78" }} /></div>;
+  if (type === "verif_approved") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.2)" }}><Icon name="BadgeCheck" size={13} style={{ color: "#38BDF8" }} /></div>;
+  if (type === "verif_rejected") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.15)" }}><Icon name="XCircle" size={13} style={{ color: "#F87171" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
@@ -37,6 +39,8 @@ function notifText(n: Notification) {
   if (n.type === "new_photo") return "добавил(а) новое фото 📷";
   if (n.type === "subscription") return "подписался(ась) на тебя ⭐";
   if (n.type === "match") return "новое совпадение! 🎉";
+  if (n.type === "verif_approved") return "✅ Верификация одобрена! Значок ✓ теперь на твоём профиле";
+  if (n.type === "verif_rejected") return "❌ Верификация отклонена. Попробуй ещё раз";
   return "просматривал(а) твой профиль";
 }
 

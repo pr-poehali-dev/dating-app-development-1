@@ -356,7 +356,7 @@ export const likesApi = {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export interface Notification {
-  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription" | "match";
+  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription" | "match" | "verif_approved" | "verif_rejected";
   from_user_id: number;
   name: string;
   photo_url?: string;
@@ -593,11 +593,16 @@ export interface AdminStats {
   online_users: number;
   new_today: number;
   new_week: number;
+  new_month: number;
   total_likes: number;
   total_matches: number;
   total_messages: number;
+  messages_today: number;
   active_sessions: number;
   verified_users: number;
+  premium_users: number;
+  total_gifts: number;
+  open_tickets: number;
   pending_reports: number;
   pending_verif: number;
 }
@@ -648,8 +653,8 @@ export const adminApi = {
   reports: (token: string, status = 'pending') =>
     adminReq<{ reports: AdminReport[] }>('reports', {}, token, { status }),
 
-  resolveReport: (token: string, report_id: number, status: string) =>
-    adminReq<{ ok: boolean }>('resolve_report', { method: 'POST', body: JSON.stringify({ report_id, status }) }, token),
+  resolveReport: (token: string, report_id: number, status: string, ban_user = false) =>
+    adminReq<{ ok: boolean }>('resolve_report', { method: 'POST', body: JSON.stringify({ report_id, status, ban_user }) }, token),
 
   verifRequests: (token: string) =>
     adminReq<{ requests: AdminVerifRequest[] }>('verif_requests', {}, token),
