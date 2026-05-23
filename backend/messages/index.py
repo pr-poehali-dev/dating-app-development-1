@@ -9,6 +9,35 @@ import uuid
 import psycopg2
 import boto3
 
+def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет Web Push всем подпискам пользователя."""
+    try:
+        from pywebpush import webpush, WebPushException
+        vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
+        vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@lovebloom.app')
+        if not vapid_private:
+            return
+        cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=%s", (user_id,))
+        rows = cur.fetchall()
+        payload = json.dumps({'title': title, 'body': body_text, 'url': url})
+        bad = []
+        for rid, ep, p256, auth in rows:
+            try:
+                webpush(
+                    subscription_info={'endpoint': ep, 'keys': {'p256dh': p256, 'auth': auth}},
+                    data=payload, vapid_private_key=vapid_private,
+                    vapid_claims={'sub': vapid_email},
+                )
+            except WebPushException as e:
+                st = getattr(e.response, 'status_code', 0) if e.response else 0
+                if st in (404, 410):
+                    bad.append(rid)
+        if bad:
+            cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad,))
+            conn.commit()
+    except Exception:
+        pass
+
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -102,6 +131,12 @@ def handler(event: dict, context) -> dict:
             )
             row = cur.fetchone()
             conn.commit()
+            # Push получателю
+            cur.execute("SELECT name FROM users WHERE id=%s", (me['id'],))
+            sn = cur.fetchone()
+            sender_name = sn[0] if sn else 'Новое сообщение'
+            preview = text if not text.startswith('__') else ('🎤 Голосовое' if text.startswith('__AUDIO__') else '📷 Фото' if text.startswith('__VANISH__') else '🎁 Подарок' if text.startswith('__GIFT__') else '📍 Локация' if text.startswith('__LOC__') else '💬 Сообщение')
+            _push_to_user(cur, conn, partner_id, f'💬 {sender_name}', preview[:80], '/')
             return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
 
         # Отправить первое сообщение без матча — создаём матч автоматически

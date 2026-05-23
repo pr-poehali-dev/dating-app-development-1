@@ -6,6 +6,7 @@ const URLS = {
   messages: "https://functions.poehali.dev/dc1a6137-a066-4ec4-8081-52ac7b0b1530",
   admin: "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18",
   notifications: "https://functions.poehali.dev/5249d7a9-31e2-4ab5-a2da-6b72346e5de4",
+  push: "https://functions.poehali.dev/282c24e0-ca25-4712-ad58-26c7742c2653",
 };
 
 function getToken(): string {
@@ -370,6 +371,14 @@ export const notificationsApi = {
   unreadCount: () => req<{ unread_count: number; messages: number; likes: number }>("notifications", "unread_count"),
   markRead: () => req<{ ok: boolean }>("notifications", "mark_read", { method: "POST" }),
   trackView: (user_id: number) => req<{ ok: boolean }>("notifications", "track_view", { method: "POST", body: JSON.stringify({ user_id }) }),
+};
+
+// ─── Push ─────────────────────────────────────────────────────────────────────
+export const pushApi = {
+  vapidPublicKey: () => req<{ public_key: string }>("push", "vapid_public_key"),
+  subscribe: (sub: PushSubscriptionJSON) =>
+    req<{ ok: boolean }>("push", "subscribe", { method: "POST", body: JSON.stringify(sub) }),
+  test: () => req<{ ok: boolean }>("push", "test"),
 };
 
 // ─── Matches ─────────────────────────────────────────────────────────────────

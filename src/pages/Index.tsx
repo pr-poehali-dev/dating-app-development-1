@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { authApi, type User } from "@/lib/api";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -43,6 +44,9 @@ export default function Index() {
   const handleProfileUpdate = (data: Partial<User>) => {
     setCurrentUser((u) => u ? { ...u, ...data } : u);
   };
+
+  // Подключаем push-уведомления сразу после авторизации
+  usePushNotifications(!!currentUser);
 
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);

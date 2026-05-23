@@ -518,6 +518,29 @@ def handler(event: dict, context) -> dict:
                     (target_id, me['id'])
                 )
             conn.commit()
+            # Push о подписке
+            if subscribed:
+                try:
+                    from pywebpush import webpush, WebPushException
+                    vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
+                    vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@lovebloom.app')
+                    if vapid_private:
+                        cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=%s", (target_id,))
+                        subs = cur.fetchall()
+                        payload = json.dumps({'title': f'⭐ {me["name"] or "Кто-то"} подписался на вас', 'body': 'Новый подписчик в LoveBloom', 'url': '/'})
+                        bad = []
+                        for rid, ep, p256, auth in subs:
+                            try:
+                                webpush(subscription_info={'endpoint': ep, 'keys': {'p256dh': p256, 'auth': auth}},
+                                        data=payload, vapid_private_key=vapid_private, vapid_claims={'sub': vapid_email})
+                            except WebPushException as e:
+                                st = getattr(e.response, 'status_code', 0) if e.response else 0
+                                if st in (404, 410): bad.append(rid)
+                        if bad:
+                            cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad,))
+                            conn.commit()
+                except Exception:
+                    pass
             return resp(200, {'ok': True, 'subscribed': subscribed})
 
         # Проверить статус подписки

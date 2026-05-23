@@ -6,6 +6,35 @@ import json
 import os
 import psycopg2
 
+def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет Web Push всем подпискам пользователя (без зависимостей через try/except)."""
+    try:
+        from pywebpush import webpush, WebPushException
+        vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
+        vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@lovebloom.app')
+        if not vapid_private:
+            return
+        cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=%s", (user_id,))
+        rows = cur.fetchall()
+        payload = json.dumps({'title': title, 'body': body_text, 'url': url})
+        bad = []
+        for rid, ep, p256, auth in rows:
+            try:
+                webpush(
+                    subscription_info={'endpoint': ep, 'keys': {'p256dh': p256, 'auth': auth}},
+                    data=payload, vapid_private_key=vapid_private,
+                    vapid_claims={'sub': vapid_email},
+                )
+            except WebPushException as e:
+                st = getattr(e.response, 'status_code', 0) if e.response else 0
+                if st in (404, 410):
+                    bad.append(rid)
+        if bad:
+            cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad,))
+            conn.commit()
+    except Exception:
+        pass
+
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -78,6 +107,15 @@ def handler(event: dict, context) -> dict:
                 match_id = row[0] if row else None
 
             conn.commit()
+            # Получаем имя отправителя для push
+            cur.execute("SELECT name FROM users WHERE id=%s", (me['id'],))
+            sender_row = cur.fetchone()
+            sender_name = sender_row[0] if sender_row else 'Кто-то'
+            if mutual:
+                _push_to_user(cur, conn, to_id, 'LoveBloom 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
+            else:
+                label = '⭐ Суперлайк' if is_super else '❤️ Лайк'
+                _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в LoveBloom!', '/')
             return resp(200, {'ok': True, 'match': bool(mutual), 'match_id': match_id})
 
         if action == 'liked_me':
