@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { postsApi, liveApi, notificationsApi, type Post, type LiveStream, type User, type Profile } from "@/lib/api";
+import { postsApi, liveApi, notificationsApi, matchesApi, profilesApi, messagesApi, type Post, type LiveStream, type User, type Profile, type Match } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { LiveBadge, TrendingBadge, CreateMenu } from "@/components/screens/HomeFeedWidgets";
 import { CommentSheet } from "@/components/screens/HomeCommentSheet";
@@ -34,6 +34,47 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
   const [giftDone, setGiftDone] = useState<number | null>(null);
   const [giftCategory, setGiftCategory] = useState("heart");
   const { pay: payGift, loading: giftPaying } = useYookassa(PAY_CREATE_URL);
+
+  // Выбор пользователя-получателя подарка
+  const [chatMatches, setChatMatches] = useState<Match[]>([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedRecipient, setSelectedRecipient] = useState<{ id: number; name: string; photo_url?: string; match_id?: number } | null>(null);
+
+  // Загружаем чаты при открытии превью с режимом "user"
+  useEffect(() => {
+    if (giftPreview !== null && giftRecipient === "user" && chatMatches.length === 0) {
+      matchesApi.getAll().then(d => setChatMatches(d.matches)).catch(() => {});
+    }
+  }, [giftPreview, giftRecipient, chatMatches.length]);
+
+  // Поиск пользователей по нику
+  useEffect(() => {
+    if (giftRecipient !== "user" || !userSearch.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const q = userSearch.trim();
+    if (q.length < 2) return;
+    setSearching(true);
+    const t = setTimeout(() => {
+      profilesApi.getDiscover({ search: q })
+        .then(d => setSearchResults(d.profiles.slice(0, 8)))
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearching(false));
+    }, 350);
+    return () => clearTimeout(t);
+  }, [userSearch, giftRecipient]);
+
+  // Сбрасываем выбранного при переключении на "себе" или закрытии
+  useEffect(() => {
+    if (giftRecipient === "self" || giftPreview === null) {
+      setSelectedRecipient(null);
+      setUserSearch("");
+      setSearchResults([]);
+    }
+  }, [giftRecipient, giftPreview]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -270,10 +311,104 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
               </div>
 
               {giftRecipient === "user" && (
-                <div className="w-full rounded-2xl px-4 py-3 text-sm text-white/50 flex items-center gap-2"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <Icon name="Info" size={14} className="flex-shrink-0" />
-                  Откройте профиль пользователя и нажмите «Подарить» там
+                <div className="w-full flex flex-col gap-2">
+                  {selectedRecipient ? (
+                    <div className="w-full rounded-2xl px-3 py-2.5 flex items-center gap-3"
+                      style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.35)" }}>
+                      {selectedRecipient.photo_url ? (
+                        <img src={selectedRecipient.photo_url} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                          <Icon name="User" size={18} className="text-white" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{selectedRecipient.name}</p>
+                        <p className="text-white/40 text-xs">Получатель подарка</p>
+                      </div>
+                      <button onClick={() => setSelectedRecipient(null)}
+                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,255,255,0.1)" }}>
+                        <Icon name="X" size={14} className="text-white/70" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Поиск по нику */}
+                      <div className="w-full relative">
+                        <Icon name="Search" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+                        <input
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          placeholder="Поиск по нику..."
+                          className="w-full rounded-2xl pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/30 outline-none"
+                          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        />
+                      </div>
+
+                      {/* Результаты поиска */}
+                      {userSearch.trim().length >= 2 && (
+                        <div className="w-full max-h-40 overflow-y-auto rounded-2xl"
+                          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                          {searching ? (
+                            <div className="flex items-center justify-center py-3 text-white/40 text-xs gap-2">
+                              <Icon name="Loader2" size={12} className="animate-spin" />Поиск...
+                            </div>
+                          ) : searchResults.length === 0 ? (
+                            <div className="text-center py-3 text-white/40 text-xs">Никого не найдено</div>
+                          ) : (
+                            searchResults.map(p => (
+                              <button key={p.id}
+                                onClick={() => setSelectedRecipient({ id: p.id, name: p.name, photo_url: p.photo_url })}
+                                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors">
+                                {p.photo_url ? (
+                                  <img src={p.photo_url} className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                                    <Icon name="User" size={14} className="text-white/50" />
+                                  </div>
+                                )}
+                                <span className="text-white text-sm truncate flex-1 text-left">{p.name}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      )}
+
+                      {/* Список из чатов */}
+                      {userSearch.trim().length < 2 && (
+                        <div className="w-full">
+                          <p className="text-white/40 text-xs px-1 pb-1.5 font-semibold">ИЗ ЧАТОВ</p>
+                          {chatMatches.length === 0 ? (
+                            <div className="text-center py-3 text-white/30 text-xs rounded-2xl"
+                              style={{ background: "rgba(255,255,255,0.04)" }}>
+                              Нет активных чатов
+                            </div>
+                          ) : (
+                            <div className="max-h-40 overflow-y-auto rounded-2xl"
+                              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                              {chatMatches.map(m => (
+                                <button key={m.match_id}
+                                  onClick={() => setSelectedRecipient({ id: m.partner_id, name: m.name, photo_url: m.photo_url, match_id: m.match_id })}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors">
+                                  {m.photo_url ? (
+                                    <img src={m.photo_url} className="w-8 h-8 rounded-full object-cover" />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                                      <Icon name="User" size={14} className="text-white/50" />
+                                    </div>
+                                  )}
+                                  <span className="text-white text-sm truncate flex-1 text-left">{m.name}</span>
+                                  {m.online && <span className="w-2 h-2 rounded-full bg-green-400" />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
@@ -285,19 +420,53 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats }: {
                 </div>
               ) : (
                 <button
-                  disabled={giftPaying || giftRecipient === "user"}
-                  onClick={() => payGift({
-                    amount: gift.price,
-                    description: `Подарок себе «${gift.name}»`,
-                    returnUrl: window.location.origin + "/?payment=success",
-                    metadata: { gift_id: String(gift.id), gift_name: gift.name, recipient: "self" },
-                  }).then(r => { if (r?.paymentUrl) setGiftDone(giftPreview); })}
+                  disabled={giftPaying || (giftRecipient === "user" && !selectedRecipient)}
+                  onClick={async () => {
+                    const isUser = giftRecipient === "user" && selectedRecipient;
+                    const senderToken = localStorage.getItem("spark_token") || "";
+                    const r = await payGift({
+                      amount: gift.price,
+                      description: isUser
+                        ? `Подарок «${gift.name}» для ${selectedRecipient!.name}`
+                        : `Подарок себе «${gift.name}»`,
+                      returnUrl: window.location.origin + "/?payment=success",
+                      metadata: isUser
+                        ? {
+                            kind: "gift",
+                            gift_id: String(gift.id),
+                            gift_name: gift.name,
+                            gift_emoji: gift.emoji,
+                            gift_category: gift.category,
+                            gift_variant: String(gift.variant),
+                            gift_rarity: gift.rarity,
+                            recipient_id: String(selectedRecipient!.id),
+                            sender_token: senderToken,
+                          }
+                        : { gift_id: String(gift.id), gift_name: gift.name, recipient: "self" },
+                    });
+                    if (r?.paymentUrl) {
+                      setGiftDone(giftPreview);
+                      // Отправляем подарок в чат
+                      if (isUser) {
+                        const giftMsg = `__GIFT__${gift.id}|${gift.name}|${gift.emoji}`;
+                        try {
+                          if (selectedRecipient!.match_id) {
+                            await messagesApi.send(selectedRecipient!.match_id, giftMsg);
+                          } else {
+                            await messagesApi.sendDirect(selectedRecipient!.id, giftMsg);
+                          }
+                        } catch (e) { void e; }
+                      }
+                    }
+                  }}
                   className="w-full btn-grad py-3.5 font-bold text-white rounded-2xl disabled:opacity-50 flex items-center justify-center gap-2">
                   {giftPaying
                     ? <><Icon name="Loader2" size={16} className="animate-spin" />Обработка...</>
-                    : giftRecipient === "user"
-                      ? <><Icon name="Heart" size={16} />Откройте профиль пользователя</>
-                      : <><Icon name="ShoppingBag" size={16} />Купить за {gift.price.toLocaleString("ru")} ₽</>}
+                    : giftRecipient === "user" && !selectedRecipient
+                      ? <><Icon name="UserPlus" size={16} />Выберите получателя</>
+                      : giftRecipient === "user"
+                        ? <><Icon name="Gift" size={16} />Подарить за {gift.price.toLocaleString("ru")} ₽</>
+                        : <><Icon name="ShoppingBag" size={16} />Купить за {gift.price.toLocaleString("ru")} ₽</>}
                 </button>
               )}
               <button onClick={() => setGiftPreview(null)} className="text-white/30 text-sm">Закрыть</button>
