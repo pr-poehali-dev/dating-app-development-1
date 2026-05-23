@@ -61,7 +61,7 @@ def handler(event: dict, context) -> dict:
 
             # Новые сообщения (непрочитанные)
             cur.execute(
-                "SELECT u.id, u.name, u.photo_url, m.text, m.created_at, mt.match_id "
+                "SELECT u.id, u.name, u.photo_url, m.text, m.created_at, mt.id "
                 "FROM messages m "
                 "JOIN matches mt ON mt.id = m.match_id "
                 "JOIN users u ON u.id = m.sender_id "
