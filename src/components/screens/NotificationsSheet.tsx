@@ -44,6 +44,7 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
 }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
 
   useEffect(() => {
     notificationsApi.list()
@@ -52,6 +53,15 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
       .finally(() => setLoading(false));
     notificationsApi.markRead().catch(() => {});
   }, []);
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await notificationsApi.clearAll();
+      setItems([]);
+    } catch { void 0; }
+    finally { setClearing(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
@@ -68,9 +78,22 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 flex-shrink-0">
           <h2 className="text-white font-bold text-lg">Уведомления</h2>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
-            <Icon name="X" size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            {items.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                disabled={clearing}
+                className="flex items-center gap-1.5 text-white/40 hover:text-red-400 transition-colors text-xs disabled:opacity-50">
+                {clearing
+                  ? <Icon name="Loader2" size={14} className="animate-spin" />
+                  : <Icon name="Trash2" size={14} />}
+                Очистить
+              </button>
+            )}
+            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+              <Icon name="X" size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

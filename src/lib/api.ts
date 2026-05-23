@@ -371,6 +371,7 @@ export const notificationsApi = {
   unreadCount: () => req<{ unread_count: number; messages: number; likes: number }>("notifications", "unread_count"),
   markRead: () => req<{ ok: boolean }>("notifications", "mark_read", { method: "POST" }),
   trackView: (user_id: number) => req<{ ok: boolean }>("notifications", "track_view", { method: "POST", body: JSON.stringify({ user_id }) }),
+  clearAll: () => req<{ ok: boolean }>("notifications", "clear_all", { method: "POST" }),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────

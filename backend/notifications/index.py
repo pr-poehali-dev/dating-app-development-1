@@ -145,6 +145,11 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        if action == 'clear_all':
+            cur.execute("DELETE FROM notifications WHERE user_id = %s", (me['id'],))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
