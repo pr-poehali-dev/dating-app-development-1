@@ -1,228 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import Icon from "@/components/ui/icon";
 import { matchesApi, messagesApi, postsApi, profilesApi, type Message, type Profile } from "@/lib/api";
-
-// ─── Маппинг города → IANA часовой пояс ───────────────────────────────────────
-const CITY_TIMEZONES: Record<string, string> = {
-  "москва": "Europe/Moscow",
-  "санкт-петербург": "Europe/Moscow",
-  "санкт петербург": "Europe/Moscow",
-  "спб": "Europe/Moscow",
-  "питер": "Europe/Moscow",
-  "сочи": "Europe/Moscow",
-  "краснодар": "Europe/Moscow",
-  "ростов-на-дону": "Europe/Moscow",
-  "нижний новгород": "Europe/Moscow",
-  "казань": "Europe/Moscow",
-  "воронеж": "Europe/Moscow",
-  "волгоград": "Europe/Volgograd",
-  "самара": "Europe/Samara",
-  "ижевск": "Europe/Samara",
-  "саратов": "Europe/Saratov",
-  "ульяновск": "Europe/Ulyanovsk",
-  "астрахань": "Europe/Astrakhan",
-  "калининград": "Europe/Kaliningrad",
-  "уфа": "Asia/Yekaterinburg",
-  "екатеринбург": "Asia/Yekaterinburg",
-  "челябинск": "Asia/Yekaterinburg",
-  "пермь": "Asia/Yekaterinburg",
-  "тюмень": "Asia/Yekaterinburg",
-  "оренбург": "Asia/Yekaterinburg",
-  "омск": "Asia/Omsk",
-  "новосибирск": "Asia/Novosibirsk",
-  "барнаул": "Asia/Barnaul",
-  "томск": "Asia/Tomsk",
-  "кемерово": "Asia/Novokuznetsk",
-  "новокузнецк": "Asia/Novokuznetsk",
-  "красноярск": "Asia/Krasnoyarsk",
-  "норильск": "Asia/Krasnoyarsk",
-  "иркутск": "Asia/Irkutsk",
-  "улан-удэ": "Asia/Irkutsk",
-  "чита": "Asia/Chita",
-  "якутск": "Asia/Yakutsk",
-  "благовещенск": "Asia/Yakutsk",
-  "хабаровск": "Asia/Vladivostok",
-  "владивосток": "Asia/Vladivostok",
-  "магадан": "Asia/Magadan",
-  "сахалин": "Asia/Sakhalin",
-  "южно-сахалинск": "Asia/Sakhalin",
-  "петропавловск-камчатский": "Asia/Kamchatka",
-  "анадырь": "Asia/Anadyr",
-  "минск": "Europe/Minsk",
-  "киев": "Europe/Kiev",
-  "алматы": "Asia/Almaty",
-  "астана": "Asia/Almaty",
-  "нур-султан": "Asia/Almaty",
-  "ташкент": "Asia/Tashkent",
-  "бишкек": "Asia/Bishkek",
-  "ереван": "Asia/Yerevan",
-  "тбилиси": "Asia/Tbilisi",
-  "баку": "Asia/Baku",
-};
-
-function getTimezoneByCity(city?: string | null): string | undefined {
-  if (!city) return undefined;
-  const key = city.trim().toLowerCase();
-  if (CITY_TIMEZONES[key]) return CITY_TIMEZONES[key];
-  for (const [k, tz] of Object.entries(CITY_TIMEZONES)) {
-    if (key.includes(k)) return tz;
-  }
-  return undefined;
-}
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
-import VoiceMessage from "@/components/chat/VoiceMessage";
-import LocationMessage from "@/components/chat/LocationMessage";
+import { renderMsgContent, getTimezoneByCity } from "@/components/chat/ChatMessageContent";
+import { ChatHeader } from "@/components/chat/ChatHeader";
+import { ChatInputBar } from "@/components/chat/ChatInputBar";
+import { ChatContextMenu, ChatVanishPicker, ChatMenu, ChatAwardPicker } from "@/components/chat/ChatModals";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
-
-// ─── Исчезающее фото ──────────────────────────────────────────────────────────
-function VanishPhoto({ url, out }: { url: string; out: boolean }) {
-  const [visible, setVisible] = useState(true);
-  const [opened, setOpened] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(60);
-  const [lightbox, setLightbox] = useState(false);
-
-  useEffect(() => {
-    if (!opened || out) return;
-    const timer = setInterval(() => {
-      setSecondsLeft(s => {
-        if (s <= 1) { clearInterval(timer); setVisible(false); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [opened, out]);
-
-  if (!visible) {
-    return (
-      <div className="flex items-center gap-2 px-1 opacity-40">
-        <Icon name="Timer" size={14} className="text-white/50" />
-        <span className="text-xs text-white/50">Фото исчезло</span>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="relative">
-        {opened || out ? (
-          <img src={url} className="rounded-xl object-cover cursor-pointer active:scale-95 transition-transform"
-            style={{ maxWidth: 200, maxHeight: 200 }}
-            onClick={() => setLightbox(true)} />
-        ) : (
-          <div
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer active:scale-95 transition-all"
-            style={{ background: "rgba(255,45,120,0.15)", border: "1.5px solid rgba(255,45,120,0.4)" }}
-            onClick={() => !out && setOpened(true)}>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
-              <Icon name="Timer" size={20} className="text-pink-400" />
-            </div>
-            <span className="text-white text-xs font-medium">
-              {out ? "Нажми чтобы посмотреть" : "Нажми чтобы открыть"}
-            </span>
-          </div>
-        )}
-        {opened && !out && (
-          <div className="absolute top-1 right-1 px-2 py-0.5 rounded-full text-white text-[11px] font-bold"
-            style={{ background: "rgba(0,0,0,0.65)" }}>
-            🔥 {secondsLeft}с
-          </div>
-        )}
-      </div>
-
-      {lightbox && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.93)", backdropFilter: "blur(14px)" }}
-          onClick={() => setLightbox(false)}>
-          <button className="absolute top-5 right-5 glass-card p-2.5"
-            onClick={() => setLightbox(false)}>
-            <Icon name="X" size={20} className="text-white" />
-          </button>
-          <img src={url} className="rounded-2xl object-contain"
-            style={{ maxWidth: "95vw", maxHeight: "90dvh" }}
-            onClick={e => e.stopPropagation()} />
-        </div>
-      )}
-    </>
-  );
-}
-
-// ─── renderMsgContent ──────────────────────────────────────────────────────────
-export function renderMsgContent(text: string, out: boolean) {
-  if (text.startsWith("__VANISH__")) {
-    const url = text.slice(10);
-    return <VanishPhoto url={url} out={out} />;
-  }
-  if (text.startsWith("__LOC__")) {
-    const coords = text.slice(7);
-    const [lat, lon] = coords.split(",");
-    return <LocationMessage lat={lat} lon={lon} />;
-  }
-  if (text.startsWith("__VCALL__")) {
-    const status = text.slice(9);
-    return (
-      <div className="flex items-center gap-2 px-1">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: status === "accepted" ? "rgba(74,222,128,0.2)" : "rgba(255,45,120,0.2)" }}>
-          <Icon name="Video" size={16} className={status === "accepted" ? "text-green-400" : "text-pink-400"} />
-        </div>
-        <span className="text-sm">{status === "accepted" ? "Видеозвонок принят ✓" : "Запрос видеозвонка 📹"}</span>
-      </div>
-    );
-  }
-  if (text.startsWith("__AWARD__")) {
-    const emoji = text.slice(9);
-    return (
-      <div className="flex flex-col items-center gap-1 py-1 px-3">
-        <span className="text-4xl">{emoji}</span>
-        <span className="text-xs text-white/60">{out ? "Ты отправил награду" : "Тебе вручена награда!"}</span>
-      </div>
-    );
-  }
-  if (text === "__GRANT_PHOTO__") {
-    return (
-      <div className="flex items-center gap-2 px-1 py-0.5">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(100,200,100,0.2)" }}>
-          <Icon name="ImagePlus" size={16} className="text-green-400" />
-        </div>
-        <span className="text-sm">{out ? "Ты открыл доступ к своим фото 🖼️" : "Открыл тебе доступ к своим фото 🖼️"}</span>
-      </div>
-    );
-  }
-  if (text.startsWith("__AUDIO__")) {
-    const url = text.slice(9);
-    return <VoiceMessage url={url} out={out} />;
-  }
-  if (text === "__REQUEST_PHOTO__") {
-    return (
-      <div className="flex items-center gap-2 px-1 py-0.5">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(255,45,120,0.2)" }}>
-          <Icon name="Lock" size={16} className="text-pink-400" />
-        </div>
-        <span className="text-sm">{out ? "Ты запросил доступ к приватным фото 🔐" : "Запрашивает доступ к твоим приватным фото 🔐"}</span>
-      </div>
-    );
-  }
-  if (text.startsWith("__GIFT__")) {
-    const payload = text.slice(8);
-    const [, giftName, giftEmoji] = payload.split("|");
-    return (
-      <div className="flex flex-col items-center gap-1 py-2 px-4 min-w-[140px]">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.25))" }}>
-          <span className="text-4xl">{giftEmoji || "🎁"}</span>
-        </div>
-        <span className="text-sm font-semibold text-white mt-1">{giftName || "Подарок"}</span>
-        <span className="text-[11px] text-white/60">{out ? "Ты отправил подарок 🎁" : "Тебе подарили 🎁"}</span>
-      </div>
-    );
-  }
-  return <span>{text}</span>;
-}
 
 // ─── RealChatScreen ────────────────────────────────────────────────────────────
 export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; currentUserId: number; onBack: () => void }) {
@@ -369,8 +154,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   };
 
   const openVanishPicker = () => {
-    import("@/lib/api").then(({ profilesApi }) => {
-      profilesApi.listProfilePhotos().then(r => setVanishPhotos(r.photos));
+    import("@/lib/api").then(({ profilesApi: pApi }) => {
+      pApi.listProfilePhotos().then(r => setVanishPhotos(r.photos));
     });
     setShowVanishPicker(true);
     setShowPlus(false);
@@ -422,89 +207,29 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   return (
     <>
       {contextMsg && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.6)" }}
-          onClick={() => setContextMsg(null)}>
-          <div className="w-full max-w-sm animate-slide-up"
-            style={{ background: "var(--spark-dark2)", borderRadius: "28px 28px 0 0" }}
-            onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 pt-5 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-white/40 text-xs mb-1.5">Сообщение</p>
-              <p className="text-white/80 text-sm line-clamp-3">{contextMsg.text}</p>
-            </div>
-            <button
-              onClick={() => handleDelete(contextMsg)}
-              className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(255,45,78,0.15)" }}>
-                <Icon name="Trash2" size={18} style={{ color: "#FF2D4E" }} />
-              </div>
-              <div>
-                <p className="text-red-400 font-semibold text-sm">Удалить сообщение</p>
-                <p className="text-white/30 text-xs">Удалится у обоих участников</p>
-              </div>
-            </button>
-            <button
-              onClick={() => { navigator.clipboard?.writeText(contextMsg.text); setContextMsg(null); }}
-              className="w-full px-5 py-4 flex items-center gap-3 text-left hover:bg-white/5 transition-colors">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(255,255,255,0.08)" }}>
-                <Icon name="Copy" size={18} className="text-white/60" />
-              </div>
-              <p className="text-white/80 font-semibold text-sm">Скопировать текст</p>
-            </button>
-            <div className="px-5 pb-6 pt-1">
-              <button onClick={() => setContextMsg(null)}
-                className="w-full glass-card py-3 text-white/50 text-sm font-medium">
-                Отмена
-              </button>
-            </div>
-          </div>
-        </div>
+        <ChatContextMenu
+          msg={contextMsg}
+          onDelete={handleDelete}
+          onClose={() => setContextMsg(null)}
+        />
       )}
 
       <div className="flex flex-col h-full">
-        <div className="flex items-center gap-3 px-4 py-3 relative z-10"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-          <button onClick={onBack} className="text-white/70 hover:text-white transition-colors">
-            <Icon name="ChevronLeft" size={24} />
-          </button>
-          <button onClick={() => setShowPartnerProfile(true)} className="flex items-center gap-3 flex-1 text-left">
-            <img src={partnerPhoto} className="w-10 h-10 rounded-full object-cover" />
-            <div>
-              <p className="text-white font-semibold text-sm">{partnerName}</p>
-              <p className="text-white/40 text-xs">Нажми для просмотра профиля</p>
-            </div>
-          </button>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => {
-                if (!partnerId) return;
-                const next = !subscribed;
-                setSubscribed(next);
-                profilesApi.subscribeToggle(partnerId).then(r => setSubscribed(r.subscribed)).catch(() => setSubscribed(!next));
-              }}
-              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
-              style={{ background: subscribed ? "rgba(255,200,0,0.15)" : "rgba(255,255,255,0.06)" }}
-              title="Подписаться на обновления">
-              <Icon name="Star" size={18} className={subscribed ? "text-yellow-400" : "text-white/50"} />
-            </button>
-            <button
-              onClick={() => setVideoCall({ isInitiator: true })}
-              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
-              style={{ background: "rgba(255,255,255,0.06)" }}
-              title="Видеозвонок">
-              <Icon name="Video" size={18} className="text-white/50" />
-            </button>
-            <button
-              onClick={() => setShowChatMenu(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
-              style={{ background: "rgba(255,255,255,0.06)" }}
-              title="Ещё">
-              <Icon name="MoreVertical" size={18} className="text-white/50" />
-            </button>
-          </div>
-        </div>
+        <ChatHeader
+          partnerName={partnerName}
+          partnerPhoto={partnerPhoto}
+          subscribed={subscribed}
+          onBack={onBack}
+          onProfileClick={() => setShowPartnerProfile(true)}
+          onSubscribeToggle={() => {
+            if (!partnerId) return;
+            const next = !subscribed;
+            setSubscribed(next);
+            profilesApi.subscribeToggle(partnerId).then(r => setSubscribed(r.subscribed)).catch(() => setSubscribed(!next));
+          }}
+          onVideoCall={() => setVideoCall({ isInitiator: true })}
+          onMenuOpen={() => setShowChatMenu(true)}
+        />
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
           {msgs.length === 0 && (
@@ -541,119 +266,29 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           <div ref={bottomRef} />
         </div>
 
-        {showPlus && (
-          <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="grid grid-cols-3 gap-2 pt-3 pb-1">
-              {[
-                { icon: "Camera", label: "Камера", action: () => { cameraRef.current?.click(); setShowPlus(false); } },
-                { icon: "Image", label: "Галерея", action: () => { fileRef.current?.click(); setShowPlus(false); } },
-                { icon: "Timer", label: "Исчезающее", action: openVanishPicker },
-                { icon: "MapPin", label: "Локация", action: sendLocation, loading: geoLoading },
-                { icon: "Video", label: "Видеочат", action: () => { setShowPlus(false); setVideoCall({ isInitiator: true }); } },
-                { icon: "Gift", label: "Подарок", action: () => { setShowAwardPicker(true); setShowPlus(false); } },
-              ].map(({ icon, label, action, loading }) => (
-                <button key={label} onClick={action} disabled={loading}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50"
-                  style={{ background: "rgba(255,255,255,0.07)" }}>
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.2),rgba(155,89,182,0.2))" }}>
-                    {loading
-                      ? <Icon name="Loader2" size={20} className="animate-spin" style={{ color: "#FF2D78" }} />
-                      : <Icon name={icon} size={20} style={{ color: "#FF2D78" }} />}
-                  </div>
-                  <span className="text-white/60 text-[11px]">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
-
-        {showEmoji && (
-          <div className="px-3 pb-2 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-            {[
-              ["😍","🥰","❤️","🔥","😘","💋","🫦","💕"],
-              ["😂","🤣","😭","🥺","😅","🙈","😏","🤤"],
-              ["👋","🤙","💪","🙏","👅","💦","🥵","🫠"],
-              ["🎉","🏆","💎","🌹","🍓","🦋","✨","💯"],
-            ].map((row, i) => (
-              <div key={i} className="flex justify-between mb-1">
-                {row.map(em => (
-                  <button key={em} onClick={() => {
-                    setInput(v => v + em);
-                    inputRef.current?.focus();
-                  }}
-                    className="text-2xl w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-75 hover:bg-white/10">
-                    {em}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="px-4 py-3 flex items-center gap-2"
-          style={{ borderTop: (showPlus || showEmoji) ? "none" : "1px solid rgba(255,255,255,0.08)" }}>
-
-          {recording ? (
-            /* ── Полоса записи ── */
-            <>
-              <button onClick={() => stopRecording(true)}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
-                <Icon name="Trash2" size={18} className="text-white/60" />
-              </button>
-              <div className="flex-1 flex items-center gap-2 rounded-full px-4 py-2.5"
-                style={{ background: "rgba(255,45,120,0.12)", border: "1.5px solid rgba(255,45,120,0.35)" }}>
-                <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse" />
-                <span className="text-white/80 text-sm font-mono">
-                  {String(Math.floor(recordSecs / 60)).padStart(2, "0")}:{String(recordSecs % 60).padStart(2, "0")}
-                </span>
-                <span className="text-white/40 text-xs flex-1">Идёт запись...</span>
-              </div>
-              <button onClick={() => stopRecording(false)}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                <Icon name="Send" size={16} className="text-white" />
-              </button>
-            </>
-          ) : (
-            /* ── Обычная панель ── */
-            <>
-              <button onClick={() => { setShowPlus(v => !v); setShowEmoji(false); }}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
-                style={{
-                  background: showPlus ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)",
-                  border: "1.5px solid rgba(255,255,255,0.15)"
-                }}>
-                <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
-              </button>
-              <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                onFocus={() => { setShowPlus(false); setShowEmoji(false); }}
-                placeholder="Написать..."
-                className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 transition-colors font-golos" />
-              <button onClick={() => { setShowEmoji(v => !v); setShowPlus(false); }}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
-                style={{ background: showEmoji ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
-                {showEmoji ? <Icon name="X" size={16} className="text-white" /> : "😊"}
-              </button>
-              {input.trim() ? (
-                <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0 active:scale-90 transition-all">
-                  <Icon name="Send" size={16} className="text-white" />
-                </button>
-              ) : (
-                <button onClick={startRecording}
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                  style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.15)" }}>
-                  <Icon name="Mic" size={18} className="text-white/80" />
-                </button>
-              )}
-            </>
-          )}
-        </div>
+        <ChatInputBar
+          input={input}
+          recording={recording}
+          recordSecs={recordSecs}
+          showPlus={showPlus}
+          showEmoji={showEmoji}
+          geoLoading={geoLoading}
+          inputRef={inputRef}
+          fileRef={fileRef}
+          cameraRef={cameraRef}
+          onInputChange={setInput}
+          onSend={send}
+          onStartRecording={startRecording}
+          onStopRecording={stopRecording}
+          onTogglePlus={() => { setShowPlus(v => !v); setShowEmoji(false); }}
+          onToggleEmoji={() => { setShowEmoji(v => !v); setShowPlus(false); }}
+          onEmojiPick={(em) => { setInput(v => v + em); inputRef.current?.focus(); }}
+          onFileSelect={handleFileSelect}
+          onOpenVanishPicker={openVanishPicker}
+          onSendLocation={sendLocation}
+          onOpenVideoCall={() => { setShowPlus(false); setVideoCall({ isInitiator: true }); }}
+          onOpenAwardPicker={() => { setShowAwardPicker(true); setShowPlus(false); }}
+        />
       </div>
 
       {showPartnerProfile && partnerId && (
@@ -675,112 +310,26 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       )}
 
       {showVanishPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
-          onClick={() => setShowVanishPicker(false)}>
-          <div className="w-full max-w-sm animate-slide-up pb-6 px-4"
-            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between py-4">
-              <p className="text-white font-semibold">Выбери исчезающее фото</p>
-              <button onClick={() => setShowVanishPicker(false)}>
-                <Icon name="X" size={20} className="text-white/50" />
-              </button>
-            </div>
-            {vanishPhotos.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8">
-                <Icon name="Image" size={32} className="text-white/20" />
-                <p className="text-white/40 text-sm text-center">В галерее нет фото. Добавь фото в профиле.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-2 pb-2">
-                {vanishPhotos.map(p => (
-                  <button key={p.id} onClick={() => sendVanishPhoto(p.photo_url)}
-                    className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-all">
-                    <img src={p.photo_url} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ChatVanishPicker
+          photos={vanishPhotos}
+          onPick={sendVanishPhoto}
+          onClose={() => setShowVanishPicker(false)}
+        />
       )}
 
       {showChatMenu && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
-          onClick={() => setShowChatMenu(false)}>
-          <div className="w-full max-w-sm pb-8 px-4"
-            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between py-4">
-              <p className="text-white font-semibold text-base">Действия</p>
-              <button onClick={() => setShowChatMenu(false)}>
-                <Icon name="X" size={20} className="text-white/50" />
-              </button>
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setShowChatMenu(false);
-                  sendSystem("__GRANT_PHOTO__");
-                }}
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
-                style={{ background: "rgba(255,255,255,0.05)" }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(100,200,100,0.15)" }}>
-                  <Icon name="ImagePlus" size={20} className="text-green-400" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-sm">Предоставить доступ к фото</p>
-                  <p className="text-white/40 text-xs mt-0.5">Открыть свои приватные фото для этого пользователя</p>
-                </div>
-              </button>
-              <button
-                onClick={() => {
-                  setShowChatMenu(false);
-                  sendSystem("__REQUEST_PHOTO__");
-                }}
-                className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
-                style={{ background: "rgba(255,255,255,0.05)" }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,45,120,0.15)" }}>
-                  <Icon name="Lock" size={20} className="text-pink-400" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold text-sm">Запросить доступ к приватным фото</p>
-                  <p className="text-white/40 text-xs mt-0.5">Отправить запрос на просмотр приватного альбома</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
+        <ChatMenu
+          onGrantPhoto={() => { setShowChatMenu(false); sendSystem("__GRANT_PHOTO__"); }}
+          onRequestPhoto={() => { setShowChatMenu(false); sendSystem("__REQUEST_PHOTO__"); }}
+          onClose={() => setShowChatMenu(false)}
+        />
       )}
 
       {showAwardPicker && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
-          onClick={() => setShowAwardPicker(false)}>
-          <div className="w-full max-w-sm animate-slide-up pb-6 px-4"
-            style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between py-4">
-              <p className="text-white font-semibold">Вручить награду</p>
-              <button onClick={() => setShowAwardPicker(false)}>
-                <Icon name="X" size={20} className="text-white/50" />
-              </button>
-            </div>
-            <div className="grid grid-cols-4 gap-3 pb-2">
-              {["🏆","🥇","🎖️","👑","💎","🌟","🔥","💝","🦋","🌹","🎁","✨"].map(emoji => (
-                <button key={emoji} onClick={() => { sendSystem(`__AWARD__${emoji}`); setShowAwardPicker(false); }}
-                  className="aspect-square rounded-2xl flex items-center justify-center text-3xl active:scale-90 transition-all"
-                  style={{ background: "rgba(255,255,255,0.07)" }}>
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ChatAwardPicker
+          onPick={(emoji) => { sendSystem(`__AWARD__${emoji}`); setShowAwardPicker(false); }}
+          onClose={() => setShowAwardPicker(false)}
+        />
       )}
     </>
   );
