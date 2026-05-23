@@ -234,10 +234,10 @@ function ProfileViewersSheet({ isPremium, onClose, onPremium }: {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {!isPremium && (
                 <button onClick={() => { onClose(); onPremium?.(); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-2xl mb-1"
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl"
                   style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.25)" }}>
                   <Icon name="Crown" size={18} className="text-pink-400 flex-shrink-0" />
                   <div className="text-left">
@@ -246,34 +246,33 @@ function ProfileViewersSheet({ isPremium, onClose, onPremium }: {
                   </div>
                 </button>
               )}
-              {viewers.map((v, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl"
-                  style={{ background: "rgba(255,255,255,0.05)" }}>
-                  {/* Аватар: блюр для не-Premium */}
-                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden">
-                    <img
-                      src={v.photo_url || FALLBACK_PHOTO}
-                      className="w-full h-full object-cover"
-                      style={!isPremium ? { filter: "blur(8px)", transform: "scale(1.1)" } : {}}
-                    />
-                    {!isPremium && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <Icon name="Lock" size={14} className="text-white/80" />
-                      </div>
-                    )}
-                  </div>
-                  {/* Имя: скрыто для не-Premium */}
-                  <div className="flex-1 min-w-0">
+              <div className="grid grid-cols-3 gap-2">
+                {viewers.map((v, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1.5 pt-3 pb-2.5 px-1 rounded-2xl"
+                    style={{ background: "rgba(255,255,255,0.05)" }}>
+                    {/* Аватар: блюр для не-Premium */}
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
+                      <img
+                        src={v.photo_url || FALLBACK_PHOTO}
+                        className="w-full h-full object-cover"
+                        style={!isPremium ? { filter: "blur(10px)", transform: "scale(1.15)" } : {}}
+                      />
+                      {!isPremium && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Icon name="Lock" size={16} className="text-white/80" />
+                        </div>
+                      )}
+                    </div>
+                    {/* Имя */}
                     {isPremium ? (
-                      <p className="text-white font-semibold text-sm truncate">{v.name}</p>
+                      <p className="text-white font-semibold text-[11px] text-center truncate w-full px-1">{v.name}</p>
                     ) : (
-                      <div className="h-4 w-24 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+                      <div className="h-3 w-12 rounded-full mx-auto" style={{ background: "rgba(255,255,255,0.15)" }} />
                     )}
-                    <p className="text-white/35 text-xs mt-0.5">{timeAgo(v.created_at)}</p>
+                    <p className="text-white/30 text-[10px] text-center">{timeAgo(v.created_at)}</p>
                   </div>
-                  <Icon name="Eye" size={14} className="text-white/20 flex-shrink-0" />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
