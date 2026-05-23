@@ -11,6 +11,8 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState<"main" | "selfie">("main");
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<{ b64: string; type: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -23,18 +25,26 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
   const handleSelfie = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       const b64 = ev.target?.result as string;
-      setUploading(true); setMsg("");
-      try {
-        await verifyApi.uploadSelfie(b64, file.type);
-        setMsg("Селфи отправлено на проверку!");
-        const s = await verifyApi.getStatus(); setStatus(s); setStep("main");
-      } catch (e: unknown) { setMsg(e instanceof Error ? e.message : "Ошибка загрузки"); }
-      finally { setUploading(false); }
+      setPreview(b64);
+      setPendingFile({ b64, type: file.type });
+      setMsg("");
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  };
+
+  const handleSend = async () => {
+    if (!pendingFile) return;
+    setUploading(true); setMsg("");
+    try {
+      await verifyApi.uploadSelfie(pendingFile.b64, pendingFile.type);
+      setMsg("Селфи отправлено на проверку!");
+      setPreview(null); setPendingFile(null);
+      const s = await verifyApi.getStatus(); setStatus(s); setStep("main");
+    } catch (e: unknown) { setMsg(e instanceof Error ? e.message : "Ошибка загрузки"); }
+    finally { setUploading(false); }
   };
 
   const statusBadge = () => {
@@ -106,25 +116,51 @@ export function VerifyScreen({ onClose }: { onClose: () => void }) {
       ) : (
         <div className="flex-1 overflow-y-auto px-4 flex flex-col gap-4 pb-6">
           <div className="glass-card p-5 flex flex-col gap-4 items-center">
-            <div className="text-5xl">🤳</div>
-            <p className="text-white font-semibold text-center">Сделай селфи с жестом</p>
-            <div className="flex flex-col gap-2 w-full">
-              {["Смотри в камеру", "Покажи большой палец вверх 👍", "Лицо должно быть чётко видно", "Хорошее освещение"].map((tip) => (
-                <div key={tip} className="flex items-center gap-2 text-white/60 text-xs">
-                  <div className="w-1.5 h-1.5 rounded-full bg-pink-500 flex-shrink-0" />{tip}
+            {preview ? (
+              <>
+                <p className="text-white font-semibold text-center">Проверь фото</p>
+                <img src={preview} className="w-full max-w-xs rounded-2xl object-cover"
+                  style={{ maxHeight: 320 }} />
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => { setPreview(null); setPendingFile(null); }}
+                    disabled={uploading}
+                    className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white/60 disabled:opacity-50"
+                    style={{ background: "rgba(255,255,255,0.08)" }}>
+                    Переснять
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={uploading}
+                    className="flex-1 btn-grad py-3 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
+                    {uploading
+                      ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Отправляем...</>
+                      : <><Icon name="Send" size={16} className="text-white" />Отправить</>}
+                  </button>
                 </div>
-              ))}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handleSelfie} />
-            <button onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="btn-grad w-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50">
-              {uploading
-                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Загружаем...</>
-                : <><Icon name="Camera" size={18} className="text-white" />Сделать фото</>}
-            </button>
+              </>
+            ) : (
+              <>
+                <div className="text-5xl">🤳</div>
+                <p className="text-white font-semibold text-center">Сделай селфи с жестом</p>
+                <div className="flex flex-col gap-2 w-full">
+                  {["Смотри в камеру", "Покажи большой палец вверх 👍", "Лицо должно быть чётко видно", "Хорошее освещение"].map((tip) => (
+                    <div key={tip} className="flex items-center gap-2 text-white/60 text-xs">
+                      <div className="w-1.5 h-1.5 rounded-full bg-pink-500 flex-shrink-0" />{tip}
+                    </div>
+                  ))}
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handleSelfie} />
+                <button onClick={() => fileRef.current?.click()}
+                  className="btn-grad w-full py-3.5 text-sm font-semibold flex items-center justify-center gap-2">
+                  <Icon name="Camera" size={18} className="text-white" />Сделать фото
+                </button>
+              </>
+            )}
             {msg && <p className="text-center text-xs" style={{ color: msg.includes("!") ? "#4ADE80" : "#FB7185" }}>{msg}</p>}
           </div>
-          <button onClick={() => setStep("main")} className="text-white/40 text-sm text-center">← Назад</button>
+          <button onClick={() => { setStep("main"); setPreview(null); setPendingFile(null); }}
+            className="text-white/40 text-sm text-center">← Назад</button>
         </div>
       )}
     </div>
