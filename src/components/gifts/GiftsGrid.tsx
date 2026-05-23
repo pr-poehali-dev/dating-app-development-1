@@ -1,4 +1,6 @@
 import { type MyGift } from "@/lib/api";
+import GiftItem from "@/components/gifts/GiftItem";
+import { GIFTS } from "@/components/screens/ProfileGiftSheet";
 
 interface Props {
   gifts: MyGift[];
@@ -41,11 +43,23 @@ export function GiftsGrid({
     <div className="grid grid-cols-3 gap-2">
       {gifts.map((gift) => {
         const rs = RARITY_COLORS[gift.gift_rarity] || RARITY_COLORS.common;
+        const giftDef = GIFTS.find(g => g.id === gift.gift_id);
+        const category = (gift.gift_category || giftDef?.category || "heart") as "heart" | "rose" | "bear" | "ring";
+        const variant = gift.gift_variant ?? giftDef?.variant ?? 0;
+        const rarity = (gift.gift_rarity || "common") as "common" | "rare" | "epic" | "legendary";
+        const animKey = giftDef?.anim ?? "gift-float";
+
         return (
           <div key={gift.id}
             className="flex flex-col items-center gap-1.5 pt-3 pb-2.5 px-1 rounded-2xl"
             style={{ background: rs.bg, border: `1.5px solid ${rs.border}`, boxShadow: rs.glow }}>
-            <span className="text-3xl">{gift.gift_emoji}</span>
+            <GiftItem
+              category={category}
+              variant={variant}
+              animKey={animKey}
+              size={56}
+              rarity={rarity}
+            />
             <p className="text-white text-xs font-semibold text-center leading-tight">{gift.gift_name}</p>
             {showSender && gift.sender_name && (
               <p className="text-white/40 text-[10px] text-center">от {gift.sender_name}</p>

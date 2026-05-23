@@ -477,6 +477,7 @@ export interface Profile {
   tags?: string[];
   verified?: boolean;
   online?: boolean;
+  last_seen?: string;
   premium?: boolean;
   height?: number;
   weight?: number;

@@ -80,8 +80,25 @@ export function ProfileInfoSection({
           )}
         </div>
         <div className="flex items-center gap-1.5 mt-1">
-          {currentProfile.online && <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80]" />}
-          <span className="text-white/50 text-xs">{currentProfile.online ? "онлайн" : ""}</span>
+          {currentProfile.online ? (
+            <>
+              <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80] animate-pulse" />
+              <span className="text-green-400 text-xs font-medium">онлайн</span>
+            </>
+          ) : currentProfile.last_seen ? (
+            <span className="text-white/35 text-xs">
+              {(() => {
+                const diff = Date.now() - new Date(currentProfile.last_seen).getTime();
+                const mins = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+                if (mins < 5) return "недавно в сети";
+                if (mins < 60) return `был(а) ${mins} мин. назад`;
+                if (hours < 24) return `был(а) ${hours} ч. назад`;
+                return `был(а) ${days} дн. назад`;
+              })()}
+            </span>
+          ) : null}
         </div>
       </div>
 
