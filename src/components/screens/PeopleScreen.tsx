@@ -66,13 +66,13 @@ function FilterSheet({ filters, onApply, onClose }: {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <span className="text-white/40 text-xs w-6">от</span>
-                <input type="range" min={18} max={ageMax} value={ageMin}
-                  onChange={(e) => setAgeMin(+e.target.value)} className="flex-1 accent-pink-500" />
+                <input type="range" min={18} max={80} value={ageMin}
+                  onChange={(e) => { const v = +e.target.value; setAgeMin(Math.min(v, ageMax - 1)); }} className="flex-1 accent-pink-500" />
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-white/40 text-xs w-6">до</span>
-                <input type="range" min={ageMin} max={80} value={ageMax}
-                  onChange={(e) => setAgeMax(+e.target.value)} className="flex-1 accent-pink-500" />
+                <input type="range" min={18} max={80} value={ageMax}
+                  onChange={(e) => { const v = +e.target.value; setAgeMax(Math.max(v, ageMin + 1)); }} className="flex-1 accent-pink-500" />
               </div>
             </div>
           </div>
