@@ -179,7 +179,7 @@ def handler(event: dict, context) -> dict:
             ban_user = body.get('ban_user', False)
             if not report_id:
                 return resp(400, {'error': 'report_id обязателен'})
-            cur.execute("UPDATE reports SET status = %s, resolved_at = NOW() WHERE id = %s", (new_status, report_id))
+            cur.execute("UPDATE reports SET status = %s WHERE id = %s", (new_status, report_id))
             if ban_user:
                 cur.execute("SELECT reported_id FROM reports WHERE id = %s", (report_id,))
                 rep_row = cur.fetchone()
@@ -197,7 +197,7 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 "SELECT vr.id, vr.selfie_url, vr.status, vr.reject_reason, vr.created_at, "
                 "u.id as user_id, u.name, u.age, u.email, u.photo_url, "
-                "EXISTS(SELECT 1 FROM email_codes ec WHERE ec.user_id = u.id AND ec.verified = TRUE) as email_verified "
+                "EXISTS(SELECT 1 FROM email_codes ec WHERE ec.user_id = u.id AND ec.used = TRUE) as email_verified "
                 "FROM verification_requests vr JOIN users u ON u.id = vr.user_id "
                 "WHERE vr.status = 'pending' ORDER BY vr.created_at ASC LIMIT 50"
             )
