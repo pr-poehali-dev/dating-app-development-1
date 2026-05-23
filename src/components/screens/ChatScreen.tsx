@@ -251,15 +251,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 {renderMsgContent(msg.text, msg.out)}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">
-                {(() => {
-                  const tz = getTimezoneByCity(partnerCity);
-                  const opts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
-                  if (tz) opts.timeZone = tz;
-                  return new Date(msg.created_at).toLocaleTimeString("ru", opts);
-                })()}
-                {partnerCity && getTimezoneByCity(partnerCity) && (
-                  <span className="ml-1 text-white/20">· {partnerCity}</span>
-                )}
+                {new Date(msg.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
           ))}
