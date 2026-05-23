@@ -19,7 +19,18 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
 
   useEffect(() => {
     profilesApi.getDiscover({ online_only: false })
-      .then(d => setUsers(d.profiles.slice(0, 9)))
+      .then(async d => {
+        const list = d.profiles.slice(0, 9);
+        setUsers(list);
+        const statuses = await Promise.allSettled(
+          list.map(u => profilesApi.subscriptionStatus(u.id))
+        );
+        const initial: Record<number, boolean> = {};
+        statuses.forEach((res, i) => {
+          if (res.status === "fulfilled") initial[list[i].id] = res.value.subscribed;
+        });
+        setSubscribed(initial);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
