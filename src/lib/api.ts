@@ -200,6 +200,9 @@ export const profilesApi = {
       method: "POST",
       body: JSON.stringify({ photo_id }),
     }),
+
+  myGifts: () =>
+    req<{ ok: boolean; gifts: MyGift[] }>("profiles", "my_gifts", { method: "GET" }),
 };
 
 // ─── Verify ───────────────────────────────────────────────────────────────────
@@ -413,6 +416,21 @@ export const messagesApi = {
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+export interface MyGift {
+  id: number;
+  sender_id: number | null;
+  gift_id: number;
+  gift_name: string;
+  gift_emoji: string;
+  gift_category: string;
+  gift_variant: number;
+  gift_rarity: string;
+  amount: number;
+  created_at: string;
+  sender_name?: string;
+  sender_photo?: string;
+}
+
 export interface User {
   id: number;
   email: string;
