@@ -5,7 +5,7 @@ import { type User } from "@/lib/api";
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
-type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private";
+type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 
 export function ProfileHeader({
   currentUser,
@@ -101,23 +101,31 @@ export function ProfileHeader({
         {currentUser.verified && <span className="ml-1.5 text-blue-400 text-base">✓</span>}
       </h3>
 
-      {/* Кнопки Фото / Приватное фото */}
-      <div className="grid grid-cols-2 gap-2 w-full mt-4">
+      {/* Кнопки Фото / Приватное фото / Подарки */}
+      <div className="grid grid-cols-3 gap-2 w-full mt-4">
         <button onClick={() => onTabChange((activeTab as string) === "photos" ? null : "photos" as ActiveTab)}
-          className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
           style={(activeTab as string) === "photos"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
             : { background: "rgba(255,255,255,0.08)" }}>
           <Icon name="Image" size={18} className={(activeTab as string) === "photos" ? "text-white" : "text-white/60"} />
-          <span className={`text-sm font-semibold ${(activeTab as string) === "photos" ? "text-white" : "text-white/60"}`}>Фото</span>
+          <span className={`text-xs font-semibold ${(activeTab as string) === "photos" ? "text-white" : "text-white/60"}`}>Фото</span>
         </button>
         <button onClick={() => onTabChange((activeTab as string) === "private" ? null : "private" as ActiveTab)}
-          className="flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95"
+          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
           style={(activeTab as string) === "private"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
             : { background: "rgba(255,255,255,0.08)" }}>
           <Icon name="Lock" size={18} className={(activeTab as string) === "private" ? "text-white" : "text-white/60"} />
-          <span className={`text-sm font-semibold ${(activeTab as string) === "private" ? "text-white" : "text-white/60"}`}>Приватное фото</span>
+          <span className={`text-xs font-semibold ${(activeTab as string) === "private" ? "text-white" : "text-white/60"}`}>Приватное</span>
+        </button>
+        <button onClick={() => onTabChange((activeTab as string) === "gifts" ? null : "gifts" as ActiveTab)}
+          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
+          style={(activeTab as string) === "gifts"
+            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+            : { background: "rgba(255,255,255,0.08)" }}>
+          <Icon name="Gift" size={18} className={(activeTab as string) === "gifts" ? "text-white" : "text-white/60"} />
+          <span className={`text-xs font-semibold ${(activeTab as string) === "gifts" ? "text-white" : "text-white/60"}`}>Подарки</span>
         </button>
       </div>
 

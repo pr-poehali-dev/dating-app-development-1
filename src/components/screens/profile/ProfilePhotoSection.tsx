@@ -160,6 +160,27 @@ export function ProfilePhotoSection({
           </button>
         </div>
       )}
+
+      {/* Подарки */}
+      {activeTab === "gifts" && (
+        <div className="w-full mt-3 flex flex-col gap-3">
+          <div className="glass-card p-4">
+            <p className="text-white/50 text-xs uppercase tracking-widest mb-3">Мои подарки</p>
+            <div className="grid grid-cols-4 gap-2">
+              {/* Заглушка — пустые ячейки */}
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-2xl flex flex-col items-center justify-center"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <Icon name="Gift" size={22} className="text-white/10" />
+                </div>
+              ))}
+            </div>
+            <p className="text-white/25 text-[11px] mt-3 text-center">
+              Здесь будут отображаться подарки, которые тебе дарят
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }

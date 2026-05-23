@@ -14,7 +14,7 @@ import { ProfileStatsBar } from "@/components/screens/profile/ProfileStatsBar";
 import { FollowersModal } from "@/components/screens/profile/FollowersModal";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
-type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private";
+type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
 type FollowTab = "followers" | "following";
 
