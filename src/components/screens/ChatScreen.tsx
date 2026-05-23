@@ -251,7 +251,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 {renderMsgContent(msg.text, msg.out)}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">
-                {new Date(msg.created_at).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
+                {new Date(msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z").toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
               </span>
             </div>
           ))}
