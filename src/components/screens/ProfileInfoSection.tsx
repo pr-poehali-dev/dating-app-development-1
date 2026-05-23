@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
-import { type Profile } from "@/lib/api";
+import { type Profile, type MyGift } from "@/lib/api";
+import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 
 interface ProfileData {
   bio?: string;
@@ -26,6 +27,8 @@ interface ProfileInfoSectionProps {
   onViewFollowers?: () => void;
   onViewGifts?: () => void;
   onOpenGiftSheet?: () => void;
+  userGifts?: MyGift[];
+  userGiftsLoading?: boolean;
 }
 
 const RS_LABEL: Record<string, string> = {
@@ -51,6 +54,8 @@ export function ProfileInfoSection({
   onViewFollowers,
   onViewGifts,
   onOpenGiftSheet,
+  userGifts = [],
+  userGiftsLoading = false,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -117,7 +122,7 @@ export function ProfileInfoSection({
             : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
           🔒 Приватное
         </button>
-        <button onClick={() => { onPhotoTabChange("gifts"); onOpenGiftSheet?.(); }}
+        <button onClick={() => { onPhotoTabChange("gifts"); onViewGifts?.(); }}
           className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
           style={photoTab === "gifts"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
@@ -127,7 +132,16 @@ export function ProfileInfoSection({
       </div>
 
       {/* Галерея */}
-      {photoTab === "public" ? (
+      {photoTab === "gifts" ? (
+        <div className="px-5 pb-3">
+          <GiftsGrid
+            gifts={userGifts}
+            loading={userGiftsLoading}
+            showSender={true}
+            emptyText={`У ${currentProfile.name} пока нет подарков.\nБудь первым — подари что-нибудь!`}
+          />
+        </div>
+      ) : photoTab === "public" ? (
         <div className="px-5 pb-3">
           {loadingPhotos ? (
             <div className="flex justify-center py-6">

@@ -296,6 +296,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onViewFollowers={handleOpenFollowers}
           onViewGifts={handleOpenUserGifts}
           onOpenGiftSheet={() => { setShowGiftSheet(true); setGiftSelected(null); setGiftDone(null); }}
+          userGifts={userGifts}
+          userGiftsLoading={userGiftsLoading}
         />
       </div>
 
