@@ -384,6 +384,7 @@ export const pushApi = {
 // ─── Matches ─────────────────────────────────────────────────────────────────
 export const matchesApi = {
   getAll: () => req<{ matches: Match[] }>("matches", "list"),
+  delete: (match_id: number) => req<{ ok: boolean }>("matches", "delete", { method: "POST", body: JSON.stringify({ match_id }) }),
 };
 
 // ─── Messages ────────────────────────────────────────────────────────────────
