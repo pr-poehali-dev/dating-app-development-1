@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { authApi, type User } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -47,6 +47,21 @@ export default function Index() {
 
   // Подключаем push-уведомления сразу после авторизации
   usePushNotifications(!!currentUser);
+
+  // Heartbeat — обновляем online/last_seen каждые 60 сек
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!currentUser) return;
+    authApi.heartbeat().catch(() => {});
+    heartbeatRef.current = setInterval(() => {
+      authApi.heartbeat().catch(() => {});
+    }, 60_000);
+    return () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      // При закрытии вкладки ставим офлайн
+      authApi.logout().catch(() => {});
+    };
+  }, [!!currentUser]);
 
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);

@@ -94,6 +94,7 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ reported_id, reason, comment }),
     }),
+  heartbeat: () => req<{ ok: boolean }>("auth", "heartbeat", { method: "POST" }),
 };
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
