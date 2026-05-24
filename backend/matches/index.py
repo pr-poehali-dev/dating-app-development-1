@@ -188,6 +188,24 @@ def handler(event: dict, context) -> dict:
                 'messages': messages
             })
 
+        if action == 'delete':
+            body = json.loads(event.get('body') or '{}')
+            match_id = int(body.get('match_id', 0))
+            if not match_id:
+                return resp(400, {'error': 'match_id обязателен'})
+            # Проверяем что пользователь участник матча
+            cur.execute(
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
+            )
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нет доступа'})
+            # Удаляем сообщения и матч
+            cur.execute("DELETE FROM messages WHERE match_id = %s", (match_id,))
+            cur.execute("DELETE FROM matches WHERE id = %s", (match_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

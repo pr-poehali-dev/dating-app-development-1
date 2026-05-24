@@ -85,7 +85,9 @@ export default function Index() {
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}
           {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} isPremium={!!currentUser.premium} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} />}
-          {screen === "matches" && <RealMatchesScreen onChat={openChat} />}
+          <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
+            <RealMatchesScreen onChat={openChat} />
+          </div>
           {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
           {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => setScreen("verify")} />}
           {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
