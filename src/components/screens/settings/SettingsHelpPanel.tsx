@@ -74,7 +74,7 @@ function SupportChat({ tickets, loading, onBack, onNewTicket }: {
         </button>
         <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-          <Icon name="HeadphonesIcon" size={15} className="text-white" />
+          <Icon name="Headphones" size={15} className="text-white" />
         </div>
         <div>
           <p className="text-white font-semibold text-sm">Поддержка LoveBloom</p>
