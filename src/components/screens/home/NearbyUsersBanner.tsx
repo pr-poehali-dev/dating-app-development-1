@@ -72,7 +72,7 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
           </div>
           <p className="text-white font-bold text-sm">Новые пользователи рядом с тобой</p>
         </div>
-        <span className="text-white/40 text-xs">{users.length}+</span>
+
       </div>
 
       {/* Горизонтальный скролл карточек */}
