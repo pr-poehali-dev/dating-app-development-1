@@ -23,6 +23,7 @@ interface Props {
   onSendLocation: () => void;
   onOpenVideoCall: () => void;
   onOpenAwardPicker: () => void;
+  onOpenVideoCircle: () => void;
 }
 
 export function ChatInputBar({
@@ -30,17 +31,18 @@ export function ChatInputBar({
   inputRef, fileRef, cameraRef,
   onInputChange, onSend, onStartRecording, onStopRecording,
   onTogglePlus, onToggleEmoji, onEmojiPick,
-  onFileSelect, onOpenVanishPicker, onSendLocation, onOpenVideoCall, onOpenAwardPicker,
+  onFileSelect, onOpenVanishPicker, onSendLocation, onOpenVideoCall, onOpenAwardPicker, onOpenVideoCircle,
 }: Props) {
   return (
     <>
       {showPlus && (
         <div className="px-4 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-          <div className="grid grid-cols-3 gap-2 pt-3 pb-1">
+          <div className="grid grid-cols-4 gap-2 pt-3 pb-1">
             {[
               { icon: "Image", label: "Галерея", action: () => { fileRef.current?.click(); onTogglePlus(); } },
               { icon: "Timer", label: "Исчезающее", action: onOpenVanishPicker },
               { icon: "MapPin", label: "Локация", action: onSendLocation, loading: geoLoading },
+              { icon: "Circle", label: "Кружок", action: onOpenVideoCircle },
             ].map(({ icon, label, action, loading }) => (
               <button key={label} onClick={action} disabled={loading}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95 disabled:opacity-50"

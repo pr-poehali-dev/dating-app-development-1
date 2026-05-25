@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { matchesApi, messagesApi, postsApi, profilesApi, type Message, type Profile } from "@/lib/api";
+import { VideoCircleRecorder } from "@/components/chat/VideoCircleRecorder";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
 import { renderMsgContent, getTimezoneByCity } from "@/components/chat/ChatMessageContent";
@@ -28,6 +29,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [geoLoading, setGeoLoading] = useState(false);
   const [videoCall, setVideoCall] = useState<{ isInitiator: boolean } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
+  const [showVideoCircle, setShowVideoCircle] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -280,6 +282,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onSendLocation={sendLocation}
           onOpenVideoCall={() => { setShowPlus(false); setVideoCall({ isInitiator: true }); }}
           onOpenAwardPicker={() => { setShowAwardPicker(true); setShowPlus(false); }}
+          onOpenVideoCircle={() => { setShowVideoCircle(true); setShowPlus(false); }}
         />
       </div>
 
@@ -298,6 +301,24 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerPhoto={partnerPhoto}
           isInitiator={videoCall.isInitiator}
           onClose={() => setVideoCall(null)}
+        />
+      )}
+
+      {showVideoCircle && (
+        <VideoCircleRecorder
+          onClose={() => setShowVideoCircle(false)}
+          onSend={async (blob, mimeType) => {
+            setShowVideoCircle(false);
+            try {
+              const reader = new FileReader();
+              reader.onload = async (e) => {
+                const base64 = (e.target?.result as string).split(",")[1];
+                const up = await profilesApi.uploadVideoCircle(base64, mimeType);
+                if (up?.url) await sendSystem(`__VIDEOCIRCLE__${up.url}`);
+              };
+              reader.readAsDataURL(blob);
+            } catch { void 0; }
+          }}
         />
       )}
 

@@ -301,6 +301,27 @@ def handler(event: dict, context) -> dict:
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             return resp(200, {'ok': True, 'url': cdn_url})
 
+        if action == 'upload_video_circle':
+            body = json.loads(event.get('body') or '{}')
+            video_data = body.get('video', '')
+            content_type = body.get('content_type', 'video/webm')
+            if not video_data:
+                return resp(400, {'error': 'Нет видео'})
+            if ',' in video_data:
+                video_data = video_data.split(',', 1)[1]
+            video_bytes = base64.b64decode(video_data)
+            if len(video_bytes) > 20 * 1024 * 1024:
+                return resp(400, {'error': 'Видео слишком большое (макс. 20 МБ)'})
+            ext = content_type.split('/')[-1].split(';')[0] or 'webm'
+            key = f"videocircle/{me['id']}/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=video_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            return resp(200, {'ok': True, 'url': cdn_url})
+
         if action == 'upload_cover':
             body = json.loads(event.get('body') or '{}')
             image_data = body.get('image', '')

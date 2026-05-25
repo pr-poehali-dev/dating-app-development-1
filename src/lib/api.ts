@@ -176,6 +176,9 @@ export const profilesApi = {
   uploadAudio: (audio: string, content_type: string) =>
     req<{ ok: boolean; url: string }>("profiles", "upload_audio", { method: "POST", body: JSON.stringify({ audio, content_type }) }),
 
+  uploadVideoCircle: (video: string, content_type: string) =>
+    req<{ ok: boolean; url: string }>("profiles", "upload_video_circle", { method: "POST", body: JSON.stringify({ video, content_type }) }),
+
   supportSend: (message: string) =>
     req<{ ok: boolean; ticket_id: number; created_at: string }>("profiles", "support_send", { method: "POST", body: JSON.stringify({ message }) }),
 

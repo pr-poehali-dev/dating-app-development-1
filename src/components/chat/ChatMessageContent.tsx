@@ -199,8 +199,44 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   );
 }
 
+// ─── VideoCircleMessage ────────────────────────────────────────────────────────
+function VideoCircleMessage({ url }: { url: string }) {
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggle = () => {
+    if (!videoRef.current) return;
+    if (playing) { videoRef.current.pause(); setPlaying(false); }
+    else { videoRef.current.play(); setPlaying(true); }
+  };
+
+  return (
+    <div className="relative cursor-pointer active:scale-95 transition-transform" style={{ width: 160, height: 160 }}
+      onClick={toggle}>
+      <video ref={videoRef} src={url} loop playsInline
+        className="w-full h-full object-cover rounded-full"
+        style={{ border: "2.5px solid rgba(255,45,120,0.6)" }}
+        onEnded={() => setPlaying(false)}
+      />
+      {!playing && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-full"
+          style={{ background: "rgba(0,0,0,0.35)" }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(255,45,120,0.85)" }}>
+            <Icon name="Play" size={22} className="text-white" style={{ marginLeft: 3 }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── renderMsgContent ──────────────────────────────────────────────────────────
 export function renderMsgContent(text: string, out: boolean) {
+  if (text.startsWith("__VIDEOCIRCLE__")) {
+    const url = text.slice(15);
+    return <VideoCircleMessage url={url} />;
+  }
   if (text.startsWith("__VANISH__")) {
     const url = text.slice(10);
     return <VanishPhoto url={url} out={out} />;
