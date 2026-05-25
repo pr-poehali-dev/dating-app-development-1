@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import VoiceMessage from "@/components/chat/VoiceMessage";
 import LocationMessage from "@/components/chat/LocationMessage";
