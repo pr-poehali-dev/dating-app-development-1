@@ -105,6 +105,16 @@ def handler(event: dict, context) -> dict:
 
         # Список активных трансляций
         if action == 'live_list':
+            # Завершаем зависшие трансляции (автор офлайн или last_seen > 10 мин назад)
+            cur.execute("""
+                UPDATE live_streams SET status='ended', ended_at=NOW()
+                WHERE status='active' AND user_id IN (
+                    SELECT id FROM users
+                    WHERE online = FALSE
+                       OR last_seen < NOW() - INTERVAL '10 minutes'
+                )
+            """)
+            conn.commit()
             cur.execute("""
                 SELECT s.id, s.user_id, s.title, s.viewers_count, s.hearts_count, s.started_at,
                        u.name, u.photo_url
