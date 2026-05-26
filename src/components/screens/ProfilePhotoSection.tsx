@@ -108,15 +108,28 @@ export function ProfilePhotoSection({
               }} />
           ))}
         </button>
+        {/* Кнопка сообщения */}
         <button onClick={onOpenChat}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
-          style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-          <Icon name="MessageCircle" size={20} className="text-white" />
+          className="relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+          style={{
+            background: "linear-gradient(135deg, rgba(99,179,237,0.25), rgba(79,134,247,0.2))",
+            backdropFilter: "blur(14px)",
+            border: "1.5px solid rgba(99,179,237,0.45)",
+            boxShadow: "0 4px 18px rgba(79,134,247,0.25), inset 0 1px 0 rgba(255,255,255,0.12)",
+          }}>
+          <Icon name="MessageCircle" size={20} style={{ color: "#93C5FD" }} />
         </button>
+
+        {/* Кнопка подарка */}
         <button onClick={onOpenGiftSheet}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
-          style={{ background: "rgba(255,200,0,0.2)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,200,0,0.4)" }}>
-          <Icon name="Gift" size={20} style={{ color: "#FFD700" }} />
+          className="relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,160,0,0.18))",
+            backdropFilter: "blur(14px)",
+            border: "1.5px solid rgba(255,200,0,0.5)",
+            boxShadow: "0 4px 18px rgba(255,180,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+          }}>
+          <Icon name="Gift" size={20} style={{ color: "#FCD34D" }} />
         </button>
       </div>
 

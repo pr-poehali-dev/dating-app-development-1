@@ -131,6 +131,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           await messagesApi.send(resolvedMatchId, "❤️");
         }
         if (resolvedMatchId && onOpenChat) {
+          onClose();
           setTimeout(() => onOpenChat(resolvedMatchId!), 350);
           return;
         }
