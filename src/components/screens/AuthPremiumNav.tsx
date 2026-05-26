@@ -87,9 +87,9 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
     }
   };
 
-  const inputCls = "w-full text-white placeholder-white/30 rounded-2xl px-4 py-3.5 text-sm outline-none border transition-colors font-golos"
+  const inputCls = "w-full text-white placeholder-white/40 rounded-2xl px-4 py-3.5 text-sm outline-none border transition-colors font-golos"
     + " focus:border-pink-500/60"
-    + " bg-white/8 border-white/10";
+    + " border-white/20";
 
   return (
     <>
@@ -147,30 +147,33 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         <div className="flex flex-col gap-3">
           {mode === "register" && (
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
                 <Icon name="User" size={16} />
               </span>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Твоё имя"
-                className={inputCls + " pl-10"} />
+                className={inputCls + " pl-10"}
+                style={{ background: "rgba(255,255,255,0.12)" }} />
             </div>
           )}
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
               <Icon name="Mail" size={16} />
             </span>
             <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email"
-              className={inputCls + " pl-10"} />
+              className={inputCls + " pl-10"}
+              style={{ background: "rgba(255,255,255,0.12)" }} />
           </div>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
               <Icon name="Lock" size={16} />
             </span>
             <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль"
               type={showPassword ? "text" : "password"}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              className={inputCls + " pl-10 pr-11"} />
+              className={inputCls + " pl-10 pr-11"}
+              style={{ background: "rgba(255,255,255,0.12)" }} />
             <button type="button" onClick={() => setShowPassword(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors">
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors">
               <Icon name={showPassword ? "EyeOff" : "Eye"} size={17} />
             </button>
           </div>
