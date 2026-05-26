@@ -111,14 +111,28 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
       {/* Верхняя часть — лого по центру */}
       <div className="flex-1 flex flex-col items-center justify-end pb-8 px-6">
         {/* Иконка приложения */}
-        <div className="mb-5 relative">
-          <div className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl"
-            style={{ background: "linear-gradient(135deg, #FF2D78 0%, #9B59B6 100%)", boxShadow: "0 8px 40px rgba(255,45,120,0.5)" }}>
-            <span className="text-4xl">💜</span>
-          </div>
-          {/* Свечение */}
-          <div className="absolute inset-0 rounded-3xl blur-xl opacity-60"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} />
+        <div className="mb-5 relative flex items-center justify-center">
+          {/* Пульсирующее свечение позади */}
+          <div className="absolute rounded-3xl"
+            style={{
+              width: 88, height: 88,
+              background: "radial-gradient(circle, rgba(255,45,120,0.55) 0%, rgba(155,89,182,0.3) 60%, transparent 80%)",
+              animation: "heartbeat 1.2s ease-in-out infinite",
+              filter: "blur(8px)",
+            }} />
+          {/* Логотип */}
+          <img
+            src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/877e412e-7952-45c5-a513-2c266868f89f.jpg"
+            alt="LoveBloom"
+            style={{
+              width: 84, height: 84,
+              borderRadius: 24,
+              animation: "heartbeat 1.2s ease-in-out infinite",
+              boxShadow: "0 8px 32px rgba(255,45,120,0.45)",
+              position: "relative",
+              zIndex: 1,
+            }}
+          />
         </div>
 
         <h1 className="font-unbounded text-white text-4xl font-black mb-2" style={{ textShadow: "0 2px 20px rgba(255,45,120,0.4)" }}>
