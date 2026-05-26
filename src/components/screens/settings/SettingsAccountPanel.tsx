@@ -154,7 +154,7 @@ export function SettingsAccountPanel({
                 </>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-white/50 text-sm font-mono">@lovebloom_1</span>
+                  <span className="text-white/50 text-sm font-mono">@{username || currentUser.username || "—"}</span>
                   <button onClick={onPremium} className="text-xs px-3 py-1.5 rounded-xl font-semibold"
                     style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
                     Изменить
