@@ -539,23 +539,27 @@ html.light .border-t-transparent {
 /* Message bubble */
 .msg-bubble-out {
   background: linear-gradient(135deg, #ff2d78, #9b59b6);
-  border-radius: 20px 20px 4px 20px;
+  border-radius: 18px 18px 4px 18px;
   color: white;
-  padding: 10px 16px;
-  max-width: 72%;
+  padding: 10px 14px;
+  max-width: 75%;
   align-self: flex-end;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+  box-shadow: 0 2px 12px rgba(255, 45, 120, 0.35);
+  word-break: break-word;
 }
 .msg-bubble-in {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 20px 20px 20px 4px;
-  color: white;
-  padding: 10px 16px;
-  max-width: 72%;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px 18px 18px 4px;
+  color: rgba(255, 255, 255, 0.92);
+  padding: 10px 14px;
+  max-width: 75%;
   align-self: flex-start;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+  word-break: break-word;
 }
 
 /* Scrollbar */

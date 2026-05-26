@@ -233,30 +233,58 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onMenuOpen={() => setShowChatMenu(true)}
         />
 
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+        <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5"
+          style={{ background: "linear-gradient(180deg, rgba(15,10,26,0) 0%, rgba(10,5,20,0.3) 100%)" }}>
           {msgs.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full gap-2">
-              <p className="text-white/40 text-sm">Начни общение первым! 👋</p>
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                👋
+              </div>
+              <p className="text-white/40 text-sm">Напиши первым — начни общение!</p>
             </div>
           )}
-          {msgs.map((msg) => (
-            <div key={msg.id}
-              className={`flex flex-col ${msg.out ? "items-end" : "items-start"} ${deleting === msg.id ? "opacity-30" : ""} transition-opacity`}
-              onMouseDown={() => startHold(msg)}
-              onMouseUp={cancelHold}
-              onMouseLeave={cancelHold}
-              onTouchStart={() => startHold(msg)}
-              onTouchEnd={cancelHold}
-              onTouchMove={cancelHold}>
-              <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
-                style={{ cursor: "pointer" }}>
-                {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
+          {msgs.map((msg) => {
+            const timeStr = new Date(
+              msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z"
+            ).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
+
+            const isSpecial = msg.text.startsWith("__GIFT__")
+              || msg.text.startsWith("__AWARD__")
+              || msg.text.startsWith("__VIDEOCIRCLE__");
+
+            return (
+              <div key={msg.id}
+                className={`flex flex-col ${msg.out ? "items-end" : "items-start"} ${deleting === msg.id ? "opacity-30" : ""} transition-opacity`}
+                style={{ marginBottom: 2 }}
+                onMouseDown={() => startHold(msg)}
+                onMouseUp={cancelHold}
+                onMouseLeave={cancelHold}
+                onTouchStart={() => startHold(msg)}
+                onTouchEnd={cancelHold}
+                onTouchMove={cancelHold}>
+
+                {isSpecial ? (
+                  /* Спец. сообщения без пузыря */
+                  <div className="flex flex-col items-center select-none" style={{ cursor: "pointer" }}>
+                    {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
+                    <span className="text-white/25 text-[10px] mt-1">{timeStr}</span>
+                  </div>
+                ) : (
+                  /* Обычные пузыри */
+                  <div className="flex flex-col gap-0.5">
+                    <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
+                      style={{ cursor: "pointer" }}>
+                      {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
+                    </div>
+                    <span className={`text-[10px] mt-0.5 px-1 ${msg.out ? "text-right text-white/35" : "text-white/30"}`}>
+                      {timeStr}
+                    </span>
+                  </div>
+                )}
               </div>
-              <span className="text-white/30 text-[11px] mt-1 px-1">
-                {new Date(msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z").toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-          ))}
+            );
+          })}
           <div ref={bottomRef} />
         </div>
 
