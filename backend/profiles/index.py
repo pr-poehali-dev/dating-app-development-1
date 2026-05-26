@@ -416,6 +416,18 @@ def handler(event: dict, context) -> dict:
             photos = [{'id': r[0], 'photo_url': r[1], 'created_at': str(r[2])} for r in cur.fetchall()]
             return resp(200, {'ok': True, 'photos': photos})
 
+        # Приватные фото партнёра (только если он дал доступ через __GRANT_PHOTO__)
+        if action == 'partner_private_photos':
+            partner_id = int(event.get('queryStringParameters', {}).get('partner_id', 0))
+            if not partner_id:
+                return resp(400, {'error': 'Нет partner_id'})
+            cur.execute(
+                "SELECT id, photo_url FROM private_photos WHERE user_id = %s AND is_hidden = FALSE ORDER BY created_at DESC",
+                (partner_id,)
+            )
+            photos = [{'id': r[0], 'photo_url': r[1]} for r in cur.fetchall()]
+            return resp(200, {'ok': True, 'photos': photos})
+
         # Добавить приватное фото (лимит: 1 бесплатно, 2 с подпиской)
         if action == 'private_photo_add':
             body = json.loads(event.get('body') or '{}')

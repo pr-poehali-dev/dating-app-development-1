@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import { profilesApi } from "@/lib/api";
 import VoiceMessage from "@/components/chat/VoiceMessage";
 import LocationMessage from "@/components/chat/LocationMessage";
 import GiftItem from "@/components/gifts/GiftItem";
@@ -231,8 +232,109 @@ function VideoCircleMessage({ url }: { url: string }) {
   );
 }
 
+// ─── PrivateGallery ────────────────────────────────────────────────────────────
+function PrivateGallery({ partnerId, onClose }: { partnerId: number; onClose: () => void }) {
+  const [photos, setPhotos] = useState<{ id: number; photo_url: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    profilesApi.getPartnerPrivatePhotos(partnerId)
+      .then(r => { setPhotos(r.photos || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [partnerId]);
+
+  const prev = useCallback(() => setIdx(i => Math.max(0, i - 1)), []);
+  const next = useCallback(() => setIdx(i => Math.min(photos.length - 1, i + 1)), [photos.length]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.95)" }}
+      onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} className="flex flex-col items-center w-full max-w-sm px-4">
+        {/* Заголовок */}
+        <div className="flex items-center justify-between w-full mb-4">
+          <span className="text-white/60 text-sm">Приватные фото</span>
+          {photos.length > 0 && (
+            <span className="text-white/40 text-sm">{idx + 1} / {photos.length}</span>
+          )}
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
+            <Icon name="X" size={16} className="text-white" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-60">
+            <Icon name="Loader2" size={32} className="text-pink-400 animate-spin" />
+          </div>
+        ) : photos.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 h-60 justify-center">
+            <Icon name="ImageOff" size={40} className="text-white/30" />
+            <span className="text-white/40 text-sm">Фото пока нет</span>
+          </div>
+        ) : (
+          <>
+            {/* Фото */}
+            <div className="relative w-full" style={{ aspectRatio: "1" }}>
+              <img src={photos[idx].photo_url} alt=""
+                className="w-full h-full object-cover rounded-2xl"
+                style={{ border: "1.5px solid rgba(255,255,255,0.1)" }} />
+              {idx > 0 && (
+                <button onClick={prev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.5)" }}>
+                  <Icon name="ChevronLeft" size={20} className="text-white" />
+                </button>
+              )}
+              {idx < photos.length - 1 && (
+                <button onClick={next}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.5)" }}>
+                  <Icon name="ChevronRight" size={20} className="text-white" />
+                </button>
+              )}
+            </div>
+            {/* Точки */}
+            {photos.length > 1 && (
+              <div className="flex gap-1.5 mt-3">
+                {photos.map((_, i) => (
+                  <button key={i} onClick={() => setIdx(i)}
+                    className="rounded-full transition-all"
+                    style={{ width: i === idx ? 16 : 6, height: 6, background: i === idx ? "#FF2D78" : "rgba(255,255,255,0.3)" }} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── GrantPhotoMessage ─────────────────────────────────────────────────────────
+function GrantPhotoMessage({ out, partnerId }: { out: boolean; partnerId: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <div className="flex items-center gap-2 px-1 py-0.5 cursor-pointer active:opacity-70 transition-opacity"
+        onClick={() => !out && setOpen(true)}>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(100,200,100,0.2)" }}>
+          <Icon name="ImagePlus" size={16} className="text-green-400" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-sm">{out ? "Ты открыл доступ к своим фото 🖼️" : "Открыл тебе доступ к своим фото 🖼️"}</span>
+          {!out && <span className="text-xs text-pink-400 mt-0.5">Нажми, чтобы посмотреть →</span>}
+        </div>
+      </div>
+      {open && <PrivateGallery partnerId={partnerId} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 // ─── renderMsgContent ──────────────────────────────────────────────────────────
-export function renderMsgContent(text: string, out: boolean) {
+export function renderMsgContent(text: string, out: boolean, partnerId?: number) {
   if (text.startsWith("__VIDEOCIRCLE__")) {
     const url = text.slice(15);
     return <VideoCircleMessage url={url} />;
@@ -268,15 +370,7 @@ export function renderMsgContent(text: string, out: boolean) {
     );
   }
   if (text === "__GRANT_PHOTO__") {
-    return (
-      <div className="flex items-center gap-2 px-1 py-0.5">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(100,200,100,0.2)" }}>
-          <Icon name="ImagePlus" size={16} className="text-green-400" />
-        </div>
-        <span className="text-sm">{out ? "Ты открыл доступ к своим фото 🖼️" : "Открыл тебе доступ к своим фото 🖼️"}</span>
-      </div>
-    );
+    return <GrantPhotoMessage out={out} partnerId={partnerId ?? 0} />;
   }
   if (text.startsWith("__AUDIO__")) {
     const url = text.slice(9);

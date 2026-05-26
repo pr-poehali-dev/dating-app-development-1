@@ -194,6 +194,9 @@ export const profilesApi = {
   listPrivatePhotos: () =>
     req<{ ok: boolean; photos: { id: number; photo_url: string; created_at: string }[] }>("profiles", "private_photos_list", { method: "GET" }),
 
+  getPartnerPrivatePhotos: (partner_id: number) =>
+    req<{ ok: boolean; photos: { id: number; photo_url: string }[] }>("profiles", "partner_private_photos", { method: "GET" }, { partner_id: String(partner_id) }),
+
   addPrivatePhoto: (image: string, content_type: string) =>
     req<{ ok: boolean; photo: { id: number; photo_url: string; created_at: string }; error?: string; limit?: number; premium?: boolean }>("profiles", "private_photo_add", {
       method: "POST",
