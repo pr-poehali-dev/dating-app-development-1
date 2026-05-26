@@ -39,54 +39,90 @@ export function StoriesBar({ currentUserId, onAddStory }: {
 
   return (
     <>
-      <div ref={scrollRef} className="flex gap-3 px-4 py-3 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
-        {/* Кнопка добавить свою историю */}
+      <div ref={scrollRef}
+        className="flex gap-4 px-4 pt-4 pb-3 overflow-x-auto scrollbar-hide"
+        style={{ scrollSnapType: "x mandatory" }}>
+
+        {/* Добавить свою историю */}
         {onAddStory && (
           <button
             onClick={onAddStory}
-            className="flex-shrink-0 flex flex-col items-center gap-1.5"
-            style={{ scrollSnapAlign: "start" }}
-          >
-            <div className="relative w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", padding: "2px" }}>
-              <div className="w-full h-full rounded-full bg-[#1a1625] flex items-center justify-center">
-                <Icon name="Plus" size={22} className="text-white" />
+            className="flex-shrink-0 flex flex-col items-center gap-2"
+            style={{ scrollSnapAlign: "start" }}>
+            <div className="relative">
+              <div className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
+                  padding: "2px",
+                }}>
+                <div className="w-full h-full rounded-full flex items-center justify-center"
+                  style={{ background: "#1a1625" }}>
+                  <Icon name="Plus" size={24} className="text-white" />
+                </div>
+              </div>
+              {/* Маленький плюс-бейдж */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", border: "2px solid #1a1625" }}>
+                <Icon name="Plus" size={10} className="text-white" />
               </div>
             </div>
-            <span className="text-white/60 text-[10px] font-medium w-16 text-center truncate">Моя история</span>
+            <span className="text-white/50 text-[10px] font-medium w-[62px] text-center truncate leading-tight">Моя история</span>
           </button>
         )}
 
         {/* Истории пользователей */}
         {groups.map((g, i) => {
-          const seen_ = isSeen(g);
+          const wasSeen = isSeen(g);
           return (
             <button
               key={g.user_id}
               onClick={() => { setViewIdx(i); markSeen(i); }}
-              className="flex-shrink-0 flex flex-col items-center gap-1.5"
-              style={{ scrollSnapAlign: "start" }}
-            >
-              <div className="relative w-16 h-16 rounded-full"
-                style={{
-                  padding: "2px",
-                  background: seen_
-                    ? "rgba(255,255,255,0.15)"
-                    : "linear-gradient(135deg,#FF2D78,#FF6B35,#FFD700,#9B59B6)",
-                }}>
-                {g.avatar
-                  ? <img src={g.avatar} className="w-full h-full rounded-full object-cover" />
-                  : <div className="w-full h-full rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">{g.user_name[0]}</div>
-                }
-                <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-[#FF2D78] border-2 border-[#1a1625] flex items-center justify-center">
-                  <span className="text-white text-[8px] font-bold">{g.stories.length}</span>
+              className="flex-shrink-0 flex flex-col items-center gap-2"
+              style={{ scrollSnapAlign: "start" }}>
+              <div className="relative">
+                {/* Кольцо вокруг аватара */}
+                <div className="w-[62px] h-[62px] rounded-full"
+                  style={{
+                    padding: "2.5px",
+                    background: wasSeen
+                      ? "rgba(255,255,255,0.12)"
+                      : "linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6)",
+                    boxShadow: wasSeen ? "none" : "0 0 12px rgba(255,45,120,0.35)",
+                  }}>
+                  <div className="w-full h-full rounded-full overflow-hidden"
+                    style={{ border: "2px solid #1a1625" }}>
+                    {g.avatar
+                      ? <img src={g.avatar} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-base">
+                          {g.user_name[0]}
+                        </div>
+                    }
+                  </div>
+                </div>
+                {/* Счётчик историй */}
+                <div className="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
+                  style={{
+                    background: wasSeen ? "rgba(255,255,255,0.18)" : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                    border: "2px solid #1a1625",
+                    fontSize: 8,
+                    fontWeight: 800,
+                    color: "white",
+                  }}>
+                  {g.stories.length}
                 </div>
               </div>
-              <span className="text-white/80 text-[10px] font-medium w-16 text-center truncate">{g.user_name}</span>
+              <span className={`text-[10px] font-medium w-[62px] text-center truncate leading-tight ${wasSeen ? "text-white/35" : "text-white/80"}`}>
+                {g.user_name}
+              </span>
             </button>
           );
         })}
       </div>
+
+      {/* Разделитель */}
+      {(groups.length > 0 || onAddStory) && (
+        <div className="mx-4 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
+      )}
 
       {viewIdx !== null && (
         <StoryViewer

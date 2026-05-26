@@ -87,36 +87,50 @@ export function TrendingBadge({ posts, streams = [], onJoinLive }: {
   if (topPosts.length === 0 && streams.length === 0) return null;
 
   return (
-    <div className="px-4 pb-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon name="TrendingUp" size={13} className="text-orange-400" />
-        <span className="text-white/60 text-xs font-medium">В тренде</span>
+    <div className="px-4 pt-3 pb-3">
+      {/* Заголовок секции */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg,#FF6B35,#FF2D78)" }}>
+            <Icon name="TrendingUp" size={12} className="text-white" />
+          </div>
+          <span className="text-white font-bold text-sm">В тренде</span>
+        </div>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+
+      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
         {/* Live-стримеры идут первыми */}
         {streams.map((s) => (
           <button key={`live-${s.id}`} onClick={() => onJoinLive?.(s)}
-            className="relative rounded-xl overflow-hidden flex-shrink-0 active:scale-95 transition-transform"
-            style={{ width: 80, height: 80 }}>
+            className="relative rounded-2xl overflow-hidden flex-shrink-0 active:scale-95 transition-transform"
+            style={{ width: 86, height: 108, boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
             <img src={s.author_photo || FALLBACK_PHOTO} className="w-full h-full object-cover" />
-            {/* Красная пульсирующая рамка */}
-            <div className="absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 0 0 2px #EF4444" }} />
-            {/* LIVE-кнопка снизу */}
-            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center py-1.5"
-              style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
-              <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse tracking-wide">● LIVE</span>
+            {/* Рамка */}
+            <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 2px #EF4444" }} />
+            {/* Градиент */}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
+            {/* LIVE бейдж */}
+            <div className="absolute top-2 left-2">
+              <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse tracking-wide flex items-center gap-0.5">
+                <span className="w-1 h-1 rounded-full bg-white inline-block" />LIVE
+              </span>
+            </div>
+            {/* Имя */}
+            <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+              <p className="text-white text-[10px] font-semibold truncate">{s.author_name}</p>
             </div>
           </button>
         ))}
 
         {/* Топ посты по лайкам */}
         {topPosts.map((p) => (
-          <div key={p.id} className="relative rounded-xl overflow-hidden flex-shrink-0" style={{ width: 80, height: 80 }}>
+          <div key={p.id} className="relative rounded-2xl overflow-hidden flex-shrink-0" style={{ width: 86, height: 108 }}>
             <img src={p.photo_url} className="w-full h-full object-cover" />
-            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-1"
-              style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }} />
+            <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex items-center gap-1">
               <Icon name="Heart" size={10} style={{ color: "#FF2D78" }} />
-              <span className="text-white text-[9px] font-bold">{p.likes_count}</span>
+              <span className="text-white text-[10px] font-bold">{p.likes_count}</span>
             </div>
           </div>
         ))}
