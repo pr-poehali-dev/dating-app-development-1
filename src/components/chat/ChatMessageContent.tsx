@@ -333,8 +333,57 @@ function GrantPhotoMessage({ out, partnerId }: { out: boolean; partnerId: number
   );
 }
 
+// ─── RequestPhotoMessage ───────────────────────────────────────────────────────
+function RequestPhotoMessage({ out, onGrant, partnerId }: { out: boolean; onGrant?: () => void; partnerId?: number }) {
+  const [granted, setGranted] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleGrant = () => {
+    setGranted(true);
+    onGrant?.();
+  };
+
+  // Исходящее: ты запросил
+  if (out) {
+    return (
+      <div className="flex items-center gap-2 px-1 py-0.5">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(255,45,120,0.2)" }}>
+          <Icon name="Lock" size={16} className="text-pink-400" />
+        </div>
+        <span className="text-sm">Ты запросил доступ к приватным фото 🔐</span>
+      </div>
+    );
+  }
+
+  // Входящее: партнёр просит доступ
+  return (
+    <>
+      <div className="flex flex-col gap-2 px-1 py-0.5">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(255,45,120,0.2)" }}>
+            <Icon name={granted ? "LockOpen" : "Lock"} size={16} className={granted ? "text-green-400" : "text-pink-400"} />
+          </div>
+          <span className="text-sm">Запрашивает доступ к твоим приватным фото 🔐</span>
+        </div>
+        {!granted ? (
+          <button onClick={handleGrant}
+            className="text-xs font-semibold py-1.5 px-3 rounded-full self-start"
+            style={{ background: "rgba(255,45,120,0.25)", color: "#FF2D78" }}>
+            Открыть доступ 🖼️
+          </button>
+        ) : (
+          <span className="text-xs text-green-400">✓ Доступ открыт</span>
+        )}
+      </div>
+      {open && partnerId && <PrivateGallery partnerId={partnerId} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 // ─── renderMsgContent ──────────────────────────────────────────────────────────
-export function renderMsgContent(text: string, out: boolean, partnerId?: number) {
+export function renderMsgContent(text: string, out: boolean, partnerId?: number, onGrant?: () => void) {
   if (text.startsWith("__VIDEOCIRCLE__")) {
     const url = text.slice(15);
     return <VideoCircleMessage url={url} />;
@@ -377,15 +426,7 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number)
     return <VoiceMessage url={url} out={out} />;
   }
   if (text === "__REQUEST_PHOTO__") {
-    return (
-      <div className="flex items-center gap-2 px-1 py-0.5">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(255,45,120,0.2)" }}>
-          <Icon name="Lock" size={16} className="text-pink-400" />
-        </div>
-        <span className="text-sm">{out ? "Ты запросил доступ к приватным фото 🔐" : "Запрашивает доступ к твоим приватным фото 🔐"}</span>
-      </div>
-    );
+    return <RequestPhotoMessage out={out} onGrant={onGrant} partnerId={partnerId} />;
   }
   if (text.startsWith("__GIFT__")) {
     return <ChatGiftMessage text={text} out={out} />;

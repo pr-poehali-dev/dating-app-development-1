@@ -250,7 +250,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
               onTouchMove={cancelHold}>
               <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
                 style={{ cursor: "pointer" }}>
-                {renderMsgContent(msg.text, msg.out, partnerId ?? undefined)}
+                {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
               </div>
               <span className="text-white/30 text-[11px] mt-1 px-1">
                 {new Date(msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z").toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" })}
