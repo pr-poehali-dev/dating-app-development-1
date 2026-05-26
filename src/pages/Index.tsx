@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { authApi, type User } from "@/lib/api";
+import { authApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
@@ -67,9 +67,15 @@ export default function Index() {
   const isMain = mainScreens.includes(screen);
 
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
+  const [joinStream, setJoinStream] = useState<LiveStream | null>(null);
   const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); setScreen("chat"); };
   const goToChats = () => { setPrevScreen(screen); setScreen("matches"); };
   const backToMatches = () => { setChatId(null); setScreen(prevScreen); };
+
+  const handleJoinLive = (s: LiveStream) => {
+    setJoinStream(s);
+    setScreen("live");
+  };
 
 
   if (authLoading) {
@@ -97,9 +103,9 @@ export default function Index() {
     <div className="app-bg flex justify-center">
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
-          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}
+          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}
           {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} isPremium={!!currentUser.premium} />}
-          {screen === "live" && <LiveScreen currentUser={currentUser} />}
+          {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}
           <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
             <RealMatchesScreen onChat={openChat} />
           </div>

@@ -3,7 +3,11 @@ import { liveApi, type User, type LiveStream, type LiveMessage } from "@/lib/api
 import { LiveActiveStream } from "@/components/screens/LiveActiveStream";
 import { LiveStreamList } from "@/components/screens/LiveStreamList";
 
-export function LiveScreen({ currentUser }: { currentUser: User }) {
+export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed }: {
+  currentUser: User;
+  initialStream?: LiveStream | null;
+  onStreamConsumed?: () => void;
+}) {
   const [streams, setStreams] = useState<LiveStream[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeStream, setActiveStream] = useState<LiveStream | null>(null);
@@ -36,6 +40,8 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
   };
 
   useEffect(() => { loadStreams(); }, []);
+
+
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -82,6 +88,15 @@ export function LiveScreen({ currentUser }: { currentUser: User }) {
     setActiveStream(stream); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     try { await liveApi.join(stream.id); } catch (e: unknown) { void e; }
   };
+
+  // Если пришли с ленты с конкретным стримом — сразу открываем его
+  useEffect(() => {
+    if (initialStream) {
+      handleJoin(initialStream);
+      onStreamConsumed?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLeave = async () => {
     if (!activeStream) return;

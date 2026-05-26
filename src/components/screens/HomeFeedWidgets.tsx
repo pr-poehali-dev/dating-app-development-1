@@ -78,17 +78,39 @@ export function LiveBadge({ streams, onJoin }: { streams: LiveStream[]; onJoin: 
 }
 
 // ─── TrendingBadge ────────────────────────────────────────────────────────────
-export function TrendingBadge({ posts }: { posts: Post[] }) {
-  const top = posts.slice().sort((a, b) => b.likes_count - a.likes_count).slice(0, 3);
-  if (top.length === 0) return null;
+export function TrendingBadge({ posts, streams = [], onJoinLive }: {
+  posts: Post[];
+  streams?: LiveStream[];
+  onJoinLive?: (s: LiveStream) => void;
+}) {
+  const topPosts = posts.slice().sort((a, b) => b.likes_count - a.likes_count).slice(0, 3);
+  if (topPosts.length === 0 && streams.length === 0) return null;
+
   return (
     <div className="px-4 pb-3">
       <div className="flex items-center gap-2 mb-2">
         <Icon name="TrendingUp" size={13} className="text-orange-400" />
         <span className="text-white/60 text-xs font-medium">В тренде</span>
       </div>
-      <div className="flex gap-2">
-        {top.map((p) => (
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        {/* Live-стримеры идут первыми */}
+        {streams.map((s) => (
+          <button key={`live-${s.id}`} onClick={() => onJoinLive?.(s)}
+            className="relative rounded-xl overflow-hidden flex-shrink-0 active:scale-95 transition-transform"
+            style={{ width: 80, height: 80 }}>
+            <img src={s.author_photo || FALLBACK_PHOTO} className="w-full h-full object-cover" />
+            {/* Красная пульсирующая рамка */}
+            <div className="absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 0 0 2px #EF4444" }} />
+            {/* LIVE-кнопка снизу */}
+            <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center py-1.5"
+              style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}>
+              <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse tracking-wide">● LIVE</span>
+            </div>
+          </button>
+        ))}
+
+        {/* Топ посты по лайкам */}
+        {topPosts.map((p) => (
           <div key={p.id} className="relative rounded-xl overflow-hidden flex-shrink-0" style={{ width: 80, height: 80 }}>
             <img src={p.photo_url} className="w-full h-full object-cover" />
             <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-1"

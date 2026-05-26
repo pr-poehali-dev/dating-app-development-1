@@ -13,6 +13,7 @@ interface Props {
   currentUserId: number;
   isPremium: boolean;
   onGoLive: () => void;
+  onJoinLive: (s: LiveStream) => void;
   onLike: (post: Post) => void;
   onComment: (post: Post) => void;
   onDelete: (post: Post) => void;
@@ -24,7 +25,7 @@ interface Props {
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, isPremium,
-  onGoLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
+  onGoLive, onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -40,10 +41,12 @@ export function HomeFeedContent({
       {!loading && (
         <>
           {/* Live streams */}
-          <LiveBadge streams={streams} onJoin={() => onGoLive()} />
+          <LiveBadge streams={streams} onJoin={onJoinLive} />
 
-          {/* Trending */}
-          {posts.length > 0 && <TrendingBadge posts={posts} />}
+          {/* Trending — топ посты + live стримеры */}
+          {(posts.length > 0 || streams.length > 0) && (
+            <TrendingBadge posts={posts} streams={streams} onJoinLive={onJoinLive} />
+          )}
 
           {/* Divider */}
           {(streams.length > 0 || posts.length > 0) && (

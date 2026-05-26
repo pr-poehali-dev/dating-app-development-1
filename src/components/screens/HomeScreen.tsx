@@ -12,9 +12,10 @@ import { NewUsersGridScreen } from "@/components/screens/home/NewUsersGridScreen
 import { StoryUploadSheet } from "@/components/screens/StoryUploadSheet";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
-export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onPremium }: {
+export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGoToChats, onPremium }: {
   currentUser: User;
   onGoLive: () => void;
+  onJoinLive?: (s: LiveStream) => void;
   onGoPhotos?: () => void;
   onOpenChat?: (matchId: number) => void;
   onGoToChats?: () => void;
@@ -166,6 +167,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
           currentUserId={currentUser.id}
           isPremium={!!currentUser.premium}
           onGoLive={onGoLive}
+          onJoinLive={onJoinLive ?? (() => {})}
           onLike={handleLike}
           onComment={(p) => setCommentPost(p)}
           onDelete={(p) => setPosts((prev) => prev.filter((x) => x.id !== p.id))}
