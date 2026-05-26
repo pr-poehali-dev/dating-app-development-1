@@ -89,24 +89,24 @@ export function ProfilePhotoSection({
           </div>
 
           {/* Фото профиля */}
-          <div className="rounded-2xl p-3 flex items-center gap-3"
+          <div className="rounded-2xl overflow-hidden"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="relative flex-shrink-0">
-              <img src={displayPhoto} className="w-16 h-16 rounded-2xl object-cover"
-                style={{ border: "2px solid rgba(255,45,120,0.45)", boxShadow: "0 4px 16px rgba(255,45,120,0.2)" }} />
+            <div className="relative w-full h-32">
+              <img src={displayPhoto} className="w-full h-full object-cover object-top" />
+              <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 30%, rgba(0,0,0,0.75) 100%)" }} />
               {photoUploading && (
-                <div className="absolute inset-0 rounded-2xl flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.55)" }}>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 </div>
               )}
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <span className="text-white/50 text-[10px] uppercase tracking-widest">Фото профиля</span>
-              <button onClick={onAvatarUpload} disabled={photoUploading}
-                className="btn-grad py-2.5 text-sm font-semibold rounded-xl disabled:opacity-50 flex items-center justify-center gap-1.5">
-                <Icon name="Camera" size={14} className="text-white" />
-                Изменить фото
-              </button>
+              <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between">
+                <span className="text-white/60 text-[10px] uppercase tracking-widest">Фото профиля</span>
+                <button onClick={onAvatarUpload} disabled={photoUploading}
+                  className="btn-grad px-4 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5">
+                  <Icon name="Camera" size={13} className="text-white" />
+                  Изменить
+                </button>
+              </div>
             </div>
           </div>
 
@@ -126,56 +126,64 @@ export function ProfilePhotoSection({
                 <Icon name="Loader2" size={24} className="text-white/30 animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
-                {galleryPhotos.map(photo => (
-                  <div key={photo.id} className="aspect-square rounded-xl overflow-hidden relative group">
+              <div className="grid grid-cols-2 gap-2">
+                {galleryPhotos.map((photo, idx) => (
+                  <div key={photo.id} className="relative rounded-2xl overflow-hidden"
+                    style={{ aspectRatio: "4/5" }}>
                     <img src={photo.photo_url} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ background: "rgba(0,0,0,0.4)" }} />
+                    <div className="absolute inset-0"
+                      style={{ background: "linear-gradient(transparent 55%, rgba(0,0,0,0.6) 100%)" }} />
+                    <span className="absolute bottom-2 left-2.5 text-white/50 text-[10px] font-medium">
+                      Фото {idx + 1}
+                    </span>
                     <button
                       onClick={() => onGalleryDelete(photo.id)}
                       disabled={galleryDeleteId === photo.id}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}>
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
+                      style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.12)" }}>
                       {galleryDeleteId === photo.id
-                        ? <Icon name="Loader2" size={11} className="text-white animate-spin" />
-                        : <Icon name="X" size={11} className="text-white" />}
+                        ? <Icon name="Loader2" size={12} className="text-white animate-spin" />
+                        : <Icon name="X" size={12} className="text-white" />}
                     </button>
                   </div>
                 ))}
 
                 {galleryPhotos.length < maxGallery && (
                   <button onClick={onGalleryAdd} disabled={galleryUploading}
-                    className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                    className="rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                     style={{
-                      border: "2px dashed rgba(255,255,255,0.18)",
-                      background: "rgba(255,255,255,0.04)",
+                      aspectRatio: "4/5",
+                      border: "2px dashed rgba(255,255,255,0.15)",
+                      background: "rgba(255,255,255,0.03)",
                     }}>
                     {galleryUploading
-                      ? <Icon name="Loader2" size={22} className="text-white/30 animate-spin" />
+                      ? <Icon name="Loader2" size={24} className="text-white/25 animate-spin" />
                       : <>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center"
                             style={{ background: "rgba(255,255,255,0.08)" }}>
-                            <Icon name="Plus" size={16} className="text-white/40" />
+                            <Icon name="Plus" size={18} className="text-white/35" />
                           </div>
-                          <span className="text-white/30 text-[10px]">Добавить</span>
+                          <span className="text-white/30 text-xs">Добавить</span>
                         </>}
                   </button>
                 )}
 
                 {galleryPhotos.length >= maxGallery && !currentUser.premium && (
                   <button onClick={onPremium}
-                    className="aspect-square rounded-xl flex flex-col items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    className="rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-all"
                     style={{
-                      border: "2px dashed rgba(255,45,120,0.35)",
-                      background: "linear-gradient(135deg, rgba(255,45,120,0.08), rgba(155,89,182,0.08))",
+                      aspectRatio: "4/5",
+                      border: "2px dashed rgba(255,45,120,0.3)",
+                      background: "linear-gradient(135deg, rgba(255,45,120,0.07), rgba(155,89,182,0.07))",
                     }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 10px rgba(255,45,120,0.4)" }}>
-                      <Icon name="Crown" size={15} className="text-white" />
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 12px rgba(255,45,120,0.4)" }}>
+                      <Icon name="Crown" size={17} className="text-white" />
                     </div>
-                    <span className="text-[9px] font-bold text-center leading-tight"
-                      style={{ color: "#FF2D78" }}>Premium<br/>+4 фото</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-xs font-bold" style={{ color: "#FF2D78" }}>Premium</span>
+                      <span className="text-[10px] text-white/35">ещё +4 фото</span>
+                    </div>
                   </button>
                 )}
               </div>
