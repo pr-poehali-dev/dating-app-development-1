@@ -244,31 +244,50 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           />
 
           {/* 2. Premium баннер */}
-          <div className="w-full mt-3 p-4 rounded-2xl cursor-pointer"
-            style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }} onClick={onPremium}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-white font-bold">LoveBloom Premium</span>
-                  <span className="premium-badge">✨ GOLD</span>
+          {!currentUser.premium && (
+            <button className="w-full mt-3 rounded-2xl overflow-hidden active:scale-[0.98] transition-all text-left"
+              onClick={onPremium}
+              style={{
+                background: "linear-gradient(135deg, #FF2D78 0%, #C061FF 50%, #9B59B6 100%)",
+                boxShadow: "0 4px 24px rgba(255,45,120,0.4)",
+              }}>
+              <div className="px-4 py-4 flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold text-base">LoveBloom Premium</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-black"
+                      style={{ background: "rgba(255,255,255,0.25)", color: "white" }}>✨ GOLD</span>
+                  </div>
+                  <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет · Инкогнито</p>
                 </div>
-                <p className="text-white/80 text-xs">Безлимитные лайки · Приоритет в поиске</p>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Icon name="ChevronRight" size={18} className="text-white" />
+                </div>
               </div>
-              <Icon name="ChevronRight" size={20} className="text-white" />
-            </div>
-          </div>
+            </button>
+          )}
 
           {/* 3. О себе */}
-          <div className="glass-card w-full p-4 mt-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white/50 text-xs uppercase tracking-widest">О себе</span>
-              <button onClick={() => setEditOpen(true)} className="text-white/40 hover:text-white transition-colors">
-                <Icon name="Pencil" size={14} />
+          <div className="w-full mt-3 rounded-2xl p-4"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(155,89,182,0.2)" }}>
+                  <Icon name="AlignLeft" size={12} className="text-purple-400" />
+                </div>
+                <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">О себе</span>
+              </div>
+              <button onClick={() => setEditOpen(true)}
+                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.07)" }}>
+                <Icon name="Pencil" size={13} className="text-white/50" />
               </button>
             </div>
             <p className="text-white/70 text-sm leading-relaxed">
               {currentUser.bio || (
-                <span className="text-white/30 italic">Расскажи о себе — нажми «Изменить»</span>
+                <span className="text-white/25 italic">Расскажи о себе — нажми карандаш</span>
               )}
             </p>
             {(currentUser.tags || []).length > 0 && (
@@ -277,7 +296,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               </div>
             )}
             {!(currentUser.tags || []).length && (
-              <button onClick={() => setEditOpen(true)} className="tag-pill border-dashed opacity-50 mt-3">
+              <button onClick={() => setEditOpen(true)}
+                className="mt-3 px-3 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px dashed rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.4)" }}>
                 + Добавить интересы
               </button>
             )}
@@ -295,17 +316,18 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           />
 
           {/* 5. Подписчики и подписки */}
-          <div className="glass-card w-full mt-3 flex items-center">
+          <div className="w-full mt-3 flex gap-2">
             <button onClick={() => setFollowModal("followers")}
-              className="flex-1 flex flex-col items-center py-3 active:bg-white/5 transition-colors rounded-l-2xl">
-              <span className="text-white font-bold text-xl">{currentUser.followers ?? 0}</span>
-              <span className="text-white/40 text-xs mt-0.5">Подписчики</span>
+              className="flex-1 flex flex-col items-center py-4 rounded-2xl active:scale-95 transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <span className="text-white font-black text-2xl leading-none">{currentUser.followers ?? 0}</span>
+              <span className="text-white/40 text-xs mt-1.5 font-medium">Подписчики</span>
             </button>
-            <div className="w-px h-10" style={{ background: "rgba(255,255,255,0.08)" }} />
             <button onClick={() => setFollowModal("following")}
-              className="flex-1 flex flex-col items-center py-3 active:bg-white/5 transition-colors rounded-r-2xl">
-              <span className="text-white font-bold text-xl">{currentUser.following ?? 0}</span>
-              <span className="text-white/40 text-xs mt-0.5">Подписки</span>
+              className="flex-1 flex flex-col items-center py-4 rounded-2xl active:scale-95 transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <span className="text-white font-black text-2xl leading-none">{currentUser.following ?? 0}</span>
+              <span className="text-white/40 text-xs mt-1.5 font-medium">Подписки</span>
             </button>
           </div>
 
@@ -315,8 +337,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {/* 6. Дата регистрации */}
           {currentUser.created_at && (
-            <div className="flex items-center justify-center gap-1.5 mt-4 mb-2">
-              <Icon name="Calendar" size={13} className="text-white/25" />
+            <div className="flex items-center justify-center gap-1.5 mt-4 mb-2 px-4 py-2 rounded-full"
+              style={{ background: "rgba(255,255,255,0.04)" }}>
+              <Icon name="Calendar" size={12} className="text-white/20" />
               <span className="text-white/25 text-xs">
                 Присоединился {(() => {
                   const d = new Date(currentUser.created_at!);
