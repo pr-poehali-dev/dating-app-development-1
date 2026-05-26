@@ -164,13 +164,91 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
 
   return (
     <div className="flex flex-col h-full overflow-y-auto" style={{ background: "linear-gradient(160deg, #1A1625, #2D1B3D)" }}>
+      <style>{`
+        @keyframes premSpin {
+          0%   { background-position: 0% 50%; }
+          25%  { background-position: 100% 0%; }
+          50%  { background-position: 100% 100%; }
+          75%  { background-position: 0% 100%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes premOrbit {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .prem-glow-ring {
+          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #3B82F6, #FF2D78);
+          background-size: 400% 400%;
+          animation: premSpin 5s ease infinite;
+          border-radius: 9999px;
+          padding: 3px;
+          box-shadow: 0 0 50px rgba(255,45,120,0.6), 0 0 100px rgba(155,89,182,0.3);
+        }
+        .prem-glow-inner {
+          background: #1A1625;
+          border-radius: 9999px;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .prem-plan-border {
+          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #FF2D78);
+          background-size: 300% 300%;
+          animation: premSpin 4s ease infinite;
+          border-radius: 18px;
+          padding: 2px;
+        }
+        .prem-plan-border-idle {
+          background: rgba(255,255,255,0.1);
+          border-radius: 18px;
+          padding: 2px;
+        }
+        .prem-plan-inner {
+          background: rgba(10,5,20,0.85);
+          backdrop-filter: blur(12px);
+          border-radius: 16px;
+          width: 100%;
+          height: 100%;
+        }
+        .prem-btn {
+          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #3B82F6, #FF2D78);
+          background-size: 300% 300%;
+          animation: premSpin 4s ease infinite;
+          border-radius: 16px;
+          box-shadow: 0 0 30px rgba(255,45,120,0.5);
+        }
+        .prem-feature-icon {
+          background: linear-gradient(135deg, #FF2D78, #9B59B6, #FF6B35);
+          background-size: 200% 200%;
+          animation: premSpin 5s ease infinite;
+        }
+        .prem-check {
+          background: linear-gradient(135deg, #FF2D78, #FFD700);
+          background-size: 200% 200%;
+          animation: premSpin 4s ease infinite reverse;
+        }
+        .prem-badge {
+          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700);
+          background-size: 200% 200%;
+          animation: premSpin 3s ease infinite;
+          border-radius: 99px;
+          padding: 2px 12px;
+          font-size: 11px;
+          font-weight: 800;
+          color: white;
+          letter-spacing: 0.03em;
+        }
+      `}</style>
       <div className="flex items-center justify-end px-5 pt-5 pb-2">
         <button onClick={onClose} className="text-white/50 hover:text-white transition-colors"><Icon name="X" size={22} /></button>
       </div>
       <div className="flex flex-col items-center px-5 pt-2 pb-6">
-        <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-          style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 0 40px rgba(255,45,120,0.5)" }}>
-          <span className="text-4xl">✨</span>
+        <div className="prem-glow-ring w-20 h-20 mb-4">
+          <div className="prem-glow-inner">
+            <span className="text-4xl">✨</span>
+          </div>
         </div>
         <h2 className="font-unbounded text-white font-black text-2xl text-center mb-2">LoveBloom PREMIUM</h2>
         <p className="text-white/50 text-sm text-center">Знакомься быстрее, находи лучшее</p>
@@ -179,29 +257,25 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
         <div className="flex flex-col gap-3">
           {features.map((f) => (
             <div key={f.label} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.2), rgba(155,89,182,0.2))" }}>
-                <Icon name={f.icon as "Heart" | "Eye" | "Zap" | "RefreshCw" | "Star" | "Shield"} size={15} className="text-pink-400" />
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 prem-feature-icon">
+                <Icon name={f.icon as "Heart" | "Eye" | "Zap" | "RefreshCw" | "Star" | "Shield"} size={15} className="text-white" />
               </div>
               <span className="text-white/80 text-sm">{f.label}</span>
-              <div className="ml-auto w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+              <div className="ml-auto w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 prem-check">
                 <Icon name="Check" size={10} className="text-white" />
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className="mx-5 flex flex-col gap-2.5 mb-5">
+      <div className="mx-5 flex flex-col gap-3 mb-5">
         {plans.map((p, i) => (
           <button key={p.label} onClick={() => setSelected(i)}
-            className="relative p-4 rounded-2xl text-left transition-all"
-            style={selected === i
-              ? { background: "linear-gradient(135deg, rgba(255,45,120,0.2), rgba(155,89,182,0.2))", border: "2px solid #FF2D78" }
-              : { background: "rgba(255,255,255,0.05)", border: "2px solid rgba(255,255,255,0.1)" }}>
+            className={`relative text-left transition-all active:scale-[0.98] ${selected === i ? "prem-plan-border" : "prem-plan-border-idle"}`}>
+            <div className="prem-plan-inner p-4">
             {p.popular && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="premium-badge px-3 py-1">🔥 ВЫГОДНЕЕ ВСЕГО</span>
+                <span className="prem-badge">🔥 ВЫГОДНЕЕ ВСЕГО</span>
               </div>
             )}
             <div className="flex items-center justify-between">
@@ -210,9 +284,10 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
                 {p.total && <p className="text-white/40 text-xs">{p.total} всего</p>}
               </div>
               <div className="text-right">
-                <span className="text-white font-bold text-xl">{p.price}</span>
+                <span className="font-bold text-xl" style={{ background: "linear-gradient(90deg,#FF2D78,#FFD700,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundSize: "200% 100%", animation: "premSpin 4s ease infinite" }}>{p.price}</span>
                 <span className="text-white/50 text-sm">{p.per}</span>
               </div>
+            </div>
             </div>
           </button>
         ))}
@@ -253,7 +328,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
               setPaying(false);
             }
           }}
-          className="btn-grad w-full py-4 text-base font-bold disabled:opacity-60 flex items-center justify-center gap-2">
+          className="prem-btn w-full py-4 text-base font-bold text-white disabled:opacity-60 flex items-center justify-center gap-2">
           {paying
             ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
             : `Оплатить ${plans[selected].total || plans[selected].price}`}
