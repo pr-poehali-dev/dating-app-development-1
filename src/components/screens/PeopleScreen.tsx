@@ -140,23 +140,59 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
               </button>
             </div>
 
+            <style>{`
+              @keyframes gradientSpin {
+                0%   { background-position: 0% 50%; }
+                25%  { background-position: 100% 0%; }
+                50%  { background-position: 100% 100%; }
+                75%  { background-position: 0% 100%; }
+                100% { background-position: 0% 50%; }
+              }
+              .boost-card-1 {
+                background: linear-gradient(135deg, #FF2D78, #FF6B35, #9B59B6, #3B82F6, #FF2D78);
+                background-size: 300% 300%;
+                animation: gradientSpin 4s ease infinite;
+                border: none !important;
+              }
+              .boost-card-2 {
+                background: linear-gradient(135deg, #9B59B6, #FF2D78, #FFD700, #FF6B35, #9B59B6);
+                background-size: 300% 300%;
+                animation: gradientSpin 4s ease infinite reverse;
+                border: none !important;
+              }
+              .boost-inner {
+                background: rgba(10,5,20,0.72);
+                backdrop-filter: blur(12px);
+                border-radius: 14px;
+              }
+              .boost-icon-1 {
+                background: linear-gradient(135deg, #FF2D78, #FF6B35, #9B59B6);
+                background-size: 200% 200%;
+                animation: gradientSpin 3s ease infinite;
+              }
+              .boost-icon-2 {
+                background: linear-gradient(135deg, #9B59B6, #FFD700, #FF2D78);
+                background-size: 200% 200%;
+                animation: gradientSpin 3s ease infinite reverse;
+              }
+            `}</style>
             <div className="px-4 pt-4 flex flex-col gap-3">
               {/* Boost 1 */}
               <button
                 disabled={boostPaying}
                 onClick={() => handleBuyBoost("promote", 350, "Продвижение профиля в сетку")}
-                className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98] disabled:opacity-60"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,45,120,0.25)" }}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                  {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Rocket" size={22} className="text-white" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-sm">Продвинуть профиль</p>
-                  <p className="text-white/45 text-xs mt-0.5">Продвинуть в ближайшую сетку</p>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <p className="text-white font-bold text-base">350 ₽</p>
+                className="w-full rounded-2xl p-[2px] text-left transition-all active:scale-[0.98] disabled:opacity-60 boost-card-1">
+                <div className="boost-inner w-full p-4 flex items-center gap-4 rounded-2xl">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 boost-icon-1">
+                    {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Rocket" size={22} className="text-white" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm">Продвинуть профиль</p>
+                    <p className="text-white/45 text-xs mt-0.5">Продвинуть в ближайшую сетку</p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>350 ₽</p>
+                  </div>
                 </div>
               </button>
 
@@ -164,18 +200,18 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
               <button
                 disabled={boostPaying}
                 onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
-                className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98] disabled:opacity-60"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(155,89,182,0.35)" }}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)" }}>
-                  {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Star" size={22} className="text-white" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-sm">Супер подъём</p>
-                  <p className="text-white/45 text-xs mt-0.5">Выбери людей, которые тебе нравятся</p>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <p className="text-white font-bold text-base">550 ₽</p>
+                className="w-full rounded-2xl p-[2px] text-left transition-all active:scale-[0.98] disabled:opacity-60 boost-card-2">
+                <div className="boost-inner w-full p-4 flex items-center gap-4 rounded-2xl">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 boost-icon-2">
+                    {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Star" size={22} className="text-white" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm">Супер подъём</p>
+                    <p className="text-white/45 text-xs mt-0.5">Выбери людей, которые тебе нравятся</p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>550 ₽</p>
+                  </div>
                 </div>
               </button>
             </div>
