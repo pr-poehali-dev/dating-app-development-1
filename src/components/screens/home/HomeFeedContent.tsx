@@ -1,6 +1,7 @@
 import { LiveBadge, TrendingBadge } from "@/components/screens/HomeFeedWidgets";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NearbyUsersBanner } from "@/components/screens/home/NearbyUsersBanner";
+import { StoriesBar } from "@/components/screens/StoriesBar";
 import { type Post, type LiveStream, type Profile } from "@/lib/api";
 
 const BANNER_AFTER = 2; // показывать баннер после N-го поста
@@ -18,14 +19,18 @@ interface Props {
   onProfileClick: (profile: Profile) => void;
   onPremium: () => void;
   onOpenNewUsers: () => void;
+  onAddStory?: () => void;
 }
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, isPremium,
-  onGoLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers,
+  onGoLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Сторис — всегда вверху */}
+      <StoriesBar currentUserId={currentUserId} onAddStory={onAddStory} />
+
       {loading && (
         <div className="flex items-center justify-center py-20">
           <div className="w-10 h-10 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />

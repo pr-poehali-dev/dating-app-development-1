@@ -9,6 +9,7 @@ import { HomeFeedContent } from "@/components/screens/home/HomeFeedContent";
 import { HomeGiftSheet } from "@/components/screens/home/HomeGiftSheet";
 import { HomeGiftPreview } from "@/components/screens/home/HomeGiftPreview";
 import { NewUsersGridScreen } from "@/components/screens/home/NewUsersGridScreen";
+import { StoryUploadSheet } from "@/components/screens/StoryUploadSheet";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onPremium }: {
@@ -24,7 +25,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
   const [loading, setLoading] = useState(true);
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [showStoryMsg, setShowStoryMsg] = useState(false);
+
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
   const [showNotifs, setShowNotifs] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -34,6 +35,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
   const [giftDone, setGiftDone] = useState<number | null>(null);
   const [giftCategory, setGiftCategory] = useState("heart");
   const [showNewUsers, setShowNewUsers] = useState(false);
+  const [showStoryUpload, setShowStoryUpload] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -131,22 +133,16 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
       {showCreate && (
         <CreateMenu
           onPhoto={() => fileInputRef.current?.click()}
-          onStory={() => setShowStoryMsg(true)}
+          onStory={() => { setShowCreate(false); setShowStoryUpload(true); }}
           onLive={onGoLive}
           onClose={() => setShowCreate(false)}
         />
       )}
-      {showStoryMsg && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-8"
-          style={{ background: "rgba(0,0,0,0.7)" }} onClick={() => setShowStoryMsg(false)}>
-          <div className="glass-card p-6 flex flex-col items-center gap-3 text-center"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="text-4xl">🎬</div>
-            <p className="text-white font-bold">Видеоистории скоро!</p>
-            <p className="text-white/50 text-sm">Функция находится в разработке и появится в следующем обновлении.</p>
-            <button onClick={() => setShowStoryMsg(false)} className="btn-grad px-6 py-2 text-sm font-semibold">Понятно</button>
-          </div>
-        </div>
+      {showStoryUpload && (
+        <StoryUploadSheet
+          onClose={() => setShowStoryUpload(false)}
+          onUploaded={() => setShowStoryUpload(false)}
+        />
       )}
       {showNotifs && (
         <NotificationsSheet
@@ -176,6 +172,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
           onProfileClick={setViewProfile}
           onPremium={() => onPremium?.()}
           onOpenNewUsers={() => setShowNewUsers(true)}
+          onAddStory={() => setShowStoryUpload(true)}
         />
       </div>
 
