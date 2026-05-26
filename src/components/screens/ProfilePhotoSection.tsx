@@ -110,7 +110,7 @@ export function ProfilePhotoSection({
         </button>
         {/* Кнопка сообщения */}
         <button onClick={onOpenChat}
-          className="relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
           style={{
             background: "linear-gradient(135deg, rgba(99,179,237,0.25), rgba(79,134,247,0.2))",
             backdropFilter: "blur(14px)",
@@ -122,7 +122,7 @@ export function ProfilePhotoSection({
 
         {/* Кнопка подарка */}
         <button onClick={onOpenGiftSheet}
-          className="relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
           style={{
             background: "linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,160,0,0.18))",
             backdropFilter: "blur(14px)",
