@@ -87,93 +87,136 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
   );
 
   if (matches.length === 0) return (
-    <div className="flex flex-col h-full items-center justify-center gap-4 px-8 text-center">
-      <div className="text-6xl">💬</div>
-      <p className="text-white/50 text-sm">Пока нет совпадений.<br />Лайкай анкеты — и скоро появятся!</p>
+    <div className="flex flex-col h-full items-center justify-center gap-5 px-8 text-center">
+      <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl"
+        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        💬
+      </div>
+      <div>
+        <p className="text-white/70 font-semibold text-base mb-1">Нет сообщений</p>
+        <p className="text-white/35 text-sm leading-relaxed">Лайкай анкеты — и скоро появятся совпадения!</p>
+      </div>
     </div>
   );
 
   return (
     <>
       <div className="flex flex-col h-full overflow-y-auto">
-        <div className="px-5 pt-5 pb-3">
-          <h2 className="text-white font-golos font-bold text-2xl">Сообщения</h2>
+        {/* Шапка */}
+        <div className="px-4 pt-5 pb-3 flex items-center justify-between flex-shrink-0"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div>
+            <h2 className="text-white font-bold text-2xl leading-tight">Сообщения</h2>
+            <p className="text-white/35 text-xs mt-0.5">{matches.length} {matches.length === 1 ? "диалог" : matches.length < 5 ? "диалога" : "диалогов"}</p>
+          </div>
+          <div className="w-8 h-8 rounded-2xl flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.07)" }}>
+            <Icon name="MessageCircle" size={16} className="text-white/50" />
+          </div>
         </div>
-        <div className="px-5 flex-1">
-          <div className="flex flex-col gap-1">
-            {matches.map((m) => (
+
+        {/* Список чатов */}
+        <div className="px-3 pt-3 flex flex-col gap-0.5 flex-1">
+          {matches.map((m) => {
+            const lastMsgText = !m.last_msg
+              ? "Совпадение! Напиши первым 👋"
+              : m.last_msg.startsWith("__AUDIO__") ? "🎤 Голосовое"
+              : m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i) ? "📷 Фото"
+              : m.last_msg === "__REQUEST_PHOTO__" ? "🔐 Запрос фото"
+              : m.last_msg === "__GRANT_PHOTO__" ? "🖼️ Доступ к фото"
+              : m.last_msg.startsWith("__LOC__") ? "📍 Геолокация"
+              : m.last_msg.startsWith("__GIFT__") ? "🎁 Подарок"
+              : m.last_msg.startsWith("__VIDEOCIRCLE__") ? "⭕ Видео-кружок"
+              : m.last_msg;
+
+            const timeStr = m.last_msg_time
+              ? new Date(m.last_msg_time).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
+              : "";
+
+            return (
               <SwipeToDelete key={m.match_id} onDelete={() => setConfirmDelete(m)}>
                 <button onClick={() => onChat(m.match_id)}
-                  className="glass-card p-4 flex items-center gap-3 w-full text-left hover:bg-white/10 transition-all">
+                  className="w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
+                  style={m.unread_count > 0 ? { background: "rgba(255,45,120,0.07)" } : {}}>
+
+                  {/* Аватар */}
                   <div className="relative flex-shrink-0">
-                    <img src={m.photo_url || FALLBACK_PHOTO} className="w-12 h-12 rounded-full object-cover" />
-                    {m.online && <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2" style={{ borderColor: "var(--spark-dark)" }} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white font-semibold text-sm">{m.name}{m.age ? `, ${m.age}` : ""}</span>
-                      <span className="text-white/40 text-xs">{m.last_msg_time ? new Date(m.last_msg_time).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' }) : ""}</span>
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden"
+                      style={m.unread_count > 0 ? { boxShadow: "0 0 0 2px rgba(255,45,120,0.5)" } : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }}>
+                      <img src={m.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover" />
                     </div>
-                    <p className="text-white/50 text-sm truncate mt-0.5">
-                      {!m.last_msg
-                        ? "Совпадение! Напиши первым 👋"
-                        : m.last_msg.startsWith("__AUDIO__")
-                          ? "🎤 Голосовое сообщение"
-                          : m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i)
-                            ? "📷 Фото"
-                            : m.last_msg === "__REQUEST_PHOTO__"
-                              ? "🔐 Запрос доступа к фото"
-                              : m.last_msg === "__GRANT_PHOTO__"
-                                ? "🖼️ Открыт доступ к фото"
-                                : m.last_msg.startsWith("__LOC__")
-                                  ? "📍 Геолокация"
-                                  : m.last_msg.startsWith("__GIFT__")
-                                    ? "🎁 Подарок"
-                                    : m.last_msg.startsWith("__VIDEOCIRCLE__")
-                                      ? "⭕ Видео-кружок"
-                                      : m.last_msg}
+                    {m.online && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400"
+                        style={{ border: "2px solid #0f0a1a", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }} />
+                    )}
+                  </div>
+
+                  {/* Текст */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-white font-bold text-sm truncate">
+                        {m.name}{m.age ? `, ${m.age}` : ""}
+                      </span>
+                      <span className={`text-xs flex-shrink-0 ml-2 ${m.unread_count > 0 ? "text-pink-400" : "text-white/30"}`}>
+                        {timeStr}
+                      </span>
+                    </div>
+                    <p className={`text-sm truncate ${m.unread_count > 0 ? "text-white/75 font-medium" : "text-white/35"}`}>
+                      {lastMsgText}
                     </p>
                   </div>
+
+                  {/* Бейдж непрочитанных */}
                   {m.unread_count > 0 && (
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>{m.unread_count}</div>
+                    <div className="min-w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] text-white font-black flex-shrink-0 px-1.5"
+                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.5)" }}>
+                      {m.unread_count > 99 ? "99+" : m.unread_count}
+                    </div>
                   )}
                 </button>
               </SwipeToDelete>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Диалог подтверждения удаления */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
           onClick={() => setConfirmDelete(null)}>
-          <div className="w-full max-w-sm rounded-t-3xl pb-8 px-5 pt-5"
-            style={{ background: "var(--spark-dark2,#1a1625)" }}
+          <div className="w-full max-w-sm flex flex-col"
+            style={{
+              background: "linear-gradient(180deg,#1e1830 0%,#17112a 100%)",
+              borderRadius: "32px 32px 0 0",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderBottom: "none",
+              padding: "12px 20px 36px",
+            }}
             onClick={e => e.stopPropagation()}>
+            <div className="flex justify-center mb-4">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+            </div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={confirmDelete.photo_url || FALLBACK_PHOTO} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+              <img src={confirmDelete.photo_url || FALLBACK_PHOTO}
+                className="w-12 h-12 rounded-2xl object-cover flex-shrink-0" />
               <div>
                 <p className="text-white font-bold text-base">{confirmDelete.name}</p>
-                <p className="text-white/40 text-xs">Удалить переписку и совпадение?</p>
+                <p className="text-white/40 text-xs">Удалить переписку?</p>
               </div>
             </div>
-            <p className="text-white/50 text-sm mb-5 leading-relaxed">
-              Чат и все сообщения будут удалены у обоих участников. Это действие нельзя отменить.
+            <p className="text-white/45 text-sm mb-5 leading-relaxed">
+              Чат и все сообщения будут удалены у обоих участников. Это нельзя отменить.
             </p>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="w-full py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 mb-2 disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
+            <button onClick={handleDelete} disabled={deleting}
+              className="w-full py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 mb-2 disabled:opacity-50 active:scale-[0.98] transition-all"
+              style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 16px rgba(220,38,38,0.35)" }}>
               {deleting
                 ? <><Icon name="Loader2" size={16} className="animate-spin" />Удаление...</>
                 : <><Icon name="Trash2" size={16} />Удалить чат</>}
             </button>
             <button onClick={() => setConfirmDelete(null)}
-              className="w-full py-3 rounded-2xl text-white/50 text-sm font-medium"
+              className="w-full py-3 rounded-2xl text-white/50 text-sm font-medium active:scale-[0.98] transition-all"
               style={{ background: "rgba(255,255,255,0.07)" }}>
               Отмена
             </button>
