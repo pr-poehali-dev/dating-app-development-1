@@ -129,7 +129,9 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
                                   ? "📍 Геолокация"
                                   : m.last_msg.startsWith("__GIFT__")
                                     ? "🎁 Подарок"
-                                    : m.last_msg}
+                                    : m.last_msg.startsWith("__VIDEOCIRCLE__")
+                                      ? "⭕ Видео-кружок"
+                                      : m.last_msg}
                     </p>
                   </div>
                   {m.unread_count > 0 && (
