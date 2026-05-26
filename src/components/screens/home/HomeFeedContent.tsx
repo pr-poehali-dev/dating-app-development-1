@@ -44,18 +44,14 @@ export function HomeFeedContent({
             <TrendingBadge posts={posts} streams={streams} onJoinLive={onJoinLive} />
           )}
 
-          {/* Divider */}
-          {(streams.length > 0 || posts.length > 0) && (
-            <div className="mx-4 mb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} />
-          )}
-
           {/* Feed */}
           {posts.length === 0 ? (
             <>
               <div className="flex flex-col items-center justify-center py-10 gap-4 px-8">
-                <div className="text-6xl">📸</div>
-                <p className="text-white/50 text-sm text-center">
-                  Лента пока пуста.<br />Публикуй фото во вкладке «Фото» — они появятся здесь!
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-4xl mb-1"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>📸</div>
+                <p className="text-white/45 text-sm text-center leading-relaxed">
+                  Лента пока пуста.<br />Публикуй фото — они появятся здесь!
                 </p>
               </div>
               {/* Баннер если постов нет — показываем сразу */}
