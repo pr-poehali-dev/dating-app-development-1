@@ -134,6 +134,15 @@ def handler(event: dict, context) -> dict:
                 cur.execute(q, (me['id'], clr) if clr else (me['id'],))
                 all_notifs += [{'type': 'subscription', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3])} for r in cur.fetchall()]
 
+            # Просмотры историй (всегда показываем)
+            q = (
+                "SELECT n.from_user_id, u.name, u.photo_url, n.created_at, n.ref_id "
+                "FROM notifications n JOIN users u ON u.id = n.from_user_id "
+                f"WHERE n.user_id = %s AND n.type = 'story_view' {clr_filter_n} ORDER BY n.created_at DESC LIMIT 30"
+            )
+            cur.execute(q, (me['id'], clr) if clr else (me['id'],))
+            all_notifs += [{'type': 'story_view', 'from_user_id': r[0], 'name': r[1], 'photo_url': r[2], 'created_at': str(r[3]), 'ref_id': r[4]} for r in cur.fetchall()]
+
             # Уведомления верификации (всегда показываем)
             q = (
                 "SELECT n.type, n.created_at FROM notifications n "

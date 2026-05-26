@@ -91,6 +91,23 @@ def handler(event: dict, context) -> dict:
     view_id = params.get("view")
     if view_id:
         cur.execute(f"UPDATE {SCHEMA}.stories SET views = views + 1 WHERE id = %s AND expires_at > NOW()", (view_id,))
+        # Уведомление автору истории (только если смотрит другой пользователь)
+        viewer = get_user(cur, token)
+        if viewer:
+            cur.execute(f"SELECT user_id FROM {SCHEMA}.stories WHERE id = %s AND expires_at > NOW()", (view_id,))
+            story_owner = cur.fetchone()
+            if story_owner and story_owner[0] != viewer[0]:
+                # Не спамим: не больше 1 уведомления от одного зрителя за 1 час
+                cur.execute(
+                    f"SELECT id FROM {SCHEMA}.notifications WHERE user_id = %s AND type = 'story_view' "
+                    f"AND from_user_id = %s AND created_at > NOW() - INTERVAL '1 hour'",
+                    (story_owner[0], viewer[0])
+                )
+                if not cur.fetchone():
+                    cur.execute(
+                        f"INSERT INTO {SCHEMA}.notifications (user_id, type, from_user_id, ref_id) VALUES (%s, 'story_view', %s, %s)",
+                        (story_owner[0], viewer[0], view_id)
+                    )
         conn.commit()
 
     cur.execute(f"""
