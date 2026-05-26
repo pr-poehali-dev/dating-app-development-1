@@ -607,13 +607,11 @@ def handler(event: dict, context) -> dict:
             profile = dict(zip(cols, row))
             profile['created_at'] = str(profile['created_at'])
             profile['last_seen'] = str(profile['last_seen']) if profile['last_seen'] else None
-            # Подписчики = кто лайкнул, подписки = кого лайкнул
-            cur.execute("SELECT COUNT(*) FROM likes WHERE liked_id = %s", (uid,))
-            followers = cur.fetchone()[0]
-            cur.execute("SELECT COUNT(*) FROM likes WHERE liker_id = %s", (uid,))
-            following = cur.fetchone()[0]
-            profile['followers'] = followers
-            profile['following'] = following
+            # Подписчики и подписки из user_subscriptions
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (uid,))
+            profile['followers'] = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (uid,))
+            profile['following'] = cur.fetchone()[0]
             cur.execute("""
                 SELECT id, photo_url, caption, created_at,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = posts.id) as likes_count,

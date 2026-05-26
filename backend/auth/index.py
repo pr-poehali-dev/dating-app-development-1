@@ -101,11 +101,11 @@ def handler(event: dict, context) -> dict:
             cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
             user = dict(zip(cols, row))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
-            # Подписчики и подписки
+            # Подписчики и подписки из user_subscriptions
             user_id = user['id']
-            cur.execute("SELECT COUNT(*) FROM likes WHERE to_user_id = %s", (user_id,))
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
             user['followers'] = cur.fetchone()[0]
-            cur.execute("SELECT COUNT(*) FROM likes WHERE from_user_id = %s", (user_id,))
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (user_id,))
             user['following'] = cur.fetchone()[0]
             # Email verification status
             cur.execute(
