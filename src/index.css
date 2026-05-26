@@ -616,7 +616,9 @@ html.light .border-t-transparent {
   font-size: 15px;
   line-height: 1.55;
   box-shadow: 0 2px 12px rgba(255, 45, 120, 0.35);
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: pre-wrap;
 }
 .msg-bubble-in {
   background: rgba(255, 255, 255, 0.09);
@@ -628,7 +630,9 @@ html.light .border-t-transparent {
   align-self: flex-start;
   font-size: 15px;
   line-height: 1.55;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
+  white-space: pre-wrap;
 }
 
 /* Scrollbar */

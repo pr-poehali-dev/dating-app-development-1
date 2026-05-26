@@ -163,16 +163,29 @@ function VanishPhoto({ url, out }: { url: string; out: boolean }) {
             onClick={() => setLightbox(true)} />
         ) : (
           <div
-            className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer active:scale-95 transition-all"
-            style={{ background: "rgba(255,45,120,0.15)", border: "1.5px solid rgba(255,45,120,0.4)" }}
+            className="flex items-center gap-3 px-3 py-3 rounded-2xl cursor-pointer active:scale-95 transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,45,120,0.18), rgba(155,89,182,0.15))",
+              border: "1.5px solid rgba(255,45,120,0.35)",
+              boxShadow: "0 4px 16px rgba(255,45,120,0.12)",
+              minWidth: 190,
+            }}
             onClick={() => !out && setOpened(true)}>
-            <div className="w-10 h-10 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(255,45,120,0.3)", border: "1.5px solid rgba(255,45,120,0.5)" }}>
-              <Icon name="Timer" size={20} className="text-pink-400" />
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                boxShadow: "0 3px 10px rgba(255,45,120,0.45)",
+              }}>
+              <Icon name="Lock" size={16} className="text-white" />
             </div>
-            <span className="text-white text-xs font-medium">
-              {out ? "Нажми чтобы посмотреть" : "Нажми чтобы открыть"}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-white text-[13px] font-semibold leading-tight">
+                Приватное фото
+              </span>
+              <span className="text-[11px]" style={{ color: "rgba(255,45,120,0.9)" }}>
+                {out ? "Ожидает просмотра" : "Нажми, чтобы открыть →"}
+              </span>
+            </div>
           </div>
         )}
         {opened && !out && (

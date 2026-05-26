@@ -6,7 +6,7 @@ interface Props {
   out: boolean;
 }
 
-const BARS = 32;
+const BARS = 28;
 
 function formatTime(s: number) {
   if (!isFinite(s) || s < 0) s = 0;
@@ -16,16 +16,14 @@ function formatTime(s: number) {
 }
 
 function generateWaveform(seed: string): number[] {
-  // Псевдослучайные высоты на основе url — стабильны для одного сообщения
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   const out: number[] = [];
   for (let i = 0; i < BARS; i++) {
     hash = (hash * 1664525 + 1013904223) >>> 0;
     const v = (hash & 0xffff) / 0xffff;
-    // больше "горбов" в середине
     const middleBoost = 1 - Math.abs(i - BARS / 2) / (BARS / 2);
-    out.push(0.25 + v * 0.55 + middleBoost * 0.2);
+    out.push(0.2 + v * 0.5 + middleBoost * 0.3);
   }
   return out;
 }
@@ -68,8 +66,7 @@ export default function VoiceMessage({ url, out }: Props) {
     const a = audioRef.current;
     if (!a) return;
     if (playing) {
-      a.pause();
-      setPlaying(false);
+      a.pause(); setPlaying(false);
     } else {
       a.playbackRate = speed;
       a.play().then(() => { setPlaying(true); setPlayed(true); }).catch(() => {});
@@ -94,66 +91,65 @@ export default function VoiceMessage({ url, out }: Props) {
   const progress = duration ? current / duration : 0;
   const shownTime = playing || current > 0 ? current : duration;
 
-  // Цвета для исходящих и входящих
-  const playBg = out
-    ? "linear-gradient(135deg,#FF2D78,#9B59B6)"
-    : "linear-gradient(135deg,#FF2D78,#9B59B6)";
-  const playedColor = out ? "#FFFFFF" : "#FF2D78";
-  const unplayedColor = out ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.28)";
+  const activeColor = out ? "rgba(255,255,255,0.9)" : "#FF2D78";
+  const inactiveColor = out ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.22)";
 
   return (
-    <div className="flex items-center gap-2.5 px-1 py-1" style={{ minWidth: 220, maxWidth: 260 }}>
-      {/* Кнопка Play/Pause */}
+    <div className="flex items-center gap-3" style={{ minWidth: 210, maxWidth: 250 }}>
+      {/* Play/Pause */}
       <button
         onClick={toggle}
         disabled={!loaded}
-        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform disabled:opacity-50"
-        style={{ background: playBg, boxShadow: "0 4px 12px rgba(255,45,120,0.35)" }}>
-        {!loaded ? (
-          <Icon name="Loader2" size={16} className="text-white animate-spin" />
-        ) : (
-          <Icon name={playing ? "Pause" : "Play"} size={16} className="text-white" />
-        )}
+        className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform disabled:opacity-40"
+        style={{
+          background: out
+            ? "rgba(255,255,255,0.22)"
+            : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+          boxShadow: out ? "none" : "0 3px 10px rgba(255,45,120,0.4)",
+        }}>
+        {!loaded
+          ? <Icon name="Loader2" size={15} className="text-white animate-spin" />
+          : <Icon name={playing ? "Pause" : "Play"} size={15} className="text-white" style={{ marginLeft: playing ? 0 : 2 }} />
+        }
       </button>
 
-      <div className="flex-1 flex flex-col gap-1 min-w-0">
-        {/* Waveform */}
-        <div
-          className="relative h-7 flex items-center gap-[2px] cursor-pointer"
-          onClick={seek}>
+      {/* Waveform + meta */}
+      <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+        {/* Bars */}
+        <div className="flex items-end gap-[2.5px] h-6 cursor-pointer" onClick={seek}>
           {bars.current.map((h, i) => {
-            const barProgress = (i + 1) / BARS;
-            const active = barProgress <= progress;
+            const active = (i + 1) / BARS <= progress;
             return (
-              <div
-                key={i}
-                className="flex-1 rounded-full transition-colors"
+              <div key={i} className="flex-1 rounded-full transition-colors duration-75"
                 style={{
-                  height: `${Math.max(15, h * 100)}%`,
-                  background: active ? playedColor : unplayedColor,
+                  height: `${Math.round(Math.max(20, h * 100))}%`,
+                  background: active ? activeColor : inactiveColor,
                   minWidth: 2,
-                }}
-              />
+                }} />
             );
           })}
         </div>
 
-        {/* Низ: время + микро-иконка + скорость */}
+        {/* Bottom row */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Icon name="Mic" size={10} className={out ? "text-white/70" : "text-pink-400"} />
-            <span className={`text-[11px] font-mono ${out ? "text-white/80" : "text-white/70"}`}>
+          <div className="flex items-center gap-1">
+            {!played && !out && (
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ background: "#FF2D78", boxShadow: "0 0 4px #FF2D78" }} />
+            )}
+            <span className="text-[11px] font-mono tabular-nums"
+              style={{ color: out ? "rgba(255,255,255,0.65)" : "rgba(255,255,255,0.55)" }}>
               {formatTime(shownTime)}
             </span>
-            {!played && !out && (
-              <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
-            )}
           </div>
           {(playing || current > 0) && (
             <button onClick={changeSpeed}
-              className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white/80"
-              style={{ background: "rgba(255,255,255,0.15)" }}>
-              {speed}x
+              className="px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-opacity active:opacity-60"
+              style={{
+                background: out ? "rgba(255,255,255,0.18)" : "rgba(255,45,120,0.2)",
+                color: out ? "rgba(255,255,255,0.8)" : "#FF2D78",
+              }}>
+              {speed}×
             </button>
           )}
         </div>
