@@ -502,6 +502,7 @@ export interface Profile {
   relationship_status?: string;
   show_age?: boolean;
   boosted?: boolean;
+  username?: string;
 }
 
 export interface LikedBy {

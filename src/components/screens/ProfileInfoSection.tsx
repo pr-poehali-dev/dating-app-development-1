@@ -73,6 +73,9 @@ export function ProfileInfoSection({
             {currentProfile.name}{currentProfile.age ? `, ${currentProfile.age}` : ""}
             {currentProfile.verified && <span className="text-blue-400 text-base">✓</span>}
           </h2>
+          {currentProfile.username && (
+            <p className="text-white/40 text-xs mt-0.5">@{currentProfile.username}</p>
+          )}
           {currentProfile.city && (
             <p className="text-white/60 text-sm flex items-center gap-1 mt-0.5">
               <Icon name="MapPin" size={13} />{currentProfile.city}
