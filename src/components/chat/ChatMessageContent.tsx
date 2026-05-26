@@ -431,5 +431,56 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   if (text.startsWith("__GIFT__")) {
     return <ChatGiftMessage text={text} out={out} />;
   }
+  if (text === "❤️") {
+    return <HeartMessage />;
+  }
   return <span>{text}</span>;
+}
+
+// ─── HeartMessage ──────────────────────────────────────────────────────────────
+function HeartMessage() {
+  const [popped, setPopped] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPopped(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center py-1 px-2 select-none"
+      style={{ minWidth: 72 }}>
+      <div className="relative flex items-center justify-center" style={{ width: 72, height: 72 }}>
+        {/* Пульсирующее свечение */}
+        <div className="absolute inset-0 rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgba(255,45,120,0.35) 0%, transparent 70%)",
+            animation: "heartGlow 1.8s ease-in-out infinite",
+          }} />
+        {/* Частицы */}
+        {popped && [0, 51, 103, 154, 205, 257, 308].map((deg, i) => (
+          <span key={i} className="absolute rounded-full pointer-events-none"
+            style={{
+              width: i % 2 === 0 ? 6 : 4,
+              height: i % 2 === 0 ? 6 : 4,
+              background: i % 3 === 0 ? "#FF2D78" : i % 3 === 1 ? "#FF8FAB" : "#FFB3CC",
+              top: "50%", left: "50%",
+              transform: `rotate(${deg}deg) translateY(-${28 + (i % 3) * 6}px) translate(-50%, -50%)`,
+              animation: "heartParticlePop 0.7s cubic-bezier(0.22,1,0.36,1) forwards",
+              animationDelay: `${i * 30}ms`,
+            }} />
+        ))}
+        {/* Само сердце */}
+        <span style={{
+          fontSize: 48,
+          lineHeight: 1,
+          display: "block",
+          animation: popped
+            ? "heartPop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards, heartBeat 1.4s ease-in-out 0.6s infinite"
+            : "none",
+          filter: "drop-shadow(0 0 12px rgba(255,45,120,0.8)) drop-shadow(0 2px 8px rgba(255,45,120,0.5))",
+          transform: popped ? undefined : "scale(0)",
+        }}>❤️</span>
+      </div>
+    </div>
+  );
 }
