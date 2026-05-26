@@ -501,6 +501,7 @@ export interface Profile {
   weight?: number;
   relationship_status?: string;
   show_age?: boolean;
+  boosted?: boolean;
 }
 
 export interface LikedBy {

@@ -85,9 +85,17 @@ export function PeopleGrid({
                 </div>
               )}
 
+              {/* Boosted badge */}
+              {p.boosted && !isLocked && (
+                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 0 6px rgba(255,45,120,0.7)" }}>
+                  <Icon name="Zap" size={10} className="text-white" />
+                </div>
+              )}
+
               {/* Online dot */}
               {p.online && !isLocked && (
-                <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-green-400"
+                <div className={`absolute w-2.5 h-2.5 rounded-full bg-green-400 ${p.boosted ? "top-2 right-8" : "top-2 right-2"}`}
                   style={{ border: "1.5px solid rgba(0,0,0,0.5)", boxShadow: "0 0 4px #4ADE80" }} />
               )}
 
