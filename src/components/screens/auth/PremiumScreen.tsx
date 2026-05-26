@@ -270,7 +270,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
           className="prem-btn w-full py-4 text-base font-black text-white disabled:opacity-60 flex items-center justify-center gap-2">
           {paying
             ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
-            : `✨ Оплатить ${plans[selected].total || plans[selected].price}`
+            : `Оплатить ${plans[selected].total || plans[selected].price}`
           }
         </button>
         <p className="text-white/20 text-xs text-center mt-3 leading-relaxed">
