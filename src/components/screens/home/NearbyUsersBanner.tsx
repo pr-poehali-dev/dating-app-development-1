@@ -6,12 +6,13 @@ interface Props {
   isPremium: boolean;
   onProfile: (p: Profile) => void;
   onPremium: () => void;
+  onOpenGrid: () => void;
 }
 
 const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 3;
 
-export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
+export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid }: Props) {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribed, setSubscribed] = useState<Record<number, boolean>>({});
@@ -64,16 +65,21 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium }: Props) {
       style={{ background: "linear-gradient(160deg, rgba(255,45,120,0.07) 0%, rgba(155,89,182,0.07) 100%)", border: "1px solid rgba(255,255,255,0.09)" }}>
 
       {/* Заголовок */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+      <button
+        onClick={onOpenGrid}
+        className="flex items-center justify-between px-4 pt-4 pb-3 w-full active:opacity-70 transition-opacity">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full flex items-center justify-center"
             style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-            <Icon name="MapPin" size={11} className="text-white" />
+            <Icon name="Sparkles" size={11} className="text-white" />
           </div>
-          <p className="text-white font-bold text-sm">Новые пользователи рядом с тобой</p>
+          <p className="text-white font-bold text-sm">Новые пользователи</p>
         </div>
-
-      </div>
+        <div className="flex items-center gap-1 text-pink-400">
+          <span className="text-xs font-semibold">Смотреть все</span>
+          <Icon name="ChevronRight" size={14} />
+        </div>
+      </button>
 
       {/* Горизонтальный скролл карточек */}
       <div className="relative pb-4">

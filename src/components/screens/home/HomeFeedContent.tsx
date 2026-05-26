@@ -17,11 +17,12 @@ interface Props {
   onDelete: (post: Post) => void;
   onProfileClick: (profile: Profile) => void;
   onPremium: () => void;
+  onOpenNewUsers: () => void;
 }
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, isPremium,
-  onGoLive, onLike, onComment, onDelete, onProfileClick, onPremium,
+  onGoLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -58,6 +59,7 @@ export function HomeFeedContent({
                 isPremium={isPremium}
                 onProfile={onProfileClick}
                 onPremium={onPremium}
+                onOpenGrid={onOpenNewUsers}
               />
             </>
           ) : (
@@ -77,6 +79,7 @@ export function HomeFeedContent({
                     isPremium={isPremium}
                     onProfile={onProfileClick}
                     onPremium={onPremium}
+                    onOpenGrid={onOpenNewUsers}
                   />
                 )}
               </div>

@@ -138,6 +138,7 @@ def handler(event: dict, context) -> dict:
             lon = params.get('lon', '')
             radius_km = int(params.get('radius_km', 0))
             online_only = params.get('online_only', '') == '1'
+            new_only = params.get('new_only', '') == '1'
 
             conditions = [f"u.id != {me['id']}",
                           f"(u.age IS NULL OR u.age BETWEEN {age_min} AND {age_max})",
@@ -170,7 +171,7 @@ def handler(event: dict, context) -> dict:
                 conditions.append("u.online = TRUE")
 
             geo_select = ""
-            geo_order = "u.last_seen DESC"
+            geo_order = "u.created_at DESC" if new_only else "u.last_seen DESC"
             if lat and lon and radius_km > 0:
                 try:
                     lat_f, lon_f = float(lat), float(lon)

@@ -8,6 +8,7 @@ import { HomeHeader } from "@/components/screens/home/HomeHeader";
 import { HomeFeedContent } from "@/components/screens/home/HomeFeedContent";
 import { HomeGiftSheet } from "@/components/screens/home/HomeGiftSheet";
 import { HomeGiftPreview } from "@/components/screens/home/HomeGiftPreview";
+import { NewUsersGridScreen } from "@/components/screens/home/NewUsersGridScreen";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onPremium }: {
@@ -32,6 +33,7 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
   const [giftPreview, setGiftPreview] = useState<number | null>(null);
   const [giftDone, setGiftDone] = useState<number | null>(null);
   const [giftCategory, setGiftCategory] = useState("heart");
+  const [showNewUsers, setShowNewUsers] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -173,8 +175,19 @@ export function HomeScreen({ currentUser, onGoLive, onOpenChat, onGoToChats, onP
           onDelete={(p) => setPosts((prev) => prev.filter((x) => x.id !== p.id))}
           onProfileClick={setViewProfile}
           onPremium={() => onPremium?.()}
+          onOpenNewUsers={() => setShowNewUsers(true)}
         />
       </div>
+
+      {/* Сетка новых пользователей */}
+      {showNewUsers && (
+        <NewUsersGridScreen
+          isPremium={!!currentUser.premium}
+          onProfile={setViewProfile}
+          onPremium={() => { setShowNewUsers(false); onPremium?.(); }}
+          onBack={() => setShowNewUsers(false)}
+        />
+      )}
 
       {/* Превью подарка */}
       {giftPreview !== null && (
