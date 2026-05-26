@@ -166,7 +166,6 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           streams={streams}
           currentUserId={currentUser.id}
           isPremium={!!currentUser.premium}
-          onGoLive={onGoLive}
           onJoinLive={onJoinLive ?? (() => {})}
           onLike={handleLike}
           onComment={(p) => setCommentPost(p)}

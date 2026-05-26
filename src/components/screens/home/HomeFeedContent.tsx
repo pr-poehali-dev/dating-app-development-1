@@ -1,4 +1,4 @@
-import { LiveBadge, TrendingBadge } from "@/components/screens/HomeFeedWidgets";
+import { TrendingBadge } from "@/components/screens/HomeFeedWidgets";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NearbyUsersBanner } from "@/components/screens/home/NearbyUsersBanner";
 import { StoriesBar } from "@/components/screens/StoriesBar";
@@ -12,7 +12,6 @@ interface Props {
   streams: LiveStream[];
   currentUserId: number;
   isPremium: boolean;
-  onGoLive: () => void;
   onJoinLive: (s: LiveStream) => void;
   onLike: (post: Post) => void;
   onComment: (post: Post) => void;
@@ -25,7 +24,7 @@ interface Props {
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, isPremium,
-  onGoLive, onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
+  onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -40,9 +39,6 @@ export function HomeFeedContent({
 
       {!loading && (
         <>
-          {/* Live streams */}
-          <LiveBadge streams={streams} onJoin={onJoinLive} />
-
           {/* Trending — топ посты + live стримеры */}
           {(posts.length > 0 || streams.length > 0) && (
             <TrendingBadge posts={posts} streams={streams} onJoinLive={onJoinLive} />
