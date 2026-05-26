@@ -482,6 +482,7 @@ export interface User {
   following?: number;
   cover_url?: string;
   email_verified?: boolean;
+  show_age?: boolean;
 }
 
 export interface Profile {
@@ -499,6 +500,7 @@ export interface Profile {
   height?: number;
   weight?: number;
   relationship_status?: string;
+  show_age?: boolean;
 }
 
 export interface LikedBy {

@@ -184,14 +184,14 @@ def handler(event: dict, context) -> dict:
 
             where_clause = " AND ".join(conditions)
             cur.execute(f"""
-                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium, u.height, u.weight, u.relationship_status, u.last_seen{geo_select}
+                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium, u.height, u.weight, u.relationship_status, u.last_seen, u.show_age{geo_select}
                 FROM users u
                 WHERE {where_clause}
                 ORDER BY {geo_order}
                 LIMIT 60
             """)
             rows = cur.fetchall()
-            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium', 'height', 'weight', 'relationship_status', 'last_seen']
+            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium', 'height', 'weight', 'relationship_status', 'last_seen', 'show_age']
             if geo_select:
                 cols.append('distance_km')
             profiles_list = []
@@ -201,6 +201,9 @@ def handler(event: dict, context) -> dict:
                     item['distance_km'] = round(float(item['distance_km']), 1)
                 if item.get('last_seen'):
                     item['last_seen'] = str(item['last_seen'])
+                # Скрыть возраст если пользователь отключил его показ
+                if not item.get('show_age', True):
+                    item['age'] = None
                 profiles_list.append(item)
             return resp(200, {'profiles': profiles_list})
 
@@ -225,6 +228,11 @@ def handler(event: dict, context) -> dict:
                     fields.append(f"{key} = %s")
                     values.append(body[key])
             # tags — передаём как PostgreSQL text[]
+            # boolean fields
+            for bool_key in ['show_age']:
+                if bool_key in body:
+                    fields.append(f"{bool_key} = %s")
+                    values.append(bool(body[bool_key]))
             if 'tags' in body:
                 tags_val = body['tags']
                 if isinstance(tags_val, list):

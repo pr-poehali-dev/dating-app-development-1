@@ -99,14 +99,20 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [appear, setAppear] = useState(() => {
     try {
       const saved = localStorage.getItem("appear_settings");
-      return saved ? JSON.parse(saved) : { compactCards: false, showAge: true };
-    } catch { return { compactCards: false, showAge: true }; }
+      const base = saved ? JSON.parse(saved) : { compactCards: false, showAge: true };
+      // show_age берём с сервера если есть
+      if (currentUser.show_age !== undefined) base.showAge = currentUser.show_age;
+      return base;
+    } catch { return { compactCards: false, showAge: currentUser.show_age ?? true }; }
   });
 
   const handleAppearToggle = (key: keyof typeof appear) => {
     const next = { ...appear, [key]: !appear[key] };
     setAppear(next);
     localStorage.setItem("appear_settings", JSON.stringify(next));
+    if (key === "showAge") {
+      profilesApi.updateMe({ show_age: next.showAge }).catch(() => {});
+    }
   };
   const [sounds, setSounds] = useState({ messages: true, matches: true, notifications: true });
 
