@@ -109,10 +109,32 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     try {
       const res = await likesApi.send(currentProfile.id);
       setLikedSet(prev => new Set([...prev, currentProfile.id]));
+      let mid = matchId;
       if (res.match && res.match_id) {
+        mid = res.match_id;
         setMatchId(res.match_id);
       }
       onLike(currentProfile);
+      // Отправляем ❤️ в чат и сразу открываем переписку
+      try {
+        const { messagesApi, matchesApi } = await import("@/lib/api");
+        let resolvedMatchId = mid;
+        if (!resolvedMatchId) {
+          const data = await matchesApi.getAll().catch(() => ({ matches: [] }));
+          const m = data.matches.find((x: { partner_id: number; match_id: number }) => x.partner_id === currentProfile.id);
+          if (m) resolvedMatchId = m.match_id;
+        }
+        if (!resolvedMatchId) {
+          const direct = await messagesApi.sendDirect(currentProfile.id, "❤️");
+          resolvedMatchId = direct.match_id;
+        } else {
+          await messagesApi.send(resolvedMatchId, "❤️");
+        }
+        if (resolvedMatchId && onOpenChat) {
+          setTimeout(() => onOpenChat(resolvedMatchId!), 350);
+          return;
+        }
+      } catch (e) { void e; }
       animateThen("right", () => {
         if (profiles && currentIdx < profiles.length - 1) {
           setCurrentIdx(i => i + 1);

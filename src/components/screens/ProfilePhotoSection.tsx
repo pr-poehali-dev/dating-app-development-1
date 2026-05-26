@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import { useState } from "react";
 
 interface ProfilePhotoSectionProps {
   currentPhoto: string;
@@ -33,6 +34,15 @@ export function ProfilePhotoSection({
   onTouchStart,
   onTouchEnd,
 }: ProfilePhotoSectionProps) {
+  const [burst, setBurst] = useState(false);
+
+  const handleLikeClick = () => {
+    if (liked) return;
+    setBurst(true);
+    setTimeout(() => setBurst(false), 700);
+    onLike();
+  };
+
   return (
     <div className="relative flex-shrink-0" style={{ height: "58%" }}
       onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -66,10 +76,37 @@ export function ProfilePhotoSection({
       </button>
 
       <div className="absolute bottom-5 right-4 flex flex-col gap-2.5 z-10">
-        <button onClick={onLike} disabled={liked}
-          className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"
-          style={{ background: liked ? "rgba(255,45,120,0.9)" : "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)", border: "1.5px solid rgba(255,255,255,0.25)" }}>
-          <Icon name="Heart" size={22} style={{ color: liked ? "white" : "#FF2D78", fill: liked ? "white" : "transparent" }} />
+        {/* Кнопка лайка с анимацией */}
+        <button onClick={handleLikeClick} disabled={liked}
+          className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg overflow-visible"
+          style={{
+            background: liked ? "linear-gradient(135deg,#FF2D78,#FF6B6B)" : "rgba(255,255,255,0.13)",
+            backdropFilter: "blur(14px)",
+            border: liked ? "none" : "1.5px solid rgba(255,45,120,0.45)",
+            boxShadow: liked
+              ? "0 6px 24px rgba(255,45,120,0.55), inset 0 1px 0 rgba(255,255,255,0.25)"
+              : "0 4px 16px rgba(255,45,120,0.2)",
+            transition: "all 0.25s ease",
+            transform: burst ? "scale(1.22)" : "scale(1)",
+          }}>
+          <Icon name="Heart" size={24}
+            style={{
+              color: liked ? "white" : "#FF2D78",
+              fill: liked ? "white" : "transparent",
+              transition: "transform 0.25s cubic-bezier(.36,.07,.19,.97), fill 0.2s",
+              transform: burst ? "scale(1.35)" : "scale(1)",
+              filter: burst ? "drop-shadow(0 0 8px rgba(255,45,120,0.9))" : "none",
+            }} />
+          {/* Частицы при нажатии */}
+          {burst && [0,60,120,180,240,300].map((deg) => (
+            <span key={deg} className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+              style={{
+                background: deg % 120 === 0 ? "#FF2D78" : deg % 60 === 0 ? "#FF6B6B" : "#FFB3CC",
+                top: "50%", left: "50%",
+                transform: `rotate(${deg}deg) translateY(-22px) translate(-50%,-50%)`,
+                animation: "heartParticle 0.6s ease-out forwards",
+              }} />
+          ))}
         </button>
         <button onClick={onOpenChat}
           className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90"

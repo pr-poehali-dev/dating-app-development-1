@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes heartParticle {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--deg, 0deg)) translateY(-22px) translate(-50%, -50%)
+      scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--deg, 0deg)) translateY(-44px) translate(-50%, -50%)
+      scale(0);
+  }
+}
+
 @keyframes heartbeat {
   0% {
     transform: scale(1);
