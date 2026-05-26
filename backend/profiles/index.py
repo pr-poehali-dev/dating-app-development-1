@@ -479,24 +479,24 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
-        # Мои подписчики (кто лайкнул меня)
+        # Мои подписчики (кто подписан на меня)
         if action == 'my_followers':
             cur.execute(
                 "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
-                "FROM likes l JOIN users u ON u.id = l.from_user_id "
-                "WHERE l.to_user_id = %s ORDER BY l.created_at DESC",
+                "FROM user_subscriptions s JOIN users u ON u.id = s.subscriber_id "
+                "WHERE s.target_id = %s ORDER BY s.created_at DESC",
                 (me['id'],)
             )
             cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'ok': True, 'users': users})
 
-        # Мои подписки (кого я лайкнул)
+        # Мои подписки (на кого я подписан)
         if action == 'my_following':
             cur.execute(
                 "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
-                "FROM likes l JOIN users u ON u.id = l.to_user_id "
-                "WHERE l.from_user_id = %s ORDER BY l.created_at DESC",
+                "FROM user_subscriptions s JOIN users u ON u.id = s.target_id "
+                "WHERE s.subscriber_id = %s ORDER BY s.created_at DESC",
                 (me['id'],)
             )
             cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
@@ -508,8 +508,8 @@ def handler(event: dict, context) -> dict:
             uid = int(params.get('user_id', 0))
             cur.execute(
                 "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
-                "FROM likes l JOIN users u ON u.id = l.from_user_id "
-                "WHERE l.to_user_id = %s ORDER BY l.created_at DESC",
+                "FROM user_subscriptions s JOIN users u ON u.id = s.subscriber_id "
+                "WHERE s.target_id = %s ORDER BY s.created_at DESC",
                 (uid,)
             )
             cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
