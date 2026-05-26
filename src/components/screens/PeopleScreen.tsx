@@ -22,6 +22,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   const [showFilters, setShowFilters] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
+  const [showBoosts, setShowBoosts] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -103,6 +104,65 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
         />
       )}
 
+      {showBoosts && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowBoosts(false)}>
+          <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-8"
+            style={{ background: "var(--spark-dark2,#1a1030)" }}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                  <Icon name="Zap" size={16} className="text-white" />
+                </div>
+                <p className="text-white font-bold text-base">Купить бусты профиля</p>
+              </div>
+              <button onClick={() => setShowBoosts(false)} className="text-white/40 hover:text-white/70">
+                <Icon name="X" size={20} />
+              </button>
+            </div>
+
+            <div className="px-4 pt-4 flex flex-col gap-3">
+              {/* Boost 1 */}
+              <button className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98]"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,45,120,0.25)" }}>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                  <Icon name="Rocket" size={22} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-sm">Продвинуть профиль</p>
+                  <p className="text-white/45 text-xs mt-0.5">Продвинуть в ближайшую сетку</p>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-white font-bold text-base">350 ₽</p>
+                </div>
+              </button>
+
+              {/* Boost 2 */}
+              <button className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98]"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(155,89,182,0.35)" }}>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)" }}>
+                  <Icon name="Star" size={22} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-sm">Супер подъём</p>
+                  <p className="text-white/45 text-xs mt-0.5">Выбери людей, которые тебе нравятся</p>
+                </div>
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-white font-bold text-base">550 ₽</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="px-4 pt-4 pb-2 flex-shrink-0">
@@ -139,6 +199,11 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
                   {viewersCount > 9 ? "9+" : viewersCount}
                 </div>
               )}
+            </button>
+            <button onClick={() => setShowBoosts(true)}
+              className="relative p-2.5 flex items-center justify-center flex-shrink-0 rounded-full transition-all active:scale-95"
+              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+              <Icon name="Zap" size={18} className="text-white" />
             </button>
           </div>
 
