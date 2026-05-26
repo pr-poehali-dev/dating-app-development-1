@@ -5,6 +5,9 @@ import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PeopleFilterSheet } from "@/components/screens/people/PeopleFilterSheet";
 import { PeopleViewersSheet } from "@/components/screens/people/PeopleViewersSheet";
 import { PeopleGrid } from "@/components/screens/people/PeopleGrid";
+import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
+import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
+
 
 export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: {
   onOpenChat?: (matchId: number) => void;
@@ -24,6 +27,17 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   const [viewersCount, setViewersCount] = useState(0);
   const [showBoosts, setShowBoosts] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+  const { pay: payBoost, loading: boostPaying } = useYookassa(PAY_CREATE_URL);
+
+  const handleBuyBoost = async (boostType: "promote" | "super", amount: number, description: string) => {
+    const token = localStorage.getItem("spark_token") || "";
+    await payBoost({
+      amount,
+      description,
+      returnUrl: window.location.origin + "/?payment=success",
+      metadata: { kind: "boost", boost_type: boostType, sender_token: token },
+    });
+  };
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback((params: DiscoverParams, q?: string) => {
@@ -128,11 +142,14 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
 
             <div className="px-4 pt-4 flex flex-col gap-3">
               {/* Boost 1 */}
-              <button className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98]"
+              <button
+                disabled={boostPaying}
+                onClick={() => handleBuyBoost("promote", 350, "Продвижение профиля в сетку")}
+                className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98] disabled:opacity-60"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,45,120,0.25)" }}>
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                  <Icon name="Rocket" size={22} className="text-white" />
+                  {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Rocket" size={22} className="text-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold text-sm">Продвинуть профиль</p>
@@ -144,11 +161,14 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
               </button>
 
               {/* Boost 2 */}
-              <button className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98]"
+              <button
+                disabled={boostPaying}
+                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
+                className="w-full rounded-2xl p-4 text-left flex items-center gap-4 transition-all active:scale-[0.98] disabled:opacity-60"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(155,89,182,0.35)" }}>
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)" }}>
-                  <Icon name="Star" size={22} className="text-white" />
+                  {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Star" size={22} className="text-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold text-sm">Супер подъём</p>

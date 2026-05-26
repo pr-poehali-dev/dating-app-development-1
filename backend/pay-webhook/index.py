@@ -1,5 +1,6 @@
 import json
 import os
+import datetime
 import psycopg2
 
 
@@ -60,6 +61,35 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
             sender_id, recipient_id, gift_id, gift_name, gift_emoji, gift_category,
             gift_variant, gift_rarity, amount, payment_id
         )
+    )
+
+
+def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
+    """Создаёт буст профиля после успешной оплаты."""
+    if not metadata or metadata.get('kind') != 'boost':
+        return
+
+    boost_type = metadata.get('boost_type') or 'promote'
+    sender_token = metadata.get('sender_token') or ''
+    user_id = None
+    if sender_token:
+        cur.execute("SELECT user_id FROM sessions WHERE token = %s LIMIT 1", (sender_token,))
+        row = cur.fetchone()
+        if row:
+            user_id = row[0]
+    if not user_id:
+        return
+
+    cur.execute("SELECT id FROM profile_boosts WHERE payment_id = %s LIMIT 1", (payment_id,))
+    if cur.fetchone():
+        return
+
+    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
+
+    cur.execute(
+        "INSERT INTO profile_boosts (user_id, boost_type, payment_id, amount, expires_at) "
+        "VALUES (%s, %s, %s, %s, %s)",
+        (user_id, boost_type, payment_id, amount, expires_at)
     )
 
 
@@ -129,6 +159,7 @@ def handler(event: dict, context) -> dict:
             effective_metadata = db_metadata if db_metadata else metadata
 
             _create_gift_from_metadata(cur, payment_id, effective_metadata, db_amount)
+            _create_boost_from_metadata(cur, payment_id, effective_metadata, db_amount)
 
         elif event_type == 'payment.canceled':
             cur.execute(
