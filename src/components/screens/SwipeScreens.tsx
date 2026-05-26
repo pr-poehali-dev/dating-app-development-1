@@ -190,18 +190,39 @@ function SwipeCard({
       </div>
 
       {isTop && (
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center gap-4 pb-6 pt-16">
+        <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center gap-5 pb-7 pt-16">
+          {/* Дизлайк */}
           <button onClick={handleDislikeBtn}
-            className="w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ background: "rgba(255,255,255,0.12)", border: "2px solid rgba(255,255,255,0.2)", backdropFilter: "blur(10px)" }}>
-            <Icon name="X" size={22} className="text-white" />
+            className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+            style={{
+              background: "rgba(30,20,45,0.75)",
+              border: "2px solid rgba(255,80,80,0.35)",
+              backdropFilter: "blur(16px)",
+              boxShadow: "0 4px 20px rgba(255,60,60,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}>
+            <Icon name="X" size={24} style={{ color: "#FF5252" }} />
           </button>
-          <button onClick={handleLikeBtn} className="w-16 h-16 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95 btn-grad">
-            <Icon name="Heart" size={26} className="text-white" />
+
+          {/* Лайк — центральная крупная */}
+          <button onClick={handleLikeBtn}
+            className="w-[72px] h-[72px] rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+            style={{
+              background: "linear-gradient(135deg, #FF2D78, #FF6B6B)",
+              boxShadow: "0 6px 28px rgba(255,45,120,0.55), 0 2px 8px rgba(255,45,120,0.3), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}>
+            <Icon name="Heart" size={30} className="text-white" />
           </button>
-          <button className="w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-            style={{ background: "rgba(255,255,255,0.12)", border: "2px solid rgba(255,255,255,0.2)", backdropFilter: "blur(10px)" }}>
-            <Icon name="Star" size={20} className="text-yellow-400" />
+
+          {/* Суперлайк */}
+          <button
+            className="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-150 active:scale-90"
+            style={{
+              background: "rgba(30,20,45,0.75)",
+              border: "2px solid rgba(255,215,0,0.35)",
+              backdropFilter: "blur(16px)",
+              boxShadow: "0 4px 20px rgba(255,215,0,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}>
+            <Icon name="Star" size={22} style={{ color: "#FFD700" }} />
           </button>
         </div>
       )}
