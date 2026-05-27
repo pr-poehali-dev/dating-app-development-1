@@ -2,12 +2,12 @@ import Icon from "@/components/ui/icon";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
-export function BottomNav({ active, onChange }: { active: Screen; onChange: (s: Screen) => void }) {
+export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
     { screen: "discover",  icon: "Home",          label: "Главная" },
     { screen: "photos",    icon: "Search",         label: "Поиск" },
     { screen: "live",      icon: "Radio",          label: "Live" },
-    { screen: "matches",   icon: "MessageCircle",  label: "Чаты" },
+    { screen: "matches",   icon: "MessageCircle",  label: "Чаты", badge: unreadMessages > 0 ? unreadMessages : undefined },
     { screen: "profile",   icon: "User",           label: "Профиль" },
   ];
 
@@ -41,9 +41,9 @@ export function BottomNav({ active, onChange }: { active: Screen; onChange: (s: 
                   style={{ color: isActive ? "#FF2D78" : "rgba(255,255,255,0.4)" }}
                 />
                 {item.badge && (
-                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
-                    style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
-                    {item.badge}
+                  <div className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                    style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 2px 6px rgba(255,45,120,0.5)" }}>
+                    {item.badge > 9 ? "9+" : item.badge}
                   </div>
                 )}
               </div>

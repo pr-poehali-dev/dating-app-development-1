@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { authApi, type User, type LiveStream } from "@/lib/api";
+import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
@@ -47,6 +47,23 @@ export default function Index() {
 
   // Подключаем push-уведомления сразу после авторизации
   usePushNotifications(!!currentUser);
+
+  // Счётчик непрочитанных сообщений
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchUnread = () => {
+      notificationsApi.unreadCount().then(d => setUnreadMessages(d.messages || 0)).catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 15_000);
+    return () => clearInterval(interval);
+  }, [!!currentUser]);
+
+  // Сбрасываем счётчик при открытии чатов
+  useEffect(() => {
+    if (screen === "matches") setUnreadMessages(0);
+  }, [screen]);
 
   // Heartbeat — обновляем online/last_seen каждые 60 сек
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -123,7 +140,7 @@ export default function Index() {
           {screen === "verify" && <VerifyScreen onClose={() => setScreen("profile")} />}
           {screen === "admin_verify" && <AdminVerifyScreen onClose={() => setScreen("profile")} />}
         </div>
-        {isMain && <BottomNav active={screen} onChange={setScreen} />}
+        {isMain && <BottomNav active={screen} onChange={setScreen} unreadMessages={unreadMessages} />}
       </div>
     </div>
   );
