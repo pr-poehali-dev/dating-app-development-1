@@ -272,7 +272,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                   </div>
                 ) : (
                   /* Обычные пузыри */
-                  <div className="flex flex-col gap-0.5">
+                  <div className={`flex flex-col gap-0.5 ${msg.out ? "items-end" : "items-start"}`} style={{ maxWidth: "80%" }}>
                     <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
                       style={{ cursor: "pointer" }}>
                       {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}

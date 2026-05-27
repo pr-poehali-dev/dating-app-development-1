@@ -611,8 +611,8 @@ html.light .border-t-transparent {
   border-radius: 18px 18px 4px 18px;
   color: white;
   padding: 10px 14px;
-  max-width: 75%;
-  align-self: flex-end;
+  width: fit-content;
+  max-width: 100%;
   font-size: 15px;
   line-height: 1.55;
   box-shadow: 0 2px 12px rgba(255, 45, 120, 0.35);
@@ -626,8 +626,8 @@ html.light .border-t-transparent {
   border-radius: 18px 18px 18px 4px;
   color: rgba(255, 255, 255, 0.92);
   padding: 10px 14px;
-  max-width: 75%;
-  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
   font-size: 15px;
   line-height: 1.55;
   overflow-wrap: break-word;
