@@ -138,22 +138,25 @@ export function ProfileHeader({
       </div>
 
       {/* ── Табы: Фото / Приватное / Подарки ── */}
-      <div className="grid grid-cols-3 gap-2 w-full mt-4 px-4">
-        {tabs.map(({ key, icon, label }) => {
-          const isActive = (activeTab as string) === key;
-          return (
-            <button
-              key={key}
-              onClick={() => onTabChange((isActive ? null : key) as ActiveTab)}
-              className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
-              style={isActive
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.35)" }
-                : { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <Icon name={icon} size={18} className={isActive ? "text-white" : "text-white/50"} />
-              <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/50"}`}>{label}</span>
-            </button>
-          );
-        })}
+      <div className="w-full mt-4 px-4">
+        <div className="flex rounded-2xl p-1 gap-1"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          {tabs.map(({ key, icon, label }) => {
+            const isActive = (activeTab as string) === key;
+            return (
+              <button
+                key={key}
+                onClick={() => onTabChange((isActive ? null : key) as ActiveTab)}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-95"
+                style={isActive
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }
+                  : {}}>
+                <Icon name={icon} size={15} className={isActive ? "text-white" : "text-white/40"} />
+                <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/40"}`}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
