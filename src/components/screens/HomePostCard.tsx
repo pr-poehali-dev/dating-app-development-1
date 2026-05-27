@@ -21,6 +21,7 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
   const [lightbox, setLightbox] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [reported, setReported] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [doubleTapHeart, setDoubleTapHeart] = useState(false);
 
   const isOwn = post.user_id === currentUserId;
@@ -75,13 +76,7 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
             </div>
             <div className="rounded-2xl overflow-hidden mb-2"
               style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
-              <button onClick={async () => {
-                  if (!reported) {
-                    setReported(true);
-                    await postsApi.reportPost(post.id).catch(() => {});
-                  }
-                  setShowMenu(false);
-                }}
+              <button onClick={() => { setShowMenu(false); if (!reported) setShowReport(true); }}
                 className="w-full flex items-center gap-4 px-5 py-4 text-left active:bg-white/5 transition-colors"
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
@@ -110,6 +105,70 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
               style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
               Отмена
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Шторка: выбор причины жалобы */}
+      {showReport && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+          onClick={() => setShowReport(false)}>
+          <div className="w-full max-w-sm flex flex-col"
+            style={{ background: "#0f0a1a", borderRadius: "24px 24px 0 0", maxHeight: "92dvh" }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Хэндл + заголовок */}
+            <div className="flex items-center justify-between px-5 pt-4 pb-3"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="w-6" />
+              <h3 className="text-white font-bold text-sm">Пожаловаться</h3>
+              <button onClick={() => setShowReport(false)}
+                className="w-7 h-7 flex items-center justify-center rounded-full"
+                style={{ background: "rgba(255,255,255,0.08)" }}>
+                <Icon name="X" size={16} className="text-white/70" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto px-5 py-5 flex flex-col gap-4">
+              {/* Заголовок */}
+              <div className="flex flex-col gap-2 mb-1">
+                <h2 className="text-white font-bold text-xl leading-tight">
+                  Почему вы хотите пожаловаться на эту публикацию?
+                </h2>
+                <p className="text-white/40 text-sm leading-relaxed">
+                  Ваша жалоба является анонимной. Если кому-то угрожает опасность, не ждите — позвоните в местную службу спасения.
+                </p>
+              </div>
+
+              {/* Причины */}
+              {[
+                "Мне это не нравится",
+                "Травля или нежелательный контакт",
+                "Самоубийство, нанесение себе увечий или расстройства пищевого поведения",
+                "Насилие, ненависть или эксплуатация",
+                "Продажа или реклама товаров с ограничениями",
+                "Изображение обнажённого тела или действий сексуального характера",
+                "Мошенничество, обман или спам",
+                "Ложная информация",
+                "Интеллектуальная собственность",
+              ].map((reason) => (
+                <button
+                  key={reason}
+                  onClick={async () => {
+                    setReported(true);
+                    setShowReport(false);
+                    await postsApi.reportPost(post.id).catch(() => {});
+                  }}
+                  className="w-full flex items-center justify-between py-4 text-left active:opacity-60 transition-opacity"
+                  style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span className="text-white text-[15px] leading-snug pr-4">{reason}</span>
+                  <Icon name="ChevronRight" size={18} className="text-white/30 flex-shrink-0" />
+                </button>
+              ))}
+
+              <div className="h-2" />
+            </div>
           </div>
         </div>
       )}
