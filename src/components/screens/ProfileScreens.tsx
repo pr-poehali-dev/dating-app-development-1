@@ -59,6 +59,13 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [giftsLoading, setGiftsLoading] = useState(false);
 
   const [photoUploadMode, setPhotoUploadMode] = useState<"cover" | "avatar" | "gallery">("avatar");
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  // Все фото для лайтбокса: аватар + галерея
+  const allPhotos = [
+    ...(localPhoto ? [localPhoto] : []),
+    ...galleryPhotos.map(p => p.photo_url),
+  ];
 
   useEffect(() => {
     if (activeTab === "photos") {
@@ -179,6 +186,74 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         <EditProfileModal user={currentUser} onSave={onProfileUpdate} onClose={() => setEditOpen(false)} />
       )}
 
+      {/* ── Лайтбокс фото ── */}
+      {lightboxIdx !== null && allPhotos.length > 0 && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.96)", backdropFilter: "blur(20px)" }}
+          onClick={() => setLightboxIdx(null)}>
+
+          {/* Фото */}
+          <img
+            src={allPhotos[lightboxIdx]}
+            className="max-w-full max-h-full object-contain rounded-xl"
+            style={{ maxHeight: "90dvh", maxWidth: "95vw", userSelect: "none" }}
+            onClick={e => e.stopPropagation()}
+          />
+
+          {/* Закрыть */}
+          <button
+            className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+            onClick={() => setLightboxIdx(null)}>
+            <Icon name="X" size={20} className="text-white" />
+          </button>
+
+          {/* Стрелка влево */}
+          {lightboxIdx > 0 && (
+            <button
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+              style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+              onClick={e => { e.stopPropagation(); setLightboxIdx(i => Math.max(0, (i ?? 1) - 1)); }}>
+              <Icon name="ChevronLeft" size={22} className="text-white" />
+            </button>
+          )}
+
+          {/* Стрелка вправо */}
+          {lightboxIdx < allPhotos.length - 1 && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+              style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+              onClick={e => { e.stopPropagation(); setLightboxIdx(i => Math.min(allPhotos.length - 1, (i ?? 0) + 1)); }}>
+              <Icon name="ChevronRight" size={22} className="text-white" />
+            </button>
+          )}
+
+          {/* Точки */}
+          {allPhotos.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              {allPhotos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={e => { e.stopPropagation(); setLightboxIdx(i); }}
+                  className="rounded-full transition-all"
+                  style={{
+                    width: i === lightboxIdx ? 20 : 7,
+                    height: 7,
+                    background: i === lightboxIdx ? "#FF2D78" : "rgba(255,255,255,0.35)",
+                  }} />
+              ))}
+            </div>
+          )}
+
+          {/* Счётчик */}
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-white/60 text-xs"
+            style={{ background: "rgba(0,0,0,0.4)" }}>
+            {lightboxIdx + 1} / {allPhotos.length}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col h-full overflow-y-auto">
 
         {/* Шапка с меню */}
@@ -207,7 +282,14 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           photoError={photoError}
           activeTab={activeTab}
           onEditOpen={() => setEditOpen(true)}
-          onAvatarClick={() => fileInputRef.current?.click()}
+          onAvatarClick={() => {
+            // Загружаем галерею если ещё не загружали
+            if (galleryPhotos.length === 0 && !galleryLoading) {
+              setGalleryLoading(true);
+              profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
+            }
+            setLightboxIdx(0);
+          }}
           onCoverClick={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
           onTabChange={setActiveTab}
           onSettingsScreen={(s) => setSettingsScreen(s)}
