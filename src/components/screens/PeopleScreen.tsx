@@ -117,6 +117,9 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
           filters={filters}
           onApply={handleApplyFilters}
           onClose={() => setShowFilters(false)}
+          onAdvancedFilter={() => setShowAdvancedFilter(true)}
+          onExploreWorld={() => setShowExplore(true)}
+          onTravelMode={() => setShowTravel(true)}
         />
       )}
       {showAdvancedFilter && (
@@ -348,66 +351,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
             ))}
           </div>
 
-          {/* Кнопки: Фильтры / Исследуй мир / Путешествие */}
-          <div className="flex flex-col gap-2 mt-3">
-            {/* Фильтры включены */}
-            <button onClick={() => setShowAdvancedFilter(true)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
-              style={{
-                background: (advancedAgeMin > 18 || advancedAgeMax < 60 || verifiedOnly)
-                  ? "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,89,182,0.12))"
-                  : "rgba(255,255,255,0.05)",
-                border: (advancedAgeMin > 18 || advancedAgeMax < 60 || verifiedOnly)
-                  ? "1.5px solid rgba(255,45,120,0.3)"
-                  : "1px solid rgba(255,255,255,0.08)",
-              }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,45,120,0.15)" }}>
-                  <Icon name="SlidersHorizontal" size={14} className="text-pink-400" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-white text-sm font-semibold">Фильтры включены</span>
-                  <span className="text-white/35 text-[11px]">{advancedAgeMin}–{advancedAgeMax} лет{verifiedOnly ? " · Только верифицированные" : ""}</span>
-                </div>
-              </div>
-              <Icon name="ChevronRight" size={16} className="text-white/30" />
-            </button>
 
-            {/* Исследуй мир */}
-            <button onClick={() => setShowExplore(true)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(59,130,246,0.15)" }}>
-                  <Icon name="Globe" size={14} className="text-blue-400" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-white text-sm font-semibold">Исследуй мир</span>
-                  <span className="text-white/35 text-[11px]">Найди людей в любом городе</span>
-                </div>
-              </div>
-              <Icon name="ChevronRight" size={16} className="text-white/30" />
-            </button>
-
-            {/* Режим путешествия */}
-            <button onClick={() => setShowTravel(true)}
-              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,107,53,0.15)" }}>
-                  <Icon name="Plane" size={14} className="text-orange-400" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-white text-sm font-semibold">Режим путешествия</span>
-                  <span className="text-white/35 text-[11px]">Смени свою локацию</span>
-                </div>
-              </div>
-              <Icon name="ChevronRight" size={16} className="text-white/30" />
-            </button>
-          </div>
         </div>
 
         {/* Grid */}
