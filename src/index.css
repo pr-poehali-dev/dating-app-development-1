@@ -635,6 +635,18 @@ html.light .border-t-transparent {
   white-space: pre-wrap;
 }
 
+@keyframes ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
