@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type User, type MyGift } from "@/lib/api";
-import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 
 // Re-exports
 export { EditProfileModal } from "@/components/screens/EditProfileModal";
@@ -11,13 +10,13 @@ import { EditProfileModal } from "@/components/screens/EditProfileModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
 import { ProfilePhotoSection } from "@/components/screens/profile/ProfilePhotoSection";
-import { ProfileStatsBar } from "@/components/screens/profile/ProfileStatsBar";
-import { FollowersModal } from "@/components/screens/profile/FollowersModal";
+import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
+import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
+import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
-type FollowTab = "followers" | "following";
 
 // ─── RealProfileScreen ────────────────────────────────────────────────────────
 export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpdate, onProfileUpdate, onVerify }: {
@@ -152,7 +151,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   };
 
   // Редактирование статов
-  const [followModal, setFollowModal] = useState<FollowTab | null>(null);
   const [statEdit, setStatEdit] = useState<StatKey | null>(null);
   const [statValue, setStatValue] = useState("");
 
@@ -188,70 +186,12 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
       {/* ── Лайтбокс фото ── */}
       {lightboxIdx !== null && allPhotos.length > 0 && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.96)", backdropFilter: "blur(20px)" }}
-          onClick={() => setLightboxIdx(null)}>
-
-          {/* Фото */}
-          <img
-            src={allPhotos[lightboxIdx]}
-            className="max-w-full max-h-full object-contain rounded-xl"
-            style={{ maxHeight: "90dvh", maxWidth: "95vw", userSelect: "none" }}
-            onClick={e => e.stopPropagation()}
-          />
-
-          {/* Закрыть */}
-          <button
-            className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
-            onClick={() => setLightboxIdx(null)}>
-            <Icon name="X" size={20} className="text-white" />
-          </button>
-
-          {/* Стрелка влево */}
-          {lightboxIdx > 0 && (
-            <button
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-              style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
-              onClick={e => { e.stopPropagation(); setLightboxIdx(i => Math.max(0, (i ?? 1) - 1)); }}>
-              <Icon name="ChevronLeft" size={22} className="text-white" />
-            </button>
-          )}
-
-          {/* Стрелка вправо */}
-          {lightboxIdx < allPhotos.length - 1 && (
-            <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-              style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
-              onClick={e => { e.stopPropagation(); setLightboxIdx(i => Math.min(allPhotos.length - 1, (i ?? 0) + 1)); }}>
-              <Icon name="ChevronRight" size={22} className="text-white" />
-            </button>
-          )}
-
-          {/* Точки */}
-          {allPhotos.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-              {allPhotos.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={e => { e.stopPropagation(); setLightboxIdx(i); }}
-                  className="rounded-full transition-all"
-                  style={{
-                    width: i === lightboxIdx ? 20 : 7,
-                    height: 7,
-                    background: i === lightboxIdx ? "#FF2D78" : "rgba(255,255,255,0.35)",
-                  }} />
-              ))}
-            </div>
-          )}
-
-          {/* Счётчик */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-white/60 text-xs"
-            style={{ background: "rgba(0,0,0,0.4)" }}>
-            {lightboxIdx + 1} / {allPhotos.length}
-          </div>
-        </div>
+        <ProfileLightbox
+          photos={allPhotos}
+          idx={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onSetIdx={(updater) => setLightboxIdx(updater(lightboxIdx) as number)}
+        />
       )}
 
       <div className="flex flex-col h-full overflow-y-auto">
@@ -350,147 +290,26 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </button>
           )}
 
-          {/* 3. О себе */}
-          <div className="w-full mt-3 rounded-2xl p-4"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ background: "rgba(155,89,182,0.2)" }}>
-                  <Icon name="AlignLeft" size={12} className="text-purple-400" />
-                </div>
-                <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">О себе</span>
-              </div>
-              <button onClick={() => setEditOpen(true)}
-                className="w-7 h-7 rounded-xl flex items-center justify-center transition-all active:scale-95"
-                style={{ background: "rgba(255,255,255,0.07)" }}>
-                <Icon name="Pencil" size={13} className="text-white/50" />
-              </button>
-            </div>
-            <p className="text-white/70 text-sm leading-relaxed">
-              {currentUser.bio || (
-                <span className="text-white/25 italic">Расскажи о себе — нажми карандаш</span>
-              )}
-            </p>
-            {(currentUser.tags || []).length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
-              </div>
-            )}
-            {!(currentUser.tags || []).length && (
-              <button onClick={() => setEditOpen(true)}
-                className="mt-3 px-3 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px dashed rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.4)" }}>
-                + Добавить интересы
-              </button>
-            )}
-          </div>
-
-          {/* 4. Рост / Вес / Пол / Статус / Город */}
-          <ProfileStatsBar
+          {/* 3. О себе + статы + подписчики + дата */}
+          <ProfileBioSection
             currentUser={currentUser}
             statEdit={statEdit}
             statValue={statValue}
-            onOpen={openStat}
-            onClose={() => setStatEdit(null)}
-            onValueChange={setStatValue}
-            onSave={saveStat}
+            onEditOpen={() => setEditOpen(true)}
+            onOpenStat={openStat}
+            onCloseStat={() => setStatEdit(null)}
+            onStatValueChange={setStatValue}
+            onSaveStat={saveStat}
           />
 
-          {/* 5. Подписчики и подписки */}
-          <div className="w-full mt-3 flex gap-2">
-            <button onClick={() => setFollowModal("followers")}
-              className="flex-1 flex flex-col items-center py-4 rounded-2xl active:scale-95 transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-white font-black text-2xl leading-none">{currentUser.followers ?? 0}</span>
-              <span className="text-white/40 text-xs mt-1.5 font-medium">Подписчики</span>
-            </button>
-            <button onClick={() => setFollowModal("following")}
-              className="flex-1 flex flex-col items-center py-4 rounded-2xl active:scale-95 transition-all"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              <span className="text-white font-black text-2xl leading-none">{currentUser.following ?? 0}</span>
-              <span className="text-white/40 text-xs mt-1.5 font-medium">Подписки</span>
-            </button>
-          </div>
+          {/* 4. Вкладки: Статистика / Магазин / Подарки */}
+          <ProfileTabPanels
+            activeTab={activeTab}
+            myGifts={myGifts}
+            giftsLoading={giftsLoading}
+            onPremium={onPremium}
+          />
 
-          {followModal && (
-            <FollowersModal initialTab={followModal} onClose={() => setFollowModal(null)} />
-          )}
-
-          {/* 6. Дата регистрации */}
-          {currentUser.created_at && (
-            <div className="flex items-center justify-center gap-1.5 mt-4 mb-2 px-4 py-2 rounded-full"
-              style={{ background: "rgba(255,255,255,0.04)" }}>
-              <Icon name="Calendar" size={12} className="text-white/20" />
-              <span className="text-white/25 text-xs">
-                Присоединился {(() => {
-                  const d = new Date(currentUser.created_at!);
-                  const now = new Date();
-                  const months = (now.getFullYear() - d.getFullYear()) * 12 + now.getMonth() - d.getMonth();
-                  if (months === 0) return "менее месяца назад";
-                  if (months === 1) return "1 месяц назад";
-                  if (months < 5) return `${months} месяца назад`;
-                  if (months < 12) return `${months} месяцев назад`;
-                  const years = Math.floor(months / 12);
-                  return years === 1 ? "1 год назад" : `${years} года назад`;
-                })()}
-              </span>
-            </div>
-          )}
-
-          {/* Панель: Статистика */}
-          {activeTab === "stats" && (
-            <div className="w-full mt-3 glass-card p-4 flex flex-col gap-3">
-              {[
-                { label: "Просмотры профиля за неделю", value: "—", icon: "Eye",           color: "#9B59B6" },
-                { label: "Лайки получено",              value: "—", icon: "Heart",         color: "#FF2D78" },
-                { label: "Совпадения",                  value: "—", icon: "Zap",           color: "#FF8C42" },
-                { label: "Сообщений отправлено",        value: "—", icon: "MessageCircle", color: "#3B82F6" },
-              ].map(({ label, value, icon, color }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `${color}22` }}>
-                    <Icon name={icon as "Eye"|"Heart"|"Zap"|"MessageCircle"} size={18} style={{ color }} />
-                  </div>
-                  <span className="text-white/70 text-sm flex-1">{label}</span>
-                  <span className="text-white font-bold">{value}</span>
-                </div>
-              ))}
-              <p className="text-white/20 text-xs text-center mt-1">Статистика обновляется раз в сутки</p>
-            </div>
-          )}
-
-          {/* Панель: Магазин */}
-          {activeTab === "shop" && (
-            <div className="w-full mt-3 flex flex-col gap-2">
-              {[
-                { icon: "Crown", label: "Premium подписка",  desc: "Безлимитные лайки и приоритет",  price: "от 249 ₽/мес", action: onPremium, grad: true },
-                { icon: "Star",  label: "Суперлайки × 10",   desc: "Выдели себя среди остальных",    price: "199 ₽",         action: onPremium, grad: false },
-                { icon: "Zap",   label: "Буст профиля",      desc: "Топ показов на 30 минут",        price: "99 ₽",          action: onPremium, grad: false },
-                { icon: "Eye",   label: "Режим инкогнито",   desc: "Просматривай анонимно",          price: "149 ₽",         action: onPremium, grad: false },
-              ].map(({ icon, label, desc, price, action, grad }) => (
-                <button key={label} onClick={action}
-                  className="glass-card p-4 flex items-center gap-3 text-left w-full active:scale-[0.98] transition-all">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: grad ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.08)" }}>
-                    <Icon name={icon as "Crown"|"Star"|"Zap"|"Eye"} size={20} className={grad ? "text-white" : "text-white/60"} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm">{label}</p>
-                    <p className="text-white/40 text-xs mt-0.5">{desc}</p>
-                  </div>
-                  <span className="text-pink-400 font-bold text-sm flex-shrink-0">{price}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Панель: Подарки */}
-          {activeTab === "gifts" && (
-            <div className="w-full mt-3">
-              <GiftsGrid gifts={myGifts} loading={giftsLoading} />
-            </div>
-          )}
         </div>
 
         <div className="h-6" />
