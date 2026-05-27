@@ -20,16 +20,17 @@ interface Props {
   onPremium: () => void;
   onOpenNewUsers: () => void;
   onAddStory?: () => void;
+  storiesRefreshKey?: number;
 }
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, isPremium,
-  onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory,
+  onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory, storiesRefreshKey,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Сторис — всегда вверху */}
-      <StoriesBar currentUserId={currentUserId} onAddStory={onAddStory} />
+      <StoriesBar currentUserId={currentUserId} onAddStory={onAddStory} refreshKey={storiesRefreshKey} />
 
       {loading && (
         <div className="flex items-center justify-center py-20">

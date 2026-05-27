@@ -4,9 +4,10 @@ import Icon from "@/components/ui/icon";
 
 const STORIES_URL = "https://functions.poehali.dev/bb965e64-26b6-440e-9d6d-c746aa07b497";
 
-export function StoriesBar({ currentUserId, onAddStory }: {
+export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
   currentUserId?: number;
   onAddStory?: () => void;
+  refreshKey?: number;
 }) {
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
@@ -20,7 +21,7 @@ export function StoriesBar({ currentUserId, onAddStory }: {
       .catch(() => {});
     const saved = JSON.parse(localStorage.getItem("seen_stories") || "[]");
     setSeen(new Set(saved));
-  }, []);
+  }, [refreshKey]);
 
   const markSeen = (groupIdx: number) => {
     const g = groups[groupIdx];

@@ -27,7 +27,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
     setUploading(true);
     setError("");
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = localStorage.getItem("spark_token");
       const duration = videoRef.current?.duration || 0;
       const b64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();

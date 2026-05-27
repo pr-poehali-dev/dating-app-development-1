@@ -37,6 +37,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const [giftCategory, setGiftCategory] = useState("heart");
   const [showNewUsers, setShowNewUsers] = useState(false);
   const [showStoryUpload, setShowStoryUpload] = useState(false);
+  const [storiesRefreshKey, setStoriesRefreshKey] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -142,7 +143,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
       {showStoryUpload && (
         <StoryUploadSheet
           onClose={() => setShowStoryUpload(false)}
-          onUploaded={() => setShowStoryUpload(false)}
+          onUploaded={() => { setShowStoryUpload(false); setStoriesRefreshKey(k => k + 1); }}
         />
       )}
       {showNotifs && (
@@ -174,6 +175,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           onPremium={() => onPremium?.()}
           onOpenNewUsers={() => setShowNewUsers(true)}
           onAddStory={() => setShowStoryUpload(true)}
+          storiesRefreshKey={storiesRefreshKey}
         />
       </div>
 
