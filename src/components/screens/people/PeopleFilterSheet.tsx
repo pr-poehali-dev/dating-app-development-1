@@ -47,7 +47,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose }: Props) {
 
         <div className="flex items-center justify-between px-5 py-3"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <h3 className="text-white font-bold text-base">Фильтры</h3>
+          <h3 className="text-white font-bold text-base">Основные фильтры</h3>
           <div className="flex items-center gap-3">
             <button onClick={reset} className="text-white/40 text-xs hover:text-white/70 transition-colors">Сбросить</button>
             <button onClick={onClose}><Icon name="X" size={20} className="text-white/50" /></button>

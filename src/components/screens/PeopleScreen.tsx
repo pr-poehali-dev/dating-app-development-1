@@ -3,6 +3,9 @@ import Icon from "@/components/ui/icon";
 import { profilesApi, notificationsApi, type Profile, type DiscoverParams } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PeopleFilterSheet } from "@/components/screens/people/PeopleFilterSheet";
+import { PeopleAdvancedFilter } from "@/components/screens/people/PeopleAdvancedFilter";
+import { PeopleExploreWorld } from "@/components/screens/people/PeopleExploreWorld";
+import { PeopleTravelMode } from "@/components/screens/people/PeopleTravelMode";
 import { PeopleViewersSheet } from "@/components/screens/people/PeopleViewersSheet";
 import { PeopleGrid } from "@/components/screens/people/PeopleGrid";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
@@ -26,6 +29,12 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
   const [showViewers, setShowViewers] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
   const [showBoosts, setShowBoosts] = useState(false);
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
+  const [showExplore, setShowExplore] = useState(false);
+  const [showTravel, setShowTravel] = useState(false);
+  const [advancedAgeMin, setAdvancedAgeMin] = useState(18);
+  const [advancedAgeMax, setAdvancedAgeMax] = useState(60);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const { pay: payBoost, loading: boostPaying } = useYookassa(PAY_CREATE_URL);
 
@@ -108,6 +117,42 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
           filters={filters}
           onApply={handleApplyFilters}
           onClose={() => setShowFilters(false)}
+        />
+      )}
+      {showAdvancedFilter && (
+        <PeopleAdvancedFilter
+          ageMin={advancedAgeMin}
+          ageMax={advancedAgeMax}
+          verifiedOnly={verifiedOnly}
+          onClose={() => setShowAdvancedFilter(false)}
+          onApply={(mn, mx, v) => {
+            setAdvancedAgeMin(mn); setAdvancedAgeMax(mx); setVerifiedOnly(v);
+            setShowAdvancedFilter(false);
+            const p: DiscoverParams = { ...filters, age_min: mn, age_max: mx };
+            if (v) p.verified_only = true as never;
+            setFilters(p); load(p, search);
+          }}
+        />
+      )}
+      {showExplore && (
+        <PeopleExploreWorld
+          onClose={() => setShowExplore(false)}
+          onSelectCity={(city) => {
+            setShowExplore(false);
+            if (city === "__nearby__" || city === "__random__") return;
+            const p: DiscoverParams = { ...filters, city };
+            setFilters(p); load(p, search);
+          }}
+        />
+      )}
+      {showTravel && (
+        <PeopleTravelMode
+          onClose={() => setShowTravel(false)}
+          onApply={(city) => {
+            setShowTravel(false);
+            const p: DiscoverParams = { ...filters, city };
+            setFilters(p); load(p, search);
+          }}
         />
       )}
       {showViewers && (
@@ -259,7 +304,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
               <input
                 value={search}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Имя, @username или город..."
+                placeholder="@username или #хэштег..."
                 className="w-full text-white placeholder-white/30 rounded-2xl pl-9 pr-9 py-3 text-sm outline-none border transition-colors font-golos"
                 style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", lineHeight: 1.2 }}
               />
@@ -301,6 +346,67 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
                 {t.label}
               </button>
             ))}
+          </div>
+
+          {/* Кнопки: Фильтры / Исследуй мир / Путешествие */}
+          <div className="flex flex-col gap-2 mt-3">
+            {/* Фильтры включены */}
+            <button onClick={() => setShowAdvancedFilter(true)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
+              style={{
+                background: (advancedAgeMin > 18 || advancedAgeMax < 60 || verifiedOnly)
+                  ? "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,89,182,0.12))"
+                  : "rgba(255,255,255,0.05)",
+                border: (advancedAgeMin > 18 || advancedAgeMax < 60 || verifiedOnly)
+                  ? "1.5px solid rgba(255,45,120,0.3)"
+                  : "1px solid rgba(255,255,255,0.08)",
+              }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,45,120,0.15)" }}>
+                  <Icon name="SlidersHorizontal" size={14} className="text-pink-400" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white text-sm font-semibold">Фильтры включены</span>
+                  <span className="text-white/35 text-[11px]">{advancedAgeMin}–{advancedAgeMax} лет{verifiedOnly ? " · Только верифицированные" : ""}</span>
+                </div>
+              </div>
+              <Icon name="ChevronRight" size={16} className="text-white/30" />
+            </button>
+
+            {/* Исследуй мир */}
+            <button onClick={() => setShowExplore(true)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(59,130,246,0.15)" }}>
+                  <Icon name="Globe" size={14} className="text-blue-400" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white text-sm font-semibold">Исследуй мир</span>
+                  <span className="text-white/35 text-[11px]">Найди людей в любом городе</span>
+                </div>
+              </div>
+              <Icon name="ChevronRight" size={16} className="text-white/30" />
+            </button>
+
+            {/* Режим путешествия */}
+            <button onClick={() => setShowTravel(true)}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-2xl active:scale-[0.98] transition-all"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,107,53,0.15)" }}>
+                  <Icon name="Plane" size={14} className="text-orange-400" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-white text-sm font-semibold">Режим путешествия</span>
+                  <span className="text-white/35 text-[11px]">Смени свою локацию</span>
+                </div>
+              </div>
+              <Icon name="ChevronRight" size={16} className="text-white/30" />
+            </button>
           </div>
         </div>
 
