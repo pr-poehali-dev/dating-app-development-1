@@ -330,15 +330,25 @@ function GrantPhotoMessage({ out, partnerId }: { out: boolean; partnerId: number
   const [open, setOpen] = useState(false);
   return (
     <>
-      <div className="flex items-center gap-2 px-1 py-0.5 cursor-pointer active:opacity-70 transition-opacity"
+      <div
+        className="flex items-center gap-3 px-3 py-2.5 rounded-2xl cursor-pointer active:scale-95 transition-all"
+        style={{
+          background: "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,197,94,0.08))",
+          border: "1.5px solid rgba(74,222,128,0.25)",
+          minWidth: 200,
+        }}
         onClick={() => !out && setOpen(true)}>
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(100,200,100,0.2)" }}>
-          <Icon name="ImagePlus" size={16} className="text-green-400" />
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#22c55e,#16a34a)", boxShadow: "0 3px 10px rgba(34,197,94,0.4)" }}>
+          <Icon name="Images" size={16} className="text-white" />
         </div>
-        <div className="flex flex-col">
-          <span className="text-sm">{out ? "Ты открыл доступ к своим фото 🖼️" : "Открыл тебе доступ к своим фото 🖼️"}</span>
-          {!out && <span className="text-xs text-pink-400 mt-0.5">Нажми, чтобы посмотреть →</span>}
+        <div className="flex flex-col gap-0.5">
+          <span className="text-white text-[13px] font-semibold leading-tight">
+            {out ? "Ты открыл фото" : "Открыл тебе фото"}
+          </span>
+          <span className="text-[11px]" style={{ color: out ? "rgba(74,222,128,0.7)" : "rgba(74,222,128,0.9)" }}>
+            {out ? "Приватный альбом доступен" : "Нажми, чтобы посмотреть →"}
+          </span>
         </div>
       </div>
       {open && <PrivateGallery partnerId={partnerId} onClose={() => setOpen(false)} />}
@@ -351,20 +361,25 @@ function RequestPhotoMessage({ out, onGrant, partnerId }: { out: boolean; onGran
   const [granted, setGranted] = useState(false);
   const [open, setOpen] = useState(false);
 
-  const handleGrant = () => {
-    setGranted(true);
-    onGrant?.();
-  };
+  const handleGrant = () => { setGranted(true); onGrant?.(); };
 
   // Исходящее: ты запросил
   if (out) {
     return (
-      <div className="flex items-center gap-2 px-1 py-0.5">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-          style={{ background: "rgba(255,45,120,0.2)" }}>
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,45,120,0.12), rgba(155,89,182,0.1))",
+          border: "1.5px solid rgba(255,45,120,0.22)",
+          minWidth: 200,
+        }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(255,45,120,0.2)", border: "1px solid rgba(255,45,120,0.35)" }}>
           <Icon name="Lock" size={16} className="text-pink-400" />
         </div>
-        <span className="text-sm">Ты запросил доступ к приватным фото 🔐</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-white text-[13px] font-semibold">Запрос фото</span>
+          <span className="text-[11px] text-white/45">Ожидаешь ответа...</span>
+        </div>
       </div>
     );
   }
@@ -372,22 +387,36 @@ function RequestPhotoMessage({ out, onGrant, partnerId }: { out: boolean; onGran
   // Входящее: партнёр просит доступ
   return (
     <>
-      <div className="flex flex-col gap-2 px-1 py-0.5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(255,45,120,0.2)" }}>
-            <Icon name={granted ? "LockOpen" : "Lock"} size={16} className={granted ? "text-green-400" : "text-pink-400"} />
+      <div className="flex flex-col gap-2.5 px-3 py-3 rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,89,182,0.12))",
+          border: "1.5px solid rgba(255,45,120,0.3)",
+          minWidth: 200,
+        }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              background: granted ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+              boxShadow: granted ? "0 3px 10px rgba(34,197,94,0.4)" : "0 3px 10px rgba(255,45,120,0.4)",
+              transition: "all 0.3s",
+            }}>
+            <Icon name={granted ? "LockOpen" : "Lock"} size={16} className="text-white" />
           </div>
-          <span className="text-sm">Запрашивает доступ к твоим приватным фото 🔐</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-white text-[13px] font-semibold">Запрос приватных фото</span>
+            <span className="text-[11px] text-white/45">{granted ? "Доступ открыт ✓" : "Хочет посмотреть твой альбом"}</span>
+          </div>
         </div>
         {!granted ? (
           <button onClick={handleGrant}
-            className="text-xs font-semibold py-1.5 px-3 rounded-full self-start"
-            style={{ background: "rgba(255,45,120,0.25)", color: "#FF2D78" }}>
-            Открыть доступ 🖼️
+            className="btn-grad py-2 px-4 text-xs font-bold rounded-xl w-full active:scale-95 transition-transform">
+            Открыть доступ →
           </button>
         ) : (
-          <span className="text-xs text-green-400">✓ Доступ открыт</span>
+          <div className="flex items-center gap-1.5 py-1">
+            <Icon name="CheckCircle" size={14} className="text-green-400" />
+            <span className="text-xs text-green-400 font-medium">Альбом открыт</span>
+          </div>
         )}
       </div>
       {open && partnerId && <PrivateGallery partnerId={partnerId} onClose={() => setOpen(false)} />}
@@ -412,13 +441,31 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   }
   if (text.startsWith("__VCALL__")) {
     const status = text.slice(9);
+    const accepted = status === "accepted";
     return (
-      <div className="flex items-center gap-2 px-1">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: status === "accepted" ? "rgba(74,222,128,0.2)" : "rgba(255,45,120,0.2)" }}>
-          <Icon name="Video" size={16} className={status === "accepted" ? "text-green-400" : "text-pink-400"} />
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
+        style={{
+          background: accepted
+            ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,197,94,0.08))"
+            : "linear-gradient(135deg, rgba(99,179,237,0.12), rgba(79,134,247,0.08))",
+          border: `1.5px solid ${accepted ? "rgba(74,222,128,0.25)" : "rgba(99,179,237,0.25)"}`,
+          minWidth: 180,
+        }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{
+            background: accepted ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
+            boxShadow: accepted ? "0 3px 10px rgba(34,197,94,0.4)" : "0 3px 10px rgba(59,130,246,0.4)",
+          }}>
+          <Icon name="Video" size={16} className="text-white" />
         </div>
-        <span className="text-sm">{status === "accepted" ? "Видеозвонок принят ✓" : "Запрос видеозвонка 📹"}</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-white text-[13px] font-semibold">
+            {accepted ? "Видеозвонок" : "Видеозвонок"}
+          </span>
+          <span className="text-[11px]" style={{ color: accepted ? "rgba(74,222,128,0.8)" : "rgba(99,179,237,0.8)" }}>
+            {accepted ? "Звонок принят ✓" : "Входящий запрос 📹"}
+          </span>
+        </div>
       </div>
     );
   }
@@ -433,6 +480,25 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   }
   if (text === "__GRANT_PHOTO__") {
     return <GrantPhotoMessage out={out} partnerId={partnerId ?? 0} />;
+  }
+  if (text === "__GEO_DENIED__") {
+    return (
+      <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(234,179,8,0.12), rgba(202,138,4,0.08))",
+          border: "1.5px solid rgba(234,179,8,0.25)",
+          minWidth: 200,
+        }}>
+        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: "rgba(234,179,8,0.2)", border: "1px solid rgba(234,179,8,0.35)" }}>
+          <Icon name="MapPinOff" size={16} className="text-yellow-400" />
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-white text-[13px] font-semibold">Геолокация недоступна</span>
+          <span className="text-[11px] text-yellow-400/70">Разреши доступ в настройках</span>
+        </div>
+      </div>
+    );
   }
   if (text.startsWith("__AUDIO__")) {
     const url = text.slice(9);

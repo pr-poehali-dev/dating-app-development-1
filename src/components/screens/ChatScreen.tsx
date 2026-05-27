@@ -182,7 +182,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       },
       () => {
         setGeoLoading(false);
-        sendSystem("📍 Доступ к геолокации запрещён. Разреши в настройках браузера (🔒 в адресной строке).");
+        sendSystem("__GEO_DENIED__");
       },
       { timeout: 8000 }
     );
