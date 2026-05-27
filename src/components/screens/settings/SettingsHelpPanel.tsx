@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi } from "@/lib/api";
 
-type HelpSub = "" | "support" | "faq" | "rules" | "privacy";
+type HelpSub = "" | "support" | "ticket" | "faq" | "rules" | "privacy";
 type Ticket = { id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null };
 
 function FaqItem({ q, a }: { q: string; a: string }) {
@@ -171,14 +171,17 @@ export function SettingsHelpPanel({ screen }: Props) {
       {helpSub === "" && (
         <div className="px-5 flex flex-col gap-3">
           {([
-            { icon: "MessageCircle", title: "Написать в поддержку",      sub: "Ответим в течение 24 часов",         id: "support"  },
+            { icon: "MessageCircle", title: "Написать в поддержку",      sub: "Ответим в течение 24 часов",         id: "ticket"   },
             { icon: "BookOpen",      title: "Частые вопросы",             sub: "Ответы на популярные вопросы",       id: "faq"      },
             { icon: "FileText",      title: "Правила сообщества",         sub: "Как мы обеспечиваем безопасность",   id: "rules"    },
             { icon: "Shield",        title: "Политика конфиденциальности",sub: "Как мы работаем с данными",          id: "privacy"  },
             { icon: "Info",          title: "О приложении",               sub: "LoveBloom v1.0",                     id: ""         },
           ] as const).map((item) => (
             <button key={item.title}
-              onClick={() => item.id && setHelpSub(item.id as HelpSub)}
+              onClick={() => {
+                if (item.id === "ticket") { window.open("https://poehali.dev/help", "_blank"); return; }
+                if (item.id) setHelpSub(item.id as HelpSub);
+              }}
               className="glass-card flex items-center gap-4 px-4 py-3.5 w-full text-left active:bg-white/5 transition-colors">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.12)" }}>
                 <Icon name={item.icon} size={18} className="text-pink-400" />
