@@ -159,17 +159,17 @@
 
 /* ── Light theme overrides ── */
 html.light {
-  --spark-dark: #f5f3fc;
-  --spark-dark2: #ede9f7;
-  --spark-glass: rgba(255, 255, 255, 0.75);
-  --spark-glass-border: rgba(26, 22, 37, 0.1);
-  --spark-card: rgba(255, 255, 255, 0.98);
-  --spark-divider: rgba(26, 22, 37, 0.08);
-  --spark-input: rgba(26, 22, 37, 0.06);
-  --spark-input-border: rgba(26, 22, 37, 0.12);
+  --spark-dark: #f7f5ff;
+  --spark-dark2: #ede8fb;
+  --spark-glass: rgba(255, 255, 255, 0.92);
+  --spark-glass-border: rgba(26, 22, 37, 0.08);
+  --spark-card: rgba(255, 255, 255, 1);
+  --spark-divider: rgba(26, 22, 37, 0.07);
+  --spark-input: rgba(26, 22, 37, 0.05);
+  --spark-input-border: rgba(26, 22, 37, 0.14);
   --spark-text: #1a1625;
   --spark-text-sub: rgba(26, 22, 37, 0.5);
-  --spark-overlay: rgba(80, 50, 120, 0.4);
+  --spark-overlay: rgba(80, 50, 120, 0.35);
 }
 
 /* App shell */
@@ -224,15 +224,20 @@ html.light {
     border-color 0.3s ease;
 }
 
-/* Light theme text adjustments */
+/* Light theme: glass cards */
 html.light .glass-card {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(24px);
-  border-color: rgba(26, 22, 37, 0.1);
-  box-shadow: 0 2px 20px rgba(26, 22, 37, 0.07);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-color: rgba(26, 22, 37, 0.09);
+  box-shadow: 0 2px 16px rgba(26, 22, 37, 0.08);
 }
+
+/* Light theme: white text → dark */
 html.light .text-white {
   color: #1a1625 !important;
+}
+html.light .text-white\/95 {
+  color: rgba(26, 22, 37, 0.95) !important;
 }
 html.light .text-white\/85 {
   color: rgba(26, 22, 37, 0.85) !important;
@@ -249,6 +254,9 @@ html.light .text-white\/60 {
 html.light .text-white\/50 {
   color: rgba(26, 22, 37, 0.5) !important;
 }
+html.light .text-white\/45 {
+  color: rgba(26, 22, 37, 0.45) !important;
+}
 html.light .text-white\/40 {
   color: rgba(26, 22, 37, 0.4) !important;
 }
@@ -264,36 +272,63 @@ html.light .text-white\/25 {
 html.light .text-white\/20 {
   color: rgba(26, 22, 37, 0.2) !important;
 }
+
+/* Light theme: bg-white/* → subtle light */
 html.light .bg-white\/5 {
-  background: rgba(0, 0, 0, 0.04) !important;
+  background: rgba(26, 22, 37, 0.04) !important;
+}
+html.light .bg-white\/7 {
+  background: rgba(26, 22, 37, 0.05) !important;
 }
 html.light .bg-white\/8 {
-  background: rgba(0, 0, 0, 0.06) !important;
+  background: rgba(26, 22, 37, 0.05) !important;
 }
 html.light .bg-white\/10 {
-  background: rgba(0, 0, 0, 0.07) !important;
+  background: rgba(26, 22, 37, 0.06) !important;
 }
 html.light .bg-white\/12 {
-  background: rgba(0, 0, 0, 0.08) !important;
+  background: rgba(26, 22, 37, 0.07) !important;
 }
 html.light .bg-white\/15 {
-  background: rgba(0, 0, 0, 0.09) !important;
+  background: rgba(26, 22, 37, 0.08) !important;
 }
+html.light .bg-white\/20 {
+  background: rgba(26, 22, 37, 0.09) !important;
+}
+html.light .bg-white\/25 {
+  background: rgba(26, 22, 37, 0.1) !important;
+}
+
+/* Light theme: borders */
 html.light .border-white\/5 {
-  border-color: rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(26, 22, 37, 0.07) !important;
 }
 html.light .border-white\/8 {
-  border-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(26, 22, 37, 0.09) !important;
 }
 html.light .border-white\/10 {
-  border-color: rgba(0, 0, 0, 0.1) !important;
+  border-color: rgba(26, 22, 37, 0.11) !important;
 }
+html.light .border-white\/12 {
+  border-color: rgba(26, 22, 37, 0.12) !important;
+}
+html.light .border-white\/15 {
+  border-color: rgba(26, 22, 37, 0.13) !important;
+}
+html.light .border-white\/20 {
+  border-color: rgba(26, 22, 37, 0.15) !important;
+}
+html.light .border-white\/25 {
+  border-color: rgba(26, 22, 37, 0.18) !important;
+}
+
+/* Light theme: nav */
 html.light .nav-item {
-  color: rgba(26, 22, 37, 0.4);
+  color: rgba(26, 22, 37, 0.45);
 }
 html.light .nav-item.active {
   color: #1a1625;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgba(26, 22, 37, 0.08);
 }
 
 /* Шторки и модалы */
@@ -393,11 +428,14 @@ html.light .app-bg::after {
   );
 }
 
-/* Светлая тема: фон нижней навбар */
-html.light nav,
-html.light [class*="bottom-nav"],
-html.light [style*="var(--spark-dark2)"] {
-  background: rgba(240, 236, 252, 0.95) !important;
+/* Светлая тема: нижняя навигационная панель */
+html.light .light-nav {
+  background: rgba(255, 255, 255, 0.97) !important;
+  border-top-color: rgba(26, 22, 37, 0.08) !important;
+  box-shadow: 0 -4px 24px rgba(26, 22, 37, 0.08) !important;
+}
+html.light .light-nav > div {
+  background: rgba(26, 22, 37, 0.04) !important;
 }
 
 /* Светлая тема: border-белые → тёмные */
@@ -462,6 +500,18 @@ html.light [style*="borderColor: var(--spark-dark)"] {
 /* Светлая тема: swipe-card тень */
 html.light .swipe-card {
   box-shadow: 0 12px 40px rgba(26, 22, 37, 0.18);
+}
+
+/* Светлая тема: карточки поиска — яркие, с тенью */
+html.light .people-card {
+  box-shadow: 0 4px 16px rgba(26, 22, 37, 0.12);
+  outline: 1px solid rgba(26, 22, 37, 0.06);
+}
+
+/* Светлая тема: хедеры экранов */
+html.light .screen-header {
+  background: rgba(247, 245, 255, 0.98) !important;
+  border-bottom-color: rgba(26, 22, 37, 0.08) !important;
 }
 
 /* Скролл-бар в светлой теме */

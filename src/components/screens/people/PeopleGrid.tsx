@@ -88,7 +88,7 @@ export function PeopleGrid({
           return (
             <button key={p.id}
               onClick={() => isLocked ? onPremium?.() : onSelect(p, idx)}
-              className="relative overflow-hidden group transition-all active:scale-[0.97]"
+              className="people-card relative overflow-hidden group transition-all active:scale-[0.97]"
               style={{ aspectRatio: "2/3", borderRadius: 16 }}>
 
               <img

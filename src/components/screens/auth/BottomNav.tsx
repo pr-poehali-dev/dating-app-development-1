@@ -12,7 +12,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
   ];
 
   return (
-    <div className="relative z-10 px-3 pb-3 pt-2"
+    <div className="relative z-10 px-3 pb-3 pt-2 light-nav"
       style={{
         background: "rgba(12,7,22,0.96)",
         backdropFilter: "blur(32px)",

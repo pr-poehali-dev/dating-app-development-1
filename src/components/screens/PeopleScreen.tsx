@@ -269,7 +269,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
 
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="px-4 pt-5 pb-3 flex-shrink-0"
+        <div className="px-4 pt-5 pb-3 flex-shrink-0 screen-header"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
           {/* Заголовок + кнопки */}
