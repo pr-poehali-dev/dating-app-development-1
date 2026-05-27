@@ -19,6 +19,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   const [streamTitle, setStreamTitle] = useState("");
   const [lastMsgId, setLastMsgId] = useState(0);
   const lastMsgIdRef = useRef(0);
+  const lastHeartsCountRef = useRef(0);
   const [activeTab, setActiveTab] = useState("popular");
   const [tabSearch, setTabSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
@@ -65,6 +66,16 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
           loadStreams(); return;
         }
         setActiveStream((prev) => prev ? { ...prev, viewers_count: res.stream.viewers_count, hearts_count: res.stream.hearts_count } : prev);
+        // Анимируем сердечки у зрителей когда hearts_count вырос
+        if (!isStreamingRef.current && res.stream.hearts_count > lastHeartsCountRef.current) {
+          const diff = res.stream.hearts_count - lastHeartsCountRef.current;
+          for (let i = 0; i < Math.min(diff, 5); i++) {
+            const id = Date.now() + i;
+            setHeartsAnim((prev) => [...prev, id]);
+            setTimeout(() => setHeartsAnim((prev) => prev.filter((x) => x !== id)), 1500);
+          }
+        }
+        lastHeartsCountRef.current = res.stream.hearts_count;
         if (res.messages.length > 0) {
           const newId = res.messages[res.messages.length - 1].id;
           lastMsgIdRef.current = newId;
@@ -85,6 +96,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   void lastMsgId;
 
   const handleJoin = async (stream: LiveStream) => {
+    lastHeartsCountRef.current = stream.hearts_count || 0;
     setActiveStream(stream); setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
     try { await liveApi.join(stream.id); } catch (e: unknown) { void e; }
   };

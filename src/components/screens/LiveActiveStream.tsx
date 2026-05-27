@@ -61,9 +61,31 @@ export function LiveActiveStream({
                 className="w-full h-full object-cover"
                 style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none", transition: "transform 0.3s" }}
               />
-            : <div className="flex flex-col items-center gap-2">
-                <img src={activeStream.author_photo || FALLBACK_PHOTO} className="w-20 h-20 rounded-full object-cover border-4 border-pink-500" />
-                <p className="text-white font-semibold">{activeStream.author_name}</p>
+            : <div className="flex flex-col items-center gap-4 px-6 text-center">
+                <div className="relative">
+                  <img src={activeStream.author_photo || FALLBACK_PHOTO}
+                    className="w-24 h-24 rounded-full object-cover"
+                    style={{ border: "3px solid #FF2D78", boxShadow: "0 0 0 6px rgba(255,45,120,0.2)" }} />
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    LIVE
+                  </div>
+                </div>
+                <div>
+                  <p className="text-white font-bold text-lg">{activeStream.author_name}</p>
+                  <p className="text-white/50 text-sm mt-0.5">{activeStream.title}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <Icon name="Eye" size={13} className="text-white/60" />
+                    <span className="text-white/80 text-xs font-semibold">{activeStream.viewers_count}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                    <span className="text-sm">❤️</span>
+                    <span className="text-white/80 text-xs font-semibold">{activeStream.hearts_count}</span>
+                  </div>
+                </div>
+                <p className="text-white/30 text-xs">Трансляция идёт в прямом эфире</p>
               </div>
           }
         </div>
@@ -102,8 +124,14 @@ export function LiveActiveStream({
           <p className="text-white font-semibold text-sm">{activeStream.title}</p>
         </div>
 
-        {heartsAnim.map((id) => (
-          <div key={id} className="absolute bottom-16 right-6 pointer-events-none animate-bounce text-2xl">❤️</div>
+        {heartsAnim.map((id, i) => (
+          <div key={id}
+            className="absolute pointer-events-none text-2xl"
+            style={{
+              bottom: 60 + (i % 3) * 20,
+              right: 16 + (id % 5) * 14,
+              animation: "heartFloat 1.5s ease-out forwards",
+            }}>❤️</div>
         ))}
       </div>
 
