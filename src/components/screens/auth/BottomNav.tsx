@@ -12,54 +12,52 @@ export function BottomNav({ active, onChange }: { active: Screen; onChange: (s: 
   ];
 
   return (
-    <div className="flex items-center justify-around px-2 pt-2 pb-3 relative z-10"
+    <div className="relative z-10"
       style={{
-        borderTop: "1px solid rgba(255,255,255,0.07)",
-        background: "rgba(18,12,28,0.97)",
-        backdropFilter: "blur(24px)",
+        background: "rgba(14,9,24,0.98)",
+        backdropFilter: "blur(28px)",
+        borderTop: "1px solid rgba(255,255,255,0.1)",
+        boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
       }}>
-      {items.map((item) => {
-        const isActive = active === item.screen;
-        return (
-          <button
-            key={item.screen}
-            onClick={() => onChange(item.screen)}
-            className="nav-item relative flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-all duration-200 active:scale-90"
-            style={{
-              color: isActive ? "#FF2D78" : "rgba(255,255,255,0.38)",
-              background: isActive ? "rgba(255,45,120,0.12)" : "transparent",
-              minWidth: 56,
-            }}>
+      <div className="flex items-center justify-around px-3 pt-2 pb-safe pb-3">
+        {items.map((item) => {
+          const isActive = active === item.screen;
+          return (
+            <button
+              key={item.screen}
+              onClick={() => onChange(item.screen)}
+              className="relative flex flex-col items-center gap-1 transition-all duration-200 active:scale-90"
+              style={{ minWidth: 52, paddingBottom: 2 }}>
 
-            {/* Иконка */}
-            <div className="relative">
-              <Icon
-                name={item.icon as "Home"|"Search"|"Radio"|"MessageCircle"|"User"}
-                size={22}
-                strokeWidth={isActive ? 2.5 : 1.8}
-              />
-              {item.badge && (
-                <div className="absolute -top-1 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
-                  style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
-                  {item.badge}
-                </div>
-              )}
-            </div>
+              {/* Иконка с подсветкой */}
+              <div className="relative flex items-center justify-center w-11 h-9 rounded-2xl transition-all duration-200"
+                style={isActive
+                  ? { background: "linear-gradient(135deg, rgba(255,45,120,0.22), rgba(155,89,182,0.18))" }
+                  : {}}>
+                <Icon
+                  name={item.icon as "Home"|"Search"|"Radio"|"MessageCircle"|"User"}
+                  size={21}
+                  strokeWidth={isActive ? 2.4 : 1.7}
+                  style={{ color: isActive ? "#FF2D78" : "rgba(255,255,255,0.4)" }}
+                />
+                {item.badge && (
+                  <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[9px] text-white font-bold"
+                    style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
+                    {item.badge}
+                  </div>
+                )}
+              </div>
 
-            {/* Лейбл */}
-            <span className="text-[10px] font-semibold leading-none"
-              style={{ color: isActive ? "#FF2D78" : "rgba(255,255,255,0.38)" }}>
-              {item.label}
-            </span>
+              {/* Лейбл */}
+              <span className="text-[10px] font-semibold leading-none transition-all duration-200"
+                style={{ color: isActive ? "#FF2D78" : "rgba(255,255,255,0.32)" }}>
+                {item.label}
+              </span>
 
-            {/* Точка-индикатор активного таба */}
-            {isActive && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                style={{ background: "#FF2D78" }} />
-            )}
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
