@@ -206,58 +206,149 @@ export function ProfileTopBar({
           </button>
 
           {activeTab === "settings" && (
-            <div className="absolute right-0 top-11 z-50 rounded-2xl overflow-hidden shadow-2xl min-w-[230px]"
-              style={{ background: "rgba(20,14,32,0.98)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
-              {[
-                { icon: "BadgeCheck", label: currentUser.verified ? "✓ Верифицирован" : "Верификация", action: () => { onVerify(); onTabChange(null); }, blue: currentUser.verified },
-                { icon: "User",       label: "Настройки аккаунта",   action: () => { onSettingsScreen("account"); onTabChange(null); } },
-                { icon: "Shield",     label: "Конфиденциальность",   action: () => { onSettingsScreen("privacy"); onTabChange(null); } },
-                { icon: "Ban",        label: "Заблокированные",      action: () => { onSettingsScreen("blocked"); onTabChange(null); } },
-                { icon: "Bell",       label: "Уведомления",          action: () => { onSettingsScreen("notifications"); onTabChange(null); } },
-                { icon: "HelpCircle", label: "Помощь",               action: () => { onSettingsScreen("help"); onTabChange(null); } },
-              ].map((item, i, arr) => (
-                <button key={item.label}
-                  onClick={item.action}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5 transition-colors"
-                  style={i < arr.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.06)" } : {}}>
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: (item as {blue?: boolean}).blue ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.07)" }}>
-                    <Icon name={item.icon as "BadgeCheck"|"User"|"Shield"|"Ban"|"Bell"|"HelpCircle"} size={14}
-                      className={(item as {blue?: boolean}).blue ? "text-blue-400" : "text-white/60"} />
-                  </div>
-                  <span className={`text-sm font-medium ${(item as {blue?: boolean}).blue ? "text-blue-400" : "text-white/80"}`}>{item.label}</span>
-                </button>
-              ))}
+            <div className="absolute right-0 top-12 z-50 min-w-[260px] flex flex-col"
+              style={{
+                background: "linear-gradient(160deg, rgba(28,18,45,0.99) 0%, rgba(18,10,30,0.99) 100%)",
+                border: "1px solid rgba(255,255,255,0.09)",
+                borderRadius: 20,
+                boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset",
+                backdropFilter: "blur(32px)",
+                overflow: "hidden",
+              }}>
+
+              {/* Шапка меню — аватар + имя */}
+              <div className="flex items-center gap-3 px-4 py-3.5"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+                <img
+                  src={currentUser.photo_url || "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg"}
+                  className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                  style={{ border: "2px solid rgba(255,45,120,0.4)" }}
+                />
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm leading-tight truncate">{currentUser.name || "Профиль"}</p>
+                  <p className="text-white/35 text-xs truncate">@{currentUser.username || currentUser.email?.split("@")[0] || "user"}</p>
+                </div>
+              </div>
+
+              {/* Группа 1: Верификация + Настройки */}
+              <div className="px-2 py-2 flex flex-col gap-0.5">
+                {[
+                  {
+                    icon: "BadgeCheck" as const,
+                    label: currentUser.verified ? "Верифицирован" : "Верификация",
+                    sub: currentUser.verified ? "Профиль подтверждён" : "Подтверди личность",
+                    action: () => { onVerify(); onTabChange(null); },
+                    iconBg: currentUser.verified ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
+                    iconColor: currentUser.verified ? "text-blue-400" : "text-white/50",
+                    badge: currentUser.verified ? "✓" : undefined,
+                  },
+                  {
+                    icon: "Settings" as const,
+                    label: "Настройки аккаунта",
+                    sub: "Имя, почта, юзернейм",
+                    action: () => { onSettingsScreen("account"); onTabChange(null); },
+                    iconBg: "rgba(255,255,255,0.07)",
+                    iconColor: "text-white/50",
+                  },
+                  {
+                    icon: "Shield" as const,
+                    label: "Конфиденциальность",
+                    sub: "Онлайн, видимость",
+                    action: () => { onSettingsScreen("privacy"); onTabChange(null); },
+                    iconBg: "rgba(255,255,255,0.07)",
+                    iconColor: "text-white/50",
+                  },
+                  {
+                    icon: "Bell" as const,
+                    label: "Уведомления",
+                    sub: "Матчи, сообщения",
+                    action: () => { onSettingsScreen("notifications"); onTabChange(null); },
+                    iconBg: "rgba(255,255,255,0.07)",
+                    iconColor: "text-white/50",
+                  },
+                  {
+                    icon: "Ban" as const,
+                    label: "Заблокированные",
+                    sub: "Управление блокировками",
+                    action: () => { onSettingsScreen("blocked"); onTabChange(null); },
+                    iconBg: "rgba(255,255,255,0.07)",
+                    iconColor: "text-white/50",
+                  },
+                  {
+                    icon: "HelpCircle" as const,
+                    label: "Помощь",
+                    sub: "Поддержка и FAQ",
+                    action: () => { onSettingsScreen("help"); onTabChange(null); },
+                    iconBg: "rgba(255,255,255,0.07)",
+                    iconColor: "text-white/50",
+                  },
+                ].map((item) => (
+                  <button key={item.label} onClick={item.action}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all active:scale-[0.98]"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: item.iconBg }}>
+                      <Icon name={item.icon} size={15} className={item.iconColor} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/90 text-sm font-semibold leading-tight">{item.label}</p>
+                      <p className="text-white/30 text-[11px] leading-tight mt-0.5">{item.sub}</p>
+                    </div>
+                    {item.badge && (
+                      <span className="text-[10px] font-bold text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded-full flex-shrink-0">{item.badge}</span>
+                    )}
+                    <Icon name="ChevronRight" size={13} className="text-white/20 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
 
               {/* Тема */}
               {onToggleTheme && (
-                <button onClick={() => { onToggleTheme(); }}
-                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left active:bg-white/5 transition-colors"
-                  style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: isDark ? "rgba(255,200,50,0.12)" : "rgba(100,100,200,0.12)" }}>
-                      <Icon name={isDark ? "Sun" : "Moon"} size={14} className={isDark ? "text-yellow-400" : "text-indigo-400"} />
+                <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <button onClick={onToggleTheme}
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
+                    style={{ background: "transparent" }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: isDark ? "rgba(251,191,36,0.12)" : "rgba(99,102,241,0.12)" }}>
+                        <Icon name={isDark ? "Sun" : "Moon"} size={15} className={isDark ? "text-amber-400" : "text-indigo-400"} />
+                      </div>
+                      <div>
+                        <p className="text-white/90 text-sm font-semibold leading-tight">{isDark ? "Светлая тема" : "Тёмная тема"}</p>
+                        <p className="text-white/30 text-[11px] leading-tight mt-0.5">{isDark ? "Переключить на светлую" : "Переключить на тёмную"}</p>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-white/80">{isDark ? "Светлая тема" : "Тёмная тема"}</span>
-                  </div>
-                  <div className="w-10 h-5 rounded-full relative flex-shrink-0"
-                    style={{ background: isDark ? "rgba(255,255,255,0.12)" : "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                    <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
-                      style={{ left: isDark ? "2px" : "calc(100% - 18px)" }} />
-                  </div>
-                </button>
+                    <div className="w-11 h-6 rounded-full relative flex-shrink-0 transition-all"
+                      style={{ background: isDark ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: isDark ? "none" : "0 2px 8px rgba(255,45,120,0.4)" }}>
+                      <div className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all"
+                        style={{ left: isDark ? "3px" : "calc(100% - 19px)" }} />
+                    </div>
+                  </button>
+                </div>
               )}
 
-              <button onClick={() => { onLogout(); onTabChange(null); }}
-                className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5 transition-colors"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(239,68,68,0.1)" }}>
-                  <Icon name="LogOut" size={14} className="text-red-400" />
-                </div>
-                <span className="text-red-400 text-sm font-medium">Выйти из аккаунта</span>
-              </button>
+              {/* Выйти */}
+              <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <button onClick={() => { onLogout(); onTabChange(null); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
+                  style={{ background: "transparent" }}
+                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.07)")}
+                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ background: "rgba(239,68,68,0.1)" }}>
+                    <Icon name="LogOut" size={15} className="text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-red-400 text-sm font-semibold leading-tight">Выйти из аккаунта</p>
+                    <p className="text-red-400/40 text-[11px] leading-tight mt-0.5">Завершить сессию</p>
+                  </div>
+                </button>
+              </div>
+
             </div>
           )}
         </div>
