@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 
@@ -42,11 +43,76 @@ export function ProfilePhotoSection({
 }) {
   const displayPhoto = localPhoto || FALLBACK_PHOTO;
   const maxGallery = currentUser.premium ? 5 : 1;
+  const [photoSubTab, setPhotoSubTab] = useState<"public" | "private">("public");
 
   return (
     <>
       {activeTab === "photos" && (
         <div className="w-full mt-3 flex flex-col gap-3">
+
+          {/* Вложенный переключатель Публичные / Приватные */}
+          <div className="flex rounded-2xl gap-1 p-1"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <button onClick={() => setPhotoSubTab("public")}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.97]"
+              style={photoSubTab === "public"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
+                : { background: "transparent" }}>
+              <Icon name="Image" size={13} className={photoSubTab === "public" ? "text-white" : "text-white/35"} />
+              <span className={`text-xs font-semibold ${photoSubTab === "public" ? "text-white" : "text-white/35"}`}>Публичные</span>
+            </button>
+            <button onClick={() => setPhotoSubTab("private")}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.97]"
+              style={photoSubTab === "private"
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
+                : { background: "transparent" }}>
+              <Icon name="Lock" size={13} className={photoSubTab === "private" ? "text-white" : "text-white/35"} />
+              <span className={`text-xs font-semibold ${photoSubTab === "private" ? "text-white" : "text-white/35"}`}>Приватные</span>
+            </button>
+          </div>
+
+          {/* Контент приватных — встроен прямо сюда */}
+          {photoSubTab === "private" && (
+            <div className="flex flex-col gap-3">
+              <div className="rounded-2xl overflow-hidden"
+                style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.15),rgba(155,89,182,0.12))", border: "1px solid rgba(255,45,120,0.25)" }}>
+                <div className="relative p-5 flex flex-col items-center gap-3 text-center">
+                  <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
+                    style={{ background: "radial-gradient(circle,#FF2D78,transparent)", transform: "translate(30%,-30%)" }} />
+                  <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full opacity-15"
+                    style={{ background: "radial-gradient(circle,#9B59B6,transparent)", transform: "translate(-30%,30%)" }} />
+                  <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 20px rgba(255,45,120,0.45)" }}>
+                    <Icon name="Lock" size={24} className="text-white" />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-white font-bold text-base">Приватный альбом</p>
+                    <p className="text-white/45 text-xs leading-relaxed px-2">
+                      Добавь фото — они будут видны только тем, кому ты откроешь доступ
+                    </p>
+                  </div>
+                  <button onClick={onSettingsPrivate}
+                    className="btn-grad px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
+                    <Icon name="Settings" size={14} className="text-white" />
+                    Настроить доступ
+                  </button>
+                </div>
+              </div>
+              <div className="rounded-2xl p-4 flex gap-3"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,45,120,0.12)" }}>
+                  <Icon name="Info" size={15} className="text-pink-400" />
+                </div>
+                <p className="text-white/35 text-xs leading-relaxed">
+                  Приватные фото открываются по запросу. Ты сам решаешь, кому показывать свой альбом.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Публичные фото */}
+          {photoSubTab === "public" && (<>
 
           {/* Фото на фон */}
           <div className="rounded-2xl overflow-hidden"
@@ -195,59 +261,7 @@ export function ProfilePhotoSection({
               </p>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Приватные фото */}
-      {activeTab === "private" && (
-        <div className="w-full mt-3 flex flex-col gap-3">
-          {/* Баннер */}
-          <div className="rounded-2xl overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,45,120,0.15), rgba(155,89,182,0.12))",
-              border: "1px solid rgba(255,45,120,0.25)",
-            }}>
-            <div className="relative p-5 flex flex-col items-center gap-3 text-center">
-              {/* Декоративные круги */}
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
-                style={{ background: "radial-gradient(circle, #FF2D78, transparent)", transform: "translate(30%, -30%)" }} />
-              <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full opacity-15"
-                style={{ background: "radial-gradient(circle, #9B59B6, transparent)", transform: "translate(-30%, 30%)" }} />
-
-              <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
-                  boxShadow: "0 6px 20px rgba(255,45,120,0.45)",
-                }}>
-                <Icon name="Lock" size={24} className="text-white" />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-white font-bold text-base">Приватный альбом</p>
-                <p className="text-white/45 text-xs leading-relaxed px-2">
-                  Добавь фото — они будут видны только тем, кому ты откроешь доступ
-                </p>
-              </div>
-
-              <button onClick={onSettingsPrivate}
-                className="btn-grad px-6 py-2.5 text-sm font-semibold flex items-center gap-2">
-                <Icon name="Settings" size={14} className="text-white" />
-                Настроить доступ
-              </button>
-            </div>
-          </div>
-
-          {/* Инфо-подсказка */}
-          <div className="rounded-2xl p-4 flex gap-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(255,45,120,0.12)" }}>
-              <Icon name="Info" size={15} className="text-pink-400" />
-            </div>
-            <p className="text-white/35 text-xs leading-relaxed">
-              Приватные фото открываются по запросу. Ты сам решаешь, кому показывать свой альбом.
-            </p>
-          </div>
+          </>)}
         </div>
       )}
 

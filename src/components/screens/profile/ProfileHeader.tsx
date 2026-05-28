@@ -42,9 +42,8 @@ export function ProfileHeader({
   const displayPhoto = localPhoto || FALLBACK_PHOTO;
 
   const tabs = [
-    { key: "photos",  icon: "Image",  label: "Фото" },
-    { key: "private", icon: "Lock",   label: "Приватное" },
-    { key: "gifts",   icon: "Gift",   label: "Подарки" },
+    { key: "photos", icon: "Image", label: "Фото" },
+    { key: "gifts",  icon: "Gift",  label: "Подарки" },
   ] as const;
 
   return (

@@ -136,17 +136,10 @@ export function ProfileInfoSection({
       <div className="flex gap-2 px-5 pb-3">
         <button onClick={() => onPhotoTabChange("public")}
           className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
-          style={photoTab === "public"
+          style={photoTab === "public" || photoTab === "private"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
             : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
           📷 Фото
-        </button>
-        <button onClick={() => onPhotoTabChange("private")}
-          className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
-          style={photoTab === "private"
-            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-            : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
-          🔒 Приватное
         </button>
         <button onClick={() => { onPhotoTabChange("gifts"); onViewGifts?.(); }}
           className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
@@ -156,6 +149,28 @@ export function ProfileInfoSection({
           🎁 Подарки
         </button>
       </div>
+
+      {/* Вложенный переключатель Публичные / Приватные */}
+      {(photoTab === "public" || photoTab === "private") && (
+        <div className="flex gap-1 px-5 pb-3">
+          <button onClick={() => onPhotoTabChange("public")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+            style={photoTab === "public"
+              ? { background: "rgba(255,255,255,0.12)", color: "white" }
+              : { background: "transparent", color: "rgba(255,255,255,0.35)" }}>
+            <Icon name="Image" size={12} className={photoTab === "public" ? "text-white" : "text-white/35"} />
+            Публичные
+          </button>
+          <button onClick={() => onPhotoTabChange("private")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+            style={photoTab === "private"
+              ? { background: "rgba(255,255,255,0.12)", color: "white" }
+              : { background: "transparent", color: "rgba(255,255,255,0.35)" }}>
+            <Icon name="Lock" size={12} className={photoTab === "private" ? "text-white" : "text-white/35"} />
+            Приватные
+          </button>
+        </div>
+      )}
 
       {/* Галерея */}
       {photoTab === "gifts" ? (
