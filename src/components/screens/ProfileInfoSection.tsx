@@ -281,13 +281,15 @@ export function ProfileInfoSection({
           className="flex-1 glass-card py-3.5 flex items-center justify-center gap-2 text-white/60 font-semibold text-sm">
           <Icon name="ChevronRight" size={18} />Пропустить
         </button>
-        <button onClick={onLike} disabled={liked || liking}
-          className="flex-1 btn-grad py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all"
-          style={{ opacity: liked ? 0.7 : 1 }}>
+        <button onClick={onLike} disabled={liking}
+          className="flex-1 py-3.5 flex items-center justify-center gap-2 font-semibold text-sm transition-all active:scale-95 rounded-full"
+          style={liked
+            ? { background: "linear-gradient(135deg,rgba(255,45,120,0.2),rgba(155,89,182,0.2))", border: "1.5px solid rgba(255,45,120,0.5)", color: "#FF2D78", boxShadow: "0 0 20px rgba(255,45,120,0.2)" }
+            : { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 20px rgba(255,45,120,0.4)", color: "white", border: "none" }}>
           {liking
-            ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            : <Icon name="Heart" size={18} className="text-white" />}
-          {liked ? "Лайкнуто!" : "Лайкнуть"}
+            ? <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            : <Icon name="Heart" size={18} className={liked ? "text-pink-400" : "text-white"} style={liked ? { fill: "#FF2D78" } : { fill: "white" }} />}
+          {liked ? "Лайкнуто ❤️" : "Лайкнуть"}
         </button>
       </div>
 

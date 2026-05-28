@@ -47,6 +47,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [showUserGifts, setShowUserGifts] = useState(false);
   const [userGifts, setUserGifts] = useState<MyGift[]>([]);
   const [userGiftsLoading, setUserGiftsLoading] = useState(false);
+  const [heartAnim, setHeartAnim] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [followersList, setFollowersList] = useState<{ id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[]>([]);
   const [followersLoading, setFollowersLoading] = useState(false);
@@ -106,6 +107,9 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const handleLike = async () => {
     if (liked || liking) return;
     setLiking(true);
+    // Запускаем анимацию сердца сразу
+    setHeartAnim(true);
+    setTimeout(() => setHeartAnim(false), 1000);
     try {
       const res = await likesApi.send(currentProfile.id);
       setLikedSet(prev => new Set([...prev, currentProfile.id]));
@@ -115,7 +119,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         setMatchId(res.match_id);
       }
       onLike(currentProfile);
-      // Отправляем ❤️ в чат и сразу открываем переписку
+      // Тихо отправляем ❤️ в чат, но не открываем его
       try {
         const { messagesApi, matchesApi } = await import("@/lib/api");
         let resolvedMatchId = mid;
@@ -127,21 +131,11 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         if (!resolvedMatchId) {
           const direct = await messagesApi.sendDirect(currentProfile.id, "❤️");
           resolvedMatchId = direct.match_id;
+          if (resolvedMatchId) setMatchId(resolvedMatchId);
         } else {
           await messagesApi.send(resolvedMatchId, "❤️");
         }
-        if (resolvedMatchId && onOpenChat) {
-          onClose();
-          setTimeout(() => onOpenChat(resolvedMatchId!), 350);
-          return;
-        }
       } catch (e) { void e; }
-      animateThen("right", () => {
-        if (profiles && currentIdx < profiles.length - 1) {
-          setCurrentIdx(i => i + 1);
-          setMatchId(null);
-        }
-      });
     } catch (e) { void e; }
     finally { setLiking(false); }
   };
@@ -287,6 +281,43 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           opacity: swipeAnim === "idle" ? 1 : 0,
         }}
       >
+        {/* ❤️ Анимация лайка */}
+        {heartAnim && (
+          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+            <div style={{ animation: "heartPop 0.9s ease forwards" }}>
+              <span style={{ fontSize: 96, filter: "drop-shadow(0 0 24px rgba(255,45,120,0.8))" }}>❤️</span>
+            </div>
+            {/* Брызги */}
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="absolute w-3 h-3 rounded-full"
+                style={{
+                  background: i % 2 === 0 ? "#FF2D78" : "#FF6B9D",
+                  animation: `heartSpark${i} 0.8s ease forwards`,
+                  top: "50%", left: "50%",
+                  transform: `rotate(${i * 45}deg) translateY(-60px)`,
+                  opacity: 0,
+                  animationDelay: "0.1s",
+                }} />
+            ))}
+          </div>
+        )}
+        <style>{`
+          @keyframes heartPop {
+            0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+            40%  { transform: scale(1.3) rotate(8deg);  opacity: 1; }
+            65%  { transform: scale(1.0) rotate(-4deg); opacity: 1; }
+            85%  { transform: scale(1.1) rotate(2deg);  opacity: 1; }
+            100% { transform: scale(0.8) rotate(0deg);  opacity: 0; }
+          }
+          @keyframes heartSpark0 { to { transform: rotate(0deg)   translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark1 { to { transform: rotate(45deg)  translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark2 { to { transform: rotate(90deg)  translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark3 { to { transform: rotate(135deg) translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark4 { to { transform: rotate(180deg) translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark5 { to { transform: rotate(225deg) translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark6 { to { transform: rotate(270deg) translateY(-80px) scale(0); opacity: 1; } }
+          @keyframes heartSpark7 { to { transform: rotate(315deg) translateY(-80px) scale(0); opacity: 1; } }
+        `}</style>
         <ProfilePhotoSection
           currentPhoto={currentPhoto}
           photos={photos}
