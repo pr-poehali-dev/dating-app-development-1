@@ -2,13 +2,21 @@ import json, os, psycopg2
 from datetime import datetime, timezone
 
 def get_db():
-    return psycopg2.connect(os.environ["DATABASE_URL"])
+    schema = os.environ.get("MAIN_DB_SCHEMA", "public")
+    return psycopg2.connect(os.environ["DATABASE_URL"], options=f"-c search_path={schema}")
 
 def get_user(conn, token):
     if not token:
         return None
     with conn.cursor() as cur:
-        cur.execute("SELECT id, name, photo_url FROM users WHERE session_token = %s", (token,))
+        cur.execute(
+            """SELECT u.id, u.name, u.photo_url
+               FROM users u
+               JOIN sessions s ON s.user_id = u.id
+               WHERE s.token = %s AND s.expires_at > NOW()
+               LIMIT 1""",
+            (token,)
+        )
         row = cur.fetchone()
         if row:
             return {"id": row[0], "name": row[1], "photo_url": row[2]}

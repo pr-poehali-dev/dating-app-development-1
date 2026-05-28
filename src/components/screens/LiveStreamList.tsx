@@ -32,6 +32,7 @@ interface LiveStreamListProps {
   onShowStart: (show: boolean) => void;
   onStreamTitleChange: (val: string) => void;
   onStartStream: () => void;
+  streamError?: string;
 }
 
 export function LiveStreamList({
@@ -52,6 +53,7 @@ export function LiveStreamList({
   onShowStart,
   onStreamTitleChange,
   onStartStream,
+  streamError,
 }: LiveStreamListProps) {
   return (
     <>
@@ -66,6 +68,13 @@ export function LiveStreamList({
             <input value={streamTitle} onChange={(e) => onStreamTitleChange(e.target.value)}
               placeholder="Название трансляции"
               className="w-full bg-white/10 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
+            {streamError && (
+              <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-sm"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}>
+                <span className="text-red-400 flex-shrink-0 mt-0.5">⚠️</span>
+                <p className="text-red-300 text-xs leading-relaxed">{streamError}</p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button onClick={() => onShowStart(false)}
                 className="flex-1 glass-card py-3 text-white/60 text-sm font-semibold">Отмена</button>

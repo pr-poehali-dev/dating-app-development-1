@@ -34,6 +34,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [switchingCamera, setSwitchingCamera] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
+  const [streamError, setStreamError] = useState("");
 
   // WebRTC refs
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -332,11 +333,29 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   // ── Стартуем трансляцию ───────────────────────────────────────────────────
   const handleStartStream = async () => {
     if (!streamTitle.trim()) return;
+    setStreamError("");
+
+    // Пробуем получить поток с разными ограничениями (от идеальных к минимальным)
+    let mediaStream: MediaStream | null = null;
+    const attempts: MediaStreamConstraints[] = [
+      { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true },
+      { video: { facingMode: "user" }, audio: true },
+      { video: true, audio: true },
+      { video: true, audio: false },
+    ];
+    for (const constraints of attempts) {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+        break;
+      } catch (e) { void e; }
+    }
+
+    if (!mediaStream) {
+      setStreamError("Не удалось открыть камеру. Разреши доступ к камере в браузере (🔒 в адресной строке) и попробуй снова.");
+      return;
+    }
+
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: true,
-      });
       streamRef.current = mediaStream;
       setFacingMode("user");
       const res = await liveApi.start(streamTitle.trim());
@@ -347,11 +366,11 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
       setStreamTitle("");
       setActiveStream(res.stream);
       setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
-      // Запускаем WebRTC сигналинг для стримера
       startStreamerSignaling(res.stream.id);
     } catch (e: unknown) {
       void e;
-      alert("Не удалось получить доступ к камере/микрофону. Проверь разрешения в браузере.");
+      mediaStream.getTracks().forEach(t => t.stop());
+      setStreamError("Ошибка запуска трансляции. Попробуй ещё раз.");
     }
   };
 
@@ -421,6 +440,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
       onShowStart={setShowStart}
       onStreamTitleChange={setStreamTitle}
       onStartStream={handleStartStream}
+      streamError={streamError}
     />
   );
 }
