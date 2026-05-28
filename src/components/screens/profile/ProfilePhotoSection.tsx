@@ -267,21 +267,19 @@ export function ProfilePhotoSection({
 
       {/* Подарки */}
       {activeTab === "gifts" && (
-        <div className="w-full mt-3 flex flex-col gap-3">
-          <div className="rounded-2xl p-4"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3">Мои подарки</p>
-            <div className="grid grid-cols-4 gap-2">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="aspect-square rounded-2xl flex flex-col items-center justify-center"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <Icon name="Gift" size={22} className="text-white/10" />
-                </div>
-              ))}
+        <div className="w-full mt-3">
+          <div className="rounded-2xl py-8 px-5 flex flex-col items-center gap-3 text-center"
+            style={{ background: "rgba(255,255,255,0.03)", border: "1.5px dashed rgba(255,255,255,0.1)" }}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.12),rgba(155,89,182,0.12))", border: "1px solid rgba(255,45,120,0.2)" }}>
+              <span className="text-2xl">🎁</span>
             </div>
-            <p className="text-white/25 text-[11px] mt-3 text-center">
-              Здесь будут отображаться подарки, которые тебе дарят
-            </p>
+            <div className="flex flex-col gap-1">
+              <p className="text-white/60 text-sm font-semibold">Подарков пока нет</p>
+              <p className="text-white/25 text-xs leading-relaxed">
+                Здесь появятся подарки,<br />которые тебе отправят
+              </p>
+            </div>
           </div>
         </div>
       )}
