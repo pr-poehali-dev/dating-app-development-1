@@ -48,6 +48,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
   const [settingsScreen, setSettingsScreen] = useState<null | SettingsScreen>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
   const toggleTheme = () => {
@@ -211,10 +212,10 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
         {/* Шапка с меню */}
         <ProfileTopBar
-          activeTab={activeTab}
+          menuOpen={menuOpen}
           currentUser={currentUser}
           onEditOpen={() => setEditOpen(true)}
-          onTabChange={setActiveTab}
+          onMenuToggle={setMenuOpen}
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}

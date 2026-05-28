@@ -165,9 +165,9 @@ export function ProfileHeader({
 }
 
 export function ProfileTopBar({
-  activeTab,
+  menuOpen,
   onEditOpen,
-  onTabChange,
+  onMenuToggle,
   onSettingsScreen,
   onLogout,
   onVerify,
@@ -175,9 +175,9 @@ export function ProfileTopBar({
   isDark,
   onToggleTheme,
 }: {
-  activeTab: ActiveTab;
+  menuOpen: boolean;
   onEditOpen: () => void;
-  onTabChange: (tab: ActiveTab) => void;
+  onMenuToggle: (open: boolean) => void;
   onSettingsScreen: (s: SettingsScreen) => void;
   onLogout: () => void;
   onVerify: () => void;
@@ -199,15 +199,15 @@ export function ProfileTopBar({
 
         {/* Меню */}
         <div className="relative">
-          <button onClick={() => onTabChange(activeTab === "settings" ? null : "settings")}
+          <button onClick={() => onMenuToggle(!menuOpen)}
             className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all active:scale-95"
-            style={activeTab === "settings"
+            style={menuOpen
               ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
               : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
             <Icon name="MoreVertical" size={18} className="text-white/80" />
           </button>
 
-          {activeTab === "settings" && (
+          {menuOpen && (
             <div className="absolute right-0 top-12 z-50 min-w-[260px] flex flex-col"
               style={{
                 background: "linear-gradient(160deg, rgba(28,18,45,0.99) 0%, rgba(18,10,30,0.99) 100%)",
@@ -239,7 +239,7 @@ export function ProfileTopBar({
                     icon: "BadgeCheck" as const,
                     label: currentUser.verified ? "Верифицирован" : "Верификация",
                     sub: currentUser.verified ? "Профиль подтверждён" : "Подтверди личность",
-                    action: () => { onVerify(); onTabChange(null); },
+                    action: () => { onVerify(); onMenuToggle(false); },
                     iconBg: currentUser.verified ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
                     iconColor: currentUser.verified ? "text-blue-400" : "text-white/50",
                     badge: currentUser.verified ? "✓" : undefined,
@@ -248,7 +248,7 @@ export function ProfileTopBar({
                     icon: "Settings" as const,
                     label: "Настройки аккаунта",
                     sub: "Имя, почта, юзернейм",
-                    action: () => { onSettingsScreen("account"); onTabChange(null); },
+                    action: () => { onSettingsScreen("account"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
@@ -256,7 +256,7 @@ export function ProfileTopBar({
                     icon: "Shield" as const,
                     label: "Конфиденциальность",
                     sub: "Онлайн, видимость",
-                    action: () => { onSettingsScreen("privacy"); onTabChange(null); },
+                    action: () => { onSettingsScreen("privacy"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
@@ -264,7 +264,7 @@ export function ProfileTopBar({
                     icon: "Bell" as const,
                     label: "Уведомления",
                     sub: "Матчи, сообщения",
-                    action: () => { onSettingsScreen("notifications"); onTabChange(null); },
+                    action: () => { onSettingsScreen("notifications"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
@@ -272,7 +272,7 @@ export function ProfileTopBar({
                     icon: "Ban" as const,
                     label: "Заблокированные",
                     sub: "Управление блокировками",
-                    action: () => { onSettingsScreen("blocked"); onTabChange(null); },
+                    action: () => { onSettingsScreen("blocked"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
@@ -280,7 +280,7 @@ export function ProfileTopBar({
                     icon: "HelpCircle" as const,
                     label: "Помощь",
                     sub: "Поддержка и FAQ",
-                    action: () => { onSettingsScreen("help"); onTabChange(null); },
+                    action: () => { onSettingsScreen("help"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
@@ -335,7 +335,7 @@ export function ProfileTopBar({
 
               {/* Выйти */}
               <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <button onClick={() => { onLogout(); onTabChange(null); }}
+                <button onClick={() => { onLogout(); onMenuToggle(false); }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
                   style={{ background: "transparent" }}
                   onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.07)")}
