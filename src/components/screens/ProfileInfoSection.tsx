@@ -236,57 +236,91 @@ export function ProfileInfoSection({
         </div>
       )}
 
-      {/* О себе */}
-      <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-        <p className="text-white/40 text-xs uppercase tracking-widest mt-3 mb-2">О себе</p>
-        {(profileData.bio || currentProfile.bio) ? (
-          <p className="text-white/80 text-sm leading-relaxed">
-            {profileData.bio || currentProfile.bio}
-          </p>
-        ) : (
-          <p className="text-white/25 text-sm italic">Нет информации</p>
-        )}
-        {(profileData.tags || (currentProfile.tags as string[]))?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {((profileData.tags || currentProfile.tags) as string[]).map((tag) => (
-              <span key={tag} className="glass-card px-3 py-1 text-white/60 text-xs rounded-full">{tag}</span>
-            ))}
+      {/* О себе — карточка */}
+      <div className="px-5 pb-3">
+        <div className="w-full rounded-2xl p-4"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(155,89,182,0.2)" }}>
+              <Icon name="AlignLeft" size={12} className="text-purple-400" />
+            </div>
+            <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">О себе</span>
           </div>
-        )}
+          {(profileData.bio || currentProfile.bio) ? (
+            <p className="text-white/70 text-sm leading-relaxed">
+              {profileData.bio || currentProfile.bio}
+            </p>
+          ) : (
+            <p className="text-white/25 text-sm italic">Нет информации</p>
+          )}
+          {(profileData.tags || (currentProfile.tags as string[]))?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {((profileData.tags || currentProfile.tags) as string[]).map((tag) => (
+                <span key={tag} className="tag-pill">{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Подписчики и Подписки */}
-      <div className="px-5 pb-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-        <div className="flex justify-center gap-2 mt-3">
+      {/* Статы: Рост / Вес / Пол / Статус / Город */}
+      {(currentProfile.height || currentProfile.weight || currentProfile.gender || currentProfile.relationship_status || currentProfile.city) && (
+        <div className="px-5 pb-3">
+          <div className="w-full rounded-2xl overflow-hidden"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="flex items-stretch">
+              {([
+                { label: "Рост",   value: currentProfile.height ? `${currentProfile.height} см` : null, icon: "Ruler",  color: "#3B82F6" },
+                { label: "Вес",    value: currentProfile.weight ? `${currentProfile.weight} кг` : null, icon: "Scale",  color: "#10B981" },
+                { label: "Пол",    value: currentProfile.gender === "female" ? "Жен" : currentProfile.gender === "male" ? "Муж" : null, icon: "User", color: "#9B59B6" },
+                { label: "Статус", value: (() => { const s = currentProfile.relationship_status; if (!s || s === "hidden") return null; if (s === "single") return "Своб."; if (s === "searching") return "Поиск"; if (s === "complicated") return "Слож."; if (s === "open") return "Откр."; return null; })(), icon: "Heart", color: "#FF2D78" },
+                { label: "Город",  value: currentProfile.city || null, icon: "MapPin", color: "#F59E0B" },
+              ] as { label: string; value: string | null; icon: string; color: string }[]).filter(s => s.value).map(({ label, value, icon, color }, i, arr) => (
+                <div key={label}
+                  className="flex-1 flex flex-col items-center py-3.5 gap-1 relative"
+                  style={{ minWidth: "20%" }}>
+                  {i < arr.length - 1 && (
+                    <div className="absolute right-0 top-3 bottom-3 w-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+                  )}
+                  <Icon name={icon as "Ruler"|"Scale"|"User"|"Heart"|"MapPin"} size={14} style={{ color }} />
+                  <span className="text-white font-bold text-xs leading-tight text-center truncate w-full px-1">{value}</span>
+                  <span className="text-white/35 text-[9px]">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Подписчики — карточки */}
+      <div className="px-5 pb-3">
+        <div className="flex gap-2">
           <button
             onClick={onViewFollowers}
-            disabled={!onViewFollowers}
-            className="flex flex-col items-center gap-0.5 px-6 py-2 rounded-2xl transition-all active:scale-95"
-            style={{ background: onViewFollowers ? "rgba(255,255,255,0.05)" : "transparent" }}>
-            <span className="text-white font-bold text-lg">{profileData.followers}</span>
-            <span className="text-white/40 text-xs">Подписчики</span>
+            className="flex-1 flex flex-col items-center py-4 rounded-2xl active:scale-95 transition-all"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <span className="text-white font-black text-2xl leading-none">{profileData.followers}</span>
+            <span className="text-white/40 text-xs mt-1.5 font-medium">Подписчики</span>
           </button>
-          <button
-            onClick={isOwnProfile ? onViewSubscriptions : undefined}
-            className="flex flex-col items-center gap-0.5 px-6 py-2 rounded-2xl transition-all"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              cursor: isOwnProfile ? "pointer" : "default",
-              opacity: isOwnProfile ? 1 : 0.5,
-            }}>
-            <Icon name="UserCheck" size={20} className="text-white/70" />
-            <span className="text-white/40 text-xs">Подписки</span>
-          </button>
+          <div className="flex-1 flex flex-col items-center py-4 rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <span className="text-white font-black text-2xl leading-none">{profileData.following ?? 0}</span>
+            <span className="text-white/40 text-xs mt-1.5 font-medium">Подписки</span>
+          </div>
         </div>
       </div>
 
       {/* Дата регистрации */}
       {profileData.created_at && (
-        <div className="px-5 pb-4" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-          <p className="text-white/25 text-xs mt-3 flex items-center gap-1.5">
-            <Icon name="Calendar" size={12} />
-            На LoveBloom с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
-          </p>
+        <div className="px-5 pb-3">
+          <div className="flex items-center justify-center gap-1.5 py-2 rounded-full"
+            style={{ background: "rgba(255,255,255,0.04)" }}>
+            <Icon name="Calendar" size={12} className="text-white/20" />
+            <span className="text-white/25 text-xs">
+              На LoveBloom с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
+            </span>
+          </div>
         </div>
       )}
 

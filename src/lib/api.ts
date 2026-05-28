@@ -490,6 +490,7 @@ export interface Profile {
   premium?: boolean;
   height?: number;
   weight?: number;
+  gender?: string;
   relationship_status?: string;
   show_age?: boolean;
   boosted?: boolean;
