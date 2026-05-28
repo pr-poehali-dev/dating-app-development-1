@@ -120,6 +120,8 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
           onAdvancedFilter={() => setShowAdvancedFilter(true)}
           onExploreWorld={() => setShowExplore(true)}
           onTravelMode={() => setShowTravel(true)}
+          isPremium={isPremium}
+          onPremium={onPremium}
         />
       )}
       {showAdvancedFilter && (
