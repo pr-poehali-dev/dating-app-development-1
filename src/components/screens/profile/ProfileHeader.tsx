@@ -51,58 +51,60 @@ export function ProfileHeader({
     <div className="flex flex-col items-center mb-0">
 
       {/* ── Обложка ── */}
-      <div className="relative w-full mb-14">
+      <div className="relative w-full" style={{ marginBottom: 52 }}>
         <div className="w-full overflow-hidden relative"
           style={{
-            height: 160,
+            height: 150,
             background: localCover ? undefined : "linear-gradient(135deg, #2d0050 0%, #1a0030 50%, #3d0060 100%)",
           }}>
           {localCover && (
             <img src={localCover} className="w-full h-full object-cover"
               style={{ opacity: coverUploading ? 0.5 : 1 }} />
           )}
-          {/* Градиент снизу для плавного перехода */}
-          <div className="absolute inset-0" style={{
-            background: "linear-gradient(to bottom, transparent 40%, rgba(15,10,26,0.6) 100%)",
-          }} />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
           {coverUploading && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
             </div>
           )}
           {!coverUploading && (
             <button onClick={onCoverClick}
-              className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white/80 text-xs font-medium transition-all active:scale-95"
-              style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)" }}>
-              <Icon name="ImagePlus" size={13} />Фон
+              className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
+              style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.18)" }}>
+              <Icon name="ImagePlus" size={12} />Фон
             </button>
           )}
         </div>
 
-        {/* ── Аватар поверх обложки ── */}
-        <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+        {/* ── Аватар ── */}
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -48 }}>
           <div className="relative" onClick={onAvatarClick} style={{ cursor: "pointer" }}>
-            {/* Кольцо-градиент */}
-            <div className="w-24 h-24 rounded-full p-[3px]"
-              style={{ background: currentUser.premium
-                ? "linear-gradient(135deg, #FF2D78, #FFD700, #9B59B6)"
-                : "linear-gradient(135deg, #FF2D78, #9B59B6)",
-                boxShadow: "0 4px 20px rgba(255,45,120,0.5)",
+            <div className="w-24 h-24 rounded-full"
+              style={{
+                padding: 3,
+                background: currentUser.premium
+                  ? "linear-gradient(135deg,#FF2D78,#FFD700,#9B59B6)"
+                  : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                boxShadow: "0 4px 20px rgba(255,45,120,0.45)",
               }}>
-              <div className="w-full h-full rounded-full overflow-hidden"
-                style={{ border: "3px solid #0f0a1a" }}>
+              <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)]">
                 <img src={displayPhoto} className="w-full h-full object-cover"
                   style={{ opacity: photoUploading ? 0.5 : 1 }} />
               </div>
             </div>
             {photoUploading ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-full">
-                <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
               </div>
             ) : (
-              <div className="absolute bottom-0.5 right-0.5 w-7 h-7 rounded-full flex items-center justify-center shadow-lg"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", border: "2px solid #0f0a1a" }}>
-                <Icon name="Camera" size={12} className="text-white" />
+              <div className="absolute bottom-0.5 right-0.5 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                  boxShadow: "0 2px 8px rgba(255,45,120,0.5)",
+                  outline: "2px solid var(--spark-dark)",
+                }}>
+                <Icon name="Camera" size={11} className="text-white" />
               </div>
             )}
           </div>
@@ -138,21 +140,21 @@ export function ProfileHeader({
       </div>
 
       {/* ── Табы: Фото / Приватное / Подарки ── */}
-      <div className="w-full mt-4 px-4">
-        <div className="flex rounded-2xl p-1 gap-1"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="w-full mt-3 px-4">
+        <div className="flex rounded-2xl gap-1 p-1"
+          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
           {tabs.map(({ key, icon, label }) => {
             const isActive = (activeTab as string) === key;
             return (
               <button
                 key={key}
                 onClick={() => onTabChange((isActive ? null : key) as ActiveTab)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-95"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.97]"
                 style={isActive
-                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }
-                  : {}}>
-                <Icon name={icon} size={15} className={isActive ? "text-white" : "text-white/40"} />
-                <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/40"}`}>{label}</span>
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
+                  : { background: "transparent" }}>
+                <Icon name={icon} size={14} className={isActive ? "text-white" : "text-white/35"} />
+                <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/35"}`}>{label}</span>
               </button>
             );
           })}
