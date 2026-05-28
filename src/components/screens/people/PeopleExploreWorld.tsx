@@ -23,6 +23,7 @@ const POPULAR_CITIES = [
 
 export function PeopleExploreWorld({ onClose, onSelectCity }: Props) {
   const [search, setSearch] = useState("");
+  const [geoLoading, setGeoLoading] = useState(false);
 
   const filtered = POPULAR_CITIES.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -60,19 +61,30 @@ export function PeopleExploreWorld({ onClose, onSelectCity }: Props) {
         {/* 2 кнопки действий */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => onSelectCity("__nearby__")}
-            className="flex flex-col items-center gap-2.5 py-5 rounded-2xl active:scale-95 transition-all"
+            disabled={geoLoading}
+            onClick={() => {
+              if (!navigator.geolocation) { onSelectCity("__nearby__"); return; }
+              setGeoLoading(true);
+              navigator.geolocation.getCurrentPosition(
+                () => { setGeoLoading(false); onSelectCity("__nearby__"); },
+                () => { setGeoLoading(false); onSelectCity("__nearby__"); },
+                { timeout: 8000 }
+              );
+            }}
+            className="flex flex-col items-center gap-2.5 py-5 rounded-2xl transition-all disabled:opacity-70"
             style={{
               background: "linear-gradient(135deg, rgba(255,45,120,0.18), rgba(155,89,182,0.14))",
               border: "1.5px solid rgba(255,45,120,0.3)",
             }}>
             <div className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 14px rgba(255,45,120,0.5)" }}>
-              <Icon name="Navigation" size={22} className="text-white" />
+              {geoLoading
+                ? <Icon name="Loader2" size={22} className="text-white animate-spin" />
+                : <Icon name="Navigation" size={22} className="text-white" />}
             </div>
             <div className="flex flex-col items-center gap-0.5">
               <span className="text-white font-bold text-sm">Рядом</span>
-              <span className="text-white/40 text-xs">Люди вокруг</span>
+              <span className="text-white/40 text-xs">{geoLoading ? "Определяем..." : "Люди вокруг"}</span>
             </div>
           </button>
 

@@ -144,8 +144,44 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
           onClose={() => setShowExplore(false)}
           onSelectCity={(city) => {
             setShowExplore(false);
-            if (city === "__nearby__" || city === "__random__") return;
-            const p: DiscoverParams = { ...filters, city };
+
+            if (city === "__nearby__") {
+              if (!navigator.geolocation) return;
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  const p: DiscoverParams = {
+                    ...filters,
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    radius_km: 50,
+                    city: undefined,
+                  };
+                  setFilters(p); load(p, search);
+                },
+                () => {
+                  // Геолокация отклонена — просто ищем без фильтра
+                  const p: DiscoverParams = { ...filters };
+                  delete p.city; delete p.lat; delete p.lon;
+                  setFilters(p); load(p, search);
+                },
+                { timeout: 8000 }
+              );
+              return;
+            }
+
+            if (city === "__random__") {
+              const cities = [
+                "Москва","Санкт-Петербург","Новосибирск","Екатеринбург","Казань",
+                "Минск","Алматы","Ташкент","Тбилиси","Баку","Ереван","Берлин",
+                "Нижний Новгород","Самара","Уфа","Красноярск","Пермь","Воронеж",
+              ];
+              const random = cities[Math.floor(Math.random() * cities.length)];
+              const p: DiscoverParams = { ...filters, city: random, lat: undefined, lon: undefined };
+              setFilters(p); load(p, search);
+              return;
+            }
+
+            const p: DiscoverParams = { ...filters, city, lat: undefined, lon: undefined };
             setFilters(p); load(p, search);
           }}
         />
