@@ -12,11 +12,12 @@ import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 
 
-export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: {
+export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, currentUserId }: {
   onOpenChat?: (matchId: number) => void;
   onGoToChats?: () => void;
   onPremium?: () => void;
   isPremium?: boolean;
+  currentUserId?: number;
 }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -401,6 +402,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium }: 
             filterCount={filterCount}
             isPremium={isPremium}
             likedIds={likedIds}
+            currentUserId={currentUserId}
             onSelect={(p, idx) => { setSelected(p); setSelectedIdx(idx); }}
             onPremium={onPremium}
             onReset={() => { setSearch(""); setFilters({}); load({}); }}

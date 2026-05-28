@@ -11,6 +11,7 @@ interface Props {
   filterCount: number;
   isPremium?: boolean;
   likedIds: Set<number>;
+  currentUserId?: number;
   onSelect: (p: Profile, idx: number) => void;
   onPremium?: () => void;
   onReset: () => void;
@@ -23,6 +24,7 @@ export function PeopleGrid({
   filterCount,
   isPremium,
   likedIds,
+  currentUserId,
   onSelect,
   onPremium,
   onReset,
@@ -83,7 +85,8 @@ export function PeopleGrid({
         {profiles.map((p, idx) => {
           const photo = p.photo_url || FALLBACK_PHOTO;
           const isLiked = likedIds.has(p.id);
-          const isLocked = !isPremium && idx >= FREE_LIMIT;
+          const isMe = p.id === currentUserId;
+          const isLocked = !isPremium && !isMe && idx >= FREE_LIMIT;
 
           return (
             <button key={p.id}
@@ -129,8 +132,16 @@ export function PeopleGrid({
                   style={{ border: "1.5px solid rgba(0,0,0,0.5)", boxShadow: "0 0 6px rgba(74,222,128,0.8)" }} />
               )}
 
+              {/* Это я */}
+              {isMe && (
+                <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full text-white font-bold"
+                  style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", fontSize: 8 }}>
+                  Вы
+                </div>
+              )}
+
               {/* Верификация */}
-              {p.verified && !isLocked && (
+              {p.verified && !isLocked && !isMe && (
                 <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center"
                   style={{ background: "rgba(59,130,246,0.9)", boxShadow: "0 0 6px rgba(59,130,246,0.5)" }}>
                   <Icon name="Check" size={10} className="text-white" />
@@ -138,7 +149,7 @@ export function PeopleGrid({
               )}
 
               {/* Лайкнут */}
-              {isLiked && !isLocked && !p.verified && (
+              {isLiked && !isLocked && !p.verified && !isMe && (
                 <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center"
                   style={{ background: "rgba(255,45,120,0.9)", boxShadow: "0 0 6px rgba(255,45,120,0.5)" }}>
                   <Icon name="Heart" size={10} className="text-white" />
