@@ -318,17 +318,7 @@ export const postsApi = {
     }),
 };
 
-// ─── Live ─────────────────────────────────────────────────────────────────────
-export const liveApi = {
-  list: () => req<{ streams: LiveStream[] }>("matches", "live_list"),
-  start: (title: string) => req<{ stream: LiveStream }>("matches", "live_start", { method: "POST", body: JSON.stringify({ title }) }),
-  end: () => req<{ ok: boolean }>("matches", "live_end", { method: "POST" }),
-  join: (stream_id: number) => req<{ ok: boolean }>("matches", "live_join", { method: "POST", body: JSON.stringify({ stream_id }) }),
-  leave: (stream_id: number) => req<{ ok: boolean }>("matches", "live_leave", { method: "POST", body: JSON.stringify({ stream_id }) }),
-  heart: (stream_id: number) => req<{ hearts_count: number }>("matches", "live_heart", { method: "POST", body: JSON.stringify({ stream_id }) }),
-  chat: (stream_id: number, text: string) => req<{ message: LiveMessage }>("matches", "live_chat", { method: "POST", body: JSON.stringify({ stream_id, text }) }),
-  poll: (stream_id: number, since_id: number) => req<{ stream: LiveStream; messages: LiveMessage[] }>("matches", "live_poll", {}, { stream_id: String(stream_id), since_id: String(since_id) }),
-};
+
 
 export interface LiveStream {
   id: number;
