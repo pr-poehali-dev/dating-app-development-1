@@ -170,6 +170,8 @@ export function ProfileTopBar({
   onLogout,
   onVerify,
   currentUser,
+  isDark,
+  onToggleTheme,
 }: {
   activeTab: ActiveTab;
   onEditOpen: () => void;
@@ -178,6 +180,8 @@ export function ProfileTopBar({
   onLogout: () => void;
   onVerify: () => void;
   currentUser: User;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
 }) {
   return (
     <div className="px-4 pt-5 pb-2 flex items-center justify-between flex-shrink-0">
@@ -208,7 +212,6 @@ export function ProfileTopBar({
                 { icon: "BadgeCheck", label: currentUser.verified ? "✓ Верифицирован" : "Верификация", action: () => { onVerify(); onTabChange(null); }, blue: currentUser.verified },
                 { icon: "User",       label: "Настройки аккаунта",   action: () => { onSettingsScreen("account"); onTabChange(null); } },
                 { icon: "Shield",     label: "Конфиденциальность",   action: () => { onSettingsScreen("privacy"); onTabChange(null); } },
-                { icon: "Lock",       label: "Приватные фото",       action: () => { onSettingsScreen("private_photos"); onTabChange(null); } },
                 { icon: "Ban",        label: "Заблокированные",      action: () => { onSettingsScreen("blocked"); onTabChange(null); } },
                 { icon: "Bell",       label: "Уведомления",          action: () => { onSettingsScreen("notifications"); onTabChange(null); } },
                 { icon: "HelpCircle", label: "Помощь",               action: () => { onSettingsScreen("help"); onTabChange(null); } },
@@ -219,12 +222,33 @@ export function ProfileTopBar({
                   style={i < arr.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.06)" } : {}}>
                   <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: (item as {blue?: boolean}).blue ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.07)" }}>
-                    <Icon name={item.icon as "BadgeCheck"|"User"|"Shield"|"Lock"|"Ban"|"Bell"|"HelpCircle"} size={14}
+                    <Icon name={item.icon as "BadgeCheck"|"User"|"Shield"|"Ban"|"Bell"|"HelpCircle"} size={14}
                       className={(item as {blue?: boolean}).blue ? "text-blue-400" : "text-white/60"} />
                   </div>
                   <span className={`text-sm font-medium ${(item as {blue?: boolean}).blue ? "text-blue-400" : "text-white/80"}`}>{item.label}</span>
                 </button>
               ))}
+
+              {/* Тема */}
+              {onToggleTheme && (
+                <button onClick={() => { onToggleTheme(); }}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left active:bg-white/5 transition-colors"
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: isDark ? "rgba(255,200,50,0.12)" : "rgba(100,100,200,0.12)" }}>
+                      <Icon name={isDark ? "Sun" : "Moon"} size={14} className={isDark ? "text-yellow-400" : "text-indigo-400"} />
+                    </div>
+                    <span className="text-sm font-medium text-white/80">{isDark ? "Светлая тема" : "Тёмная тема"}</span>
+                  </div>
+                  <div className="w-10 h-5 rounded-full relative flex-shrink-0"
+                    style={{ background: isDark ? "rgba(255,255,255,0.12)" : "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                    <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                      style={{ left: isDark ? "2px" : "calc(100% - 18px)" }} />
+                  </div>
+                </button>
+              )}
+
               <button onClick={() => { onLogout(); onTabChange(null); }}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-white/5 transition-colors"
                 style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>

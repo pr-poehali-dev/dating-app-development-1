@@ -49,6 +49,19 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [settingsScreen, setSettingsScreen] = useState<null | SettingsScreen>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
 
+  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("theme", "light");
+    }
+  };
+
   const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
@@ -205,6 +218,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
         />
 
         {/* Скрытые инпуты */}

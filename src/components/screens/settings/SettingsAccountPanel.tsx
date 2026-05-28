@@ -231,6 +231,54 @@ export function SettingsAccountPanel({
             className="btn-grad py-3.5 text-sm font-semibold text-white rounded-2xl flex items-center justify-center gap-2">
             {saved ? <><Icon name="Check" size={16} className="text-white" />Сохранено!</> : "Сохранить изменения"}
           </button>
+
+          {/* Приватные фото */}
+          <div className="glass-card overflow-hidden">
+            <button
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/jpeg,image/png,image/webp";
+                input.onchange = (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (file) onPrivateUpload(file);
+                };
+                input.click();
+              }}
+              disabled={privateUploading}
+              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/5 transition-colors"
+              style={{ borderBottom: privatePhotos.length > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,45,120,0.12)" }}>
+                  {privateUploading
+                    ? <Icon name="Loader2" size={14} className="text-pink-400 animate-spin" />
+                    : <Icon name="Lock" size={14} className="text-pink-400" />}
+                </div>
+                <div>
+                  <p className="text-white/80 text-sm font-medium text-left">Приватные фото</p>
+                  <p className="text-white/35 text-xs text-left">{privatePhotos.length > 0 ? `${privatePhotos.length} фото` : "Добавить закрытые фото"}</p>
+                </div>
+              </div>
+              <Icon name="Plus" size={16} className="text-white/30" />
+            </button>
+            {privateError && <p className="text-red-400 text-xs px-4 pb-2">{privateError}</p>}
+            {privatePhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-1 p-2">
+                {privatePhotos.map(ph => (
+                  <div key={ph.id} className="relative" style={{ aspectRatio: "1" }}>
+                    <img src={ph.photo_url} className="w-full h-full object-cover rounded-xl" />
+                    <button
+                      onClick={() => onPrivateDelete(ph.id)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.65)" }}>
+                      <Icon name="X" size={10} className="text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
