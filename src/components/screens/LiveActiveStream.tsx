@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type LiveStream, type LiveMessage } from "@/lib/api";
 
@@ -42,52 +43,67 @@ export function LiveActiveStream({
   onSendChat,
   onChatInputChange,
 }: LiveActiveStreamProps) {
+  const [videoPlaying, setVideoPlaying] = useState(false);
+
   return (
     <div className="flex flex-col h-full relative"
       style={{ background: "#0a0014", opacity: leaving ? 0 : 1, transform: leaving ? "scale(0.97)" : "scale(1)", transition: "opacity 0.35s ease, transform 0.35s ease" }}>
       <div className="relative flex-shrink-0" style={{ height: "45%" }}>
         <div className="w-full h-full flex items-center justify-center overflow-hidden"
           style={{ background: "linear-gradient(135deg,#1a0030,#2d0050)" }}>
-          {isStreaming
-            ? <video
-                ref={(el) => {
-                  (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
-                  if (el && streamRef.current && !el.srcObject) {
-                    el.srcObject = streamRef.current;
-                    el.play().catch(() => {});
-                  }
-                }}
-                autoPlay muted playsInline
-                className="w-full h-full object-cover"
-                style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none", transition: "transform 0.3s" }}
-              />
-            : <div className="flex flex-col items-center gap-4 px-6 text-center">
-                <div className="relative">
-                  <img src={activeStream.author_photo || FALLBACK_PHOTO}
-                    className="w-24 h-24 rounded-full object-cover"
-                    style={{ border: "3px solid #FF2D78", boxShadow: "0 0 0 6px rgba(255,45,120,0.2)" }} />
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    LIVE
-                  </div>
+          {/* Видео всегда рендерится — стример видит себя, зритель получает поток через WebRTC */}
+          <video
+            ref={(el) => {
+              (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+              if (el && isStreaming && streamRef.current && !el.srcObject) {
+                el.srcObject = streamRef.current;
+                el.play().catch(() => {});
+              }
+            }}
+            autoPlay
+            muted={isStreaming}
+            playsInline
+            onPlaying={() => setVideoPlaying(true)}
+            className="w-full h-full object-cover"
+            style={{
+              transform: isStreaming && facingMode === "user" ? "scaleX(-1)" : "none",
+              transition: "transform 0.3s",
+              display: "block",
+            }}
+          />
+          {/* Плейсхолдер — пока видео не заиграло у зрителя */}
+          {!isStreaming && !videoPlaying && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
+              style={{ background: "linear-gradient(135deg,#1a0030,#2d0050)", pointerEvents: "none" }}
+              id="viewer-placeholder">
+              <div className="relative">
+                <img src={activeStream.author_photo || FALLBACK_PHOTO}
+                  className="w-24 h-24 rounded-full object-cover"
+                  style={{ border: "3px solid #FF2D78", boxShadow: "0 0 0 6px rgba(255,45,120,0.2)" }} />
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />LIVE
                 </div>
-                <div>
-                  <p className="text-white font-bold text-lg">{activeStream.author_name}</p>
-                  <p className="text-white/50 text-sm mt-0.5">{activeStream.title}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                    <Icon name="Eye" size={13} className="text-white/60" />
-                    <span className="text-white/80 text-xs font-semibold">{activeStream.viewers_count}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
-                    <span className="text-sm">❤️</span>
-                    <span className="text-white/80 text-xs font-semibold">{activeStream.hearts_count}</span>
-                  </div>
-                </div>
-                <p className="text-white/30 text-xs">Трансляция идёт в прямом эфире</p>
               </div>
-          }
+              <div>
+                <p className="text-white font-bold text-lg">{activeStream.author_name}</p>
+                <p className="text-white/50 text-sm mt-0.5">{activeStream.title}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <Icon name="Eye" size={13} className="text-white/60" />
+                  <span className="text-white/80 text-xs font-semibold">{activeStream.viewers_count}</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                  <span className="text-sm">❤️</span>
+                  <span className="text-white/80 text-xs font-semibold">{activeStream.hearts_count}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-white/30 text-xs">
+                <div className="w-3 h-3 rounded-full border-2 border-pink-400 border-t-transparent animate-spin" />
+                Подключение к трансляции...
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">

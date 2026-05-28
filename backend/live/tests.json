@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "List active streams",
+      "method": "GET",
+      "path": "/?action=list",
+      "expectedStatus": 200,
+      "expectedBody": {"streams": []},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

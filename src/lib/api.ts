@@ -7,6 +7,7 @@ const URLS = {
   admin: "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18",
   notifications: "https://functions.poehali.dev/5249d7a9-31e2-4ab5-a2da-6b72346e5de4",
   push: "https://functions.poehali.dev/282c24e0-ca25-4712-ad58-26c7742c2653",
+  live: "https://functions.poehali.dev/f113fa74-fe31-48da-ae7d-362a933b5294",
 };
 
 function getToken(): string {
@@ -646,6 +647,59 @@ export const blocksApi = {
   list: () => req<{ blocks: BlockedUser[] }>("profiles", "blocks_list"),
   block: (user_id: number) => req<{ ok: boolean }>("profiles", "block_user", { method: "POST", body: JSON.stringify({ user_id }) }),
   unblock: (user_id: number) => req<{ ok: boolean }>("profiles", "unblock_user", { method: "POST", body: JSON.stringify({ user_id }) }),
+};
+
+// ─── Live ─────────────────────────────────────────────────────────────────────
+export const liveApi = {
+  list: () => req<{ streams: LiveStream[] }>("live", "list"),
+
+  start: (title: string) =>
+    req<{ stream: LiveStream }>("live", "start", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+
+  end: () => req<{ ok: boolean }>("live", "end", { method: "POST" }),
+
+  join: (stream_id: number) =>
+    req<{ ok: boolean }>("live", "join", {
+      method: "POST",
+      body: JSON.stringify({ stream_id }),
+    }),
+
+  leave: (stream_id: number) =>
+    req<{ ok: boolean }>("live", "leave", {
+      method: "POST",
+      body: JSON.stringify({ stream_id }),
+    }),
+
+  heart: (stream_id: number) =>
+    req<{ hearts_count: number }>("live", "heart", {
+      method: "POST",
+      body: JSON.stringify({ stream_id }),
+    }),
+
+  chat: (stream_id: number, text: string) =>
+    req<{ message: LiveMessage }>("live", "chat", {
+      method: "POST",
+      body: JSON.stringify({ stream_id, text }),
+    }),
+
+  poll: (stream_id: number, last_msg_id: number) =>
+    req<{ stream: { id: number; status: string; viewers_count: number; hearts_count: number }; messages: LiveMessage[] }>(
+      "live", "poll", {}, { stream_id: String(stream_id), last_msg_id: String(last_msg_id) }
+    ),
+
+  signalSend: (stream_id: number, signal_type: string, payload: string, to_user_id?: number) =>
+    req<{ ok: boolean }>("live", "signal_send", {
+      method: "POST",
+      body: JSON.stringify({ stream_id, signal_type, payload, to_user_id }),
+    }),
+
+  signalPoll: (stream_id: number, last_id: number) =>
+    req<{ signals: { id: number; from_user_id: number; to_user_id: number | null; signal_type: string; payload: string }[] }>(
+      "live", "signal_poll", {}, { stream_id: String(stream_id), last_id: String(last_id) }
+    ),
 };
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
