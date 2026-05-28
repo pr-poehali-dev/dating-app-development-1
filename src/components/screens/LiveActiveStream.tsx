@@ -44,6 +44,15 @@ export function LiveActiveStream({
   onChatInputChange,
 }: LiveActiveStreamProps) {
   const [videoPlaying, setVideoPlaying] = useState(false);
+  const [viewerMuted, setViewerMuted] = useState(true);
+
+  const tapToPlay = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.muted = false;
+    setViewerMuted(false);
+    el.play().catch(() => {});
+  };
 
   return (
     <div className="flex flex-col h-full relative"
@@ -61,7 +70,7 @@ export function LiveActiveStream({
               }
             }}
             autoPlay
-            muted={isStreaming}
+            muted={isStreaming ? true : viewerMuted}
             playsInline
             onPlaying={() => setVideoPlaying(true)}
             className="w-full h-full object-cover"
@@ -71,6 +80,16 @@ export function LiveActiveStream({
               display: "block",
             }}
           />
+
+          {/* Кнопка включения звука для зрителя */}
+          {!isStreaming && videoPlaying && viewerMuted && (
+            <button onClick={tapToPlay}
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-bold active:scale-95 transition-all"
+              style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)" }}>
+              <Icon name="VolumeX" size={14} className="text-white" />
+              Нажми для звука
+            </button>
+          )}
           {/* Плейсхолдер — пока видео не заиграло у зрителя */}
           {!isStreaming && !videoPlaying && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center"
