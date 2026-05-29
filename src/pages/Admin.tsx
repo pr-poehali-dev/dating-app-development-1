@@ -59,43 +59,57 @@ export default function Admin() {
         </button>
       </div>
 
-      {/* Tabs — сгруппированные */}
-      <div className="px-6 pt-4 pb-2 flex flex-col gap-2">
-        {groups.map(group => {
-          const groupTabs = tabs.filter(t => t.group === group);
-          return (
-            <div key={group} className="flex items-center gap-2">
-              <span className="text-white/20 text-[10px] font-semibold uppercase tracking-widest w-16 flex-shrink-0">
-                {group}
-              </span>
-              <div className="flex gap-1.5 overflow-x-auto">
-                {groupTabs.map((t) => (
-                  <button key={t.id} onClick={() => setTab(t.id)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap flex-shrink-0"
-                    style={tab === t.id
-                      ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)" }}>
-                    <Icon name={t.icon as "BarChart2"} size={13} />
-                    {t.label}
-                  </button>
-                ))}
+      {/* Nav + Content */}
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-48 flex-shrink-0 sticky top-[65px] self-start h-[calc(100vh-65px)] overflow-y-auto py-4 px-3 flex flex-col gap-1"
+          style={{ borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+          {groups.map((group, gi) => {
+            const groupTabs = tabs.filter(t => t.group === group);
+            return (
+              <div key={group}>
+                {gi > 0 && <div className="my-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }} />}
+                <p className="text-white/20 text-[9px] font-bold uppercase tracking-[0.12em] px-2 mb-1">
+                  {group}
+                </p>
+                {groupTabs.map((t) => {
+                  const active = tab === t.id;
+                  return (
+                    <button key={t.id} onClick={() => setTab(t.id)}
+                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium transition-all text-left"
+                      style={active
+                        ? { background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.18))", color: "white", boxShadow: "inset 0 0 0 1px rgba(255,45,120,0.3)" }
+                        : { color: "rgba(255,255,255,0.4)" }}>
+                      <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+                        style={active
+                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                          : { background: "rgba(255,255,255,0.07)" }}>
+                        <Icon name={t.icon as "BarChart2"} size={12} className={active ? "text-white" : "text-white/40"} />
+                      </div>
+                      <span className={active ? "text-white font-semibold" : ""}>{t.label}</span>
+                      {active && (
+                        <div className="ml-auto w-1 h-1 rounded-full bg-pink-400 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </aside>
 
-      {/* Content */}
-      <div className="px-6 py-4">
-        {tab === "stats"     && <StatsTab     token={token} />}
-        {tab === "analytics" && <AnalyticsTab token={token} />}
-        {tab === "users"     && <UsersTab     token={token} />}
-        {tab === "verif"     && <VerifTab     token={token} />}
-        {tab === "reports"   && <ReportsTab   token={token} />}
-        {tab === "support"   && <SupportTab   token={token} />}
-        {tab === "security"      && <SecurityTab      token={token} />}
-        {tab === "marketing"     && <MarketingTab     token={token} />}
-        {tab === "subscriptions" && <SubscriptionsTab token={token} />}
+        {/* Content */}
+        <main className="flex-1 min-w-0 px-5 py-5">
+          {tab === "stats"         && <StatsTab         token={token} />}
+          {tab === "analytics"     && <AnalyticsTab     token={token} />}
+          {tab === "users"         && <UsersTab         token={token} />}
+          {tab === "verif"         && <VerifTab         token={token} />}
+          {tab === "reports"       && <ReportsTab       token={token} />}
+          {tab === "support"       && <SupportTab       token={token} />}
+          {tab === "security"      && <SecurityTab      token={token} />}
+          {tab === "marketing"     && <MarketingTab     token={token} />}
+          {tab === "subscriptions" && <SubscriptionsTab token={token} />}
+        </main>
       </div>
     </div>
   );
