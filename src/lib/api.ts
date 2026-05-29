@@ -604,6 +604,8 @@ export interface AdminReport {
   reported_name: string;
   reported_email: string;
   reported_id: number;
+  post_id?: number;
+  post_photo_url?: string;
 }
 
 export interface AdminVerifRequest {

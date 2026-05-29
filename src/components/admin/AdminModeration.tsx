@@ -340,6 +340,17 @@ export function ReportsTab({ token }: { token: string }) {
                   {REASONS[r.reason] || r.reason}
                 </span>
               </div>
+              {/* Превью поста */}
+              {r.post_photo_url && (
+                <div className="flex items-center gap-3 rounded-xl overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <img src={r.post_photo_url} className="w-16 h-16 object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0 pr-3">
+                    <p className="text-white/60 text-xs font-semibold">Жалоба на пост</p>
+                    <p className="text-white/30 text-[10px] mt-0.5">ID поста: #{r.post_id}</p>
+                  </div>
+                </div>
+              )}
               {r.comment && (
                 <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.05)" }}>
                   <p className="text-white/60 text-sm">«{r.comment}»</p>

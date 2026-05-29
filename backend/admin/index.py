@@ -205,15 +205,18 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 "SELECT r.id, r.reason, r.comment, r.status, r.created_at, "
                 "u1.name as reporter_name, u1.email as reporter_email, "
-                "u2.name as reported_name, u2.email as reported_email, u2.id as reported_id "
+                "u2.name as reported_name, u2.email as reported_email, u2.id as reported_id, "
+                "r.post_id, p.photo_url as post_photo_url "
                 "FROM reports r "
                 "JOIN users u1 ON u1.id = r.reporter_id "
                 "JOIN users u2 ON u2.id = r.reported_id "
+                "LEFT JOIN posts p ON p.id = r.post_id "
                 "WHERE r.status = %s ORDER BY r.created_at DESC LIMIT 50",
                 (status,)
             )
             cols = ['id', 'reason', 'comment', 'status', 'created_at',
-                    'reporter_name', 'reporter_email', 'reported_name', 'reported_email', 'reported_id']
+                    'reporter_name', 'reporter_email', 'reported_name', 'reported_email', 'reported_id',
+                    'post_id', 'post_photo_url']
             reports = [dict(zip(cols, row)) for row in cur.fetchall()]
             return resp(200, {'reports': reports})
 

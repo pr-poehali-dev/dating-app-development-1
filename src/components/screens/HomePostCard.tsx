@@ -143,26 +143,26 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
 
               {/* Причины */}
               {[
-                "Мне это не нравится",
-                "Травля или нежелательный контакт",
-                "Самоубийство, нанесение себе увечий или расстройства пищевого поведения",
-                "Насилие, ненависть или эксплуатация",
-                "Продажа или реклама товаров с ограничениями",
-                "Изображение обнажённого тела или действий сексуального характера",
-                "Мошенничество, обман или спам",
-                "Ложная информация",
-                "Интеллектуальная собственность",
-              ].map((reason) => (
+                { label: "Мне это не нравится",                                              code: "other" },
+                { label: "Травля или нежелательный контакт",                                code: "abuse" },
+                { label: "Самоубийство, нанесение себе увечий или расстройства пищевого поведения", code: "abuse" },
+                { label: "Насилие, ненависть или эксплуатация",                             code: "abuse" },
+                { label: "Продажа или реклама товаров с ограничениями",                     code: "spam" },
+                { label: "Изображение обнажённого тела или действий сексуального характера", code: "photo" },
+                { label: "Мошенничество, обман или спам",                                   code: "spam" },
+                { label: "Ложная информация",                                               code: "fake" },
+                { label: "Интеллектуальная собственность",                                  code: "other" },
+              ].map(({ label, code }) => (
                 <button
-                  key={reason}
+                  key={label}
                   onClick={async () => {
                     setReported(true);
                     setShowReport(false);
-                    await postsApi.reportPost(post.id).catch(() => {});
+                    await postsApi.reportPost(post.id, code).catch(() => {});
                   }}
                   className="w-full flex items-center justify-between py-4 text-left active:opacity-60 transition-opacity"
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span className="text-white text-[15px] leading-snug pr-4">{reason}</span>
+                  <span className="text-white text-[15px] leading-snug pr-4">{label}</span>
                   <Icon name="ChevronRight" size={18} className="text-white/30 flex-shrink-0" />
                 </button>
               ))}
