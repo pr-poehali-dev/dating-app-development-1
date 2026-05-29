@@ -603,6 +603,50 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Подписки: список тарифов ──────────────────────────────────────────
+        if action == 'plans':
+            cur.execute("""
+                SELECT id, plan_key, label, price_per_month, total_amount,
+                       duration_months, popular, active, sort_order, updated_at
+                FROM premium_plans ORDER BY sort_order
+            """)
+            cols = ['id','plan_key','label','price_per_month','total_amount',
+                    'duration_months','popular','active','sort_order','updated_at']
+            plans = []
+            for r in cur.fetchall():
+                d = dict(zip(cols, r))
+                d['price_per_month'] = float(d['price_per_month'])
+                d['total_amount']    = float(d['total_amount'])
+                plans.append(d)
+            # Статистика по каждому плану
+            cur.execute("""
+                SELECT plan, COUNT(*) FROM orders
+                WHERE status = 'succeeded' GROUP BY plan
+            """)
+            stats = {r[0]: r[1] for r in cur.fetchall()}
+            cur.execute("SELECT COUNT(*) FROM users WHERE premium = TRUE")
+            total_premium = cur.fetchone()[0]
+            return resp(200, {'plans': plans, 'stats': stats, 'total_premium': total_premium})
+
+        # ── Подписки: обновить тариф ──────────────────────────────────────────
+        if action == 'update_plan':
+            plan_id = body.get('id')
+            if not plan_id:
+                return resp(400, {'error': 'id обязателен'})
+            allowed = ['label', 'price_per_month', 'total_amount', 'duration_months',
+                       'popular', 'active', 'sort_order']
+            updates = {k: v for k, v in body.items() if k in allowed}
+            if not updates:
+                return resp(400, {'error': 'Нет полей для обновления'})
+            set_clause = ', '.join(f"{k} = %s" for k in updates)
+            values = list(updates.values()) + [plan_id]
+            cur.execute(
+                f"UPDATE premium_plans SET {set_clause}, updated_at = NOW() WHERE id = %s",
+                values
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

@@ -120,6 +120,21 @@ def handler(event: dict, context) -> dict:
 
             return resp(400, {'error': 'Неизвестное admin действие'})
 
+        # ── Публичный: тарифы премиума ────────────────────────────────────────
+        if action == 'get_premium_plans':
+            cur.execute("""
+                SELECT plan_key, label, price_per_month, total_amount, duration_months, popular
+                FROM premium_plans WHERE active = TRUE ORDER BY sort_order
+            """)
+            cols = ['plan', 'label', 'price_per_month', 'total_amount', 'duration_months', 'popular']
+            plans = []
+            for r in cur.fetchall():
+                d = dict(zip(cols, r))
+                d['price_per_month'] = float(d['price_per_month'])
+                d['total_amount']    = float(d['total_amount'])
+                plans.append(d)
+            return resp(200, {'plans': plans})
+
         # ── USER endpoints ─────────────────────────────────────────────────────
         me = get_me(conn, token)
         if not me:

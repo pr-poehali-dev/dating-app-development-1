@@ -7,8 +7,9 @@ import { VerifTab, ReportsTab, SupportTab } from "@/components/admin/AdminModera
 import { AnalyticsTab } from "@/components/admin/AdminAnalytics";
 import { SecurityTab } from "@/components/admin/AdminSecurity";
 import { MarketingTab } from "@/components/admin/AdminMarketing";
+import { SubscriptionsTab } from "@/components/admin/AdminSubscriptions";
 
-type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing";
+type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing" | "subscriptions";
 
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function Admin() {
@@ -33,8 +34,9 @@ export default function Admin() {
     { id: "verif",     label: "Верификация",  icon: "BadgeCheck",    group: "Управление" },
     { id: "reports",   label: "Жалобы",       icon: "Flag",          group: "Управление" },
     { id: "support",   label: "Поддержка",    icon: "MessageCircle", group: "Управление" },
-    { id: "security",  label: "Безопасность", icon: "Shield",        group: "Настройки" },
-    { id: "marketing", label: "Маркетинг",    icon: "Megaphone",     group: "Настройки" },
+    { id: "security",      label: "Безопасность", icon: "Shield",        group: "Настройки" },
+    { id: "marketing",     label: "Маркетинг",    icon: "Megaphone",     group: "Настройки" },
+    { id: "subscriptions", label: "Подписки",     icon: "Crown",         group: "Настройки" },
   ];
 
   const groups = ["Обзор", "Управление", "Настройки"];
@@ -91,8 +93,9 @@ export default function Admin() {
         {tab === "verif"     && <VerifTab     token={token} />}
         {tab === "reports"   && <ReportsTab   token={token} />}
         {tab === "support"   && <SupportTab   token={token} />}
-        {tab === "security"  && <SecurityTab  token={token} />}
-        {tab === "marketing" && <MarketingTab token={token} />}
+        {tab === "security"      && <SecurityTab      token={token} />}
+        {tab === "marketing"     && <MarketingTab     token={token} />}
+        {tab === "subscriptions" && <SubscriptionsTab token={token} />}
       </div>
     </div>
   );

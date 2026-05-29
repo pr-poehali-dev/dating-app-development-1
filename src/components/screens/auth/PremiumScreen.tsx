@@ -1,15 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import { postsApi2 } from "@/lib/api";
 
 const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/defb6829-9c31-4270-b350-feadf9619079.jpg";
 
+const DEFAULT_PLANS = [
+  { plan: "1month",  label: "1 месяц",    price_per_month: 699,  total_amount: 699,  duration_months: 1,  popular: false },
+  { plan: "3month",  label: "3 месяца",   price_per_month: 449,  total_amount: 1347, duration_months: 3,  popular: true  },
+  { plan: "12month", label: "12 месяцев", price_per_month: 249,  total_amount: 2988, duration_months: 12, popular: false },
+];
+
 export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; currentUser?: { id: number; email: string; name: string } | null }) {
-  const plans = [
-    { label: "1 месяц",    price: "699 ₽",  amount: 699,  per: "/мес", popular: false, total: "",        plan: "1month"  },
-    { label: "3 месяца",   price: "449 ₽",  amount: 1347, per: "/мес", popular: true,  total: "1 347 ₽", plan: "3month"  },
-    { label: "12 месяцев", price: "249 ₽",  amount: 2988, per: "/мес", popular: false, total: "2 988 ₽", plan: "12month" },
-  ];
-  const [selected, setSelected] = useState(1);
+  const [rawPlans, setRawPlans] = useState(DEFAULT_PLANS);
+
+  useEffect(() => {
+    postsApi2.getPremiumPlans()
+      .then((d) => { if (d.plans?.length) setRawPlans(d.plans); })
+      .catch(() => {});
+  }, []);
+
+  const plans = rawPlans.map((p) => ({
+    label:   p.label,
+    price:   `${p.price_per_month.toLocaleString("ru")} ₽`,
+    amount:  p.total_amount,
+    per:     "/мес",
+    popular: p.popular,
+    total:   p.duration_months > 1 ? `${p.total_amount.toLocaleString("ru")} ₽` : "",
+    plan:    p.plan,
+  }));
+
+  const defaultSelected = plans.findIndex((p) => p.popular);
+  const [selected, setSelected] = useState(defaultSelected >= 0 ? defaultSelected : 1);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
 

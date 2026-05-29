@@ -810,4 +810,26 @@ export const adminApi = {
     adminReq<{ ok: boolean }>('banner_save', { method: 'POST', body: JSON.stringify(data) }, token),
   bannerDelete: (token: string, id: number) =>
     adminReq<{ ok: boolean }>('banner_delete', { method: 'POST', body: JSON.stringify({ id }) }, token),
+
+  plans: (token: string) =>
+    adminReq<{ plans: PremiumPlan[]; stats: Record<string, number>; total_premium: number }>('plans', {}, token),
+  updatePlan: (token: string, id: number, fields: Partial<PremiumPlan>) =>
+    adminReq<{ ok: boolean }>('update_plan', { method: 'POST', body: JSON.stringify({ id, ...fields }) }, token),
+};
+
+export interface PremiumPlan {
+  id: number;
+  plan_key: string;
+  label: string;
+  price_per_month: number;
+  total_amount: number;
+  duration_months: number;
+  popular: boolean;
+  active: boolean;
+  sort_order: number;
+  updated_at?: string;
+}
+
+export const postsApi2 = {
+  getPremiumPlans: () => req<{ plans: { plan: string; label: string; price_per_month: number; total_amount: number; duration_months: number; popular: boolean }[] }>('profiles', 'get_premium_plans'),
 };
