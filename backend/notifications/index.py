@@ -150,8 +150,25 @@ def handler(event: dict, context) -> dict:
             )
             cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             for r in cur.fetchall():
-                label = "LoveBloom" if r[0] == 'verif_approved' else "LoveBloom"
-                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': label, 'photo_url': None, 'created_at': str(r[1])})
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'created_at': str(r[1])})
+
+            # Уведомления о покупке Premium (всегда показываем)
+            q = (
+                "SELECT n.type, n.text, n.created_at FROM notifications n "
+                f"WHERE n.user_id = %s AND n.type = 'premium_activated' {clr_filter_n} ORDER BY n.created_at DESC LIMIT 5"
+            )
+            cur.execute(q, (me['id'], clr) if clr else (me['id'],))
+            for r in cur.fetchall():
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'text': r[1], 'created_at': str(r[2])})
+
+            # Жалобы и системные (всегда показываем)
+            q = (
+                "SELECT n.type, n.created_at FROM notifications n "
+                f"WHERE n.user_id = %s AND n.type IN ('admin_report_resolved','admin_report_dismissed','admin_post_removed','admin_post_kept','admin_broadcast') {clr_filter_n} ORDER BY n.created_at DESC LIMIT 20"
+            )
+            cur.execute(q, (me['id'], clr) if clr else (me['id'],))
+            for r in cur.fetchall():
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'created_at': str(r[1])})
 
             all_notifs = sorted(all_notifs, key=lambda x: x['created_at'], reverse=True)
 

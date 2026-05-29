@@ -26,6 +26,8 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "admin_report_dismissed") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(107,114,128,0.2)" }}><Icon name="ShieldOff" size={13} style={{ color: "#9CA3AF" }} /></div>;
   if (type === "admin_post_removed") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.2)" }}><Icon name="Trash2" size={13} style={{ color: "#F87171" }} /></div>;
   if (type === "admin_post_kept") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.15)" }}><Icon name="CheckCircle" size={13} style={{ color: "#4ADE80" }} /></div>;
+  if (type === "premium_activated") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#FF2D78,#FCD34D)" }}><span style={{ fontSize: 12 }}>✨</span></div>;
+  if (type === "admin_broadcast") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(155,89,182,0.2)" }}><Icon name="Megaphone" size={13} style={{ color: "#C084FC" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
@@ -51,6 +53,14 @@ function notifText(n: Notification) {
   if (n.type === "admin_report_dismissed") return "⚪ Твоя жалоба рассмотрена — нарушений не выявлено";
   if (n.type === "admin_post_removed") return "🚫 Администрация удалила твой пост из ленты за нарушение правил";
   if (n.type === "admin_post_kept") return "ℹ️ Жалоба на твой пост рассмотрена — пост оставлен в ленте";
+  if (n.type === "admin_broadcast") return n.text || "Сообщение от администрации";
+  if (n.type === "premium_activated") {
+    if (n.text) {
+      const [planLabel, until] = n.text.split("|");
+      return `Premium активирован на ${planLabel}${until ? ` · до ${until}` : ""}`;
+    }
+    return "✨ Premium подписка активирована!";
+  }
   return "просматривал(а) твой профиль";
 }
 
@@ -132,34 +142,61 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
 
           {!loading && items.length > 0 && (
             <div className="flex flex-col">
-              {items.map((n, i) => (
-                <button
-                  key={i}
-                  onClick={() => { if (n.type === "message" && n.match_id && onOpenChat) { onClose(); onOpenChat(n.match_id); } }}
-                  className="flex items-center gap-3 px-5 py-3.5 active:bg-white/5 transition-colors text-left"
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div className="relative flex-shrink-0">
-                    {["admin_report_resolved","admin_report_dismissed","admin_post_removed","admin_post_kept"].includes(n.type) ? (
-                      <div className="w-11 h-11 rounded-full flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                        <Icon name="Shield" size={20} className="text-white" />
+              {items.map((n, i) => {
+                // Специальная карточка Premium
+                if (n.type === "premium_activated") {
+                  const [planLabel, until] = (n.text || "").split("|");
+                  return (
+                    <div key={i} className="mx-4 my-2 rounded-2xl overflow-hidden"
+                      style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.15),rgba(155,89,182,0.18),rgba(252,211,77,0.08))", border: "1px solid rgba(255,45,120,0.3)" }}>
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.4)" }}>
+                          <span style={{ fontSize: 22 }}>✨</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm">LoveBloom Premium активирован</p>
+                          <p className="text-white/60 text-xs mt-0.5">
+                            {planLabel ? `Подписка на ${planLabel}` : "Подписка активна"}
+                            {until ? ` · до ${until}` : ""}
+                          </p>
+                        </div>
+                        <span className="text-white/25 text-xs flex-shrink-0">{timeAgo(n.created_at)}</span>
                       </div>
-                    ) : (
-                      <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
-                    )}
-                    <div className="absolute -bottom-0.5 -right-0.5">
-                      <NotifIcon type={n.type} />
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-semibold truncate">
-                      {["admin_report_resolved","admin_report_dismissed","admin_post_removed","admin_post_kept"].includes(n.type) ? "Администрация" : n.name}
-                    </p>
-                    <p className="text-white/50 text-xs mt-0.5 truncate">{notifText(n)}</p>
-                  </div>
-                  <span className="text-white/25 text-xs flex-shrink-0">{timeAgo(n.created_at)}</span>
-                </button>
-              ))}
+                  );
+                }
+
+                const isSystem = ["admin_report_resolved","admin_report_dismissed","admin_post_removed","admin_post_kept","admin_broadcast","verif_approved","verif_rejected"].includes(n.type);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => { if (n.type === "message" && n.match_id && onOpenChat) { onClose(); onOpenChat(n.match_id); } }}
+                    className="flex items-center gap-3 px-5 py-3.5 active:bg-white/5 transition-colors text-left"
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                    <div className="relative flex-shrink-0">
+                      {isSystem ? (
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                          <Icon name="Shield" size={20} className="text-white" />
+                        </div>
+                      ) : (
+                        <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
+                      )}
+                      <div className="absolute -bottom-0.5 -right-0.5">
+                        <NotifIcon type={n.type} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">
+                        {isSystem ? "Администрация" : n.name}
+                      </p>
+                      <p className="text-white/50 text-xs mt-0.5 truncate">{notifText(n)}</p>
+                    </div>
+                    <span className="text-white/25 text-xs flex-shrink-0">{timeAgo(n.created_at)}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

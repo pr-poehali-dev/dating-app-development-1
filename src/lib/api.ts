@@ -355,7 +355,7 @@ export const likesApi = {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 export interface Notification {
-  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription" | "match" | "verif_approved" | "verif_rejected" | "story_view" | "admin_report_resolved" | "admin_report_dismissed" | "admin_post_removed" | "admin_post_kept";
+  type: "like" | "super_like" | "message" | "view" | "new_photo" | "subscription" | "match" | "verif_approved" | "verif_rejected" | "story_view" | "admin_report_resolved" | "admin_report_dismissed" | "admin_post_removed" | "admin_post_kept" | "premium_activated" | "admin_broadcast";
   from_user_id: number;
   name: string;
   photo_url?: string;
