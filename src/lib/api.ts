@@ -767,4 +767,45 @@ export const adminApi = {
 
   supportReply: (token: string, ticket_id: number, reply: string) =>
     adminReq<{ ok: boolean }>('support_reply', { method: 'POST', body: JSON.stringify({ ticket_id, reply }) }, token),
+
+  editUser: (token: string, user_id: number, fields: Record<string, unknown>) =>
+    adminReq<{ ok: boolean }>('edit_user', { method: 'POST', body: JSON.stringify({ user_id, ...fields }) }, token),
+
+  userActivity: (token: string, user_id: number) =>
+    adminReq<{ likes_sent: number; likes_received: number; matches: number; messages: number; reports_sent: number; reports_received: number; last_seen: string | null; created_at: string | null }>(
+      'user_activity', {}, token, { user_id: String(user_id) }
+    ),
+
+  analyticsActivity: (token: string) =>
+    adminReq<{ dau: { date: string; dau: number }[]; mau: { month: string; new_users: number }[] }>('analytics_activity', {}, token),
+
+  analyticsDemo: (token: string) =>
+    adminReq<{ gender: Record<string, number>; age: Record<string, number>; cities: { city: string; count: number }[] }>('analytics_demo', {}, token),
+
+  analyticsFinance: (token: string) =>
+    adminReq<{ total_gift_transactions: number; total_gift_revenue: number; premium_users: number; monthly: { month: string; count: number; revenue: number }[] }>('analytics_finance', {}, token),
+
+  blockedIps: (token: string) =>
+    adminReq<{ ips: { id: number; ip_address: string; reason: string; created_at: string }[] }>('blocked_ips', {}, token),
+  blockIp: (token: string, ip_address: string, reason: string) =>
+    adminReq<{ ok: boolean }>('block_ip', { method: 'POST', body: JSON.stringify({ ip_address, reason }) }, token),
+  unblockIp: (token: string, id: number) =>
+    adminReq<{ ok: boolean }>('unblock_ip', { method: 'POST', body: JSON.stringify({ id }) }, token),
+
+  stopwords: (token: string) =>
+    adminReq<{ words: { id: number; word: string; created_at: string }[] }>('stopwords', {}, token),
+  addStopword: (token: string, word: string) =>
+    adminReq<{ ok: boolean }>('add_stopword', { method: 'POST', body: JSON.stringify({ word }) }, token),
+  deleteStopword: (token: string, id: number) =>
+    adminReq<{ ok: boolean }>('delete_stopword', { method: 'POST', body: JSON.stringify({ id }) }, token),
+
+  pushBroadcast: (token: string, title: string, message: string, segment: string) =>
+    adminReq<{ ok: boolean; sent_to: number }>('push_broadcast', { method: 'POST', body: JSON.stringify({ title, message, segment }) }, token),
+
+  banners: (token: string) =>
+    adminReq<{ banners: { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string }[] }>('banners', {}, token),
+  bannerSave: (token: string, data: Record<string, unknown>) =>
+    adminReq<{ ok: boolean }>('banner_save', { method: 'POST', body: JSON.stringify(data) }, token),
+  bannerDelete: (token: string, id: number) =>
+    adminReq<{ ok: boolean }>('banner_delete', { method: 'POST', body: JSON.stringify({ id }) }, token),
 };

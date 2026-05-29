@@ -381,6 +381,219 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Редактировать профиль пользователя ───────────────────────────────
+        if action == 'edit_user':
+            user_id = body.get('user_id')
+            if not user_id:
+                return resp(400, {'error': 'user_id обязателен'})
+            allowed = ['name', 'age', 'city', 'bio', 'gender', 'premium', 'verified']
+            updates = {k: v for k, v in body.items() if k in allowed}
+            if not updates:
+                return resp(400, {'error': 'Нет полей для обновления'})
+            set_clause = ', '.join(f"{k} = %s" for k in updates)
+            cur.execute(f"UPDATE users SET {set_clause} WHERE id = %s", list(updates.values()) + [user_id])
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── История активности пользователя ──────────────────────────────────
+        if action == 'user_activity':
+            user_id = int(params.get('user_id', 0))
+            if not user_id:
+                return resp(400, {'error': 'user_id обязателен'})
+            cur.execute("SELECT COUNT(*) FROM likes WHERE from_user_id=%s", (user_id,))
+            likes_sent = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM likes WHERE to_user_id=%s", (user_id,))
+            likes_received = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM matches WHERE user1_id=%s OR user2_id=%s", (user_id, user_id))
+            matches_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM messages WHERE sender_id=%s", (user_id,))
+            messages_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM reports WHERE reporter_id=%s", (user_id,))
+            reports_sent = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM reports WHERE reported_id=%s", (user_id,))
+            reports_received = cur.fetchone()[0]
+            cur.execute("SELECT last_seen, created_at FROM users WHERE id=%s", (user_id,))
+            u_row = cur.fetchone()
+            return resp(200, {
+                'likes_sent': likes_sent, 'likes_received': likes_received,
+                'matches': matches_count, 'messages': messages_count,
+                'reports_sent': reports_sent, 'reports_received': reports_received,
+                'last_seen': str(u_row[0]) if u_row and u_row[0] else None,
+                'created_at': str(u_row[1]) if u_row and u_row[1] else None,
+            })
+
+        # ── Аналитика: DAU/MAU по дням ────────────────────────────────────────
+        if action == 'analytics_activity':
+            cur.execute("""
+                SELECT DATE(created_at) as day, COUNT(DISTINCT user_id) as dau
+                FROM sessions
+                WHERE created_at > NOW() - INTERVAL '30 days'
+                GROUP BY day ORDER BY day DESC
+            """)
+            rows = cur.fetchall()
+            dau_data = [{'date': str(r[0]), 'dau': r[1]} for r in rows]
+            cur.execute("""
+                SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as new_users
+                FROM users
+                WHERE created_at > NOW() - INTERVAL '6 months'
+                GROUP BY month ORDER BY month DESC
+            """)
+            mau_rows = cur.fetchall()
+            mau_data = [{'month': str(r[0])[:7], 'new_users': r[1]} for r in mau_rows]
+            return resp(200, {'dau': dau_data, 'mau': mau_data})
+
+        # ── Аналитика: демография ─────────────────────────────────────────────
+        if action == 'analytics_demo':
+            cur.execute("SELECT gender, COUNT(*) FROM users WHERE gender IS NOT NULL GROUP BY gender")
+            gender_rows = cur.fetchall()
+            gender = {r[0]: r[1] for r in gender_rows}
+            cur.execute("""
+                SELECT
+                  CASE WHEN age < 18 THEN '<18'
+                       WHEN age BETWEEN 18 AND 24 THEN '18-24'
+                       WHEN age BETWEEN 25 AND 34 THEN '25-34'
+                       WHEN age BETWEEN 35 AND 44 THEN '35-44'
+                       WHEN age >= 45 THEN '45+'
+                       ELSE 'unknown' END as group,
+                  COUNT(*) as cnt
+                FROM users GROUP BY 1
+            """)
+            age_rows = cur.fetchall()
+            age = {r[0]: r[1] for r in age_rows}
+            cur.execute("SELECT city, COUNT(*) FROM users WHERE city IS NOT NULL GROUP BY city ORDER BY 2 DESC LIMIT 10")
+            city_rows = cur.fetchall()
+            cities = [{'city': r[0], 'count': r[1]} for r in city_rows]
+            return resp(200, {'gender': gender, 'age': age, 'cities': cities})
+
+        # ── Аналитика: финансы ────────────────────────────────────────────────
+        if action == 'analytics_finance':
+            cur.execute("SELECT COUNT(*), SUM(amount) FROM user_gifts WHERE amount > 0")
+            g_row = cur.fetchone()
+            cur.execute("SELECT COUNT(*) FROM users WHERE premium = TRUE")
+            premium_count = cur.fetchone()[0]
+            cur.execute("""
+                SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as cnt, COALESCE(SUM(amount),0) as revenue
+                FROM user_gifts WHERE amount > 0 AND created_at > NOW() - INTERVAL '6 months'
+                GROUP BY month ORDER BY month DESC
+            """)
+            finance_rows = cur.fetchall()
+            monthly = [{'month': str(r[0])[:7], 'count': r[1], 'revenue': float(r[2])} for r in finance_rows]
+            return resp(200, {
+                'total_gift_transactions': g_row[0] or 0,
+                'total_gift_revenue': float(g_row[1] or 0),
+                'premium_users': premium_count,
+                'monthly': monthly,
+            })
+
+        # ── Безопасность: список заблокированных IP ───────────────────────────
+        if action == 'blocked_ips':
+            cur.execute("""
+                SELECT id, ip_address, reason, created_at
+                FROM blocked_ips ORDER BY created_at DESC LIMIT 100
+            """)
+            rows = cur.fetchall()
+            cols = ['id', 'ip_address', 'reason', 'created_at']
+            return resp(200, {'ips': [dict(zip(cols, r)) for r in rows]})
+
+        if action == 'block_ip':
+            ip = body.get('ip_address', '').strip()
+            reason = body.get('reason', 'Ручная блокировка').strip()
+            if not ip:
+                return resp(400, {'error': 'ip_address обязателен'})
+            cur.execute(
+                "INSERT INTO blocked_ips (ip_address, reason) VALUES (%s, %s) ON CONFLICT (ip_address) DO NOTHING",
+                (ip, reason)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'unblock_ip':
+            ip_id = body.get('id')
+            if not ip_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM blocked_ips WHERE id = %s", (ip_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Безопасность: стоп-слова ──────────────────────────────────────────
+        if action == 'stopwords':
+            cur.execute("SELECT id, word, created_at FROM stopwords ORDER BY created_at DESC LIMIT 200")
+            rows = cur.fetchall()
+            return resp(200, {'words': [{'id': r[0], 'word': r[1], 'created_at': str(r[2])} for r in rows]})
+
+        if action == 'add_stopword':
+            word = body.get('word', '').strip().lower()
+            if not word:
+                return resp(400, {'error': 'word обязателен'})
+            cur.execute("INSERT INTO stopwords (word) VALUES (%s) ON CONFLICT (word) DO NOTHING", (word,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'delete_stopword':
+            word_id = body.get('id')
+            if not word_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM stopwords WHERE id = %s", (word_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Маркетинг: отправить push всем ───────────────────────────────────
+        if action == 'push_broadcast':
+            title = body.get('title', '').strip()
+            message = body.get('message', '').strip()
+            segment = body.get('segment', 'all')  # all | premium | new_week
+            if not title or not message:
+                return resp(400, {'error': 'title и message обязательны'})
+            if segment == 'premium':
+                cur.execute("SELECT id FROM users WHERE premium = TRUE")
+            elif segment == 'new_week':
+                cur.execute("SELECT id FROM users WHERE created_at > NOW() - INTERVAL '7 days'")
+            else:
+                cur.execute("SELECT id FROM users")
+            user_ids = [r[0] for r in cur.fetchall()]
+            for uid in user_ids:
+                cur.execute(
+                    "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_broadcast', NULL)",
+                    (uid,)
+                )
+            conn.commit()
+            return resp(200, {'ok': True, 'sent_to': len(user_ids)})
+
+        # ── Маркетинг: баннеры ────────────────────────────────────────────────
+        if action == 'banners':
+            cur.execute("SELECT id, title, subtitle, color_from, color_to, active, created_at FROM admin_banners ORDER BY created_at DESC")
+            rows = cur.fetchall()
+            cols = ['id', 'title', 'subtitle', 'color_from', 'color_to', 'active', 'created_at']
+            return resp(200, {'banners': [dict(zip(cols, r)) for r in rows]})
+
+        if action == 'banner_save':
+            banner_id = body.get('id')
+            title = body.get('title', '').strip()
+            subtitle = body.get('subtitle', '').strip()
+            color_from = body.get('color_from', '#FF2D78').strip()
+            color_to = body.get('color_to', '#9B59B6').strip()
+            active = bool(body.get('active', True))
+            if banner_id:
+                cur.execute(
+                    "UPDATE admin_banners SET title=%s, subtitle=%s, color_from=%s, color_to=%s, active=%s WHERE id=%s",
+                    (title, subtitle, color_from, color_to, active, banner_id)
+                )
+            else:
+                cur.execute(
+                    "INSERT INTO admin_banners (title, subtitle, color_from, color_to, active) VALUES (%s,%s,%s,%s,%s)",
+                    (title, subtitle, color_from, color_to, active)
+                )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'banner_delete':
+            banner_id = body.get('id')
+            if not banner_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM admin_banners WHERE id = %s", (banner_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
