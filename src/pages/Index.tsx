@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -85,6 +86,28 @@ export default function Index() {
 
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
   const [joinStream, setJoinStream] = useState<LiveStream | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Обработка редиректа после оплаты Premium
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      // Убираем параметр из URL
+      window.history.replaceState({}, "", window.location.pathname);
+      // Обновляем данные пользователя (теперь premium=true)
+      if (authApi.isLoggedIn()) {
+        authApi.me().then((d) => {
+          setCurrentUser(d.user);
+          // Небольшая задержка — вебхук мог ещё не дойти
+          setTimeout(() => setShowConfetti(true), 400);
+          setTimeout(() => setShowConfetti(false), 5000);
+        }).catch(() => {
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 5000);
+        });
+      }
+    }
+  }, []);
   const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); setScreen("chat"); };
   const goToChats = () => { setPrevScreen(screen); setScreen("matches"); };
   const backToMatches = () => { setChatId(null); setScreen(prevScreen); };
@@ -118,6 +141,7 @@ export default function Index() {
 
   return (
     <div className="app-bg flex justify-center">
+      {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}

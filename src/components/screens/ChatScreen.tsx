@@ -251,7 +251,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
 
             const isSpecial = msg.text.startsWith("__GIFT__")
               || msg.text.startsWith("__AWARD__")
-              || msg.text.startsWith("__VIDEOCIRCLE__");
+              || msg.text.startsWith("__VIDEOCIRCLE__")
+              || msg.text.startsWith("__PREMIUM__");
 
             return (
               <div key={msg.id}

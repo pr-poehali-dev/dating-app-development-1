@@ -64,6 +64,64 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
     )
 
 
+def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
+    """Активирует Premium после успешной оплаты подписки."""
+    if not metadata or metadata.get('kind') not in (None, 'premium', ''):
+        # Если kind явно указан и это не premium — пропускаем
+        if metadata.get('kind') and metadata.get('kind') not in ('premium',):
+            return
+
+    plan = metadata.get('plan', '')
+    if not plan:
+        return  # Нет плана — не премиум-платёж
+
+    user_id = _int(metadata.get('user_id'))
+    if not user_id:
+        return
+
+    # Защита от дубликатов
+    cur.execute("SELECT id FROM orders WHERE order_number = %s AND status = 'paid' LIMIT 1", (payment_id,))
+    # Уже проверено выше; идём дальше
+
+    # Длительность по плану
+    plan_months = {'1month': 1, '3month': 3, '6month': 6, '12month': 12}
+    months = plan_months.get(plan, 1)
+
+    # Текущая дата окончания (продлеваем если есть активная)
+    cur.execute("SELECT premium_until FROM users WHERE id = %s", (user_id,))
+    row = cur.fetchone()
+    now = datetime.datetime.now()
+    base = row[0] if row and row[0] and row[0] > now else now
+    premium_until = base + datetime.timedelta(days=30 * months)
+
+    cur.execute(
+        "UPDATE users SET premium = TRUE, premium_until = %s WHERE id = %s",
+        (premium_until, user_id)
+    )
+
+    # Системное сообщение о подписке во все чаты пользователя
+    plan_labels = {'1month': '1 месяц', '3month': '3 месяца', '6month': '6 месяцев', '12month': '12 месяцев'}
+    plan_label = plan_labels.get(plan, plan)
+    until_str = premium_until.strftime('%d.%m.%Y')
+    sys_text = f"__PREMIUM__{plan_label}|{until_str}"
+
+    # Отправляем только в первый матч (как системное событие для себя)
+    cur.execute(
+        """
+        SELECT id FROM matches
+        WHERE user1_id = %s OR user2_id = %s
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        (user_id, user_id)
+    )
+    match_row = cur.fetchone()
+    if match_row:
+        cur.execute(
+            "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+            (match_row[0], user_id, sys_text)
+        )
+
+
 def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
     """Создаёт буст профиля после успешной оплаты."""
     if not metadata or metadata.get('kind') != 'boost':
@@ -160,6 +218,7 @@ def handler(event: dict, context) -> dict:
 
             _create_gift_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _create_boost_from_metadata(cur, payment_id, effective_metadata, db_amount)
+            _create_premium_from_metadata(cur, payment_id, effective_metadata)
 
         elif event_type == 'payment.canceled':
             cur.execute(

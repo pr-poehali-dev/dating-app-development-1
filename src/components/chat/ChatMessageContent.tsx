@@ -197,6 +197,47 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   if (text.startsWith("__GIFT__")) {
     return <ChatGiftMessage text={text} out={out} />;
   }
+  if (text.startsWith("__PREMIUM__")) {
+    const payload = text.slice(11); // "1 месяц|31.12.2026"
+    const [planLabel, until] = payload.split("|");
+    return (
+      <div className="flex flex-col items-center gap-3 py-4 px-5 select-none"
+        style={{
+          background: "linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(155,89,182,0.15) 50%, rgba(252,211,77,0.08) 100%)",
+          border: "1.5px solid rgba(255,45,120,0.3)",
+          borderRadius: 20,
+          minWidth: 220,
+          maxWidth: 280,
+          boxShadow: "0 4px 24px rgba(255,45,120,0.2)",
+        }}>
+        {/* Иконка */}
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.5)" }}>
+          <span style={{ fontSize: 28 }}>✨</span>
+        </div>
+        {/* Текст */}
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-white font-black text-base tracking-wide">LoveBloom Premium</span>
+          <span className="text-white/60 text-xs font-semibold">активирован на {planLabel}</span>
+          {until && (
+            <span className="text-white/35 text-[11px]">активен до {until}</span>
+          )}
+        </div>
+        {/* Фичи */}
+        <div className="flex flex-col gap-1 w-full">
+          {["Безлимитные лайки", "Приоритет в поиске", "Инкогнито-режим"].map(f => (
+            <div key={f} className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#FCD34D)" }}>
+                <Icon name="Check" size={9} className="text-white" />
+              </div>
+              <span className="text-white/55 text-[11px]">{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (text === "❤️") {
     return <HeartMessage />;
   }
