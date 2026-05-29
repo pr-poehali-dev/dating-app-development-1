@@ -130,6 +130,51 @@ def handler(event: dict, context) -> dict:
             total = cur.fetchone()[0]
             return resp(200, {'users': users, 'total': total, 'page': page, 'per_page': per_page})
 
+        # ── Список совпадений ─────────────────────────────────────────────────
+        if action == 'matches_list':
+            page = int(params.get('page', 1))
+            per_page = 30
+            offset = (page - 1) * per_page
+            cur.execute(
+                "SELECT m.id, m.created_at, "
+                "u1.id as user1_id, u1.name as user1_name, u1.photo_url as user1_photo, u1.age as user1_age, "
+                "u2.id as user2_id, u2.name as user2_name, u2.photo_url as user2_photo, u2.age as user2_age "
+                "FROM matches m "
+                "JOIN users u1 ON u1.id = m.user1_id "
+                "JOIN users u2 ON u2.id = m.user2_id "
+                "ORDER BY m.created_at DESC LIMIT %s OFFSET %s",
+                (per_page, offset)
+            )
+            cols = ['id', 'created_at', 'user1_id', 'user1_name', 'user1_photo', 'user1_age',
+                    'user2_id', 'user2_name', 'user2_photo', 'user2_age']
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+            cur.execute("SELECT COUNT(*) FROM matches")
+            total = cur.fetchone()[0]
+            return resp(200, {'matches': rows, 'total': total, 'page': page, 'per_page': per_page})
+
+        # ── Список подарков ───────────────────────────────────────────────────
+        if action == 'gifts_list':
+            page = int(params.get('page', 1))
+            per_page = 30
+            offset = (page - 1) * per_page
+            cur.execute(
+                "SELECT ug.id, ug.created_at, ug.amount, ug.gift_name, ug.gift_emoji, "
+                "us.id as sender_id, us.name as sender_name, us.photo_url as sender_photo, "
+                "ur.id as receiver_id, ur.name as receiver_name, ur.photo_url as receiver_photo "
+                "FROM user_gifts ug "
+                "LEFT JOIN users us ON us.id = ug.sender_id "
+                "JOIN users ur ON ur.id = ug.recipient_id "
+                "ORDER BY ug.created_at DESC LIMIT %s OFFSET %s",
+                (per_page, offset)
+            )
+            cols = ['id', 'created_at', 'amount', 'gift_name', 'gift_emoji',
+                    'sender_id', 'sender_name', 'sender_photo',
+                    'receiver_id', 'receiver_name', 'receiver_photo']
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+            cur.execute("SELECT COUNT(*) FROM user_gifts")
+            total = cur.fetchone()[0]
+            return resp(200, {'gifts': rows, 'total': total, 'page': page, 'per_page': per_page})
+
         # ── Забанить пользователя ─────────────────────────────────────────────
         if action == 'ban_user':
             user_id = body.get('user_id')

@@ -566,6 +566,33 @@ export interface AdminUser {
   banned: boolean;
 }
 
+export interface AdminMatch {
+  id: number;
+  created_at: string;
+  user1_id: number;
+  user1_name: string;
+  user1_photo?: string;
+  user1_age?: number;
+  user2_id: number;
+  user2_name: string;
+  user2_photo?: string;
+  user2_age?: number;
+}
+
+export interface AdminGift {
+  id: number;
+  created_at: string;
+  amount: number;
+  gift_name: string;
+  gift_emoji: string;
+  sender_id: number;
+  sender_name: string;
+  sender_photo?: string;
+  receiver_id: number;
+  receiver_name: string;
+  receiver_photo?: string;
+}
+
 export interface AdminReport {
   id: number;
   reason: string;
@@ -707,6 +734,16 @@ export const adminApi = {
 
   unbanUser: (token: string, user_id: number) =>
     adminReq<{ ok: boolean }>('unban_user', { method: 'POST', body: JSON.stringify({ user_id }) }, token),
+
+  matchesList: (token: string, page = 1) =>
+    adminReq<{ matches: AdminMatch[]; total: number; page: number; per_page: number }>(
+      'matches_list', {}, token, { page: String(page) }
+    ),
+
+  giftsList: (token: string, page = 1) =>
+    adminReq<{ gifts: AdminGift[]; total: number; page: number; per_page: number }>(
+      'gifts_list', {}, token, { page: String(page) }
+    ),
 
   reports: (token: string, status = 'pending') =>
     adminReq<{ reports: AdminReport[] }>('reports', {}, token, { status }),
