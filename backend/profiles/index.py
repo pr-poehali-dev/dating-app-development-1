@@ -751,7 +751,7 @@ def handler(event: dict, context) -> dict:
                 return resp(404, {'error': 'Пост не найден'})
             reported_user_id = row[0]
             cur.execute(
-                "SELECT id FROM reports WHERE reporter_id=%s AND post_id=%s",
+                "SELECT id FROM reports WHERE reporter_id=%s AND post_id=%s AND status='pending'",
                 (me['id'], post_id)
             )
             if cur.fetchone():
