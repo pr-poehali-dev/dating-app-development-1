@@ -22,6 +22,10 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "verif_approved") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(59,130,246,0.2)" }}><Icon name="BadgeCheck" size={13} style={{ color: "#38BDF8" }} /></div>;
   if (type === "verif_rejected") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.15)" }}><Icon name="XCircle" size={13} style={{ color: "#F87171" }} /></div>;
   if (type === "story_view") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(155,89,182,0.2)" }}><Icon name="Play" size={13} style={{ color: "#C084FC" }} /></div>;
+  if (type === "admin_report_resolved") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.2)" }}><Icon name="ShieldCheck" size={13} style={{ color: "#4ADE80" }} /></div>;
+  if (type === "admin_report_dismissed") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(107,114,128,0.2)" }}><Icon name="ShieldOff" size={13} style={{ color: "#9CA3AF" }} /></div>;
+  if (type === "admin_post_removed") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.2)" }}><Icon name="Trash2" size={13} style={{ color: "#F87171" }} /></div>;
+  if (type === "admin_post_kept") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.15)" }}><Icon name="CheckCircle" size={13} style={{ color: "#4ADE80" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
@@ -43,6 +47,10 @@ function notifText(n: Notification) {
   if (n.type === "verif_approved") return "✅ Верификация одобрена! Значок ✓ теперь на твоём профиле";
   if (n.type === "verif_rejected") return "❌ Верификация отклонена. Попробуй ещё раз";
   if (n.type === "story_view") return "посмотрел(а) твою видеоисторию 🎬";
+  if (n.type === "admin_report_resolved") return "✅ Твоя жалоба рассмотрена — меры приняты";
+  if (n.type === "admin_report_dismissed") return "⚪ Твоя жалоба рассмотрена — нарушений не выявлено";
+  if (n.type === "admin_post_removed") return "🚫 Администрация удалила твой пост из ленты за нарушение правил";
+  if (n.type === "admin_post_kept") return "ℹ️ Жалоба на твой пост рассмотрена — пост оставлен в ленте";
   return "просматривал(а) твой профиль";
 }
 
@@ -131,13 +139,22 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                   className="flex items-center gap-3 px-5 py-3.5 active:bg-white/5 transition-colors text-left"
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                   <div className="relative flex-shrink-0">
-                    <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
+                    {["admin_report_resolved","admin_report_dismissed","admin_post_removed","admin_post_kept"].includes(n.type) ? (
+                      <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                        <Icon name="Shield" size={20} className="text-white" />
+                      </div>
+                    ) : (
+                      <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
+                    )}
                     <div className="absolute -bottom-0.5 -right-0.5">
                       <NotifIcon type={n.type} />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-semibold truncate">{n.name}</p>
+                    <p className="text-white text-sm font-semibold truncate">
+                      {["admin_report_resolved","admin_report_dismissed","admin_post_removed","admin_post_kept"].includes(n.type) ? "Администрация" : n.name}
+                    </p>
                     <p className="text-white/50 text-xs mt-0.5 truncate">{notifText(n)}</p>
                   </div>
                   <span className="text-white/25 text-xs flex-shrink-0">{timeAgo(n.created_at)}</span>

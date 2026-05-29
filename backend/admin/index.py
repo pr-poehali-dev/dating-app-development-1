@@ -177,18 +177,54 @@ def handler(event: dict, context) -> dict:
             report_id = body.get('report_id')
             new_status = body.get('status', 'resolved')
             ban_user = body.get('ban_user', False)
+            post_action = body.get('post_action', '')  # 'delete_post' | 'keep_post' | ''
             if not report_id:
                 return resp(400, {'error': 'report_id обязателен'})
+
+            # Получаем данные жалобы
+            cur.execute(
+                "SELECT reporter_id, reported_id FROM reports WHERE id = %s",
+                (report_id,)
+            )
+            rep_info = cur.fetchone()
+            reporter_id = rep_info[0] if rep_info else None
+            reported_id = rep_info[1] if rep_info else None
+
             cur.execute("UPDATE reports SET status = %s WHERE id = %s", (new_status, report_id))
-            if ban_user:
-                cur.execute("SELECT reported_id FROM reports WHERE id = %s", (report_id,))
-                rep_row = cur.fetchone()
-                if rep_row:
+
+            if ban_user and reported_id:
+                cur.execute(
+                    "INSERT INTO banned_users (user_id, reason) VALUES (%s, %s) ON CONFLICT (user_id) DO NOTHING",
+                    (reported_id, 'Нарушение правил сообщества')
+                )
+                cur.execute("UPDATE sessions SET expires_at = NOW() WHERE user_id = %s", (reported_id,))
+
+            if new_status == 'dismissed':
+                # Жалоба отклонена — уведомляем репортёра
+                if reporter_id:
                     cur.execute(
-                        "INSERT INTO banned_users (user_id, reason) VALUES (%s, %s) ON CONFLICT (user_id) DO NOTHING",
-                        (rep_row[0], 'Нарушение правил сообщества')
+                        "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_report_dismissed', NULL)",
+                        (reporter_id,)
                     )
-                    cur.execute("UPDATE sessions SET expires_at = NOW() WHERE user_id = %s", (rep_row[0],))
+            else:
+                # Меры приняты — уведомляем репортёра о решении
+                if reporter_id:
+                    cur.execute(
+                        "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_report_resolved', NULL)",
+                        (reporter_id,)
+                    )
+                # Уведомляем нарушителя о пост-действии
+                if reported_id and post_action == 'delete_post':
+                    cur.execute(
+                        "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_post_removed', NULL)",
+                        (reported_id,)
+                    )
+                elif reported_id and post_action == 'keep_post':
+                    cur.execute(
+                        "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_post_kept', NULL)",
+                        (reported_id,)
+                    )
+
             conn.commit()
             return resp(200, {'ok': True})
 

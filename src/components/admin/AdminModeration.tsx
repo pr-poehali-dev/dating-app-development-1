@@ -188,13 +188,84 @@ export function VerifTab({ token }: { token: string }) {
   );
 }
 
+// ─── Диалог принятия мер ──────────────────────────────────────────────────────
+function ActionsDialog({ report, onConfirm, onCancel }: {
+  report: AdminReport;
+  onConfirm: (postAction: string, banUser: boolean) => void;
+  onCancel: () => void;
+}) {
+  const [postAction, setPostAction] = useState<"delete_post" | "keep_post">("keep_post");
+  const [banUser, setBanUser] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}>
+      <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4"
+        style={{ background: "#1a1030", border: "1px solid rgba(255,45,120,0.25)" }}>
+
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(255,45,120,0.15)" }}>
+            <Icon name="ShieldCheck" size={20} style={{ color: "#FF2D78" }} />
+          </div>
+          <div>
+            <p className="text-white font-bold">Принять меры</p>
+            <p className="text-white/40 text-xs">На: {report.reported_name}</p>
+          </div>
+        </div>
+
+        {/* Действие с постом */}
+        <div className="flex flex-col gap-2">
+          <p className="text-white/50 text-xs font-semibold uppercase tracking-wider">Действие с постом</p>
+          {([
+            { v: "delete_post", label: "Удалить пост из ленты", icon: "Trash2", color: "#EF4444" },
+            { v: "keep_post",   label: "Оставить пост в ленте", icon: "Check",  color: "#22C55E" },
+          ] as const).map(({ v, label, icon, color }) => (
+            <button key={v} onClick={() => setPostAction(v)}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-left transition-all active:scale-[0.98]"
+              style={postAction === v
+                ? { background: `${color}22`, color, border: `1px solid ${color}55` }
+                : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <Icon name={icon} size={15} style={{ color: postAction === v ? color : undefined }} />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Бан */}
+        <button onClick={() => setBanUser(b => !b)}
+          className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98]"
+          style={banUser
+            ? { background: "rgba(239,68,68,0.15)", color: "#F87171", border: "1px solid rgba(239,68,68,0.4)" }
+            : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <Icon name={banUser ? "UserX" : "User"} size={15} />
+          {banUser ? "🚫 Заблокировать пользователя" : "Не блокировать пользователя"}
+        </button>
+
+        <div className="flex gap-2 mt-1">
+          <button onClick={onCancel}
+            className="flex-1 py-3 rounded-xl text-sm font-semibold text-white/50"
+            style={{ background: "rgba(255,255,255,0.07)" }}>
+            Отмена
+          </button>
+          <button onClick={() => onConfirm(postAction, banUser)}
+            className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
+            style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+            Применить
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Reports Tab ──────────────────────────────────────────────────────────────
 export function ReportsTab({ token }: { token: string }) {
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("pending");
   const [actionId, setActionId] = useState<number | null>(null);
-  const [banConfirm, setBanConfirm] = useState<AdminReport | null>(null);
+  const [actionsTarget, setActionsTarget] = useState<AdminReport | null>(null);
 
   const load = (s: string) => {
     setLoading(true);
@@ -203,11 +274,11 @@ export function ReportsTab({ token }: { token: string }) {
 
   useEffect(() => { load(statusFilter); }, [token, statusFilter]);
 
-  const resolve = async (r: AdminReport, status: string, banUser = false) => {
+  const resolve = async (r: AdminReport, status: string, banUser = false, postAction = '') => {
     setActionId(r.id);
-    setBanConfirm(null);
+    setActionsTarget(null);
     try {
-      await adminApi.resolveReport(token, r.id, status, banUser);
+      await adminApi.resolveReport(token, r.id, status, banUser, postAction);
       load(statusFilter);
     } catch (e) { void e; }
     finally { setActionId(null); }
@@ -235,32 +306,13 @@ export function ReportsTab({ token }: { token: string }) {
         ))}
       </div>
 
-      {/* Диалог бана */}
-      {banConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(8px)" }}>
-          <div className="w-full max-w-xs rounded-3xl p-6 flex flex-col gap-4"
-            style={{ background: "#1a1030", border: "1px solid rgba(239,68,68,0.3)" }}>
-            <div className="text-center">
-              <div className="text-4xl mb-2">🚫</div>
-              <p className="text-white font-bold">Принять меры и забанить?</p>
-              <p className="text-white/50 text-sm mt-1">Пользователь <span className="text-pink-400">{banConfirm.reported_name}</span> будет заблокирован</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => resolve(banConfirm, "resolved", false)}
-                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white/60"
-                style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", color: "#4ADE80" }}>
-                Без бана
-              </button>
-              <button onClick={() => resolve(banConfirm, "resolved", true)}
-                className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
-                style={{ background: "linear-gradient(135deg,#DC2626,#991B1B)" }}>
-                🚫 Забанить
-              </button>
-            </div>
-            <button onClick={() => setBanConfirm(null)} className="text-white/30 text-xs text-center">Отмена</button>
-          </div>
-        </div>
+      {/* Диалог принятия мер */}
+      {actionsTarget && (
+        <ActionsDialog
+          report={actionsTarget}
+          onConfirm={(postAction, banUser) => resolve(actionsTarget, "resolved", banUser, postAction)}
+          onCancel={() => setActionsTarget(null)}
+        />
       )}
 
       {loading ? <Spinner /> : reports.length === 0 ? (
@@ -295,14 +347,16 @@ export function ReportsTab({ token }: { token: string }) {
               )}
               {statusFilter === "pending" && (
                 <div className="flex gap-2">
-                  <button onClick={() => setBanConfirm(r)} disabled={actionId === r.id}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1.5"
-                    style={{ background: "linear-gradient(135deg,#22C55E,#16A34A)" }}>
-                    <Icon name="ShieldCheck" size={13} />Принять меры
+                  <button onClick={() => setActionsTarget(r)} disabled={actionId === r.id}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                    {actionId === r.id
+                      ? <Icon name="Loader2" size={13} className="animate-spin" />
+                      : <><Icon name="ShieldCheck" size={13} />Принять меры</>}
                   </button>
                   <button onClick={() => resolve(r, "dismissed")} disabled={actionId === r.id}
-                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold disabled:opacity-50"
-                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}>
+                    className="flex-1 py-2.5 rounded-xl text-xs font-semibold disabled:opacity-50 active:scale-95 transition-all"
+                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
                     Отклонить жалобу
                   </button>
                 </div>
