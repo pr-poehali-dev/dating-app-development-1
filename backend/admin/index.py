@@ -228,12 +228,13 @@ def handler(event: dict, context) -> dict:
 
             # Получаем данные жалобы
             cur.execute(
-                "SELECT reporter_id, reported_id FROM reports WHERE id = %s",
+                "SELECT reporter_id, reported_id, post_id FROM reports WHERE id = %s",
                 (report_id,)
             )
             rep_info = cur.fetchone()
             reporter_id = rep_info[0] if rep_info else None
             reported_id = rep_info[1] if rep_info else None
+            post_id     = rep_info[2] if rep_info else None
 
             cur.execute("UPDATE reports SET status = %s WHERE id = %s", (new_status, report_id))
 
@@ -260,6 +261,11 @@ def handler(event: dict, context) -> dict:
                     )
                 # Уведомляем нарушителя о пост-действии
                 if reported_id and post_action == 'delete_post':
+                    # Удаляем пост из ленты
+                    if post_id:
+                        cur.execute("DELETE FROM post_comments WHERE post_id = %s", (post_id,))
+                        cur.execute("DELETE FROM post_likes WHERE post_id = %s", (post_id,))
+                        cur.execute("DELETE FROM posts WHERE id = %s", (post_id,))
                     cur.execute(
                         "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'admin_post_removed', NULL)",
                         (reported_id,)
