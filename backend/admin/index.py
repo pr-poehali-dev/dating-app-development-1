@@ -647,6 +647,41 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Подписки: создать тариф ───────────────────────────────────────────
+        if action == 'create_plan':
+            plan_key      = body.get('plan_key', '').strip()
+            label         = body.get('label', '').strip()
+            price_per_month = body.get('price_per_month')
+            total_amount  = body.get('total_amount')
+            duration_months = body.get('duration_months', 1)
+            popular       = bool(body.get('popular', False))
+            if not plan_key or not label or price_per_month is None or total_amount is None:
+                return resp(400, {'error': 'plan_key, label, price_per_month, total_amount обязательны'})
+            cur.execute("SELECT id FROM premium_plans WHERE plan_key = %s", (plan_key,))
+            if cur.fetchone():
+                return resp(400, {'error': f'plan_key «{plan_key}» уже существует'})
+            cur.execute(
+                "SELECT COALESCE(MAX(sort_order),0)+1 FROM premium_plans"
+            )
+            next_order = cur.fetchone()[0]
+            cur.execute(
+                "INSERT INTO premium_plans (plan_key, label, price_per_month, total_amount, duration_months, popular, active, sort_order) "
+                "VALUES (%s, %s, %s, %s, %s, %s, TRUE, %s) RETURNING id",
+                (plan_key, label, float(price_per_month), float(total_amount), int(duration_months), popular, next_order)
+            )
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            return resp(200, {'ok': True, 'id': new_id})
+
+        # ── Подписки: удалить тариф ───────────────────────────────────────────
+        if action == 'delete_plan':
+            plan_id = body.get('id')
+            if not plan_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM premium_plans WHERE id = %s", (plan_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:

@@ -815,6 +815,10 @@ export const adminApi = {
     adminReq<{ plans: PremiumPlan[]; stats: Record<string, number>; total_premium: number }>('plans', {}, token),
   updatePlan: (token: string, id: number, fields: Partial<PremiumPlan>) =>
     adminReq<{ ok: boolean }>('update_plan', { method: 'POST', body: JSON.stringify({ id, ...fields }) }, token),
+  createPlan: (token: string, fields: Omit<PremiumPlan, 'id' | 'updated_at'>) =>
+    adminReq<{ ok: boolean; id: number }>('create_plan', { method: 'POST', body: JSON.stringify(fields) }, token),
+  deletePlan: (token: string, id: number) =>
+    adminReq<{ ok: boolean }>('delete_plan', { method: 'POST', body: JSON.stringify({ id }) }, token),
 };
 
 export interface PremiumPlan {
