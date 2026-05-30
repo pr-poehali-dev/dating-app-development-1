@@ -12,11 +12,12 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   const handleFile = (f: File) => {
     if (!f.type.startsWith("video/")) { setError("Только видео файлы"); return; }
-    if (f.size > 50 * 1024 * 1024) { setError("Файл слишком большой (макс 50 МБ)"); return; }
+    if (f.size > 100 * 1024 * 1024) { setError("Файл слишком большой (макс 100 МБ)"); return; }
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
     setError("");
@@ -25,27 +26,69 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
+    setProgress(0);
     setError("");
+
     try {
-      const token = localStorage.getItem("spark_token");
+      const token = localStorage.getItem("spark_token") || "";
       const duration = videoRef.current?.duration || 0;
-      const b64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve((e.target?.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const res = await fetch(STORIES_URL, {
+
+      // Шаг 1: получаем presigned URL от бэкенда
+      setProgress(10);
+      const presignRes = await fetch(STORIES_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token || "" },
-        body: JSON.stringify({ video: b64, content_type: file.type, duration: Math.round(duration) }),
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ action: "presign", content_type: file.type }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || "Ошибка загрузки"); return; }
+      if (!presignRes.ok) {
+        const d = await presignRes.json().catch(() => ({}));
+        setError(d.error || "Ошибка получения ссылки для загрузки");
+        return;
+      }
+      const { upload_url, video_url } = await presignRes.json();
+      setProgress(20);
+
+      // Шаг 2: загружаем файл напрямую в S3 через presigned URL (PUT)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", upload_url);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(20 + Math.round((e.loaded / e.total) * 70));
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`S3 error: ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error("Ошибка загрузки файла"));
+        xhr.send(file);
+      });
+      setProgress(90);
+
+      // Шаг 3: создаём запись в БД
+      const createRes = await fetch(STORIES_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({
+          action: "create",
+          video_url,
+          content_type: file.type,
+          duration: Math.round(duration),
+        }),
+      });
+      if (!createRes.ok) {
+        const d = await createRes.json().catch(() => ({}));
+        setError(d.error || "Ошибка публикации");
+        return;
+      }
+
+      setProgress(100);
       onUploaded?.();
       onClose();
-    } catch {
-      setError("Ошибка соединения");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка соединения");
     } finally {
       setUploading(false);
     }
@@ -66,7 +109,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
             disabled={!file || uploading}
             className="btn-grad px-4 py-1.5 text-sm font-semibold disabled:opacity-40"
           >
-            {uploading ? "..." : "Опубликовать"}
+            {uploading ? `${progress}%` : "Опубликовать"}
           </button>
         </div>
 
@@ -82,7 +125,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
               </div>
               <div className="text-center">
                 <p className="text-white font-semibold text-sm">Выбрать видео</p>
-                <p className="text-white/40 text-xs mt-1">MP4, MOV, WebM · макс 50 МБ</p>
+                <p className="text-white/40 text-xs mt-1">MP4, MOV, WebM · макс 100 МБ</p>
               </div>
             </button>
           ) : (
@@ -94,12 +137,27 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
                 controls
                 playsInline
               />
-              <button
-                onClick={() => { setFile(null); setPreviewUrl(null); }}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white"
-              >
-                <Icon name="X" size={14} />
-              </button>
+              {!uploading && (
+                <button
+                  onClick={() => { setFile(null); setPreviewUrl(null); setProgress(0); }}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white"
+                >
+                  <Icon name="X" size={14} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Прогресс-бар */}
+          {uploading && (
+            <div className="flex flex-col gap-2">
+              <div className="w-full h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+                <div className="h-full rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%`, background: "linear-gradient(90deg,#FF2D78,#9B59B6)" }} />
+              </div>
+              <p className="text-white/40 text-xs text-center">
+                {progress < 20 ? "Подготовка..." : progress < 90 ? "Загрузка видео..." : "Публикация..."}
+              </p>
             </div>
           )}
 
