@@ -144,6 +144,15 @@
     --spark-text-sub: rgba(255, 255, 255, 0.5);
     --spark-overlay: rgba(0, 0, 0, 0.7);
 
+    /* Bottom navigation */
+    --spark-nav-bg: rgba(12, 7, 22, 0.96);
+    --spark-nav-border: rgba(255, 255, 255, 0.08);
+    --spark-nav-shadow: 0 -12px 40px rgba(0, 0, 0, 0.5);
+    --spark-nav-pill: rgba(255, 255, 255, 0.04);
+    --spark-nav-pill-border: rgba(255, 255, 255, 0.07);
+    --spark-nav-icon: rgba(255, 255, 255, 0.38);
+    --spark-nav-label: rgba(255, 255, 255, 0.42);
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -179,6 +188,14 @@ html.light {
   --spark-text: #1a1625;
   --spark-text-sub: rgba(26, 22, 37, 0.5);
   --spark-overlay: rgba(80, 50, 120, 0.35);
+
+  --spark-nav-bg: rgba(255, 255, 255, 0.97);
+  --spark-nav-border: rgba(26, 22, 37, 0.08);
+  --spark-nav-shadow: 0 -4px 24px rgba(26, 22, 37, 0.1);
+  --spark-nav-pill: rgba(26, 22, 37, 0.05);
+  --spark-nav-pill-border: rgba(26, 22, 37, 0.07);
+  --spark-nav-icon: rgba(26, 22, 37, 0.5);
+  --spark-nav-label: rgba(26, 22, 37, 0.55);
 }
 
 /* App shell */
@@ -248,17 +265,29 @@ html.light .text-white {
 html.light .text-white\/95 {
   color: rgba(26, 22, 37, 0.95) !important;
 }
+html.light .text-white\/90 {
+  color: rgba(26, 22, 37, 0.9) !important;
+}
 html.light .text-white\/85 {
   color: rgba(26, 22, 37, 0.85) !important;
 }
 html.light .text-white\/80 {
   color: rgba(26, 22, 37, 0.8) !important;
 }
+html.light .text-white\/75 {
+  color: rgba(26, 22, 37, 0.75) !important;
+}
 html.light .text-white\/70 {
   color: rgba(26, 22, 37, 0.7) !important;
 }
+html.light .text-white\/65 {
+  color: rgba(26, 22, 37, 0.65) !important;
+}
 html.light .text-white\/60 {
   color: rgba(26, 22, 37, 0.6) !important;
+}
+html.light .text-white\/55 {
+  color: rgba(26, 22, 37, 0.55) !important;
 }
 html.light .text-white\/50 {
   color: rgba(26, 22, 37, 0.5) !important;
@@ -277,6 +306,12 @@ html.light .text-white\/30 {
 }
 html.light .text-white\/25 {
   color: rgba(26, 22, 37, 0.25) !important;
+}
+html.light .text-white\/20 {
+  color: rgba(26, 22, 37, 0.2) !important;
+}
+html.light .text-white\/15 {
+  color: rgba(26, 22, 37, 0.15) !important;
 }
 html.light .text-white\/20 {
   color: rgba(26, 22, 37, 0.2) !important;
@@ -437,16 +472,6 @@ html.light .app-bg::after {
   );
 }
 
-/* Светлая тема: нижняя навигационная панель */
-html.light .light-nav {
-  background: rgba(255, 255, 255, 0.97) !important;
-  border-top-color: rgba(26, 22, 37, 0.08) !important;
-  box-shadow: 0 -4px 24px rgba(26, 22, 37, 0.08) !important;
-}
-html.light .light-nav > div {
-  background: rgba(26, 22, 37, 0.04) !important;
-}
-
 /* Светлая тема: border-белые → тёмные */
 html.light .border-white\/15 {
   border-color: rgba(26, 22, 37, 0.12) !important;
@@ -462,8 +487,24 @@ html.light .border-white\/25 {
 html.light [style*="rgba(12,8,20"],
 html.light [style*="rgba(12, 8, 20"],
 html.light [style*="rgba(8,5,15"],
-html.light [style*="rgba(8, 5, 15"] {
+html.light [style*="rgba(8, 5, 15"],
+html.light [style*="rgba(28,22,40"],
+html.light [style*="rgba(28, 22, 40"],
+html.light [style*="rgba(12,7,22"],
+html.light [style*="rgba(12, 7, 22"],
+html.light [style*="#0f0a1a"],
+html.light [style*="#0F0A1A"] {
   background: var(--spark-card) !important;
+}
+
+/* Светлая тема: инлайновый тёмный фон #1a1625 / #231d35 → фон темы
+   (заглушки кружков, бордеры аватаров в сторис и т.п.) */
+html.light [style*="#1a1625"],
+html.light [style*="#1A1625"],
+html.light [style*="#231d35"],
+html.light [style*="#231D35"] {
+  background-color: var(--spark-dark) !important;
+  border-color: var(--spark-dark) !important;
 }
 
 /* Светлая тема: chat bubble incoming */

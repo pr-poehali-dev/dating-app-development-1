@@ -91,10 +91,10 @@ export function LiveStreamList({
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
             {LIVE_TABS.map((tab) => (
               <button key={tab.id} onClick={() => onTabChange(tab.id)}
-                className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all"
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all ${activeTab === tab.id ? "text-white" : "bg-white/10 text-white/60"}`}
                 style={activeTab === tab.id
-                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}>
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                  : undefined}>
                 {tab.label}
               </button>
             ))}

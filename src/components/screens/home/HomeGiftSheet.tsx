@@ -39,10 +39,10 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
           {([{ id: "heart", label: "Сердца", emoji: "❤️" }, { id: "rose", label: "Розы", emoji: "🌹" }, { id: "bear", label: "Мишки", emoji: "🧸" }, { id: "ring", label: "Кольца", emoji: "💍" }] as const).map(cat => (
             <button key={cat.id}
               onClick={() => onCategoryChange(cat.id)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl flex-shrink-0 transition-all text-sm font-semibold active:scale-95"
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl flex-shrink-0 transition-all text-sm font-semibold active:scale-95 ${giftCategory === cat.id ? "text-white" : "text-white/50"}`}
               style={giftCategory === cat.id
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" }}>
+                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                : { background: "rgba(255,255,255,0.07)" }}>
               <span>{cat.emoji}</span><span>{cat.label}</span>
             </button>
           ))}

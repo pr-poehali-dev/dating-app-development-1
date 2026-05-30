@@ -106,10 +106,10 @@ export function FilterScreen({ initial, onApply, onClose }: {
           <div className="grid grid-cols-3 gap-2">
             {genders.map((g) => (
               <button key={g.val} onClick={() => setLookingFor(g.val)}
-                className="py-2.5 rounded-xl text-sm font-medium transition-all"
+                className={`py-2.5 rounded-xl text-sm font-medium transition-all ${lookingFor === g.val ? "text-white" : "text-white/60"}`}
                 style={lookingFor === g.val
-                  ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                  ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }
+                  : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {g.label}
               </button>
             ))}

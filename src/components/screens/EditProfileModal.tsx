@@ -90,10 +90,10 @@ export function EditProfileModal({ user, onSave, onClose }: {
                 placeholder={user.username || "username"}
                 maxLength={30}
                 disabled={!user.premium}
-                className="w-full pl-8 pr-4 py-3 rounded-2xl text-sm font-mono outline-none border transition-colors"
+                className={`w-full pl-8 pr-4 py-3 rounded-2xl text-sm font-mono outline-none border transition-colors ${user.premium ? "text-white" : "text-white/25"}`}
                 style={user.premium
-                  ? { background: "rgba(255,255,255,0.1)", color: "white", borderColor: "rgba(255,255,255,0.1)" }
-                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.25)", borderColor: "rgba(255,255,255,0.06)", cursor: "not-allowed" }}
+                  ? { background: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.1)" }
+                  : { background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.06)", cursor: "not-allowed" }}
               />
             </div>
             {!user.premium && (
@@ -120,10 +120,10 @@ export function EditProfileModal({ user, onSave, onClose }: {
             <div className="grid grid-cols-3 gap-2">
               {[{ value: "female", label: "Девушка" }, { value: "male", label: "Парень" }, { value: "other", label: "Другое" }].map((g) => (
                 <button key={g.value} onClick={() => setGender(g.value)}
-                  className="py-2.5 rounded-2xl text-sm font-medium transition-all"
+                  className={`py-2.5 rounded-2xl text-sm font-medium transition-all ${gender === g.value ? "text-white" : "text-white/60"}`}
                   style={gender === g.value
-                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                    : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }
+                    : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   {g.label}
                 </button>
               ))}
@@ -145,10 +145,10 @@ export function EditProfileModal({ user, onSave, onClose }: {
             <div className="flex flex-wrap gap-2">
               {ALL_INTERESTS.map((t) => (
                 <button key={t} onClick={() => toggleTag(t)}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${tags.includes(t) ? "text-white" : "text-white/60"}`}
                   style={tags.includes(t)
-                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white" }
-                    : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                    ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }
+                    : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                   {t}
                 </button>
               ))}

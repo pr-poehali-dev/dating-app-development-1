@@ -52,9 +52,9 @@ export function ProfileStatsBar({
                 <div className="absolute right-0 top-3 bottom-3 w-px" style={{ background: "rgba(255,255,255,0.07)" }} />
               )}
               <Icon name={icon as "Ruler"|"Scale"|"User"|"Heart"|"MapPin"} size={14}
-                style={{ color: value !== "—" ? color : "rgba(255,255,255,0.25)" }} />
-              <span className="text-white font-bold text-xs leading-tight text-center truncate w-full px-1"
-                style={{ color: value !== "—" ? "white" : "rgba(255,255,255,0.3)" }}>
+                className={value !== "—" ? undefined : "text-white/25"}
+                style={value !== "—" ? { color } : undefined} />
+              <span className={`font-bold text-xs leading-tight text-center truncate w-full px-1 ${value !== "—" ? "text-white" : "text-white/30"}`}>
                 {value}
               </span>
               <span className="text-white/35 text-[9px]">{label}</span>
@@ -113,10 +113,10 @@ export function ProfileStatsBar({
               <div className="grid grid-cols-2 gap-2">
                 {[{ v: "male", l: "Мужской" }, { v: "female", l: "Женский" }].map(({ v, l }) => (
                   <button key={v} onClick={() => onValueChange(v)}
-                    className="py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                    className={`py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-95 ${statValue === v ? "text-white" : "text-white/60"}`}
                     style={statValue === v
-                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 4px 16px rgba(255,45,120,0.35)" }
-                      : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.35)" }
+                      : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
                     {l}
                   </button>
                 ))}
@@ -133,10 +133,10 @@ export function ProfileStatsBar({
                   { v: "open",        l: "В свободных отношениях", emoji: "💛" },
                 ].map(({ v, l, emoji }) => (
                   <button key={v} onClick={() => onValueChange(v)}
-                    className="py-3 px-4 rounded-2xl text-sm font-semibold text-left transition-all active:scale-[0.98] flex items-center gap-3"
+                    className={`py-3 px-4 rounded-2xl text-sm font-semibold text-left transition-all active:scale-[0.98] flex items-center gap-3 ${statValue === v ? "text-white" : "text-white/65"}`}
                     style={statValue === v
-                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 4px 16px rgba(255,45,120,0.3)" }
-                      : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.65)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.3)" }
+                      : { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <span>{emoji}</span><span>{l}</span>
                   </button>
                 ))}

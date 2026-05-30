@@ -101,10 +101,10 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         <div className="flex rounded-2xl p-1" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
           {(["login", "register"] as const).map((m) => (
             <button key={m} onClick={() => setMode(m)}
-              className="flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl"
+              className={`flex-1 py-2.5 text-sm font-semibold transition-all rounded-xl ${mode === m ? "text-white" : "text-white/40"}`}
               style={mode === m
-                ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", color: "white", boxShadow: "0 2px 12px rgba(255,45,120,0.35)" }
-                : { color: "rgba(255,255,255,0.4)" }}>
+                ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 2px 12px rgba(255,45,120,0.35)" }
+                : undefined}>
               {m === "login" ? "Вход" : "Регистрация"}
             </button>
           ))}

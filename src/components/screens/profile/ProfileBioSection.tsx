@@ -61,8 +61,8 @@ export function ProfileBioSection({
         )}
         {!(currentUser.tags || []).length && (
           <button onClick={onEditOpen}
-            className="mt-2 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all active:scale-95"
-            style={{ background: "rgba(255,255,255,0.07)", border: "1px dashed rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.4)" }}>
+            className="mt-2 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all active:scale-95 text-white/40"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px dashed rgba(255,255,255,0.2)" }}>
             + Добавить интересы
           </button>
         )}

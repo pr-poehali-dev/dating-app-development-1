@@ -47,10 +47,10 @@ export function FollowersModal({
             <div className="flex gap-1 rounded-2xl p-1" style={{ background: "rgba(255,255,255,0.06)" }}>
               {(["followers", "following"] as TabType[]).map(t => (
                 <button key={t} onClick={() => setTab(t)}
-                  className="px-4 py-1.5 rounded-xl text-sm font-semibold transition-all"
+                  className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${tab === t ? "text-white" : "text-white/40"}`}
                   style={tab === t
-                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                    : { color: "rgba(255,255,255,0.4)" }}>
+                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                    : undefined}>
                   {t === "followers" ? "Подписчики" : "Подписки"}
                 </button>
               ))}

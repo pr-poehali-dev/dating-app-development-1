@@ -55,10 +55,10 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
             <div className="grid grid-cols-3 gap-2">
               {[{ v: "ru", l: "Русский" }, { v: "en", l: "English" }, { v: "tr", l: "Türkçe" }].map((lg) => (
                 <button key={lg.v} onClick={() => setLang(lg.v)}
-                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                  className={`py-2.5 rounded-xl text-xs font-semibold transition-all ${lang === lg.v ? "text-white" : "text-white/60"}`}
                   style={lang === lg.v
-                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                    : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.55)" }}>
+                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                    : { background: "rgba(255,255,255,0.08)" }}>
                   {lg.l}
                 </button>
               ))}
@@ -135,8 +135,8 @@ export function ToolsSheet({ currentUser, onClose }: { currentUser: User; onClos
               <p className="text-white font-mono font-bold text-base">{liveId}</p>
             </div>
             <button onClick={copyId}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-              style={{ background: copied ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.08)", color: copied ? "#4ADE80" : "rgba(255,255,255,0.6)" }}>
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${copied ? "" : "text-white/60"}`}
+              style={{ background: copied ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.08)", ...(copied ? { color: "#4ADE80" } : {}) }}>
               <Icon name={copied ? "Check" : "Copy"} size={14} />
               {copied ? "Скопировано!" : "Копировать"}
             </button>

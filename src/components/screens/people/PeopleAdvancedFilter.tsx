@@ -93,10 +93,10 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
                   return (
                     <button key={`${a}-${b}`}
                       onClick={() => { setAgeMin(a); setAgeMax(b); }}
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${active ? "text-white" : "text-white/45"}`}
                       style={active
-                        ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                        : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                        : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
                       {a}–{b}
                     </button>
                   );

@@ -61,8 +61,8 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           </div>
           <div className="flex items-center gap-2">
             <button onClick={reset}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-              style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 text-white/45"
+              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
               Сбросить
             </button>
             <button onClick={onClose}
@@ -168,8 +168,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                       }}>
                       <Icon name={g.icon} size={13} className="text-white" />
                     </div>
-                    <span className="text-xs font-semibold"
-                      style={{ color: active ? "white" : "rgba(255,255,255,0.4)" }}>{g.label}</span>
+                    <span className={`text-xs font-semibold ${active ? "text-white" : "text-white/40"}`}>{g.label}</span>
                   </button>
                 );
               })}
@@ -187,7 +186,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
               <div className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ background: onlineOnly ? "#4ADE80" : "rgba(255,255,255,0.2)", boxShadow: onlineOnly ? "0 0 6px #4ADE80" : "none" }} />
               <div className="text-left">
-                <p className="font-semibold text-xs" style={{ color: onlineOnly ? "#4ADE80" : "rgba(255,255,255,0.7)" }}>Только онлайн</p>
+                <p className={`font-semibold text-xs ${onlineOnly ? "" : "text-white/70"}`} style={onlineOnly ? { color: "#4ADE80" } : undefined}>Только онлайн</p>
                 <p className="text-white/30 text-[11px]">Сейчас в сети</p>
               </div>
             </div>

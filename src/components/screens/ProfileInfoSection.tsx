@@ -126,17 +126,17 @@ export function ProfileInfoSection({
       {/* Вкладки фото */}
       <div className="flex gap-2 px-5 pb-3">
         <button onClick={() => onPhotoTabChange(photoTab === "public" || photoTab === "private" ? null : "public")}
-          className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
+          className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all ${photoTab === "public" || photoTab === "private" ? "text-white" : "text-white/60"}`}
           style={photoTab === "public" || photoTab === "private"
-            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-            : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
+            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+            : { background: "rgba(255,255,255,0.07)" }}>
           📷 Фото
         </button>
         <button onClick={() => { onPhotoTabChange(photoTab === "gifts" ? null : "gifts"); if (photoTab !== "gifts") onViewGifts?.(); }}
-          className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
+          className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all ${photoTab === "gifts" ? "text-white" : "text-white/60"}`}
           style={photoTab === "gifts"
-            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-            : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
+            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+            : { background: "rgba(255,255,255,0.07)" }}>
           🎁 Подарки
         </button>
       </div>
@@ -145,18 +145,18 @@ export function ProfileInfoSection({
       {(photoTab === "public" || photoTab === "private") && (
         <div className="flex gap-1 px-5 pb-3">
           <button onClick={() => onPhotoTabChange("public")}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97] ${photoTab === "public" ? "text-white" : "text-white/35"}`}
             style={photoTab === "public"
-              ? { background: "rgba(255,255,255,0.12)", color: "white" }
-              : { background: "transparent", color: "rgba(255,255,255,0.35)" }}>
+              ? { background: "rgba(255,255,255,0.12)" }
+              : { background: "transparent" }}>
             <Icon name="Image" size={12} className={photoTab === "public" ? "text-white" : "text-white/35"} />
             Публичные
           </button>
           <button onClick={() => onPhotoTabChange("private")}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97]"
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-[0.97] ${photoTab === "private" ? "text-white" : "text-white/35"}`}
             style={photoTab === "private"
-              ? { background: "rgba(255,255,255,0.12)", color: "white" }
-              : { background: "transparent", color: "rgba(255,255,255,0.35)" }}>
+              ? { background: "rgba(255,255,255,0.12)" }
+              : { background: "transparent" }}>
             <Icon name="Lock" size={12} className={photoTab === "private" ? "text-white" : "text-white/35"} />
             Приватные
           </button>

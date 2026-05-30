@@ -12,18 +12,18 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
   ];
 
   return (
-    <div className="relative z-10 px-3 pb-3 pt-2 light-nav"
+    <div className="relative z-10 px-3 pb-3 pt-2"
       style={{
-        background: "rgba(12,7,22,0.96)",
+        background: "var(--spark-nav-bg)",
         backdropFilter: "blur(32px)",
-        borderTop: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 -12px 40px rgba(0,0,0,0.5)",
+        borderTop: "1px solid var(--spark-nav-border)",
+        boxShadow: "var(--spark-nav-shadow)",
       }}>
       {/* Плавающая таблетка */}
       <div className="flex items-center justify-around rounded-2xl px-1 py-1"
         style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.07)",
+          background: "var(--spark-nav-pill)",
+          border: "1px solid var(--spark-nav-pill-border)",
         }}>
         {items.map((item) => {
           const isActive = active === item.screen;
@@ -50,8 +50,8 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
                     color: isActive
                       ? "#FF2D78"
                       : isLive
-                      ? "rgba(255,120,50,0.55)"
-                      : "rgba(255,255,255,0.38)",
+                      ? "#FF6B35"
+                      : "var(--spark-nav-icon)",
                     filter: isActive ? "drop-shadow(0 0 6px rgba(255,45,120,0.6))" : "none",
                   }}
                 />
@@ -77,8 +77,8 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
                   color: isActive
                     ? "#FF2D78"
                     : isLive
-                    ? "rgba(255,120,50,0.55)"
-                    : "rgba(255,255,255,0.3)",
+                    ? "#FF6B35"
+                    : "var(--spark-nav-label)",
                 }}>
                 {item.label}
               </span>

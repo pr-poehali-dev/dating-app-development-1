@@ -462,8 +462,8 @@ export function SettingsAccountPanel({
                   <button
                     disabled={unblocking === user.id}
                     onClick={() => onUnblock(user.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
-                    style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.7)" }}>
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-50 text-white/70"
+                    style={{ background: "rgba(255,255,255,0.08)" }}>
                     {unblocking === user.id
                       ? <><Icon name="Loader2" size={13} className="animate-spin" />Ждите</>
                       : <><Icon name="UserCheck" size={13} />Разблокировать</>}

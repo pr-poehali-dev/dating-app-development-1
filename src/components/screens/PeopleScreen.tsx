@@ -377,10 +377,10 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
           <div className="flex gap-2 mt-3">
             {tabs.map((t) => (
               <button key={t.id} onClick={() => handleTabChange(t.id)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold transition-all active:scale-95"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold transition-all active:scale-95 ${activeTab === t.id ? "text-white" : "text-white/45"}`}
                 style={activeTab === t.id
-                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.3)" }
-                  : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.3)" }
+                  : { background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 {t.id === "online" && (
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block flex-shrink-0"
                     style={activeTab === t.id ? {} : { boxShadow: "0 0 4px #4ADE80" }} />
