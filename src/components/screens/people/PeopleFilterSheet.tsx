@@ -36,10 +36,10 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   };
 
   const genders = [
-    { val: "female", label: "Девушки", icon: "🌸" },
-    { val: "male",   label: "Парни",   icon: "⚡" },
-    { val: "all",    label: "Все",     icon: "✨" },
-  ];
+    { val: "female", label: "Девушки", icon: "Venus",  grad: "linear-gradient(135deg,#FF6B9D,#FF2D78)", glow: "rgba(255,45,120,0.5)" },
+    { val: "male",   label: "Парни",   icon: "Mars",   grad: "linear-gradient(135deg,#4F8EF7,#7B5CF5)", glow: "rgba(79,142,247,0.5)" },
+    { val: "all",    label: "Все",     icon: "Sparkles", grad: "linear-gradient(135deg,#F59E0B,#EF4444)", glow: "rgba(245,158,11,0.5)" },
+  ] as const;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
@@ -153,16 +153,26 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
               Кого ищешь
             </p>
             <div className="flex gap-2">
-              {genders.map(g => (
-                <button key={g.val} onClick={() => setLookingFor(g.val)}
-                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl font-semibold transition-all active:scale-95"
-                  style={lookingFor === g.val
-                    ? { background: "linear-gradient(145deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 4px 16px rgba(255,45,120,0.45)", border: "1px solid rgba(255,45,120,0.4)" }
-                    : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                  <span className="text-xl leading-none">{g.icon}</span>
-                  <span className="text-[11px] font-semibold">{g.label}</span>
-                </button>
-              ))}
+              {genders.map(g => {
+                const active = lookingFor === g.val;
+                return (
+                  <button key={g.val} onClick={() => setLookingFor(g.val)}
+                    className="flex-1 flex flex-col items-center gap-2 py-3.5 rounded-2xl transition-all active:scale-95"
+                    style={active
+                      ? { background: "rgba(255,255,255,0.07)", border: `1.5px solid ${g.glow.replace("0.5","0.6")}`, boxShadow: `0 6px 20px ${g.glow}` }
+                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center transition-all"
+                      style={{
+                        background: active ? g.grad : "rgba(255,255,255,0.08)",
+                        boxShadow: active ? `0 4px 14px ${g.glow}` : "none",
+                      }}>
+                      <Icon name={g.icon} size={18} className="text-white" />
+                    </div>
+                    <span className="text-[11px] font-semibold"
+                      style={{ color: active ? "white" : "rgba(255,255,255,0.4)" }}>{g.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
