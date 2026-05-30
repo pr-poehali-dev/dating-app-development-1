@@ -229,7 +229,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         <input ref={galleryInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSectionFile} />
 
         {/* Обложка, аватар, ник, имя, кнопки фото, Premium-баннер */}
-        {(() => { console.log("[ProfileScreens] localCover =", JSON.stringify(localCover), "| gender =", currentUser.gender); return null; })()}
         <ProfileHeader
           currentUser={currentUser}
           localPhoto={localPhoto}

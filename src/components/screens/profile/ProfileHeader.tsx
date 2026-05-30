@@ -27,7 +27,6 @@ function genderCover(gender?: string): { gradient: string; heart: string; glow: 
 }
 
 function DefaultCover({ gender }: { gender?: string }) {
-  console.log("[DefaultCover] рендер дефолтного фона, gender =", gender);
   const c = genderCover(gender);
   const heartSvg = encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='${c.heart}'><path d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/></svg>`
