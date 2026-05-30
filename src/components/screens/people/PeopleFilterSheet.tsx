@@ -40,8 +40,6 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
     { val: "all",    label: "Все",     icon: "✨" },
   ];
 
-  const AGE_PRESETS = [[18,25],[25,35],[35,50],[50,80]] as const;
-
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
@@ -75,51 +73,6 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
         </div>
 
         <div className="overflow-y-auto px-5 py-5 flex flex-col gap-5">
-
-          {/* Возраст */}
-          <div className="rounded-2xl p-4 flex flex-col gap-4"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🎂</span>
-                <span className="text-white font-semibold text-sm">Возраст</span>
-              </div>
-              <span className="text-pink-400 font-bold text-sm">{ageMin} – {ageMax} лет</span>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div>
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-white/35 text-xs">от {ageMin}</span>
-                </div>
-                <input type="range" min={18} max={80} value={ageMin}
-                  onChange={e => setAgeMin(Math.min(+e.target.value, ageMax - 1))}
-                  className="w-full accent-pink-500" />
-              </div>
-              <div>
-                <div className="flex justify-between mb-1.5">
-                  <span className="text-white/35 text-xs">до {ageMax}</span>
-                </div>
-                <input type="range" min={18} max={80} value={ageMax}
-                  onChange={e => setAgeMax(Math.max(+e.target.value, ageMin + 1))}
-                  className="w-full accent-pink-500" />
-              </div>
-            </div>
-
-            {/* Быстрые диапазоны */}
-            <div className="flex gap-1.5 flex-wrap">
-              {AGE_PRESETS.map(([a, b]) => (
-                <button key={`${a}-${b}`}
-                  onClick={() => { setAgeMin(a); setAgeMax(b); }}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-                  style={ageMin === a && ageMax === b
-                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 8px rgba(255,45,120,0.4)" }
-                    : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  {a}–{b}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Кого ищешь */}
           <div className="rounded-2xl p-4 flex flex-col gap-3"
