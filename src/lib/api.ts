@@ -187,6 +187,9 @@ export const profilesApi = {
   supportMyTickets: () =>
     req<{ ok: boolean; tickets: { id: number; message: string; reply: string | null; status: string; created_at: string; replied_at: string | null }[] }>("profiles", "support_my_tickets"),
 
+  supportDelete: (ticket_id: number) =>
+    req<{ ok: boolean }>("profiles", "support_delete", { method: "POST", body: JSON.stringify({ ticket_id }) }),
+
   uploadCover: (image: string, content_type: string) =>
     req<{ ok: boolean; cover_url: string }>("profiles", "upload_cover", {
       method: "POST",

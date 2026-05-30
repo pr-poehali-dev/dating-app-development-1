@@ -557,6 +557,19 @@ def handler(event: dict, context) -> dict:
             tickets = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'ok': True, 'tickets': tickets})
 
+        # Закрыть/удалить свой тикет поддержки
+        if action == 'support_delete':
+            body = json.loads(event.get('body') or '{}')
+            ticket_id = int(body.get('ticket_id', 0))
+            if not ticket_id:
+                return resp(400, {'error': 'ticket_id обязателен'})
+            cur.execute("SELECT id FROM support_tickets WHERE id = %s AND user_id = %s", (ticket_id, me['id']))
+            if not cur.fetchone():
+                return resp(404, {'error': 'Тикет не найден'})
+            cur.execute("DELETE FROM support_tickets WHERE id = %s AND user_id = %s", (ticket_id, me['id']))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # Подписаться / отписаться на обновления пользователя
         if action == 'subscribe_toggle':
             body = json.loads(event.get('body') or '{}')

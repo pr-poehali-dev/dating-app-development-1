@@ -27,16 +27,26 @@ function formatTime(iso: string) {
   return new Date(iso.endsWith("Z") ? iso : iso + "Z").toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
 }
 
-function SupportTickets({ tickets, loading, onBack, onNewTicket }: {
+function SupportTickets({ tickets, loading, onBack, onNewTicket, onDeleteTicket }: {
   tickets: Ticket[];
   loading: boolean;
   onBack: () => void;
   onNewTicket: (t: Ticket) => void;
+  onDeleteTicket: (id: number) => void;
 }) {
   const [view, setView] = useState<"list" | "new">("list");
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const closeTicket = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const r = await profilesApi.supportDelete(id);
+      if (r.ok) onDeleteTicket(id);
+    } catch { void 0; } finally { setDeletingId(null); }
+  };
 
   const send = async () => {
     const text = msg.trim();
@@ -152,6 +162,14 @@ function SupportTickets({ tickets, loading, onBack, onNewTicket }: {
                 <p className="text-white/85 text-sm leading-relaxed">{t.message}</p>
                 <p className="text-white/30 text-[11px] mt-1">{formatTime(t.created_at)}</p>
               </div>
+              <button
+                onClick={() => closeTicket(t.id)}
+                disabled={deletingId === t.id}
+                className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-white/40 hover:text-red-400 transition-colors disabled:opacity-40"
+                title="Закрыть обращение">
+                <Icon name={deletingId === t.id ? "Loader2" : "Trash2"} size={14}
+                  className={deletingId === t.id ? "animate-spin" : ""} />
+              </button>
             </div>
             {/* Ответ или ожидание */}
             {t.reply ? (
@@ -234,6 +252,7 @@ export function SettingsHelpPanel({ screen }: Props) {
           loading={supportLoading}
           onBack={() => setHelpSub("")}
           onNewTicket={(t) => setSupportTickets(prev => [t, ...prev])}
+          onDeleteTicket={(id) => setSupportTickets(prev => prev.filter(t => t.id !== id))}
         />
       )}
 
