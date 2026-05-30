@@ -271,7 +271,7 @@ export function SettingsHelpPanel({ screen }: Props) {
               </div>
               <div>
                 <p className="text-white font-bold text-base">Правила сообщества</p>
-                <p className="text-white/40 text-xs">Обновлено: январь 2025</p>
+                <p className="text-white/40 text-xs">Обновлено: 5 мая 2026</p>
               </div>
             </div>
             {([
