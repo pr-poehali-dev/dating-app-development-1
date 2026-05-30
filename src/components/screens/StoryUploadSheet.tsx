@@ -17,11 +17,18 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
 
   const handleFile = (f: File) => {
     if (!f.type.startsWith("video/")) { setError("Только видео файлы"); return; }
-    if (f.size > 100 * 1024 * 1024) { setError("Файл слишком большой (макс 100 МБ)"); return; }
+    if (f.size > 50 * 1024 * 1024) { setError("Файл слишком большой (макс 50 МБ)"); return; }
     setFile(f);
     setPreviewUrl(URL.createObjectURL(f));
     setError("");
   };
+
+  const fileToBase64 = (f: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",", 2)[1] || "");
+    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
+    reader.readAsDataURL(f);
+  });
 
   const handleUpload = async () => {
     if (!file) return;
@@ -33,53 +40,24 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
       const token = localStorage.getItem("spark_token") || "";
       const duration = videoRef.current?.duration || 0;
 
-      // Шаг 1: получаем presigned URL от бэкенда
-      setProgress(10);
-      const presignRes = await fetch(STORIES_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ action: "presign", content_type: file.type }),
-      });
-      if (!presignRes.ok) {
-        const d = await presignRes.json().catch(() => ({}));
-        setError(d.error || "Ошибка получения ссылки для загрузки");
-        return;
-      }
-      const { upload_url, video_url } = await presignRes.json();
-      setProgress(20);
+      setProgress(15);
+      const videoB64 = await fileToBase64(file);
+      setProgress(40);
 
-      // Шаг 2: загружаем файл напрямую в S3 через presigned URL (PUT)
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", upload_url);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            setProgress(20 + Math.round((e.loaded / e.total) * 70));
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`S3 error: ${xhr.status}`));
-        };
-        xhr.onerror = () => reject(new Error("Ошибка загрузки файла"));
-        xhr.send(file);
-      });
-      setProgress(90);
-
-      // Шаг 3: создаём запись в БД
-      const createRes = await fetch(STORIES_URL, {
+      const res = await fetch(STORIES_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": token },
         body: JSON.stringify({
-          action: "create",
-          video_url,
+          action: "upload",
+          video: videoB64,
           content_type: file.type,
           duration: Math.round(duration),
         }),
       });
-      if (!createRes.ok) {
-        const d = await createRes.json().catch(() => ({}));
+      setProgress(95);
+
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
         setError(d.error || "Ошибка публикации");
         return;
       }
@@ -125,7 +103,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
               </div>
               <div className="text-center">
                 <p className="text-white font-semibold text-sm">Выбрать видео</p>
-                <p className="text-white/40 text-xs mt-1">MP4, MOV, WebM · макс 100 МБ</p>
+                <p className="text-white/40 text-xs mt-1">MP4, MOV, WebM · макс 50 МБ</p>
               </div>
             </button>
           ) : (

@@ -1,7 +1,7 @@
 """
 Видеоистории: загрузка, получение и удаление сторис (24 часа).
 """
-import json, os, uuid, boto3, psycopg2
+import json, os, uuid, base64, boto3, psycopg2
 
 CORS = {
     "Access-Control-Allow-Origin": "*",
@@ -76,26 +76,27 @@ def handler(event: dict, context) -> dict:
             aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
         )
 
-        # Режим 1: получить presigned URL для прямой загрузки браузером
-        if action == "presign":
+        # Загрузка видео через бэкенд: фронт шлёт base64, бэкенд кладёт в S3 и создаёт запись
+        if action == "upload":
             content_type = body.get("content_type", "video/mp4")
+            image_b64 = body.get("video") or ""
+            duration = body.get("duration", 0)
+            if not image_b64:
+                return resp(400, {"error": "Видео не передано"})
+            if "," in image_b64:
+                image_b64 = image_b64.split(",", 1)[1]
+            try:
+                data = base64.b64decode(image_b64)
+            except (ValueError, TypeError):
+                return resp(400, {"error": "Некорректные данные видео"})
+            if len(data) > 60 * 1024 * 1024:
+                return resp(400, {"error": "Файл слишком большой (макс 50 МБ)"})
+
             ext = "mp4" if "mp4" in content_type else ("webm" if "webm" in content_type else "mov")
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext}"
-            upload_url = s3.generate_presigned_url(
-                "put_object",
-                Params={"Bucket": "files", "Key": key, "ContentType": content_type},
-                ExpiresIn=300,
-            )
+            s3.put_object(Bucket="files", Key=key, Body=data, ContentType=content_type)
             video_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-            return resp(200, {"upload_url": upload_url, "video_url": video_url, "key": key})
 
-        # Режим 2: создать запись в БД после успешной загрузки
-        if action == "create":
-            video_url = body.get("video_url")
-            content_type = body.get("content_type", "video/mp4")
-            duration = body.get("duration", 0)
-            if not video_url:
-                return resp(400, {"error": "video_url обязателен"})
             cur.execute(
                 "INSERT INTO stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
                 (user[0], video_url, duration)
@@ -104,7 +105,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {"id": row[0], "video_url": video_url, "created_at": str(row[1]), "expires_at": str(row[2])})
 
-        return resp(400, {"error": "Укажи action: presign или create"})
+        return resp(400, {"error": "Укажи action: upload"})
 
     # GET — получить активные сторис
     params = event.get("queryStringParameters") or {}
