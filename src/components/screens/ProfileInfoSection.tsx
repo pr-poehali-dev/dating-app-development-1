@@ -66,30 +66,21 @@ export function ProfileInfoSection({
   return (
     <div className="flex-1 overflow-y-auto pb-4 flex flex-col gap-0">
 
-      {/* Имя и онлайн */}
-      <div className="flex items-start justify-between px-5 pt-3 pb-2">
-        <div>
-          <h2 className="text-white font-golos font-bold text-2xl flex items-center gap-2">
-            {currentProfile.name}{currentProfile.age ? `, ${currentProfile.age}` : ""}
-            {currentProfile.verified && <span className="text-blue-400 text-base">✓</span>}
-          </h2>
-          {currentProfile.username && (
-            <p className="text-white/40 text-xs mt-0.5">@{currentProfile.username}</p>
-          )}
-          {currentProfile.city && (
-            <p className="text-white/60 text-sm flex items-center gap-1 mt-0.5">
-              <Icon name="MapPin" size={13} />{currentProfile.city}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 mt-1">
+      {/* Город + последний визит */}
+      <div className="flex items-center justify-between px-5 pt-2 pb-1">
+        {currentProfile.city ? (
+          <p className="text-white/50 text-xs flex items-center gap-1">
+            <Icon name="MapPin" size={11} className="text-white/30" />{currentProfile.city}
+          </p>
+        ) : <span />}
+        <div className="flex items-center gap-1.5">
           {currentProfile.online ? (
             <>
-              <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ADE80] animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               <span className="text-green-400 text-xs font-medium">онлайн</span>
             </>
           ) : currentProfile.last_seen ? (
-            <span className="text-white/35 text-xs">
+            <span className="text-white/30 text-[11px]">
               {(() => {
                 const iso = currentProfile.last_seen!;
                 const ts = new Date(iso.endsWith("Z") ? iso : iso + "Z").getTime();
@@ -98,9 +89,9 @@ export function ProfileInfoSection({
                 const hours = Math.floor(diff / 3600000);
                 const days = Math.floor(diff / 86400000);
                 if (mins < 5) return "недавно в сети";
-                if (mins < 60) return `была в сети ${mins} мин. назад`;
-                if (hours < 24) return `была в сети ${hours} ч. назад`;
-                return `была в сети ${days} дн. назад`;
+                if (mins < 60) return `${mins} мин. назад`;
+                if (hours < 24) return `${hours} ч. назад`;
+                return `${days} дн. назад`;
               })()}
             </span>
           ) : null}

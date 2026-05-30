@@ -325,6 +325,13 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           totalPhotos={totalPhotos}
           loadingPhotos={loadingPhotos}
           liked={liked}
+          profileName={currentProfile.name}
+          profileAge={currentProfile.age}
+          profileUsername={currentProfile.username}
+          profileVerified={currentProfile.verified}
+          profilePremium={currentProfile.premium}
+          profileOnline={currentProfile.online}
+          coverUrl={currentProfile.cover_url}
           onClose={onClose}
           onShowMenu={() => setShowMenu(true)}
           onPhotoIdx={setPhotoIdx}

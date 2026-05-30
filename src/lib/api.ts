@@ -483,6 +483,7 @@ export interface Profile {
   city?: string;
   bio?: string;
   photo_url?: string;
+  cover_url?: string;
   tags?: string[];
   verified?: boolean;
   online?: boolean;
