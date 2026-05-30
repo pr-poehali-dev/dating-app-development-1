@@ -33,35 +33,35 @@ export function ProfileBioSection({
   return (
     <>
       {/* О себе */}
-      <div className="w-full mt-3 rounded-2xl p-4"
+      <div className="w-full mt-6 rounded-2xl p-3"
         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full flex items-center justify-center"
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center"
               style={{ background: "rgba(155,89,182,0.2)" }}>
-              <Icon name="AlignLeft" size={12} className="text-purple-400" />
+              <Icon name="AlignLeft" size={10} className="text-purple-400" />
             </div>
-            <span className="text-white/60 text-xs font-semibold uppercase tracking-wider">О себе</span>
+            <span className="text-white/50 text-[10px] font-semibold uppercase tracking-wider">О себе</span>
           </div>
           <button onClick={onEditOpen}
-            className="w-7 h-7 rounded-xl flex items-center justify-center transition-all active:scale-95"
+            className="w-6 h-6 rounded-lg flex items-center justify-center transition-all active:scale-95"
             style={{ background: "rgba(255,255,255,0.07)" }}>
-            <Icon name="Pencil" size={13} className="text-white/50" />
+            <Icon name="Pencil" size={11} className="text-white/50" />
           </button>
         </div>
-        <p className="text-white/70 text-sm leading-relaxed">
+        <p className="text-white/70 text-xs leading-relaxed">
           {currentUser.bio || (
             <span className="text-white/25 italic">Расскажи о себе — нажми карандаш</span>
           )}
         </p>
         {(currentUser.tags || []).length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div className="flex flex-wrap gap-1 mt-2">
             {(currentUser.tags || []).map((t) => <span key={t} className="tag-pill">{t}</span>)}
           </div>
         )}
         {!(currentUser.tags || []).length && (
           <button onClick={onEditOpen}
-            className="mt-3 px-3 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95"
+            className="mt-2 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all active:scale-95"
             style={{ background: "rgba(255,255,255,0.07)", border: "1px dashed rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.4)" }}>
             + Добавить интересы
           </button>
