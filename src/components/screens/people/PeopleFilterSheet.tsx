@@ -199,41 +199,41 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           </button>
 
           {/* Дополнительные секции */}
-          <div className="flex flex-col gap-1.5">
-            <p className="text-white/30 text-[11px] uppercase tracking-wider font-semibold px-1 mb-0.5">Ещё возможности</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-white/25 text-[10px] uppercase tracking-wider font-semibold px-1 mb-0.5">Ещё возможности</p>
 
             {/* Фильтры включены */}
             <button onClick={() => { onClose(); setTimeout(() => onAdvancedFilter?.(), 50); }}
-              className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-all"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-between w-full px-3 py-2 rounded-xl active:scale-[0.98] transition-all"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: "rgba(255,45,120,0.15)" }}>
-                  <Icon name="SlidersHorizontal" size={16} className="text-pink-400" />
+                  <Icon name="SlidersHorizontal" size={13} className="text-pink-400" />
                 </div>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-white text-sm font-semibold">Фильтры включены</span>
-                  <span className="text-white/35 text-[11px]">Возраст, верификация и другое</span>
+                <div className="flex flex-col items-start">
+                  <span className="text-white text-xs font-semibold">Фильтры включены</span>
+                  <span className="text-white/30 text-[10px]">Возраст, верификация и другое</span>
                 </div>
               </div>
-              <Icon name="ChevronRight" size={16} className="text-white/25" />
+              <Icon name="ChevronRight" size={13} className="text-white/20" />
             </button>
 
             {/* Исследуй мир */}
             <button onClick={() => { onClose(); setTimeout(() => onExploreWorld?.(), 50); }}
-              className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-all"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-between w-full px-3 py-2 rounded-xl active:scale-[0.98] transition-all"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ background: "rgba(59,130,246,0.15)" }}>
-                  <Icon name="Globe" size={16} className="text-blue-400" />
+                  <Icon name="Globe" size={13} className="text-blue-400" />
                 </div>
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-white text-sm font-semibold">Исследуй мир</span>
-                  <span className="text-white/35 text-[11px]">Найди людей в любом городе</span>
+                <div className="flex flex-col items-start">
+                  <span className="text-white text-xs font-semibold">Исследуй мир</span>
+                  <span className="text-white/30 text-[10px]">Найди людей в любом городе</span>
                 </div>
               </div>
-              <Icon name="ChevronRight" size={16} className="text-white/25" />
+              <Icon name="ChevronRight" size={13} className="text-white/20" />
             </button>
 
             {/* Режим путешествия — только Premium */}
@@ -242,38 +242,34 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                 if (!isPremium) { onClose(); setTimeout(() => onPremium?.(), 50); return; }
                 onClose(); setTimeout(() => onTravelMode?.(), 50);
               }}
-              className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl active:scale-[0.98] transition-all"
+              className="flex items-center justify-between w-full px-3 py-2 rounded-xl active:scale-[0.98] transition-all"
               style={{
-                background: isPremium
-                  ? "rgba(255,255,255,0.04)"
-                  : "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))",
-                border: isPremium
-                  ? "1px solid rgba(255,255,255,0.07)"
-                  : "1px solid rgba(255,45,120,0.2)",
+                background: isPremium ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))",
+                border: isPremium ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(255,45,120,0.18)",
               }}>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: isPremium ? "rgba(255,107,53,0.15)" : "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: isPremium ? "none" : "0 2px 8px rgba(255,45,120,0.3)" }}>
-                  <Icon name="Plane" size={16} className="text-white" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: isPremium ? "rgba(255,107,53,0.15)" : "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: isPremium ? "none" : "0 2px 6px rgba(255,45,120,0.3)" }}>
+                  <Icon name="Plane" size={13} className="text-white" />
                 </div>
-                <div className="flex flex-col items-start gap-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white text-sm font-semibold">Режим путешествия</span>
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-white text-xs font-semibold">Режим путешествия</span>
                     {!isPremium && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none"
+                      <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold leading-none"
                         style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
                         PREMIUM
                       </span>
                     )}
                   </div>
-                  <span className="text-white/35 text-[11px]">
+                  <span className="text-white/30 text-[10px]">
                     {isPremium ? "Смени свою локацию" : "Доступно с подпиской"}
                   </span>
                 </div>
               </div>
               {isPremium
-                ? <Icon name="ChevronRight" size={16} className="text-white/25" />
-                : <Icon name="Crown" size={16} className="text-pink-400" />}
+                ? <Icon name="ChevronRight" size={13} className="text-white/20" />
+                : <Icon name="Crown" size={13} className="text-pink-400" />}
             </button>
           </div>
 
