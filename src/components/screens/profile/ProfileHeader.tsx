@@ -130,9 +130,17 @@ export function ProfileHeader({
             <span className="text-white/35 text-xs font-mono">@{currentUser.username}</span>
           )}
           {currentUser.premium && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold leading-none"
-              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
-              ✨ GOLD
+            <span className="relative overflow-hidden text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+              style={{
+                background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
+                backgroundSize: "200% 100%",
+                color: "#1a1000",
+                boxShadow: "0 0 8px rgba(255,215,0,0.6), 0 0 2px rgba(255,215,0,0.9), inset 0 1px 0 rgba(255,255,255,0.4)",
+                animation: "goldShimmer 2.5s linear infinite",
+                border: "1px solid rgba(255,215,0,0.5)",
+                textShadow: "0 1px 0 rgba(255,255,255,0.4)",
+              }}>
+              ✦ PREMIUM
             </span>
           )}
         </div>
