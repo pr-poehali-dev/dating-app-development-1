@@ -332,6 +332,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           profilePremium={currentProfile.premium}
           profileOnline={currentProfile.online}
           coverUrl={currentProfile.cover_url}
+          profileGender={currentProfile.gender}
           onClose={onClose}
           onShowMenu={() => setShowMenu(true)}
           onPhotoIdx={setPhotoIdx}
