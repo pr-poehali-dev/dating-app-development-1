@@ -106,8 +106,10 @@ export function ProfileHeader({
             ? <img src={localCover} className="w-full h-full object-cover"
                 style={{ opacity: coverUploading ? 0.5 : 1 }} />
             : <DefaultCover gender={currentUser.gender} />}
-          <div className="absolute inset-0"
-            style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
+          {localCover && (
+            <div className="absolute inset-0"
+              style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
+          )}
           {coverUploading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
