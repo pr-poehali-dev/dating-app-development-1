@@ -328,7 +328,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
         </div>
 
-        <div className="h-6" />
+        <div style={{ height: "calc(2rem + env(safe-area-inset-bottom, 0px))" }} className="flex-shrink-0" />
       </div>
 
       {settingsScreen && (

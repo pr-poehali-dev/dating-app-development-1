@@ -215,14 +215,14 @@ export function ProfileTopBar({
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-12 z-50 min-w-[260px] flex flex-col"
+            <div className="absolute right-0 top-12 z-50 min-w-[260px] flex flex-col overflow-y-auto"
               style={{
                 background: "linear-gradient(160deg, rgba(28,18,45,0.99) 0%, rgba(18,10,30,0.99) 100%)",
                 border: "1px solid rgba(255,255,255,0.09)",
                 borderRadius: 20,
                 boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset",
                 backdropFilter: "blur(32px)",
-                overflow: "hidden",
+                maxHeight: "calc(100dvh - 220px)",
               }}>
 
               {/* Шапка меню — аватар + имя */}
