@@ -140,21 +140,21 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           </div>
 
           {/* Кого ищешь */}
-          <div className="rounded-2xl p-4 flex flex-col gap-3"
+          <div className="rounded-2xl p-3 flex flex-col gap-2.5"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2">
-              <span className="text-base">👥</span>
-              <span className="text-white font-semibold text-sm">Кого ищешь</span>
+            <div className="flex items-center gap-2 px-0.5">
+              <Icon name="Users" size={14} className="text-pink-400" />
+              <span className="text-white/70 font-semibold text-xs uppercase tracking-wide">Кого ищешь</span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex gap-1.5">
               {genders.map(g => (
                 <button key={g.val} onClick={() => setLookingFor(g.val)}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
                   style={lookingFor === g.val
                     ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }
                     : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span className="text-lg">{g.icon}</span>
-                  <span className="text-xs">{g.label}</span>
+                  <span className="text-sm">{g.icon}</span>
+                  <span>{g.label}</span>
                 </button>
               ))}
             </div>
