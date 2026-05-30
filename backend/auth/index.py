@@ -64,7 +64,18 @@ def handler(event: dict, context) -> dict:
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
             conn.commit()
-            return resp(200, {'token': new_token, 'user': {'id': user_id, 'name': name, 'email': email, 'username': username}})
+            cur.execute(
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
+                "FROM users u WHERE u.id = %s", (user_id,)
+            )
+            urow = cur.fetchone()
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
+            user = dict(zip(cols, urow))
+            user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            user['followers'] = 0
+            user['following'] = 0
+            user['email_verified'] = False
+            return resp(200, {'token': new_token, 'user': user})
 
         if action == 'login':
             email = body.get('email', '').strip().lower()
@@ -73,12 +84,26 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row or row[2] != hash_password(password):
                 return resp(401, {'error': 'Неверный email или пароль'})
-            user_id, name = row[0], row[1]
+            user_id = row[0]
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
             cur.execute("UPDATE users SET online = TRUE, last_seen = NOW() WHERE id = %s", (user_id,))
             conn.commit()
-            return resp(200, {'token': new_token, 'user': {'id': user_id, 'name': name, 'email': email}})
+            cur.execute(
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
+                "FROM users u WHERE u.id = %s", (user_id,)
+            )
+            urow = cur.fetchone()
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
+            user = dict(zip(cols, urow))
+            user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
+            user['followers'] = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (user_id,))
+            user['following'] = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM email_codes WHERE user_id = %s AND used = TRUE", (user_id,))
+            user['email_verified'] = cur.fetchone()[0] > 0
+            return resp(200, {'token': new_token, 'user': user})
 
         if action == 'me':
             cur.execute(
