@@ -200,11 +200,19 @@ html.light {
 
 /* App shell */
 .app-bg {
-  background: var(--spark-dark);
+  background-color: var(--spark-dark);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='rgba(255,255,255,0.035)'%3E%3Cpath transform='translate(30 28) scale(2.2)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(150 120) scale(3.4)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(40 165) scale(1.4)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(180 30) scale(1.1)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  background-repeat: repeat;
   min-height: 100dvh;
   position: relative;
   overflow: hidden;
-  transition: background 0.3s ease;
+  transition: background-color 0.3s ease;
+}
+
+/* Светлая тема: сердечки на узоре делаем тёмными и едва заметными */
+html.light .app-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240' fill='rgba(26,22,37,0.04)'%3E%3Cpath transform='translate(30 28) scale(2.2)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(150 120) scale(3.4)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(40 165) scale(1.4)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3Cpath transform='translate(180 30) scale(1.1)' d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/%3E%3C/svg%3E");
 }
 
 .app-bg::before {

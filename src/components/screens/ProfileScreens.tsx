@@ -210,18 +210,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
       <div className="relative flex flex-col h-full overflow-y-auto">
 
-        {/* Декоративные сердечки на тёмном фоне профиля */}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <Icon name="Heart" size={120} className="absolute -right-8 top-[34%] text-white/[0.03]" fallback="Heart" />
-          <Icon name="Heart" size={64} className="absolute left-4 top-[46%] text-white/[0.04]" fallback="Heart" />
-          <Icon name="Heart" size={28} className="absolute right-10 top-[40%] text-white/[0.05]" fallback="Heart" />
-          <Icon name="Heart" size={90} className="absolute -left-6 top-[64%] text-white/[0.03]" fallback="Heart" />
-          <Icon name="Heart" size={36} className="absolute right-6 top-[72%] text-white/[0.04]" fallback="Heart" />
-          <Icon name="Heart" size={22} className="absolute left-10 top-[58%] text-white/[0.05]" fallback="Heart" />
-          <Icon name="Heart" size={50} className="absolute right-1/3 top-[86%] text-white/[0.03]" fallback="Heart" />
-          <Icon name="Heart" size={20} className="absolute left-1/3 top-[80%] text-white/[0.04]" fallback="Heart" />
-        </div>
-
         {/* Шапка с меню */}
         <ProfileTopBar
           menuOpen={menuOpen}
