@@ -12,6 +12,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [error, setError] = useState("");
   const [showForgot, setShowForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -161,10 +162,79 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
 
         <p className="text-white/20 text-[11px] text-center leading-relaxed">
           Нажимая кнопку, ты соглашаешься с{" "}
-          <span className="text-white/35 underline underline-offset-2">правилами сервиса</span>
+          <button onClick={() => setShowRules(true)}
+            className="text-white/50 underline underline-offset-2 hover:text-white/70 transition-colors">
+            правилами сервиса
+          </button>
         </p>
       </div>
     </div>
+
+    {/* Модальное окно — Правила сервиса */}
+    {showRules && (
+      <div className="fixed inset-0 z-50 flex flex-col justify-end"
+        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+        onClick={() => setShowRules(false)}>
+        <div className="w-full max-h-[88vh] flex flex-col rounded-t-3xl overflow-hidden"
+          style={{ background: "linear-gradient(160deg,#1a1030,#130d22)", border: "1px solid rgba(255,255,255,0.08)" }}
+          onClick={e => e.stopPropagation()}>
+
+          {/* Handle */}
+          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+            <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+          </div>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 flex-shrink-0"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                style={{ background: "rgba(255,45,120,0.12)" }}>
+                <Icon name="FileText" size={19} className="text-pink-400" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-base">Правила сервиса</p>
+                <p className="text-white/35 text-xs">Обновлено: 5 мая 2026</p>
+              </div>
+            </div>
+            <button onClick={() => setShowRules(false)}
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.07)" }}>
+              <Icon name="X" size={16} className="text-white/60" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
+            {([
+              { icon: "Heart", title: "Уважение и вежливость", text: "Общайтесь так, как хотите, чтобы общались с вами. Оскорбления, харассмент и агрессивное поведение ведут к немедленной блокировке." },
+              { icon: "Shield", title: "Достоверность профиля", text: "Используйте только свои реальные фотографии. Запрещены чужие фото, фото знаменитостей, аниме и персонажей. Профиль должен отражать реальный облик." },
+              { icon: "Lock", title: "Запрещённый контент", text: "Строго запрещены: материалы 18+ в публичных постах, насилие, экстремизм, пропаганда ненависти, спам и реклама сторонних сервисов." },
+              { icon: "UserCheck", title: "Один аккаунт", text: "Создание нескольких аккаунтов для обхода блокировок запрещено. Мультиаккаунты удаляются без предупреждения." },
+              { icon: "MessageSquare", title: "Честное общение", text: "Не вводите людей в заблуждение относительно своих намерений, внешности или личных данных. Мошенничество и манипуляции недопустимы." },
+              { icon: "AlertTriangle", title: "Нарушения и последствия", text: "За нарушения: предупреждение → временная блокировка → перманентный бан. Тяжкие нарушения (мошенничество, CSAM) — бан без предупреждения с уведомлением властей." },
+            ] as const).map((rule) => (
+              <div key={rule.title} className="flex gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                  style={{ background: "rgba(255,45,120,0.1)" }}>
+                  <Icon name={rule.icon as "Heart"|"Shield"|"Lock"|"UserCheck"|"MessageSquare"|"AlertTriangle"} size={16} className="text-pink-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-white font-semibold text-sm">{rule.title}</p>
+                  <p className="text-white/55 text-xs leading-relaxed mt-1">{rule.text}</p>
+                </div>
+              </div>
+            ))}
+
+            <button onClick={() => setShowRules(false)}
+              className="w-full py-3.5 rounded-2xl text-white font-bold text-sm mt-2"
+              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+              Понятно, принимаю
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
