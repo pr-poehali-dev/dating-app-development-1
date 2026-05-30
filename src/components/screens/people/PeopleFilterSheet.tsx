@@ -74,6 +74,71 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
 
         <div className="overflow-y-auto px-5 py-5 flex flex-col gap-5">
 
+          {/* Город */}
+          <div className="rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(155,89,182,0.1) 100%)",
+              border: "1px solid rgba(255,45,120,0.2)",
+              boxShadow: "0 4px 20px rgba(255,45,120,0.1)",
+            }}>
+            {/* Декоративное свечение */}
+            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none"
+              style={{ background: "radial-gradient(circle, rgba(255,45,120,0.25), transparent 70%)" }} />
+
+            <div className="flex items-center gap-2.5 relative">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 10px rgba(255,45,120,0.4)" }}>
+                <Icon name="MapPin" size={17} className="text-white" />
+              </div>
+              <div>
+                <p className="text-white font-bold text-sm leading-tight">Город</p>
+                <p className="text-white/40 text-[11px] leading-tight">Где ищем пару</p>
+              </div>
+            </div>
+            <div className="flex gap-2 relative">
+              <input value={city} onChange={e => setCity(e.target.value)}
+                placeholder="Например: Москва"
+                className="flex-1 text-white placeholder-white/25 rounded-xl px-4 py-2.5 text-sm outline-none border font-golos transition-colors"
+                style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)" }}
+                onFocus={e => (e.target.style.borderColor = "rgba(255,45,120,0.6)")}
+                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
+              />
+              <button
+                disabled={geoLoading}
+                onClick={() => {
+                  setGeoError("");
+                  if (!navigator.geolocation) { setGeoError("Геолокация не поддерживается"); return; }
+                  setGeoLoading(true);
+                  navigator.geolocation.getCurrentPosition(
+                    async pos => {
+                      try {
+                        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
+                        const d = await r.json();
+                        const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
+                        if (detected) setCity(detected); else setGeoError("Город не найден");
+                      } catch { setGeoError("Ошибка запроса"); }
+                      finally { setGeoLoading(false); }
+                    },
+                    () => { setGeoError("Доступ запрещён"); setGeoLoading(false); },
+                    { timeout: 8000 }
+                  );
+                }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }}>
+                {geoLoading
+                  ? <Icon name="Loader2" size={17} className="text-white animate-spin" />
+                  : <Icon name="Navigation" size={17} className="text-white" />}
+              </button>
+            </div>
+            {geoError && (
+              <p className="text-red-400 text-xs relative">
+                {geoError === "Доступ запрещён"
+                  ? "Разреши доступ в настройках браузера (🔒 в адресной строке)"
+                  : geoError}
+              </p>
+            )}
+          </div>
+
           {/* Кого ищешь */}
           <div className="rounded-2xl p-4 flex flex-col gap-3"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -124,57 +189,6 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                 style={{ left: onlineOnly ? "calc(100% - 22px)" : "2px" }} />
             </div>
           </button>
-
-          {/* Город */}
-          <div className="rounded-2xl p-4 flex flex-col gap-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2">
-              <span className="text-base">📍</span>
-              <span className="text-white font-semibold text-sm">Город</span>
-            </div>
-            <div className="flex gap-2">
-              <input value={city} onChange={e => setCity(e.target.value)}
-                placeholder="Например: Москва"
-                className="flex-1 text-white placeholder-white/25 rounded-xl px-4 py-2.5 text-sm outline-none border font-golos transition-colors"
-                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}
-                onFocus={e => (e.target.style.borderColor = "rgba(255,45,120,0.5)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
-              />
-              <button
-                disabled={geoLoading}
-                onClick={() => {
-                  setGeoError("");
-                  if (!navigator.geolocation) { setGeoError("Геолокация не поддерживается"); return; }
-                  setGeoLoading(true);
-                  navigator.geolocation.getCurrentPosition(
-                    async pos => {
-                      try {
-                        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
-                        const d = await r.json();
-                        const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
-                        if (detected) setCity(detected); else setGeoError("Город не найден");
-                      } catch { setGeoError("Ошибка запроса"); }
-                      finally { setGeoLoading(false); }
-                    },
-                    () => { setGeoError("Доступ запрещён"); setGeoLoading(false); },
-                    { timeout: 8000 }
-                  );
-                }}
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }}>
-                {geoLoading
-                  ? <Icon name="Loader2" size={17} className="text-white animate-spin" />
-                  : <Icon name="Navigation" size={17} className="text-white" />}
-              </button>
-            </div>
-            {geoError && (
-              <p className="text-red-400 text-xs">
-                {geoError === "Доступ запрещён"
-                  ? "Разреши доступ в настройках браузера (🔒 в адресной строке)"
-                  : geoError}
-              </p>
-            )}
-          </div>
 
           {/* Дополнительные секции */}
           <div className="flex flex-col gap-1.5">
