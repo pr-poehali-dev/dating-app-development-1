@@ -147,7 +147,7 @@ export function ProfileHeader({
       </div>
 
       {/* ── Табы: Фото / Приватное / Подарки ── */}
-      <div className="w-full mt-3 px-4">
+      <div className="w-full mt-6 px-4">
         <div className="flex rounded-2xl gap-1 p-1"
           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
           {tabs.map(({ key, icon, label }) => {
