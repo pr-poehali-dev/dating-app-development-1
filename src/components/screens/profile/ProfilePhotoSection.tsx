@@ -45,6 +45,16 @@ export function ProfilePhotoSection({
   const maxGallery = currentUser.premium ? 5 : 1;
   const [photoSubTab, setPhotoSubTab] = useState<"public" | "private">("public");
 
+  const coverGradient =
+    currentUser.gender === "male"
+      ? "linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #3b82f6 100%)"
+      : currentUser.gender === "female"
+      ? "linear-gradient(135deg, #be185d 0%, #ec4899 45%, #f472b6 100%)"
+      : "linear-gradient(135deg, #6d28d9 0%, #9333ea 45%, #a855f7 100%)";
+  const coverHearts = `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24' fill='rgba(255,255,255,0.18)'><path d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/></svg>`
+  )}")`;
+
   return (
     <>
       {activeTab === "photos" && (
@@ -122,9 +132,11 @@ export function ProfilePhotoSection({
               style={{ background: "rgba(255,255,255,0.04)" }}>
               {localCover
                 ? <img src={localCover} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex flex-col items-center justify-center gap-1.5">
-                    <Icon name="ImagePlus" size={28} className="text-white/15" />
-                    <span className="text-white/20 text-[11px]">Нет фото на фон</span>
+                : <div className="w-full h-full relative flex items-center justify-center"
+                    style={{ background: coverGradient }}>
+                    <div className="absolute inset-0"
+                      style={{ backgroundImage: coverHearts, backgroundSize: "44px 44px", opacity: 0.9 }} />
+                    <span className="relative text-white/75 text-[11px] font-medium">Стандартный фон</span>
                   </div>}
               {coverUploading && (
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
