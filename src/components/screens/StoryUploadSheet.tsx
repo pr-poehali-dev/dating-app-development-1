@@ -23,13 +23,6 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
     setError("");
   };
 
-  const fileToBase64 = (f: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",", 2)[1] || "");
-    reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
-    reader.readAsDataURL(f);
-  });
-
   const handleUpload = async () => {
     if (!file) return;
     setUploading(true);
@@ -40,24 +33,45 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
       const token = localStorage.getItem("spark_token") || "";
       const duration = videoRef.current?.duration || 0;
 
-      setProgress(15);
-      const videoB64 = await fileToBase64(file);
-      setProgress(40);
-
-      const res = await fetch(STORIES_URL, {
+      // Шаг 1: получаем ссылку для прямой загрузки
+      setProgress(8);
+      const presignRes = await fetch(STORIES_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({
-          action: "upload",
-          video: videoB64,
-          content_type: file.type,
-          duration: Math.round(duration),
-        }),
+        body: JSON.stringify({ action: "presign", content_type: file.type }),
       });
-      setProgress(95);
+      if (!presignRes.ok) {
+        const d = await presignRes.json().catch(() => ({}));
+        setError(d.error || "Ошибка подготовки загрузки");
+        return;
+      }
+      const { upload_url, key } = await presignRes.json();
+      setProgress(15);
 
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
+      // Шаг 2: грузим файл напрямую в хранилище (без ручного Content-Type — он не в подписи)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", upload_url);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(15 + Math.round((e.loaded / e.total) * 75));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Хранилище вернуло ошибку ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error("Ошибка загрузки файла"));
+        xhr.send(file);
+      });
+      setProgress(92);
+
+      // Шаг 3: создаём запись истории
+      const createRes = await fetch(STORIES_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ action: "create", key, duration: Math.round(duration) }),
+      });
+      if (!createRes.ok) {
+        const d = await createRes.json().catch(() => ({}));
         setError(d.error || "Ошибка публикации");
         return;
       }
