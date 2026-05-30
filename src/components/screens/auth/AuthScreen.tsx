@@ -13,9 +13,11 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [showForgot, setShowForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [emailTaken, setEmailTaken] = useState(false);
 
   const submit = async () => {
     setError("");
+    setEmailTaken(false);
     setLoading(true);
     try {
       let result;
@@ -27,7 +29,12 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
       }
       onAuth(result.user);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      const msg = e instanceof Error ? e.message : "Ошибка";
+      if (mode === "register" && msg.toLowerCase().includes("уже занят")) {
+        setEmailTaken(true);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -138,6 +145,30 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
             </button>
           </div>
         </div>
+
+        {emailTaken && (
+          <div className="flex flex-col gap-2 px-4 py-3 rounded-2xl" style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.25)" }}>
+            <div className="flex items-center gap-2">
+              <Icon name="UserCheck" size={15} className="text-pink-400 flex-shrink-0" />
+              <p className="text-pink-300 text-sm font-semibold">Этот email уже зарегистрирован</p>
+            </div>
+            <p className="text-white/50 text-xs">Аккаунт с таким email уже существует. Войди в него или восстанови пароль.</p>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => { setEmailTaken(false); setError(""); setMode("login"); }}
+                className="flex-1 py-2 rounded-xl text-white text-xs font-bold"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                Войти в аккаунт
+              </button>
+              <button
+                onClick={() => { setEmailTaken(false); setShowForgot(true); }}
+                className="flex-1 py-2 rounded-xl text-white/60 text-xs font-semibold"
+                style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                Забыл пароль
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl" style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.2)" }}>
