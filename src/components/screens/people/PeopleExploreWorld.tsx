@@ -7,18 +7,18 @@ interface Props {
 }
 
 const POPULAR_CITIES = [
-  { name: "Москва", country: "Россия", emoji: "🏙️" },
-  { name: "Санкт-Петербург", country: "Россия", emoji: "🌆" },
-  { name: "Новосибирск", country: "Россия", emoji: "🌇" },
-  { name: "Екатеринбург", country: "Россия", emoji: "🏔️" },
-  { name: "Казань", country: "Россия", emoji: "🕌" },
-  { name: "Минск", country: "Беларусь", emoji: "🇧🇾" },
-  { name: "Алматы", country: "Казахстан", emoji: "🇰🇿" },
-  { name: "Ташкент", country: "Узбекистан", emoji: "🇺🇿" },
-  { name: "Тбилиси", country: "Грузия", emoji: "🇬🇪" },
-  { name: "Баку", country: "Азербайджан", emoji: "🇦🇿" },
-  { name: "Ереван", country: "Армения", emoji: "🇦🇲" },
-  { name: "Берлин", country: "Германия", emoji: "🇩🇪" },
+  { name: "Москва", country: "Россия", emoji: "🏙️", grad: ["#FF2D78", "#9B59B6"] },
+  { name: "Санкт-Петербург", country: "Россия", emoji: "🌆", grad: ["#6366f1", "#3b82f6"] },
+  { name: "Новосибирск", country: "Россия", emoji: "🌇", grad: ["#f59e0b", "#ef4444"] },
+  { name: "Екатеринбург", country: "Россия", emoji: "🏔️", grad: ["#06b6d4", "#3b82f6"] },
+  { name: "Казань", country: "Россия", emoji: "🕌", grad: ["#10b981", "#06b6d4"] },
+  { name: "Минск", country: "Беларусь", emoji: "🇧🇾", grad: ["#ec4899", "#f43f5e"] },
+  { name: "Алматы", country: "Казахстан", emoji: "🇰🇿", grad: ["#14b8a6", "#22c55e"] },
+  { name: "Ташкент", country: "Узбекистан", emoji: "🇺🇿", grad: ["#0ea5e9", "#6366f1"] },
+  { name: "Тбилиси", country: "Грузия", emoji: "🇬🇪", grad: ["#ef4444", "#f97316"] },
+  { name: "Баку", country: "Азербайджан", emoji: "🇦🇿", grad: ["#06b6d4", "#10b981"] },
+  { name: "Ереван", country: "Армения", emoji: "🇦🇲", grad: ["#f59e0b", "#ec4899"] },
+  { name: "Берлин", country: "Германия", emoji: "🇩🇪", grad: ["#8b5cf6", "#6366f1"] },
 ];
 
 export function PeopleExploreWorld({ onClose, onSelectCity }: Props) {
@@ -108,26 +108,51 @@ export function PeopleExploreWorld({ onClose, onSelectCity }: Props) {
 
         {/* Популярные города */}
         <div>
-          <p className="text-white/40 text-xs font-semibold uppercase tracking-wider mb-3">
-            {search ? "Результаты поиска" : "Популярные"}
-          </p>
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 mb-3.5">
+            <Icon name="Sparkles" size={14} className="text-pink-400" />
+            <p className="text-white/50 text-xs font-bold uppercase tracking-[0.15em]">
+              {search ? "Результаты поиска" : "Популярные города"}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             {filtered.map(city => (
               <button
                 key={city.name}
                 onClick={() => onSelectCity(city.name)}
-                className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left active:scale-[0.98] transition-all"
-                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <span className="text-2xl flex-shrink-0">{city.emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold text-sm">{city.name}</p>
-                  <p className="text-white/35 text-xs">{city.country}</p>
+                className="group relative overflow-hidden rounded-3xl text-left active:scale-[0.96] transition-all duration-200"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                }}>
+                {/* Цветной градиентный ореол */}
+                <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-40 transition-opacity group-active:opacity-70"
+                  style={{ background: `radial-gradient(circle, ${city.grad[0]}, transparent 70%)` }} />
+
+                <div className="relative flex flex-col gap-3 p-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${city.grad[0]}33, ${city.grad[1]}22)`,
+                      border: `1px solid ${city.grad[0]}44`,
+                      boxShadow: `0 4px 14px ${city.grad[0]}33`,
+                    }}>
+                    {city.emoji}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-white font-bold text-sm leading-tight truncate">{city.name}</p>
+                    <p className="text-white/40 text-xs mt-0.5 flex items-center gap-1">
+                      <Icon name="MapPin" size={10} className="text-white/30" />
+                      {city.country}
+                    </p>
+                  </div>
                 </div>
-                <Icon name="ChevronRight" size={16} className="text-white/20 flex-shrink-0" />
               </button>
             ))}
             {filtered.length === 0 && (
-              <p className="text-white/30 text-sm text-center py-8">Город не найден</p>
+              <div className="col-span-2 flex flex-col items-center gap-2 py-10">
+                <Icon name="SearchX" size={28} className="text-white/20" />
+                <p className="text-white/30 text-sm">Город не найден</p>
+              </div>
             )}
           </div>
         </div>
