@@ -178,31 +178,23 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
 
           {/* Только онлайн */}
           <button onClick={() => setOnlineOnly(v => !v)}
-            className="flex items-center justify-between w-full rounded-2xl p-4 transition-all active:scale-[0.98]"
+            className="flex items-center justify-between w-full rounded-xl px-3.5 py-2.5 transition-all active:scale-[0.98]"
             style={{
-              background: onlineOnly
-                ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,197,94,0.08))"
-                : "rgba(255,255,255,0.04)",
-              border: onlineOnly ? "1.5px solid rgba(74,222,128,0.3)" : "1px solid rgba(255,255,255,0.07)",
+              background: onlineOnly ? "rgba(74,222,128,0.08)" : "rgba(255,255,255,0.04)",
+              border: onlineOnly ? "1.5px solid rgba(74,222,128,0.25)" : "1px solid rgba(255,255,255,0.07)",
             }}>
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{
-                  background: onlineOnly ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.07)",
-                  border: onlineOnly ? "1px solid rgba(74,222,128,0.4)" : "none",
-                }}>
-                <div className="w-2.5 h-2.5 rounded-full"
-                  style={{ background: onlineOnly ? "#4ADE80" : "rgba(255,255,255,0.25)", boxShadow: onlineOnly ? "0 0 8px #4ADE80" : "none" }} />
-              </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: onlineOnly ? "#4ADE80" : "rgba(255,255,255,0.2)", boxShadow: onlineOnly ? "0 0 6px #4ADE80" : "none" }} />
               <div className="text-left">
-                <p className="text-white font-semibold text-sm">Только онлайн</p>
-                <p className="text-white/35 text-xs">Сейчас в сети</p>
+                <p className="font-semibold text-xs" style={{ color: onlineOnly ? "#4ADE80" : "rgba(255,255,255,0.7)" }}>Только онлайн</p>
+                <p className="text-white/30 text-[11px]">Сейчас в сети</p>
               </div>
             </div>
-            <div className="w-12 h-6 rounded-full transition-all relative flex-shrink-0"
-              style={{ background: onlineOnly ? "linear-gradient(135deg,#4ADE80,#22c55e)" : "rgba(255,255,255,0.12)" }}>
-              <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all shadow"
-                style={{ left: onlineOnly ? "calc(100% - 22px)" : "2px" }} />
+            <div className="w-10 h-5 rounded-full transition-all relative flex-shrink-0"
+              style={{ background: onlineOnly ? "linear-gradient(135deg,#4ADE80,#22c55e)" : "rgba(255,255,255,0.1)" }}>
+              <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow"
+                style={{ left: onlineOnly ? "calc(100% - 18px)" : "2px" }} />
             </div>
           </button>
 
