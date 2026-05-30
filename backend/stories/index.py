@@ -6,20 +6,27 @@ import json, os, base64, uuid, boto3, psycopg2
 CORS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-User-Id, X-Auth-Token",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Authorization, X-Auth-Token",
 }
-SCHEMA = "t_p49767073_dating_app_developme"
 
 
 def resp(status, body):
     return {"statusCode": status, "headers": {**CORS, "Content-Type": "application/json"}, "body": json.dumps(body, ensure_ascii=False, default=str)}
 
 
+def get_token(event: dict) -> str:
+    h = event.get("headers") or {}
+    raw = (h.get("X-Authorization") or h.get("x-authorization") or
+           h.get("Authorization") or h.get("authorization") or
+           h.get("X-Auth-Token") or h.get("x-auth-token") or "")
+    return raw.replace("Bearer ", "").strip()
+
+
 def get_user(cur, token):
     if not token:
         return None
     cur.execute(
-        f"SELECT u.id, u.name, u.photo_url FROM {SCHEMA}.sessions s JOIN {SCHEMA}.users u ON u.id = s.user_id WHERE s.token = %s",
+        "SELECT u.id, u.name, u.photo_url FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = %s AND s.expires_at > NOW()",
         (token,)
     )
     return cur.fetchone()
@@ -30,8 +37,9 @@ def handler(event: dict, context) -> dict:
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
     method = event.get("httpMethod", "GET")
-    token = event.get("headers", {}).get("X-Auth-Token") or event.get("headers", {}).get("x-auth-token")
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    token = get_token(event)
+    schema = os.environ.get("MAIN_DB_SCHEMA", "public")
+    conn = psycopg2.connect(os.environ["DATABASE_URL"], options=f"-c search_path={schema}")
     cur = conn.cursor()
 
     # DELETE — пометить историю как истёкшую (мягкое удаление)
@@ -43,13 +51,13 @@ def handler(event: dict, context) -> dict:
         story_id = body.get("story_id")
         if not story_id:
             return resp(400, {"error": "story_id обязателен"})
-        cur.execute(f"SELECT id, user_id FROM {SCHEMA}.stories WHERE id = %s", (story_id,))
+        cur.execute("SELECT id, user_id FROM stories WHERE id = %s", (story_id,))
         row = cur.fetchone()
         if not row:
             return resp(404, {"error": "История не найдена"})
         if row[1] != user[0]:
             return resp(403, {"error": "Нет доступа"})
-        cur.execute(f"UPDATE {SCHEMA}.stories SET expires_at = NOW() WHERE id = %s", (story_id,))
+        cur.execute("UPDATE stories SET expires_at = NOW() WHERE id = %s", (story_id,))
         conn.commit()
         return resp(200, {"ok": True})
 
@@ -79,7 +87,7 @@ def handler(event: dict, context) -> dict:
         video_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
         cur.execute(
-            f"INSERT INTO {SCHEMA}.stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
+            "INSERT INTO stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
             (user[0], video_url, duration)
         )
         row = cur.fetchone()
@@ -90,31 +98,29 @@ def handler(event: dict, context) -> dict:
     params = event.get("queryStringParameters") or {}
     view_id = params.get("view")
     if view_id:
-        cur.execute(f"UPDATE {SCHEMA}.stories SET views = views + 1 WHERE id = %s AND expires_at > NOW()", (view_id,))
-        # Уведомление автору истории (только если смотрит другой пользователь)
+        cur.execute("UPDATE stories SET views = views + 1 WHERE id = %s AND expires_at > NOW()", (view_id,))
         viewer = get_user(cur, token)
         if viewer:
-            cur.execute(f"SELECT user_id FROM {SCHEMA}.stories WHERE id = %s AND expires_at > NOW()", (view_id,))
+            cur.execute("SELECT user_id FROM stories WHERE id = %s AND expires_at > NOW()", (view_id,))
             story_owner = cur.fetchone()
             if story_owner and story_owner[0] != viewer[0]:
-                # Не спамим: не больше 1 уведомления от одного зрителя за 1 час
                 cur.execute(
-                    f"SELECT id FROM {SCHEMA}.notifications WHERE user_id = %s AND type = 'story_view' "
-                    f"AND from_user_id = %s AND created_at > NOW() - INTERVAL '1 hour'",
+                    "SELECT id FROM notifications WHERE user_id = %s AND type = 'story_view' "
+                    "AND from_user_id = %s AND created_at > NOW() - INTERVAL '1 hour'",
                     (story_owner[0], viewer[0])
                 )
                 if not cur.fetchone():
                     cur.execute(
-                        f"INSERT INTO {SCHEMA}.notifications (user_id, type, from_user_id, ref_id) VALUES (%s, 'story_view', %s, %s)",
+                        "INSERT INTO notifications (user_id, type, from_user_id, ref_id) VALUES (%s, 'story_view', %s, %s)",
                         (story_owner[0], viewer[0], view_id)
                     )
         conn.commit()
 
-    cur.execute(f"""
+    cur.execute("""
         SELECT s.id, s.user_id, s.video_url, s.duration, s.views, s.created_at, s.expires_at,
                u.name, u.photo_url
-        FROM {SCHEMA}.stories s
-        JOIN {SCHEMA}.users u ON u.id = s.user_id
+        FROM stories s
+        JOIN users u ON u.id = s.user_id
         WHERE s.expires_at > NOW()
         ORDER BY s.created_at DESC
         LIMIT 100

@@ -37,7 +37,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
       });
       const res = await fetch(STORIES_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-Auth-Token": token || "" },
+        headers: { "Content-Type": "application/json", "Authorization": token || "" },
         body: JSON.stringify({ video: b64, content_type: file.type, duration: Math.round(duration) }),
       });
       const data = await res.json();
