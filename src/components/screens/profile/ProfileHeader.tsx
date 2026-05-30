@@ -34,20 +34,21 @@ function DefaultCover({ gender }: { gender?: string }) {
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: c.gradient }}>
       {/* Светящиеся пятна */}
-      <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full blur-2xl opacity-60"
+      <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full blur-2xl opacity-70"
         style={{ background: `radial-gradient(circle, ${c.glow}, transparent 70%)` }} />
-      <div className="absolute -bottom-12 -left-10 w-44 h-44 rounded-full blur-2xl opacity-45"
+      <div className="absolute -bottom-12 -left-10 w-44 h-44 rounded-full blur-2xl opacity-55"
         style={{ background: `radial-gradient(circle, ${c.glow}, transparent 70%)` }} />
       {/* Паттерн сердечек */}
       <div className="absolute inset-0"
         style={{
           backgroundImage: `url("data:image/svg+xml,${heartSvg}")`,
-          backgroundSize: "54px 54px",
-          opacity: 0.9,
+          backgroundSize: "46px 46px",
+          opacity: 1,
         }} />
-      {/* Крупное декоративное сердце */}
-      <Icon name="Heart" size={64} className="absolute right-5 top-3 text-white/15"
-        fallback="Heart" />
+      {/* Декоративные сердца поверх */}
+      <Icon name="Heart" size={72} className="absolute -right-3 -top-3 text-white/20" fallback="Heart" />
+      <Icon name="Heart" size={40} className="absolute left-6 bottom-2 text-white/20" fallback="Heart" />
+      <Icon name="Heart" size={28} className="absolute left-1/3 top-4 text-white/15" fallback="Heart" />
     </div>
   );
 }
