@@ -150,10 +150,11 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                     <div key={i} className="mx-4 my-2 rounded-2xl overflow-hidden"
                       style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.15),rgba(155,89,182,0.18),rgba(252,211,77,0.08))", border: "1px solid rgba(255,45,120,0.3)" }}>
                       <div className="flex items-center gap-3 px-4 py-3">
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.4)" }}>
-                          <span style={{ fontSize: 22 }}>✨</span>
-                        </div>
+                        <img
+                          src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/587a9205-cc85-4487-9fa6-283c2ecfcba0.jpg"
+                          className="w-12 h-12 rounded-2xl object-cover flex-shrink-0"
+                          style={{ boxShadow: "0 4px 16px rgba(255,45,120,0.4)" }}
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-bold text-sm">LoveBloom Premium активирован</p>
                           <p className="text-white/60 text-xs mt-0.5">
@@ -176,10 +177,11 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                     style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                     <div className="relative flex-shrink-0">
                       {isSystem ? (
-                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
-                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                          <Icon name="Shield" size={20} className="text-white" />
-                        </div>
+                        <img
+                          src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/587a9205-cc85-4487-9fa6-283c2ecfcba0.jpg"
+                          className="w-11 h-11 rounded-full object-cover"
+                          style={{ border: "2px solid rgba(255,45,120,0.3)" }}
+                        />
                       ) : (
                         <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
                       )}
