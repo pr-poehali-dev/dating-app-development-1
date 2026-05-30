@@ -21,6 +21,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   const [city, setCity] = useState(filters.city ?? "");
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState("");
+  const [cityOpen, setCityOpen] = useState(false);
 
   const apply = () => {
     const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
@@ -75,86 +76,91 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
         <div className="overflow-y-auto px-5 py-5 flex flex-col gap-5">
 
           {/* Город */}
-          <div className="rounded-2xl p-4 flex flex-col gap-3 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(155,89,182,0.1) 100%)",
-              border: "1px solid rgba(255,45,120,0.2)",
-              boxShadow: "0 4px 20px rgba(255,45,120,0.1)",
-            }}>
-            {/* Декоративное свечение */}
-            <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full pointer-events-none"
-              style={{ background: "radial-gradient(circle, rgba(255,45,120,0.25), transparent 70%)" }} />
-
-            <div className="flex items-center gap-2.5 relative">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 10px rgba(255,45,120,0.4)" }}>
-                <Icon name="MapPin" size={17} className="text-white" />
+          <div className="rounded-2xl overflow-hidden"
+            style={{ border: "1px solid rgba(255,45,120,0.2)", boxShadow: "0 4px 20px rgba(255,45,120,0.08)" }}>
+            {/* Баннер-кнопка */}
+            <button onClick={() => setCityOpen(v => !v)}
+              className="w-full flex items-center gap-3 px-4 py-3 transition-all active:scale-[0.99] relative overflow-hidden"
+              style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.15) 0%, rgba(155,89,182,0.12) 100%)" }}>
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full pointer-events-none"
+                style={{ background: "radial-gradient(circle, rgba(255,45,120,0.2), transparent 70%)" }} />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.4)" }}>
+                <Icon name="MapPin" size={15} className="text-white" />
               </div>
-              <div>
+              <div className="flex-1 text-left">
                 <p className="text-white font-bold text-sm leading-tight">Город</p>
-                <p className="text-white/40 text-[11px] leading-tight">Где ищем пару</p>
+                <p className="text-white/45 text-[11px] leading-tight">{city || "Где ищем пару"}</p>
               </div>
-            </div>
-            <div className="flex gap-2 relative">
-              <input value={city} onChange={e => setCity(e.target.value)}
-                placeholder="Например: Москва"
-                className="flex-1 text-white placeholder-white/25 rounded-xl px-4 py-2.5 text-sm outline-none border font-golos transition-colors"
-                style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.12)" }}
-                onFocus={e => (e.target.style.borderColor = "rgba(255,45,120,0.6)")}
-                onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.12)")}
-              />
-              <button
-                disabled={geoLoading}
-                onClick={() => {
-                  setGeoError("");
-                  if (!navigator.geolocation) { setGeoError("Геолокация не поддерживается"); return; }
-                  setGeoLoading(true);
-                  navigator.geolocation.getCurrentPosition(
-                    async pos => {
-                      try {
-                        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
-                        const d = await r.json();
-                        const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
-                        if (detected) setCity(detected); else setGeoError("Город не найден");
-                      } catch { setGeoError("Ошибка запроса"); }
-                      finally { setGeoLoading(false); }
-                    },
-                    () => { setGeoError("Доступ запрещён"); setGeoLoading(false); },
-                    { timeout: 8000 }
-                  );
-                }}
-                className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }}>
-                {geoLoading
-                  ? <Icon name="Loader2" size={17} className="text-white animate-spin" />
-                  : <Icon name="Navigation" size={17} className="text-white" />}
-              </button>
-            </div>
-            {geoError && (
-              <p className="text-red-400 text-xs relative">
-                {geoError === "Доступ запрещён"
-                  ? "Разреши доступ в настройках браузера (🔒 в адресной строке)"
-                  : geoError}
-              </p>
+              <Icon name={cityOpen ? "ChevronUp" : "ChevronDown"} size={15} className="text-white/40 flex-shrink-0" />
+            </button>
+
+            {/* Раскрывающееся поле */}
+            {cityOpen && (
+              <div className="px-3 pb-3 pt-2 flex flex-col gap-2"
+                style={{ background: "rgba(0,0,0,0.15)" }}>
+                <div className="flex gap-2">
+                  <input value={city} onChange={e => setCity(e.target.value)}
+                    placeholder="Например: Москва"
+                    autoFocus
+                    className="flex-1 text-white placeholder-white/25 rounded-xl px-3.5 py-2 text-sm outline-none border font-golos transition-colors"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+                    onFocus={e => (e.target.style.borderColor = "rgba(255,45,120,0.6)")}
+                    onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+                  />
+                  <button
+                    disabled={geoLoading}
+                    onClick={() => {
+                      setGeoError("");
+                      if (!navigator.geolocation) { setGeoError("Геолокация не поддерживается"); return; }
+                      setGeoLoading(true);
+                      navigator.geolocation.getCurrentPosition(
+                        async pos => {
+                          try {
+                            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
+                            const d = await r.json();
+                            const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
+                            if (detected) setCity(detected); else setGeoError("Город не найден");
+                          } catch { setGeoError("Ошибка запроса"); }
+                          finally { setGeoLoading(false); }
+                        },
+                        () => { setGeoError("Доступ запрещён"); setGeoLoading(false); },
+                        { timeout: 8000 }
+                      );
+                    }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-90 disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }}>
+                    {geoLoading
+                      ? <Icon name="Loader2" size={15} className="text-white animate-spin" />
+                      : <Icon name="Navigation" size={15} className="text-white" />}
+                  </button>
+                </div>
+                {geoError && (
+                  <p className="text-red-400 text-[11px]">
+                    {geoError === "Доступ запрещён"
+                      ? "Разреши доступ в настройках браузера"
+                      : geoError}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
           {/* Кого ищешь */}
-          <div className="rounded-2xl p-3 flex flex-col gap-2.5"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="flex items-center gap-2 px-0.5">
-              <Icon name="Users" size={14} className="text-pink-400" />
-              <span className="text-white/70 font-semibold text-xs uppercase tracking-wide">Кого ищешь</span>
-            </div>
-            <div className="flex gap-1.5">
+          <div className="flex flex-col gap-2">
+            <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold px-1 flex items-center gap-1.5">
+              <Icon name="Users" size={11} className="text-pink-500" />
+              Кого ищешь
+            </p>
+            <div className="flex gap-2">
               {genders.map(g => (
                 <button key={g.val} onClick={() => setLookingFor(g.val)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl font-semibold transition-all active:scale-95"
                   style={lookingFor === g.val
-                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 3px 12px rgba(255,45,120,0.4)" }
-                    : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span className="text-sm">{g.icon}</span>
-                  <span>{g.label}</span>
+                    ? { background: "linear-gradient(145deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 4px 16px rgba(255,45,120,0.45)", border: "1px solid rgba(255,45,120,0.4)" }
+                    : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  <span className="text-xl leading-none">{g.icon}</span>
+                  <span className="text-[11px] font-semibold">{g.label}</span>
                 </button>
               ))}
             </div>
