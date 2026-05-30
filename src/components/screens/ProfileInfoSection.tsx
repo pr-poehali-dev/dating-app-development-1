@@ -14,13 +14,13 @@ interface ProfileData {
 interface ProfileInfoSectionProps {
   currentProfile: Profile;
   profileData: ProfileData;
-  photoTab: "public" | "private" | "gifts";
+  photoTab: "public" | "private" | "gifts" | null;
   loadingPhotos: boolean;
   galleryPhotos: { id: number; photo_url: string }[];
   privateReqSent: boolean;
   liked: boolean;
   liking: boolean;
-  onPhotoTabChange: (tab: "public" | "private" | "gifts") => void;
+  onPhotoTabChange: (tab: "public" | "private" | "gifts" | null) => void;
   onPrivateReqSent: () => void;
   onSkip: () => void;
   onLike: () => void;
@@ -134,14 +134,14 @@ export function ProfileInfoSection({
 
       {/* Вкладки фото */}
       <div className="flex gap-2 px-5 pb-3">
-        <button onClick={() => onPhotoTabChange("public")}
+        <button onClick={() => onPhotoTabChange(photoTab === "public" || photoTab === "private" ? null : "public")}
           className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
           style={photoTab === "public" || photoTab === "private"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
             : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}>
           📷 Фото
         </button>
-        <button onClick={() => { onPhotoTabChange("gifts"); onViewGifts?.(); }}
+        <button onClick={() => { onPhotoTabChange(photoTab === "gifts" ? null : "gifts"); if (photoTab !== "gifts") onViewGifts?.(); }}
           className="flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all"
           style={photoTab === "gifts"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
@@ -173,7 +173,7 @@ export function ProfileInfoSection({
       )}
 
       {/* Галерея */}
-      {photoTab === "gifts" ? (
+      {photoTab === null ? null : photoTab === "gifts" ? (
         <div className="px-5 pb-3 flex flex-col gap-3">
           <button
             onClick={onOpenGiftSheet}

@@ -55,7 +55,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
-  const [photoTab, setPhotoTab] = useState<"public" | "private" | "gifts">("public");
+  const [photoTab, setPhotoTab] = useState<"public" | "private" | "gifts" | null>(null);
   const [privateReqSent, setPrivateReqSent] = useState(false);
   const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [profileData, setProfileData] = useState<{
@@ -71,7 +71,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     setLoadingPhotos(true);
     setProfileData({ followers: 0, following: 0 });
     setPrivateReqSent(false);
-    setPhotoTab("public");
+    setPhotoTab(null);
     setMatchId(null);
     import("@/lib/api").then(({ postsApi, profilesApi }) => {
       notificationsApi.trackView(currentProfile.id).catch(() => {});
