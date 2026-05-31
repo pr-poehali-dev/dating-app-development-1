@@ -30,20 +30,32 @@ async function req<T>(
   const params = new URLSearchParams({ action, ...(extraParams || {}) });
   const url = `${URLS[base]}?${params.toString()}`;
 
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: token } : {}),
+      ...(options.headers || {}),
+    },
+  };
+
   let res: Response;
-  try {
-    res = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: token } : {}),
-        ...(options.headers || {}),
-      },
-    });
-  } catch (e) {
-    console.error("Fetch error:", e, "for", url);
-    throw new Error("Нет соединения с сервером. Проверь интернет.");
+  let lastErr: unknown;
+  const maxAttempts = 3;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      res = await fetch(url, fetchOptions);
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (attempt >= maxAttempts) {
+        console.error("Fetch error:", e, "for", url);
+        throw new Error("Нет соединения с сервером. Проверь интернет.");
+      }
+      await new Promise((r) => setTimeout(r, attempt * 600));
+    }
   }
+  void lastErr;
 
   let data: Record<string, unknown>;
   try {
