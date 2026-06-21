@@ -365,11 +365,9 @@ export function ProfileTopBar({
               {/* Тема */}
               {onToggleTheme && (
                 <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                  <button onClick={onToggleTheme}
-                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
-                    style={{ background: "transparent" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                  <button disabled
+                    className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl mt-2 cursor-not-allowed opacity-50"
+                    style={{ background: "transparent" }}>
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ background: isDark ? "rgba(251,191,36,0.12)" : "rgba(99,102,241,0.12)" }}>
@@ -377,13 +375,13 @@ export function ProfileTopBar({
                       </div>
                       <div>
                         <p className="text-white/90 text-sm font-semibold leading-tight">{isDark ? "Светлая тема" : "Тёмная тема"}</p>
-                        <p className="text-white/30 text-[11px] leading-tight mt-0.5">{isDark ? "Переключить на светлую" : "Переключить на тёмную"}</p>
+                        <p className="text-white/30 text-[11px] leading-tight mt-0.5">Заработает в следующем обновлении</p>
                       </div>
                     </div>
-                    <div className="w-11 h-6 rounded-full relative flex-shrink-0 transition-all"
-                      style={{ background: isDark ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: isDark ? "none" : "0 2px 8px rgba(255,45,120,0.4)" }}>
-                      <div className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-md transition-all"
-                        style={{ left: isDark ? "3px" : "calc(100% - 19px)" }} />
+                    <div className="w-11 h-6 rounded-full relative flex-shrink-0"
+                      style={{ background: "rgba(255,255,255,0.1)" }}>
+                      <div className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-md"
+                        style={{ left: "3px" }} />
                     </div>
                   </button>
                 </div>
