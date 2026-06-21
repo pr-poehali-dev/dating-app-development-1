@@ -75,27 +75,38 @@ export function ProfileInfoSection({
           </p>
         ) : <span />}
         <div className="flex items-center gap-1.5">
-          {currentProfile.online ? (
-            <>
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-green-400 text-xs font-medium">онлайн</span>
-            </>
-          ) : currentProfile.last_seen ? (
-            <span className="text-white/30 text-[11px]">
-              {(() => {
-                const iso = currentProfile.last_seen!;
-                const ts = new Date(iso.endsWith("Z") ? iso : iso + "Z").getTime();
-                const diff = Date.now() - ts;
-                const mins = Math.floor(diff / 60000);
-                const hours = Math.floor(diff / 3600000);
-                const days = Math.floor(diff / 86400000);
-                if (mins < 5) return "недавно в сети";
-                if (mins < 60) return `${mins} мин. назад`;
-                if (hours < 24) return `${hours} ч. назад`;
-                return `${days} дн. назад`;
-              })()}
-            </span>
-          ) : null}
+          {(() => {
+            const iso = currentProfile.last_seen;
+            const ts = iso ? new Date(iso.endsWith("Z") ? iso : iso + "Z").getTime() : 0;
+            const diff = ts ? Date.now() - ts : Infinity;
+            const mins = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            // Онлайн = был в сети меньше 5 минут назад (по факту, а не по флагу)
+            const isOnline = ts > 0 && mins < 5;
+            if (isOnline) {
+              return (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-green-400 text-xs font-medium">онлайн</span>
+                </>
+              );
+            }
+            if (!ts) {
+              return <span className="text-white/25 text-[11px]">не в сети</span>;
+            }
+            let label: string;
+            if (mins < 60) label = `был(а) ${mins} мин. назад`;
+            else if (hours < 24) label = `был(а) ${hours} ч. назад`;
+            else if (days < 7) label = `был(а) ${days} дн. назад`;
+            else label = "давно не в сети";
+            return (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-white/25" />
+                <span className="text-white/35 text-[11px]">{label}</span>
+              </>
+            );
+          })()}
         </div>
       </div>
 
