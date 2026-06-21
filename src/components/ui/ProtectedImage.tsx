@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
+import { getViewerLabel } from "@/lib/api";
 
 interface ProtectedImageProps {
   src: string;
@@ -50,6 +51,13 @@ export function ProtectedImage({
 
   const objectFit = (style?.objectFit as CSSProperties["objectFit"]) || "cover";
   const isContain = objectFit === "contain";
+
+  const viewerLabel = watermark ? getViewerLabel() : "";
+  const watermarkText = watermark
+    ? viewerLabel
+      ? `${watermark} · ${viewerLabel}`
+      : watermark
+    : "";
 
   return (
     <div
@@ -108,7 +116,7 @@ export function ProtectedImage({
                 textShadow: "0 1px 2px rgba(0,0,0,0.4)",
               }}
             >
-              {watermark}
+              {watermarkText}
             </span>
           ))}
         </div>

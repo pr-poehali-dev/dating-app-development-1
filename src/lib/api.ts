@@ -18,6 +18,25 @@ function setToken(token: string) {
 }
 function clearToken() {
   localStorage.removeItem("spark_token");
+  localStorage.removeItem("spark_viewer");
+}
+
+// Кэш данных смотрящего для водяного знака на фото
+export function cacheViewer(user: { id: number; name?: string }) {
+  try {
+    localStorage.setItem("spark_viewer", JSON.stringify({ id: user.id, name: user.name || "" }));
+  } catch { /* ignore */ }
+}
+export function getViewerLabel(): string {
+  try {
+    const raw = localStorage.getItem("spark_viewer");
+    if (!raw) return "";
+    const v = JSON.parse(raw) as { id: number; name?: string };
+    const name = (v.name || "").trim();
+    return name ? `${name} · ID ${v.id}` : `ID ${v.id}`;
+  } catch {
+    return "";
+  }
 }
 
 async function req<T>(
@@ -75,6 +94,7 @@ export const authApi = {
       body: JSON.stringify({ email, password, name }),
     });
     setToken(data.token);
+    cacheViewer(data.user);
     return data;
   },
 
@@ -84,10 +104,15 @@ export const authApi = {
       body: JSON.stringify({ email, password }),
     });
     setToken(data.token);
+    cacheViewer(data.user);
     return data;
   },
 
-  me: () => req<{ user: User }>("auth", "me"),
+  me: async () => {
+    const data = await req<{ user: User }>("auth", "me");
+    cacheViewer(data.user);
+    return data;
+  },
 
   logout: async () => {
     await req("auth", "logout", { method: "POST" });
