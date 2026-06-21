@@ -47,27 +47,22 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
         {/* Добавить свою историю */}
         {onAddStory && (
           <button
-            onClick={onAddStory}
-            className="flex-shrink-0 flex flex-col items-center gap-2"
+            disabled
+            className="flex-shrink-0 flex flex-col items-center gap-2 cursor-not-allowed"
             style={{ scrollSnapAlign: "start" }}>
-            <div className="relative">
+            <div className="relative opacity-50">
               <div className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
                 style={{
-                  background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
+                  background: "rgba(255,255,255,0.12)",
                   padding: "2px",
                 }}>
                 <div className="w-full h-full rounded-full flex items-center justify-center"
                   style={{ background: "#1a1625" }}>
-                  <Icon name="Plus" size={24} className="text-white" />
+                  <Icon name="Clock" size={22} className="text-white/60" />
                 </div>
               </div>
-              {/* Маленький плюс-бейдж */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", border: "2px solid #1a1625" }}>
-                <Icon name="Plus" size={10} className="text-white" />
-              </div>
             </div>
-            <span className="text-white/50 text-[10px] font-medium w-[62px] text-center truncate leading-tight">Моя история</span>
+            <span className="text-white/40 text-[10px] font-medium w-[64px] text-center leading-tight">Скоро в обновлении</span>
           </button>
         )}
 
