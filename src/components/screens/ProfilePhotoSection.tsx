@@ -135,14 +135,24 @@ export function ProfilePhotoSection({
               </div>
             )}
             {profilePremium && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+              <span className="relative inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full font-black leading-none tracking-wider select-none flex-shrink-0 overflow-hidden"
                 style={{
-                  background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
+                  background: "linear-gradient(120deg,#9A6A06,#FFD700,#FFF6C2,#FFD700,#9A6A06)",
                   backgroundSize: "200% 100%",
-                  color: "#1a1000",
+                  color: "#3a2700",
+                  border: "1px solid rgba(255,236,150,0.85)",
+                  boxShadow: "0 2px 10px rgba(255,200,40,0.55), inset 0 1px 1px rgba(255,255,255,0.6)",
+                  textShadow: "0 1px 0 rgba(255,255,255,0.35)",
                   animation: "goldShimmer 2.5s linear infinite",
                 }}>
-                ✦ PREMIUM
+                <Icon name="Crown" size={11} style={{ color: "#3a2700" }} />
+                PREMIUM
+                <span className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(75deg, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%)",
+                    backgroundSize: "250% 100%",
+                    animation: "goldShine 3.2s ease-in-out infinite",
+                  }} />
               </span>
             )}
 

@@ -11,6 +11,16 @@
   }
 }
 
+@keyframes goldShine {
+  0% {
+    background-position: 150% 0;
+  }
+  60%,
+  100% {
+    background-position: -150% 0;
+  }
+}
+
 @keyframes heartParticle {
   0% {
     opacity: 1;
