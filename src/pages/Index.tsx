@@ -121,6 +121,7 @@ export default function Index() {
   if (authLoading) {
     return (
       <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
+        <div className="app-hearts-layer" />
         <div className="flex flex-col items-center gap-3">
           <h1 className="font-unbounded text-white text-2xl font-black grad-text">LoveBloom</h1>
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
@@ -132,6 +133,7 @@ export default function Index() {
   if (!currentUser) {
     return (
       <div className="app-bg flex justify-center">
+        <div className="app-hearts-layer" />
         <div className="w-full max-w-sm relative z-10" style={{ height: "100dvh" }}>
           <AuthScreen onAuth={handleAuth} />
         </div>
@@ -141,6 +143,7 @@ export default function Index() {
 
   return (
     <div className="app-bg flex justify-center">
+      <div className="app-hearts-layer" />
       {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
