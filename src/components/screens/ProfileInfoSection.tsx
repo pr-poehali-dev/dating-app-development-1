@@ -110,31 +110,6 @@ export function ProfileInfoSection({
         </div>
       </div>
 
-      {/* Рост / Вес / Статус */}
-      {(currentProfile.height || currentProfile.weight || (currentProfile.relationship_status && currentProfile.relationship_status !== "hidden")) && (
-        <div className="px-5 pb-3">
-          <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 px-3.5 py-2 rounded-2xl text-xs text-white/75"
-            style={{ background: "rgba(255,255,255,0.1)" }}>
-            {currentProfile.height && (
-              <span className="flex items-center gap-1">
-                <Icon name="Ruler" size={11} className="text-white/50" />{currentProfile.height} см
-              </span>
-            )}
-            {currentProfile.weight && (
-              <span className="flex items-center gap-1">
-                <Icon name="Weight" size={11} className="text-white/50" />{currentProfile.weight} кг
-              </span>
-            )}
-            {currentProfile.relationship_status && currentProfile.relationship_status !== "hidden" && RS_LABEL[currentProfile.relationship_status] && (
-              <span className="flex items-center gap-1">
-                <Icon name="Heart" size={11} className="text-white/50" />
-                {RS_LABEL[currentProfile.relationship_status]}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Вкладки фото */}
       <div className="flex gap-2 px-5 pb-3">
         <button onClick={() => onPhotoTabChange(photoTab === "public" || photoTab === "private" ? null : "public")}
