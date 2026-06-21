@@ -23,8 +23,8 @@ interface ProfilePhotoSectionProps {
   onLike: () => void;
   onOpenChat: () => void;
   onOpenGiftSheet: () => void;
-  onTouchStart: (e: React.TouchEvent) => void;
-  onTouchEnd: (e: React.TouchEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
 }
 
 export function ProfilePhotoSection({
@@ -40,19 +40,14 @@ export function ProfilePhotoSection({
   profileVerified,
   profilePremium,
   profileOnline,
-  coverUrl,
-  profileGender,
   onClose,
   onShowMenu,
   onPhotoIdx,
   onLike,
   onOpenChat,
   onOpenGiftSheet,
-  onTouchStart,
-  onTouchEnd,
 }: ProfilePhotoSectionProps) {
   const [burst, setBurst] = useState(false);
-  void profileGender;
 
   const handleLikeClick = () => {
     if (liked) return;
@@ -61,162 +56,197 @@ export function ProfilePhotoSection({
     onLike();
   };
 
+  const goNext = () => {
+    if (photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1);
+  };
+  const goPrev = () => {
+    if (photoIdx > 0) onPhotoIdx(i => i - 1);
+  };
+
   return (
-    <div className="flex-shrink-0" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className="relative w-full flex-shrink-0" style={{ height: "100dvh" }}>
 
-      {/* ── Обложка ── */}
-      <div className="relative w-full" style={{ marginBottom: 52 }}>
-        <div className="w-full overflow-hidden relative" style={{ height: 150 }}>
-          {coverUrl ? (
-            <>
-              <ProtectedImage src={coverUrl} className="w-full h-full" style={{ objectFit: "cover" }} />
-              <div className="absolute inset-0"
-                style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
-            </>
-          ) : (
-            <div className="w-full h-full relative overflow-hidden">
-              <ProtectedImage src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg"
-                className="w-full h-full" style={{ objectFit: "cover" }} />
-            </div>
-          )}
+      {/* Фото на весь экран */}
+      <ProtectedImage
+        src={currentPhoto}
+        className="absolute inset-0 w-full h-full"
+        style={{ objectFit: "cover" }}
+        protect
+      />
 
-          {/* Кнопки навигации */}
-          <button onClick={onClose}
-            className="absolute top-4 left-4 flex items-center justify-center w-9 h-9 rounded-full z-10"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.18)" }}>
-            <Icon name="ChevronLeft" size={20} className="text-white" />
-          </button>
-          <button onClick={onShowMenu}
-            className="absolute top-4 right-4 flex items-center justify-center w-9 h-9 rounded-full z-10"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.18)" }}>
-            <Icon name="MoreVertical" size={18} className="text-white/80" />
-          </button>
-        </div>
+      {/* Градиент снизу — для читаемости текста */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "linear-gradient(to top, rgba(5,0,15,0.92) 0%, rgba(5,0,15,0.4) 38%, transparent 62%)" }} />
 
-        {/* ── Аватар ── */}
-        <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -48 }}>
-          <div className="relative">
-            <div className="w-24 h-24 rounded-full"
+      {/* Градиент сверху — для кнопок навигации */}
+      <div className="absolute inset-x-0 top-0 h-28 pointer-events-none"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)" }} />
+
+      {/* Индикаторы фото (вертикальные черточки) */}
+      {totalPhotos > 1 && (
+        <div className="absolute top-0 left-0 right-0 flex gap-1 px-3 pt-3 z-10">
+          {Array.from({ length: totalPhotos }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => onPhotoIdx(() => i)}
+              className="flex-1 rounded-full transition-all"
               style={{
-                padding: 3,
-                background: profilePremium
-                  ? "linear-gradient(135deg,#FF2D78,#FFD700,#9B59B6)"
-                  : "linear-gradient(135deg,#FF2D78,#9B59B6)",
-                boxShadow: "0 4px 20px rgba(255,45,120,0.45)",
-              }}>
-              <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)]">
-                <ProtectedImage src={currentPhoto} className="w-full h-full" style={{ objectFit: "cover" }} />
-              </div>
-            </div>
-            {profileOnline && (
-              <div className="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-green-400 flex items-center justify-center"
-                style={{ border: "2px solid var(--spark-dark)", boxShadow: "0 0 8px #4ADE80" }}>
-                <div className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-              </div>
-            )}
-          </div>
+                height: 3,
+                background: i === photoIdx ? "#fff" : "rgba(255,255,255,0.35)",
+                transform: i === photoIdx ? "scaleY(1.4)" : "scaleY(1)",
+              }}
+            />
+          ))}
         </div>
+      )}
+
+      {/* Кнопки шапки */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-10"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 48px)" }}>
+        <button onClick={onClose}
+          className="flex items-center justify-center w-10 h-10 rounded-full"
+          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
+          <Icon name="ChevronLeft" size={22} className="text-white" />
+        </button>
+        <button onClick={onShowMenu}
+          className="flex items-center justify-center w-10 h-10 rounded-full"
+          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
+          <Icon name="MoreVertical" size={18} className="text-white/80" />
+        </button>
       </div>
 
-      {/* ── Имя и бейджи ── */}
-      <div className="flex flex-col items-center gap-1 px-5 pb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-white font-bold text-xl leading-tight">
-            {profileName}{profileAge ? `, ${profileAge}` : ""}
-          </h3>
-          {profileVerified && (
-            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(59,130,246,0.2)" }}>
-              <Icon name="BadgeCheck" size={14} className="text-blue-400" />
-            </div>
-          )}
+      {/* Зоны тапа: левая половина → пред. фото, правая → след. фото */}
+      {totalPhotos > 1 && (
+        <>
+          <button className="absolute left-0 top-0 w-1/2 h-full z-10 bg-transparent" onClick={goPrev} style={{ WebkitTapHighlightColor: "transparent" }} />
+          <button className="absolute right-0 top-0 w-1/2 h-full z-10 bg-transparent" onClick={goNext} style={{ WebkitTapHighlightColor: "transparent" }} />
+        </>
+      )}
+
+      {/* Онлайн-индикатор */}
+      {profileOnline && (
+        <div className="absolute z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+          style={{
+            top: "calc(env(safe-area-inset-top) + 48px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(74,222,128,0.4)",
+          }}>
+          <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+          <span className="text-green-400 text-[11px] font-semibold">онлайн</span>
         </div>
-        <div className="flex items-center gap-2">
+      )}
+
+      {/* Нижний блок: имя + кнопки */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pb-6 px-5"
+        style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
+
+        {/* Имя и бейджи */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h2 className="text-white font-bold leading-tight"
+              style={{ fontSize: 28, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+              {profileName}{profileAge ? `, ${profileAge}` : ""}
+            </h2>
+            {profileVerified && (
+              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(59,130,246,0.25)", border: "1px solid rgba(59,130,246,0.4)" }}>
+                <Icon name="BadgeCheck" size={15} className="text-blue-400" />
+              </div>
+            )}
+            {profilePremium && (
+              <span className="relative overflow-hidden text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+                style={{
+                  background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
+                  backgroundSize: "200% 100%",
+                  color: "#1a1000",
+                  boxShadow: "0 0 8px rgba(255,215,0,0.5)",
+                  animation: "goldShimmer 2.5s linear infinite",
+                }}>
+                ✦ PREMIUM
+              </span>
+            )}
+          </div>
           {profileUsername && (
-            <span className="text-white/35 text-xs font-mono">@{profileUsername}</span>
-          )}
-          {profilePremium && (
-            <span className="relative overflow-hidden text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
-              style={{
-                background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
-                backgroundSize: "200% 100%",
-                color: "#1a1000",
-                boxShadow: "0 0 8px rgba(255,215,0,0.6), 0 0 2px rgba(255,215,0,0.9)",
-                animation: "goldShimmer 2.5s linear infinite",
-                border: "1px solid rgba(255,215,0,0.5)",
-              }}>
-              ✦ PREMIUM
-            </span>
+            <p className="text-white/45 text-xs font-mono">@{profileUsername}</p>
           )}
         </div>
 
-        {/* Фото-индикаторы */}
-        {totalPhotos > 1 && (
-          <div className="flex gap-1.5 mt-1">
-            {photos.map((_, i) => (
-              <button key={i} onClick={() => onPhotoIdx(() => i)}
-                className="h-1 rounded-full transition-all"
+        {/* Кнопки действий */}
+        <div className="flex items-center gap-3">
+
+          {/* Лайк */}
+          <button onClick={handleLikeClick} disabled={liked}
+            className="relative w-14 h-14 rounded-full flex items-center justify-center overflow-visible transition-all active:scale-90 flex-shrink-0"
+            style={{
+              background: liked ? "linear-gradient(135deg,#FF2D78,#FF6B6B)" : "rgba(255,255,255,0.12)",
+              border: liked ? "none" : "1.5px solid rgba(255,45,120,0.5)",
+              boxShadow: liked ? "0 6px 24px rgba(255,45,120,0.55)" : "0 4px 16px rgba(255,45,120,0.2)",
+              backdropFilter: "blur(10px)",
+              transform: burst ? "scale(1.22)" : "scale(1)",
+            }}>
+            <Icon name="Heart" size={22}
+              style={{
+                color: liked ? "white" : "#FF2D78",
+                fill: liked ? "white" : "transparent",
+                transition: "transform 0.25s cubic-bezier(.36,.07,.19,.97)",
+                transform: burst ? "scale(1.35)" : "scale(1)",
+              }} />
+            {burst && [0, 60, 120, 180, 240, 300].map((deg) => (
+              <span key={deg} className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
                 style={{
-                  background: i === photoIdx ? "#FF2D78" : "rgba(255,255,255,0.25)",
-                  width: i === photoIdx ? 20 : 6,
+                  background: deg % 120 === 0 ? "#FF2D78" : "#FFB3CC",
+                  top: "50%", left: "50%",
+                  transform: `rotate(${deg}deg) translateY(-22px) translate(-50%,-50%)`,
+                  animation: "heartParticle 0.6s ease-out forwards",
                 }} />
             ))}
+          </button>
+
+          {/* Сообщение — растянутая кнопка */}
+          <button onClick={onOpenChat}
+            className="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              border: "1.5px solid rgba(255,255,255,0.18)",
+              backdropFilter: "blur(12px)",
+            }}>
+            <Icon name="MessageCircle" size={20} className="text-white" />
+            <span className="text-white font-semibold text-sm">Написать</span>
+          </button>
+
+          {/* Подарок */}
+          <button onClick={onOpenGiftSheet}
+            className="w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
+            style={{
+              background: "rgba(255,255,255,0.1)",
+              border: "1.5px solid rgba(255,255,255,0.18)",
+              backdropFilter: "blur(12px)",
+            }}>
+            <span style={{ fontSize: 22 }}>🎁</span>
+          </button>
+        </div>
+
+        {/* Свайп вниз — подсказка, если есть фото выше/ниже */}
+        {totalPhotos > 1 && !loadingPhotos && (
+          <div className="flex justify-center mt-3 gap-2">
+            {photoIdx > 0 && (
+              <button onClick={goPrev} className="flex items-center gap-1 text-white/40 text-xs active:text-white/70">
+                <Icon name="ChevronUp" size={13} />
+                <span>пред. фото</span>
+              </button>
+            )}
+            {photoIdx < totalPhotos - 1 && (
+              <button onClick={goNext} className="flex items-center gap-1 text-white/40 text-xs active:text-white/70">
+                <span>след. фото</span>
+                <Icon name="ChevronDown" size={13} />
+              </button>
+            )}
           </div>
         )}
       </div>
-
-      {/* ── Кнопки действий ── */}
-      <div className="flex items-center justify-center gap-4 px-5 pb-4">
-        {/* Лайк */}
-        <button onClick={handleLikeClick} disabled={liked}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg overflow-visible transition-all active:scale-90"
-          style={{
-            background: liked ? "linear-gradient(135deg,#FF2D78,#FF6B6B)" : "rgba(255,255,255,0.08)",
-            border: liked ? "none" : "1.5px solid rgba(255,45,120,0.45)",
-            boxShadow: liked ? "0 6px 24px rgba(255,45,120,0.55)" : "0 4px 16px rgba(255,45,120,0.2)",
-            transform: burst ? "scale(1.22)" : "scale(1)",
-          }}>
-          <Icon name="Heart" size={22}
-            style={{
-              color: liked ? "white" : "#FF2D78",
-              fill: liked ? "white" : "transparent",
-              transition: "transform 0.25s cubic-bezier(.36,.07,.19,.97)",
-              transform: burst ? "scale(1.35)" : "scale(1)",
-            }} />
-          {burst && [0,60,120,180,240,300].map((deg) => (
-            <span key={deg} className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
-              style={{
-                background: deg % 120 === 0 ? "#FF2D78" : "#FFB3CC",
-                top: "50%", left: "50%",
-                transform: `rotate(${deg}deg) translateY(-22px) translate(-50%,-50%)`,
-                animation: "heartParticle 0.6s ease-out forwards",
-              }} />
-          ))}
-        </button>
-
-        {/* Сообщение */}
-        <button onClick={onOpenChat}
-          className="w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{
-            background: "linear-gradient(135deg, rgba(99,179,237,0.2), rgba(79,134,247,0.15))",
-            border: "1.5px solid rgba(99,179,237,0.4)",
-            boxShadow: "0 4px 18px rgba(79,134,247,0.2)",
-          }}>
-          <Icon name="MessageCircle" size={20} style={{ color: "#93C5FD" }} />
-        </button>
-
-        {/* Подарок */}
-        <button onClick={onOpenGiftSheet}
-          className="w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{
-            background: "linear-gradient(135deg, rgba(255,215,0,0.18), rgba(255,160,0,0.14))",
-            border: "1.5px solid rgba(255,200,0,0.45)",
-            boxShadow: "0 4px 18px rgba(255,180,0,0.22)",
-          }}>
-          <Icon name="Gift" size={20} style={{ color: "#FCD34D" }} />
-        </button>
-      </div>
-
     </div>
   );
 }

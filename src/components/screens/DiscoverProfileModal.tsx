@@ -274,12 +274,13 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       )}
 
       <div
-        className="absolute inset-0 z-30 flex flex-col"
+        className="absolute inset-0 z-30 overflow-y-auto"
         style={{
           background: "var(--spark-dark)",
           transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
           transform: swipeAnim === "left" ? "translateX(-110%)" : swipeAnim === "right" ? "translateX(110%)" : "translateX(0)",
           opacity: swipeAnim === "idle" ? 1 : 0,
+          scrollSnapType: "none",
         }}
       >
         {/* ❤️ Анимация лайка */}
