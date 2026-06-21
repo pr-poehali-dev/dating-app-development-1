@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi } from "@/lib/api";
+import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 // ─── PrivateGallery ───────────────────────────────────────────────────────────
 export function PrivateGallery({ partnerId, onClose }: { partnerId: number; onClose: () => void }) {
@@ -47,9 +48,10 @@ export function PrivateGallery({ partnerId, onClose }: { partnerId: number; onCl
           <>
             {/* Фото */}
             <div className="relative w-full" style={{ aspectRatio: "1" }}>
-              <img src={photos[idx].photo_url} alt=""
-                className="w-full h-full object-cover rounded-2xl"
-                style={{ border: "1.5px solid rgba(255,255,255,0.1)" }} />
+              <ProtectedImage src={photos[idx].photo_url}
+                watermark="LoveBloom · скриншот запрещён"
+                className="w-full h-full rounded-2xl"
+                style={{ objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.1)" }} />
               {idx > 0 && (
                 <button onClick={prev}
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center"

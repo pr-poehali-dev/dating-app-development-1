@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 interface ProfileLightboxProps {
   photos: string[];
@@ -17,10 +18,11 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
       onClick={onClose}>
 
       {/* Фото */}
-      <img
+      <ProtectedImage
         src={photos[idx]}
-        className="max-w-full max-h-full object-contain rounded-xl"
-        style={{ maxHeight: "90dvh", maxWidth: "95vw", userSelect: "none" }}
+        className="rounded-xl"
+        hideOnBlur={false}
+        style={{ maxHeight: "90dvh", maxWidth: "95vw", objectFit: "contain" }}
         onClick={e => e.stopPropagation()}
       />
 

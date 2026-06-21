@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { useState } from "react";
+import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 interface ProfilePhotoSectionProps {
   currentPhoto: string;
@@ -77,7 +78,7 @@ export function ProfilePhotoSection({
         <div className="w-full overflow-hidden relative" style={{ height: 150 }}>
           {coverUrl ? (
             <>
-              <img src={coverUrl} className="w-full h-full object-cover" />
+              <ProtectedImage src={coverUrl} className="w-full h-full" style={{ objectFit: "cover" }} />
               <div className="absolute inset-0"
                 style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
             </>
@@ -117,7 +118,7 @@ export function ProfilePhotoSection({
                 boxShadow: "0 4px 20px rgba(255,45,120,0.45)",
               }}>
               <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)]">
-                <img src={currentPhoto} className="w-full h-full object-cover" />
+                <ProtectedImage src={currentPhoto} className="w-full h-full" style={{ objectFit: "cover" }} />
               </div>
             </div>
             {profileOnline && (

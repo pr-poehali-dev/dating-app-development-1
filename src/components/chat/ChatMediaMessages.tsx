@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 // ─── VanishPhoto ──────────────────────────────────────────────────────────────
 export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
@@ -32,8 +33,8 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
     <>
       <div className="relative">
         {opened || out ? (
-          <img src={url} className="rounded-xl object-cover cursor-pointer active:scale-95 transition-transform"
-            style={{ maxWidth: 200, maxHeight: 200 }}
+          <ProtectedImage src={url} className="rounded-xl cursor-pointer active:scale-95 transition-transform"
+            style={{ width: 200, height: 200, objectFit: "cover" }}
             onClick={() => setLightbox(true)} />
         ) : (
           <div
@@ -78,8 +79,9 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
             onClick={() => setLightbox(false)}>
             <Icon name="X" size={20} className="text-white" />
           </button>
-          <img src={url} className="rounded-2xl object-contain"
-            style={{ maxWidth: "95vw", maxHeight: "90dvh" }}
+          <ProtectedImage src={url} className="rounded-2xl"
+            watermark="LoveBloom · скриншот запрещён"
+            style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
             onClick={e => e.stopPropagation()} />
         </div>
       )}

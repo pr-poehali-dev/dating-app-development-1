@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
+import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 interface ProfileData {
   bio?: string;
@@ -189,7 +190,7 @@ export function ProfileInfoSection({
               {galleryPhotos.map((ph) => (
                 <button key={ph.id} className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-transform"
                   onClick={() => setLightboxUrl(ph.photo_url)}>
-                  <img src={ph.photo_url} className="w-full h-full object-cover" />
+                  <ProtectedImage src={ph.photo_url} className="w-full h-full" style={{ objectFit: "cover" }} />
                 </button>
               ))}
             </div>
@@ -342,8 +343,9 @@ export function ProfileInfoSection({
             onClick={() => setLightboxUrl(null)}>
             <Icon name="X" size={20} className="text-white" />
           </button>
-          <img src={lightboxUrl} className="max-w-full max-h-full object-contain rounded-2xl"
-            style={{ maxWidth: "95vw", maxHeight: "90dvh" }}
+          <ProtectedImage src={lightboxUrl} className="rounded-2xl"
+            watermark="LoveBloom · скриншот запрещён"
+            style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
             onClick={e => e.stopPropagation()} />
         </div>
       )}
