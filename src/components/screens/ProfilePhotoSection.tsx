@@ -120,102 +120,97 @@ export function ProfilePhotoSection({
           </>
         )}
 
-        {/* Онлайн-бейдж */}
-        {profileOnline && (
-          <div className="absolute bottom-3 left-4 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-            style={{
-              background: "rgba(0,0,0,0.5)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(74,222,128,0.4)",
-            }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-green-400 text-[11px] font-semibold">онлайн</span>
+        {/* Нижний блок внутри фото: имя + онлайн + кнопки */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
+
+          {/* Имя и бейджи */}
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-white font-bold leading-tight drop-shadow" style={{ fontSize: 22 }}>
+              {profileName}{profileAge ? `, ${profileAge}` : ""}
+            </h2>
+            {profileVerified && (
+              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(59,130,246,0.25)", border: "1px solid rgba(59,130,246,0.4)" }}>
+                <Icon name="BadgeCheck" size={13} className="text-blue-400" />
+              </div>
+            )}
+            {profilePremium && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+                style={{
+                  background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
+                  backgroundSize: "200% 100%",
+                  color: "#1a1000",
+                  animation: "goldShimmer 2.5s linear infinite",
+                }}>
+                ✦ PREMIUM
+              </span>
+            )}
+            {profileOnline && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full flex-shrink-0"
+                style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(74,222,128,0.35)" }}>
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-green-400 text-[10px] font-semibold">онлайн</span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* ── Имя и бейджи ── */}
-      <div className="px-5 pt-4 pb-2">
-        <div className="flex items-center gap-2 mb-0.5">
-          <h2 className="text-white font-bold leading-tight" style={{ fontSize: 24 }}>
-            {profileName}{profileAge ? `, ${profileAge}` : ""}
-          </h2>
-          {profileVerified && (
-            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(59,130,246,0.2)", border: "1px solid rgba(59,130,246,0.35)" }}>
-              <Icon name="BadgeCheck" size={13} className="text-blue-400" />
-            </div>
-          )}
-          {profilePremium && (
-            <span className="text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+          {/* Кнопки действий */}
+          <div className="flex items-center gap-2.5">
+
+            {/* Лайк */}
+            <button onClick={handleLikeClick} disabled={liked}
+              className="relative rounded-full flex items-center justify-center overflow-visible transition-all active:scale-90 flex-shrink-0"
               style={{
-                background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
-                backgroundSize: "200% 100%",
-                color: "#1a1000",
-                boxShadow: "0 0 8px rgba(255,215,0,0.5)",
-                animation: "goldShimmer 2.5s linear infinite",
+                width: 50, height: 50,
+                background: liked ? "linear-gradient(135deg,#FF2D78,#FF6B6B)" : "rgba(0,0,0,0.4)",
+                border: liked ? "none" : "1.5px solid rgba(255,45,120,0.5)",
+                boxShadow: liked ? "0 6px 20px rgba(255,45,120,0.5)" : "none",
+                backdropFilter: "blur(10px)",
+                transform: burst ? "scale(1.22)" : "scale(1)",
               }}>
-              ✦ PREMIUM
-            </span>
-          )}
-        </div>
-        {profileUsername && (
-          <p className="text-white/35 text-xs font-mono">@{profileUsername}</p>
-        )}
-      </div>
+              <Icon name="Heart" size={20}
+                style={{
+                  color: liked ? "white" : "#FF2D78",
+                  fill: liked ? "white" : "transparent",
+                  transform: burst ? "scale(1.35)" : "scale(1)",
+                  transition: "transform 0.25s cubic-bezier(.36,.07,.19,.97)",
+                }} />
+              {burst && [0, 60, 120, 180, 240, 300].map((deg) => (
+                <span key={deg} className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+                  style={{
+                    background: deg % 120 === 0 ? "#FF2D78" : "#FFB3CC",
+                    top: "50%", left: "50%",
+                    transform: `rotate(${deg}deg) translateY(-20px) translate(-50%,-50%)`,
+                    animation: "heartParticle 0.6s ease-out forwards",
+                  }} />
+              ))}
+            </button>
 
-      {/* ── Кнопки действий ── */}
-      <div className="flex items-center gap-3 px-5 pb-4">
-
-        {/* Лайк */}
-        <button onClick={handleLikeClick} disabled={liked}
-          className="relative w-13 h-13 rounded-full flex items-center justify-center overflow-visible transition-all active:scale-90 flex-shrink-0"
-          style={{
-            width: 52, height: 52,
-            background: liked ? "linear-gradient(135deg,#FF2D78,#FF6B6B)" : "rgba(255,255,255,0.07)",
-            border: liked ? "none" : "1.5px solid rgba(255,45,120,0.45)",
-            boxShadow: liked ? "0 6px 24px rgba(255,45,120,0.5)" : "0 2px 12px rgba(255,45,120,0.15)",
-            transform: burst ? "scale(1.22)" : "scale(1)",
-          }}>
-          <Icon name="Heart" size={20}
-            style={{
-              color: liked ? "white" : "#FF2D78",
-              fill: liked ? "white" : "transparent",
-              transform: burst ? "scale(1.35)" : "scale(1)",
-              transition: "transform 0.25s cubic-bezier(.36,.07,.19,.97)",
-            }} />
-          {burst && [0, 60, 120, 180, 240, 300].map((deg) => (
-            <span key={deg} className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+            {/* Написать */}
+            <button onClick={onOpenChat}
+              className="flex-1 rounded-2xl flex items-center justify-center gap-1.5 transition-all active:scale-95"
               style={{
-                background: deg % 120 === 0 ? "#FF2D78" : "#FFB3CC",
-                top: "50%", left: "50%",
-                transform: `rotate(${deg}deg) translateY(-20px) translate(-50%,-50%)`,
-                animation: "heartParticle 0.6s ease-out forwards",
-              }} />
-          ))}
-        </button>
+                height: 50,
+                background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                boxShadow: "0 4px 16px rgba(255,45,120,0.4)",
+              }}>
+              <Icon name="MessageCircle" size={17} className="text-white" />
+              <span className="text-white font-semibold text-sm">Написать</span>
+            </button>
 
-        {/* Написать — растянутая */}
-        <button onClick={onOpenChat}
-          className="flex-1 h-[52px] rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95"
-          style={{
-            background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
-            boxShadow: "0 4px 18px rgba(255,45,120,0.35)",
-          }}>
-          <Icon name="MessageCircle" size={18} className="text-white" />
-          <span className="text-white font-semibold text-sm">Написать</span>
-        </button>
-
-        {/* Подарок */}
-        <button onClick={onOpenGiftSheet}
-          className="rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
-          style={{
-            width: 52, height: 52,
-            background: "rgba(255,255,255,0.07)",
-            border: "1.5px solid rgba(255,255,255,0.12)",
-          }}>
-          <span style={{ fontSize: 20 }}>🎁</span>
-        </button>
+            {/* Подарок */}
+            <button onClick={onOpenGiftSheet}
+              className="rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
+              style={{
+                width: 50, height: 50,
+                background: "rgba(0,0,0,0.4)",
+                backdropFilter: "blur(10px)",
+                border: "1.5px solid rgba(255,255,255,0.15)",
+              }}>
+              <span style={{ fontSize: 20 }}>🎁</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
