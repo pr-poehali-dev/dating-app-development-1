@@ -540,38 +540,47 @@ def handler(event: dict, context) -> dict:
         # Мои подписчики (кто подписан на меня)
         if action == 'my_followers':
             cur.execute(
-                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
+                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online, u.last_seen "
                 "FROM user_subscriptions s JOIN users u ON u.id = s.subscriber_id "
                 "WHERE s.target_id = %s ORDER BY s.created_at DESC",
                 (me['id'],)
             )
-            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
+            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online', 'last_seen']
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
+            for u in users:
+                if u.get('last_seen'):
+                    u['last_seen'] = str(u['last_seen'])
             return resp(200, {'ok': True, 'users': users})
 
         # Мои подписки (на кого я подписан)
         if action == 'my_following':
             cur.execute(
-                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
+                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online, u.last_seen "
                 "FROM user_subscriptions s JOIN users u ON u.id = s.target_id "
                 "WHERE s.subscriber_id = %s ORDER BY s.created_at DESC",
                 (me['id'],)
             )
-            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
+            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online', 'last_seen']
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
+            for u in users:
+                if u.get('last_seen'):
+                    u['last_seen'] = str(u['last_seen'])
             return resp(200, {'ok': True, 'users': users})
 
         # Подписчики другого пользователя (публично)
         if action == 'user_followers':
             uid = int(params.get('user_id', 0))
             cur.execute(
-                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online "
+                "SELECT u.id, u.name, u.age, u.photo_url, u.verified, u.online, u.last_seen "
                 "FROM user_subscriptions s JOIN users u ON u.id = s.subscriber_id "
                 "WHERE s.target_id = %s ORDER BY s.created_at DESC",
                 (uid,)
             )
-            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online']
+            cols = ['id', 'name', 'age', 'photo_url', 'verified', 'online', 'last_seen']
             users = [dict(zip(cols, r)) for r in cur.fetchall()]
+            for u in users:
+                if u.get('last_seen'):
+                    u['last_seen'] = str(u['last_seen'])
             return resp(200, {'ok': True, 'users': users})
 
         # Отправить тикет в поддержку

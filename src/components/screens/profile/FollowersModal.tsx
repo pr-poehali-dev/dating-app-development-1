@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
+import { isUserOnline } from "@/lib/online";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
 type TabType = "followers" | "following";
-type UserItem = { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean };
+type UserItem = { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean; last_seen?: string };
 
 export function FollowersModal({
   initialTab,
@@ -22,12 +23,20 @@ export function FollowersModal({
   const [viewProfile, setViewProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    const req = tab === "followers" ? profilesApi.getFollowers() : profilesApi.getFollowing();
-    req.then(r => {
-      if (tab === "followers") setFollowers(r.users);
-      else setFollowing(r.users);
-    }).finally(() => setLoading(false));
+    let active = true;
+    const fetchList = (silent: boolean) => {
+      if (!silent) setLoading(true);
+      const req = tab === "followers" ? profilesApi.getFollowers() : profilesApi.getFollowing();
+      req.then(r => {
+        if (!active) return;
+        if (tab === "followers") setFollowers(r.users);
+        else setFollowing(r.users);
+      }).finally(() => { if (active && !silent) setLoading(false); });
+    };
+    fetchList(false);
+    // Автообновление онлайн-статусов каждые 30 секунд
+    const interval = setInterval(() => fetchList(true), 30_000);
+    return () => { active = false; clearInterval(interval); };
   }, [tab]);
 
   const list = tab === "followers" ? followers : following;
@@ -83,7 +92,7 @@ export function FollowersModal({
                     <img src={user.photo_url || FALLBACK_PHOTO}
                       className="w-12 h-12 rounded-full object-cover"
                       style={{ border: "2px solid rgba(255,45,120,0.3)" }} />
-                    {user.online && (
+                    {isUserOnline(user.last_seen, user.online) && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"
                         style={{ borderColor: "var(--spark-dark2,#1a1030)" }} />
                     )}
@@ -95,6 +104,11 @@ export function FollowersModal({
                       </p>
                       {user.verified && <Icon name="BadgeCheck" size={14} className="text-blue-400 flex-shrink-0" />}
                     </div>
+                    {isUserOnline(user.last_seen, user.online) ? (
+                      <p className="text-green-400 text-[11px] mt-0.5">в сети</p>
+                    ) : (
+                      <p className="text-white/30 text-[11px] mt-0.5">не в сети</p>
+                    )}
                   </div>
                   <Icon name="ChevronRight" size={16} className="text-white/25 flex-shrink-0" />
                 </button>

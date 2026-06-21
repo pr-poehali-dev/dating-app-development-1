@@ -210,13 +210,13 @@ export const profilesApi = {
     }),
 
   getFollowers: () =>
-    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_followers", { method: "GET" }),
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean; last_seen?: string }[] }>("profiles", "my_followers", { method: "GET" }),
 
   getFollowing: () =>
-    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_following", { method: "GET" }),
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean; last_seen?: string }[] }>("profiles", "my_following", { method: "GET" }),
 
   getUserFollowers: (user_id: number) =>
-    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "user_followers", { method: "GET" }, { user_id: String(user_id) }),
+    req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean; last_seen?: string }[] }>("profiles", "user_followers", { method: "GET" }, { user_id: String(user_id) }),
 
   subscribeToggle: (target_id: number) =>
     req<{ ok: boolean; subscribed: boolean }>("profiles", "subscribe_toggle", { method: "POST", body: JSON.stringify({ target_id }) }),
