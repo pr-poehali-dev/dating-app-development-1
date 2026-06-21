@@ -12,7 +12,13 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [seen, setSeen] = useState<Set<number>>(new Set());
+  const [showSoon, setShowSoon] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleSoonClick = () => {
+    setShowSoon(true);
+    setTimeout(() => setShowSoon(false), 2500);
+  };
 
   useEffect(() => {
     fetch(STORIES_URL)
@@ -47,10 +53,10 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
         {/* Добавить свою историю */}
         {onAddStory && (
           <button
-            disabled
-            className="flex-shrink-0 flex flex-col items-center gap-2 cursor-not-allowed"
+            onClick={handleSoonClick}
+            className="flex-shrink-0 flex flex-col items-center gap-2 active:scale-95 transition-transform"
             style={{ scrollSnapAlign: "start" }}>
-            <div className="relative opacity-50">
+            <div className="relative opacity-60">
               <div className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
                 style={{
                   background: "rgba(255,255,255,0.12)",
@@ -127,6 +133,26 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
           currentUserId={currentUserId}
           onClose={() => setViewIdx(null)}
         />
+      )}
+
+      {/* Подсказка «Скоро в обновлении» */}
+      {showSoon && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-4 py-3 rounded-2xl"
+          style={{
+            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+            background: "rgba(26,22,37,0.96)",
+            border: "1px solid rgba(255,45,120,0.35)",
+            boxShadow: "0 8px 28px rgba(0,0,0,0.45)",
+            backdropFilter: "blur(10px)",
+            maxWidth: "calc(100vw - 32px)",
+            animation: "fadeInUp 0.25s ease",
+          }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+            <Icon name="Clock" size={16} className="text-white" />
+          </div>
+          <span className="text-white text-sm font-medium">Эта функция появится в следующем обновлении</span>
+        </div>
       )}
     </>
   );
