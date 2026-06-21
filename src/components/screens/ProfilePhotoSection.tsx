@@ -145,13 +145,7 @@ export function ProfilePhotoSection({
                 ✦ PREMIUM
               </span>
             )}
-            {profileOnline && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full flex-shrink-0"
-                style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(74,222,128,0.35)" }}>
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-green-400 text-[10px] font-semibold">онлайн</span>
-              </div>
-            )}
+
           </div>
 
           {/* Кнопки действий */}
