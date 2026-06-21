@@ -378,6 +378,35 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        if action == 'activate_promo':
+            body = json.loads(event.get('body') or '{}')
+            code = body.get('code', '').strip().upper()
+            if not code:
+                return resp(400, {'error': 'Введи промокод'})
+            cur.execute("""
+                SELECT id, discount_percent, max_uses, used_count, expires_at, active
+                FROM promo_codes WHERE code = %s
+            """, (code,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Промокод не найден'})
+            promo_id, discount, max_uses, used_count, expires_at, active = row
+            if not active:
+                return resp(400, {'error': 'Промокод недействителен'})
+            if expires_at and expires_at.tzinfo:
+                import datetime
+                if datetime.datetime.now(datetime.timezone.utc) > expires_at:
+                    return resp(400, {'error': 'Срок действия промокода истёк'})
+            if used_count >= max_uses:
+                return resp(400, {'error': 'Промокод уже исчерпан'})
+            cur.execute("SELECT id FROM promo_code_uses WHERE promo_code_id = %s AND user_id = %s", (promo_id, me['id']))
+            if cur.fetchone():
+                return resp(400, {'error': 'Ты уже использовал этот промокод'})
+            cur.execute("INSERT INTO promo_code_uses (promo_code_id, user_id) VALUES (%s, %s)", (promo_id, me['id']))
+            cur.execute("UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
+            conn.commit()
+            return resp(200, {'ok': True, 'discount_percent': discount, 'code': code})
+
         # Фото галереи другого пользователя
         if action == 'user_profile_photos':
             uid = int(params.get('user_id', 0))

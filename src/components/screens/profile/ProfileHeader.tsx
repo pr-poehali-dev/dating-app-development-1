@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
+import { PromoCodeModal } from "@/components/screens/PromoCodeModal";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -202,7 +204,11 @@ export function ProfileTopBar({
   isDark?: boolean;
   onToggleTheme?: () => void;
 }) {
+  const [showPromo, setShowPromo] = useState(false);
+
   return (
+    <>
+    {showPromo && <PromoCodeModal onClose={() => setShowPromo(false)} />}
     <div className="px-4 pt-5 pb-2 flex items-center justify-between flex-shrink-0">
       <h2 className="text-white font-bold text-2xl">Профиль</h2>
       <div className="flex items-center gap-2">
@@ -301,6 +307,15 @@ export function ProfileTopBar({
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
                   },
+                  {
+                    icon: "Tag" as const,
+                    label: "Промокод",
+                    sub: "Скидка на Premium",
+                    action: () => { setShowPromo(true); onMenuToggle(false); },
+                    iconBg: "rgba(255,45,120,0.15)",
+                    iconColor: "text-pink-400",
+                    badge: undefined,
+                  },
                 ].map((item) => (
                   <button key={item.label} onClick={item.action}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all active:scale-[0.98]"
@@ -371,5 +386,6 @@ export function ProfileTopBar({
         </div>
       </div>
     </div>
+    </>
   );
 }

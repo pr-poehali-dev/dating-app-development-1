@@ -203,6 +203,12 @@ export const profilesApi = {
   deletePhoto: () =>
     req<{ ok: boolean }>("profiles", "delete_photo", { method: "POST" }),
 
+  activatePromo: (code: string) =>
+    req<{ ok: boolean; discount_percent: number; code: string }>("profiles", "activate_promo", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+
   getFollowers: () =>
     req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_followers", { method: "GET" }),
 
