@@ -181,7 +181,12 @@ def handler(event: dict, context) -> dict:
                 conditions.append(f"u.country ILIKE '%{safe_country}%'")
 
             if online_only:
-                conditions.append("u.online = TRUE")
+                # Реальный онлайн: активность за последние 5 минут
+                conditions.append("u.last_seen > NOW() - INTERVAL '5 minutes'")
+
+            if new_only:
+                # Новые: зарегистрированы за последние 7 дней
+                conditions.append("u.created_at > NOW() - INTERVAL '7 days'")
 
             geo_select = ""
             geo_order = "u.created_at DESC" if new_only else "u.last_seen DESC"

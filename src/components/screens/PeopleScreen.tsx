@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, notificationsApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PeopleFilterSheet } from "@/components/screens/people/PeopleFilterSheet";
 import { PeopleAdvancedFilter } from "@/components/screens/people/PeopleAdvancedFilter";
@@ -49,16 +50,27 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
     });
   };
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Запоминаем текущие параметры запроса для автообновления
+  const lastQuery = useRef<{ params: DiscoverParams; q?: string }>({ params: {} });
 
-  const load = useCallback((params: DiscoverParams, q?: string) => {
-    setLoading(true);
+  const load = useCallback((params: DiscoverParams, q?: string, silent?: boolean) => {
+    lastQuery.current = { params, q };
+    if (!silent) setLoading(true);
     profilesApi.getDiscover({ ...params, ...(q !== undefined ? { search: q } : {}) })
       .then((d) => setProfiles(d.profiles))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!silent) setLoading(false); });
   }, []);
 
   useEffect(() => { load({}); }, [load]);
+
+  // Автообновление списка каждые 30 секунд (реальное время: онлайн/новые)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load(lastQuery.current.params, lastQuery.current.q, true);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [load]);
 
   useEffect(() => {
     notificationsApi.list()
@@ -81,8 +93,10 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
   const handleTabChange = (tab: "all" | "online" | "new") => {
     setActiveTab(tab);
     const p: DiscoverParams = { ...filters };
+    delete p.online_only;
+    delete p.new_only;
     if (tab === "online") p.online_only = true;
-    else delete p.online_only;
+    else if (tab === "new") p.new_only = true;
     load(p, search);
   };
 
@@ -100,12 +114,17 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
     { id: "new" as const, label: "Новые" },
   ];
 
+  // На вкладке «Онлайн» дополнительно фильтруем по реальному статусу (last_seen < 5 мин)
+  const displayProfiles = activeTab === "online"
+    ? profiles.filter((p) => isUserOnline(p.last_seen, p.online))
+    : profiles;
+
   return (
     <>
       {selected && (
         <DiscoverProfileModal
           profile={selected}
-          profiles={profiles}
+          profiles={displayProfiles}
           profileIndex={selectedIdx}
           onClose={() => setSelected(null)}
           onLike={(p) => setLikedIds((prev) => new Set([...prev, p.id]))}
@@ -396,7 +415,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
         {/* Grid */}
         <div className="flex-1 overflow-y-auto">
           <PeopleGrid
-            profiles={profiles}
+            profiles={displayProfiles}
             loading={loading}
             search={search}
             filterCount={filterCount}
@@ -405,7 +424,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
             currentUserId={currentUserId}
             onSelect={(p, idx) => { setSelected(p); setSelectedIdx(idx); }}
             onPremium={onPremium}
-            onReset={() => { setSearch(""); setFilters({}); load({}); }}
+            onReset={() => { setSearch(""); setFilters({}); setActiveTab("all"); load({}); }}
           />
         </div>
       </div>
