@@ -17,6 +17,7 @@ export function ProfilePhotoSection({
   onCoverUpload,
   onCoverDelete,
   onAvatarUpload,
+  onPhotoDelete,
   onGalleryAdd,
   onGalleryDelete,
   onPremium,
@@ -35,6 +36,7 @@ export function ProfilePhotoSection({
   onCoverUpload: () => void;
   onCoverDelete: () => void;
   onAvatarUpload: () => void;
+  onPhotoDelete: () => void;
   onGalleryAdd: () => void;
   onGalleryDelete: (id: number) => void;
   onPremium: () => void;
@@ -179,11 +181,21 @@ export function ProfilePhotoSection({
               )}
               <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between">
                 <span className="text-white/60 text-[10px] uppercase tracking-widest">Фото профиля</span>
-                <button onClick={onAvatarUpload} disabled={photoUploading}
-                  className="btn-grad px-4 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5">
-                  <Icon name="Camera" size={13} className="text-white" />
-                  Изменить
-                </button>
+                <div className="flex items-center gap-2">
+                  {localPhoto && (
+                    <button onClick={onPhotoDelete} disabled={photoUploading}
+                      className="px-3 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-all active:scale-95"
+                      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.14)" }}>
+                      <Icon name="Trash2" size={13} className="text-white/70" />
+                      Удалить
+                    </button>
+                  )}
+                  <button onClick={onAvatarUpload} disabled={photoUploading}
+                    className="btn-grad px-4 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5">
+                    <Icon name="Camera" size={13} className="text-white" />
+                    Изменить
+                  </button>
+                </div>
               </div>
             </div>
           </div>

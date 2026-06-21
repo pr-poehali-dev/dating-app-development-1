@@ -274,6 +274,12 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               profilesApi.deleteCover().catch(() => {});
             }}
             onAvatarUpload={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
+            onPhotoDelete={() => {
+              setLocalPhoto("");
+              onPhotoUpdate("");
+              onProfileUpdate({ photo_url: "" });
+              profilesApi.deletePhoto().catch(() => {});
+            }}
             onGalleryAdd={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
             onGalleryDelete={handleGalleryDelete}
             onPremium={onPremium}

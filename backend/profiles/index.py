@@ -373,6 +373,11 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        if action == 'delete_photo':
+            cur.execute("UPDATE users SET photo_url = NULL WHERE id = %s", (me['id'],))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # Фото галереи другого пользователя
         if action == 'user_profile_photos':
             uid = int(params.get('user_id', 0))

@@ -200,6 +200,9 @@ export const profilesApi = {
   deleteCover: () =>
     req<{ ok: boolean }>("profiles", "delete_cover", { method: "POST" }),
 
+  deletePhoto: () =>
+    req<{ ok: boolean }>("profiles", "delete_photo", { method: "POST" }),
+
   getFollowers: () =>
     req<{ ok: boolean; users: { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean }[] }>("profiles", "my_followers", { method: "GET" }),
 
