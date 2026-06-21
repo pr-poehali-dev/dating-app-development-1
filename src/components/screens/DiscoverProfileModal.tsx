@@ -7,6 +7,7 @@ import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessage
 import { ProfilePhotoSection } from "@/components/screens/ProfilePhotoSection";
 import { ProfileInfoSection } from "@/components/screens/ProfileInfoSection";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
+import { isUserOnline } from "@/lib/online";
 
 export const PROFILES_FALLBACK = [
   {
@@ -330,7 +331,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           profileUsername={currentProfile.username}
           profileVerified={currentProfile.verified}
           profilePremium={currentProfile.premium}
-          profileOnline={currentProfile.online}
+          profileOnline={isUserOnline(currentProfile.last_seen, currentProfile.online)}
           coverUrl={currentProfile.cover_url}
           profileGender={currentProfile.gender}
           onClose={onClose}

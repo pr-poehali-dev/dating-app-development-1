@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { matchesApi, likesApi, type Match, type LikedBy } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -145,7 +146,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
                       style={m.unread_count > 0 ? { boxShadow: "0 0 0 2px rgba(255,45,120,0.5)" } : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }}>
                       <img src={m.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover" />
                     </div>
-                    {m.online && (
+                    {isUserOnline(m.last_seen, m.online) && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400"
                         style={{ border: "2px solid #0f0a1a", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }} />
                     )}

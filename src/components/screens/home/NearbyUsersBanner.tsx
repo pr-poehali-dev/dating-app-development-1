@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 
 interface Props {
   isPremium: boolean;
@@ -126,7 +127,7 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
                   )}
 
                   {/* Онлайн-точка */}
-                  {user.online && !isLocked && (
+                  {isUserOnline(user.last_seen, user.online) && !isLocked && (
                     <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-green-400"
                       style={{ boxShadow: "0 0 0 2px rgba(0,0,0,0.5), 0 0 6px rgba(74,222,128,0.6)" }} />
                   )}

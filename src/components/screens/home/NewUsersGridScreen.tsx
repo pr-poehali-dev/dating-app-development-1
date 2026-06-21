@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 
 interface Props {
   isPremium: boolean;
@@ -107,7 +108,7 @@ export function NewUsersGridScreen({ isPremium, onProfile, onPremium, onBack }: 
                     )}
 
                     {/* Онлайн */}
-                    {user.online && !isLocked && (
+                    {isUserOnline(user.last_seen, user.online) && !isLocked && (
                       <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-green-400"
                         style={{ boxShadow: "0 0 0 1.5px rgba(0,0,0,0.6)" }} />
                     )}

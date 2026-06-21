@@ -567,6 +567,7 @@ export interface Match {
   age?: number;
   photo_url?: string;
   online?: boolean;
+  last_seen?: string;
   last_msg?: string;
   last_msg_time?: string;
   unread_count: number;

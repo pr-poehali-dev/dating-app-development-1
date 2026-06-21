@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { postsApi, type User, type Post, type PostComment } from "@/lib/api";
 import { ReportModal } from "@/components/screens/SwipeScreens";
+import { isUserOnline } from "@/lib/online";
 
 // Re-exports
 export { LiveScreen } from "@/components/screens/LiveScreen";
@@ -146,7 +147,7 @@ function UserProfileModal({ userId, onClose }: { userId: number; onClose: () => 
                 <img src={data.profile.photo_url || FALLBACK_PHOTO}
                   className="w-24 h-24 rounded-full object-cover"
                   style={{ border: "3px solid rgba(255,45,120,0.6)", boxShadow: "0 0 24px rgba(255,45,120,0.25)" }} />
-                {data.profile.online && (
+                {isUserOnline((data.profile as { last_seen?: string }).last_seen, data.profile.online) && (
                   <div className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-green-400"
                     style={{ border: "2px solid var(--spark-dark)" }} />
                 )}

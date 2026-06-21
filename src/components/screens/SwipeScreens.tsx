@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 
 // Re-exports
 export { ReportModal } from "@/components/screens/ReportModal";
@@ -152,7 +153,7 @@ function SwipeCard({
               ✨ GOLD
             </span>
           )}
-          {profile.online && <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_6px_#00E676]" />}
+          {isUserOnline((profile as { last_seen?: string }).last_seen, profile.online) && <div className="w-2.5 h-2.5 rounded-full bg-green-400 shadow-[0_0_6px_#00E676]" />}
         </div>
         <div className="flex items-center gap-1 text-white/70 text-sm mb-2">
           <Icon name="MapPin" size={13} />

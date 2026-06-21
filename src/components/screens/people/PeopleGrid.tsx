@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { type Profile } from "@/lib/api";
+import { isUserOnline } from "@/lib/online";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 9;
@@ -127,7 +128,7 @@ export function PeopleGrid({
               )}
 
               {/* Онлайн */}
-              {p.online && !isLocked && (
+              {isUserOnline(p.last_seen, p.online) && !isLocked && (
                 <div className={`absolute w-2.5 h-2.5 rounded-full bg-green-400 ${p.boosted ? "top-2 right-8" : "top-2 right-2"}`}
                   style={{ border: "1.5px solid rgba(0,0,0,0.5)", boxShadow: "0 0 6px rgba(74,222,128,0.8)" }} />
               )}

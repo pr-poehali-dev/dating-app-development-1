@@ -56,7 +56,7 @@ def handler(event: dict, context) -> dict:
                 SELECT
                     m.id as match_id,
                     CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END as partner_id,
-                    u.name, u.age, u.photo_url, u.online,
+                    u.name, u.age, u.photo_url, u.online, u.last_seen,
                     (SELECT text FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg,
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg_time,
                     (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != {uid} AND read_at IS NULL) as unread_count,
@@ -73,11 +73,13 @@ def handler(event: dict, context) -> dict:
                 ) DESC
             """)
             rows = cur.fetchall()
-            cols = ['match_id', 'partner_id', 'name', 'age', 'photo_url', 'online', 'last_msg', 'last_msg_time', 'unread_count', 'created_at']
+            cols = ['match_id', 'partner_id', 'name', 'age', 'photo_url', 'online', 'last_seen', 'last_msg', 'last_msg_time', 'unread_count', 'created_at']
             matches = []
             for r in rows:
                 item = dict(zip(cols, r))
                 item['unread_count'] = int(item['unread_count'])
+                if item.get('last_seen'):
+                    item['last_seen'] = str(item['last_seen'])
                 matches.append(item)
             return resp(200, {'matches': matches})
 
