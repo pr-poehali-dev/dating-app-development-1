@@ -13,10 +13,11 @@ import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 
 
-export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, currentUserId }: {
+export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, isPremium, currentUserId }: {
   onOpenChat?: (matchId: number) => void;
   onGoToChats?: () => void;
   onPremium?: () => void;
+  onOpenSelf?: () => void;
   isPremium?: boolean;
   currentUserId?: number;
 }) {
@@ -422,7 +423,10 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, isPremium, cu
             isPremium={isPremium}
             likedIds={likedIds}
             currentUserId={currentUserId}
-            onSelect={(p, idx) => { setSelected(p); setSelectedIdx(idx); }}
+            onSelect={(p, idx) => {
+              if (p.id === currentUserId && onOpenSelf) { onOpenSelf(); return; }
+              setSelected(p); setSelectedIdx(idx);
+            }}
             onPremium={onPremium}
             onReset={() => { setSearch(""); setFilters({}); setActiveTab("all"); load({}); }}
           />
