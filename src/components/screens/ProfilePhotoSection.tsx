@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 
 interface ProfilePhotoSectionProps {
@@ -48,6 +48,8 @@ export function ProfilePhotoSection({
   onOpenGiftSheet,
 }: ProfilePhotoSectionProps) {
   const [burst, setBurst] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const touchStartY = useRef(0);
 
   const handleLikeClick = () => {
     if (liked) return;
@@ -62,6 +64,54 @@ export function ProfilePhotoSection({
   void loadingPhotos;
 
   return (
+    <>
+    {/* Полноэкранный просмотр */}
+    {fullscreen && (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center"
+        style={{ background: "rgba(0,0,0,0.96)" }}
+        onClick={() => setFullscreen(false)}
+        onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
+        onTouchEnd={(e) => {
+          const dy = touchStartY.current - e.changedTouches[0].clientY;
+          if (dy > 50 && photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1);
+          else if (dy < -50 && photoIdx > 0) onPhotoIdx(i => i - 1);
+        }}>
+        <button onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
+          className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full"
+          style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+          <Icon name="X" size={20} className="text-white" />
+        </button>
+        <ProtectedImage src={currentPhoto} className="w-full max-h-full"
+          style={{ objectFit: "contain" }} protect />
+
+        {/* Стрелки листания */}
+        {totalPhotos > 1 && photoIdx > 0 && (
+          <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+            <Icon name="ChevronLeft" size={22} className="text-white" />
+          </button>
+        )}
+        {totalPhotos > 1 && photoIdx < totalPhotos - 1 && (
+          <button onClick={(e) => { e.stopPropagation(); goNext(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+            <Icon name="ChevronRight" size={22} className="text-white" />
+          </button>
+        )}
+
+        {/* Полоски-индикаторы */}
+        {totalPhotos > 1 && (
+          <div className="absolute bottom-6 left-0 right-0 flex gap-1.5 justify-center px-8">
+            {Array.from({ length: totalPhotos }).map((_, i) => (
+              <div key={i} className="rounded-full transition-all"
+                style={{ height: 3, width: i === photoIdx ? 22 : 7, background: i === photoIdx ? "#fff" : "rgba(255,255,255,0.4)" }} />
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+
     <div className="flex-shrink-0">
 
       {/* ── Фото (половина экрана) ── */}
@@ -96,8 +146,28 @@ export function ProfilePhotoSection({
           </div>
         )}
 
+        {/* Центральная зона: открыть фото на весь экран */}
+        <button
+          className="absolute left-0 right-0 z-[5] bg-transparent"
+          style={{ top: 64, bottom: 130, WebkitTapHighlightColor: "transparent" }}
+          onClick={() => setFullscreen(true)}
+          aria-label="Открыть фото"
+        />
+
+        {/* Узкие зоны листания по краям */}
+        {totalPhotos > 1 && (
+          <>
+            <button className="absolute left-0 z-[6] bg-transparent"
+              style={{ top: 64, bottom: 130, width: "22%", WebkitTapHighlightColor: "transparent" }}
+              onClick={goPrev} aria-label="Предыдущее фото" />
+            <button className="absolute right-0 z-[6] bg-transparent"
+              style={{ top: 64, bottom: 130, width: "22%", WebkitTapHighlightColor: "transparent" }}
+              onClick={goNext} aria-label="Следующее фото" />
+          </>
+        )}
+
         {/* Кнопки шапки */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4 z-10">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4 z-30">
           <button onClick={onClose}
             className="flex items-center justify-center w-9 h-9 rounded-full"
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
@@ -110,18 +180,8 @@ export function ProfilePhotoSection({
           </button>
         </div>
 
-        {/* Тап-зоны листания фото */}
-        {totalPhotos > 1 && (
-          <>
-            <button className="absolute left-0 top-0 w-1/2 h-full z-10 bg-transparent"
-              onClick={goPrev} style={{ WebkitTapHighlightColor: "transparent" }} />
-            <button className="absolute right-0 top-0 w-1/2 h-full z-10 bg-transparent"
-              onClick={goNext} style={{ WebkitTapHighlightColor: "transparent" }} />
-          </>
-        )}
-
         {/* Нижний блок внутри фото: имя + онлайн + кнопки */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
+        <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4">
 
           {/* Имя и бейджи */}
           <div className="flex items-center gap-2 mb-3">
@@ -217,5 +277,6 @@ export function ProfilePhotoSection({
         </div>
       </div>
     </div>
+    </>
   );
 }
