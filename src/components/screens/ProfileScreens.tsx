@@ -271,7 +271,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onCoverDelete={() => {
               setLocalCover("");
               onProfileUpdate({ cover_url: "" });
-              profilesApi.updateMe({ cover_url: "" } as never).catch(() => {});
+              profilesApi.deleteCover().catch(() => {});
             }}
             onAvatarUpload={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
             onGalleryAdd={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
