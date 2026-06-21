@@ -363,6 +363,12 @@ export const postsApi = {
       body: JSON.stringify({ post_id }),
     }),
 
+  editPost: (post_id: number, caption: string) =>
+    req<{ ok: boolean }>("profiles", "post_edit", {
+      method: "POST",
+      body: JSON.stringify({ post_id, caption }),
+    }),
+
   reportPost: (post_id: number, reason = "other") =>
     req<{ ok: boolean }>("profiles", "report_post", {
       method: "POST",

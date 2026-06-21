@@ -810,6 +810,23 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # Редактировать пост (caption)
+        if action == 'post_edit':
+            body = json.loads(event.get('body') or '{}')
+            post_id = int(body.get('post_id', 0))
+            caption = body.get('caption', '')
+            if not post_id:
+                return resp(400, {'error': 'post_id обязателен'})
+            cur.execute("SELECT user_id FROM posts WHERE id = %s", (post_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пост не найден'})
+            if row[0] != me['id']:
+                return resp(403, {'error': 'Нельзя редактировать чужой пост'})
+            cur.execute("UPDATE posts SET caption = %s WHERE id = %s", (caption, post_id))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # Пожаловаться на пост
         if action == 'report_post':
             body = json.loads(event.get('body') or '{}')

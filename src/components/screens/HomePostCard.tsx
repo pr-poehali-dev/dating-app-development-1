@@ -18,11 +18,26 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showOwnMenu, setShowOwnMenu] = useState(false);
+  const [showEditSheet, setShowEditSheet] = useState(false);
+  const [editCaption, setEditCaption] = useState(post.caption || "");
+  const [saving, setSaving] = useState(false);
+  const [caption, setCaption] = useState(post.caption || "");
   const [lightbox, setLightbox] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [reported, setReported] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [doubleTapHeart, setDoubleTapHeart] = useState(false);
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      await postsApi.editPost(post.id, editCaption.trim());
+      setCaption(editCaption.trim());
+      setShowEditSheet(false);
+    } catch (e: unknown) { void e; }
+    finally { setSaving(false); }
+  };
 
   const isOwn = post.user_id === currentUserId;
 
@@ -62,6 +77,85 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
           onCancel={() => setShowConfirm(false)}
           loading={deleting}
         />
+      )}
+
+      {/* Меню своих постов (3 точки) */}
+      {showOwnMenu && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowOwnMenu(false)}>
+          <div className="w-full max-w-sm pb-8 px-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+            </div>
+            <div className="rounded-2xl overflow-hidden mb-2"
+              style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
+              <button onClick={() => { setShowOwnMenu(false); setEditCaption(caption); setShowEditSheet(true); }}
+                className="w-full flex items-center gap-4 px-5 py-4 text-left active:bg-white/5 transition-colors"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,255,255,0.07)" }}>
+                  <Icon name="Pencil" size={17} className="text-white/70" />
+                </div>
+                <div>
+                  <p className="text-white text-sm font-semibold">Редактировать</p>
+                  <p className="text-white/40 text-xs mt-0.5">Изменить подпись к посту</p>
+                </div>
+              </button>
+              <button onClick={() => { setShowOwnMenu(false); setShowConfirm(true); }}
+                className="w-full flex items-center gap-4 px-5 py-4 text-left active:bg-white/5 transition-colors">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(239,68,68,0.12)" }}>
+                  <Icon name="Trash2" size={17} className="text-red-400" />
+                </div>
+                <div>
+                  <p className="text-red-400 text-sm font-semibold">Удалить пост</p>
+                  <p className="text-white/40 text-xs mt-0.5">Действие нельзя отменить</p>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setShowOwnMenu(false)}
+              className="w-full py-4 rounded-2xl text-white/60 font-semibold text-sm active:opacity-70"
+              style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Шторка редактирования */}
+      {showEditSheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
+          onClick={() => setShowEditSheet(false)}>
+          <div className="w-full max-w-sm pb-8 px-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+            </div>
+            <div className="rounded-2xl overflow-hidden mb-2 px-5 py-4"
+              style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
+              <p className="text-white font-bold text-base mb-3">Редактировать пост</p>
+              <textarea
+                value={editCaption}
+                onChange={(e) => setEditCaption(e.target.value)}
+                placeholder="Подпись к посту..."
+                rows={4}
+                className="w-full rounded-xl px-4 py-3 text-sm text-white resize-none outline-none"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+              />
+              <button onClick={handleSaveEdit} disabled={saving}
+                className="w-full mt-3 py-3.5 rounded-xl font-semibold text-sm text-white transition-all active:scale-95"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", opacity: saving ? 0.6 : 1 }}>
+                {saving ? "Сохраняю..." : "Сохранить"}
+              </button>
+            </div>
+            <button onClick={() => setShowEditSheet(false)}
+              className="w-full py-4 rounded-2xl text-white/60 font-semibold text-sm active:opacity-70"
+              style={{ background: "rgba(28,22,40,0.98)", border: "1px solid rgba(255,255,255,0.09)" }}>
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Меню 3 точки для чужих постов */}
@@ -194,10 +288,10 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
             <p className="text-white/35 text-[11px] mt-0.5">{timeAgo(post.created_at)}</p>
           </div>
           {isOwn ? (
-            <button onClick={() => setShowConfirm(true)}
+            <button onClick={() => setShowOwnMenu(true)}
               className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-all"
-              style={{ background: "rgba(239,68,68,0.1)" }}>
-              <Icon name="Trash2" size={15} className="text-red-400" />
+              style={{ background: "rgba(255,255,255,0.07)" }}>
+              <Icon name="MoreHorizontal" size={17} className="text-white/50" />
             </button>
           ) : (
             <button onClick={() => setShowMenu(true)}
@@ -253,14 +347,14 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
         </div>
 
         {/* Подпись */}
-        {post.caption && (
+        {caption && (
           <div className="px-4 pb-4">
             <span className="text-white font-bold text-sm">{post.author_name} </span>
-            <span className="text-white/65 text-sm leading-relaxed">{post.caption}</span>
+            <span className="text-white/65 text-sm leading-relaxed">{caption}</span>
           </div>
         )}
 
-        {!post.caption && <div className="pb-3" />}
+        {!caption && <div className="pb-3" />}
       </div>
 
       {/* Lightbox */}
