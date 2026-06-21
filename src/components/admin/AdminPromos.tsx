@@ -14,6 +14,18 @@ interface Promo {
   created_at: string;
 }
 
+interface PromoUse {
+  id: number;
+  used_at: string;
+  code: string;
+  discount_percent: number;
+  user_id: number;
+  name: string;
+  email: string;
+  username: string | null;
+  photo_url: string | null;
+}
+
 async function adminReq(token: string, action: string, body?: object) {
   const res = await fetch(`${ADMIN_URL}?action=${action}`, {
     method: body ? "POST" : "GET",
@@ -30,6 +42,19 @@ export function AdminPromos({ token }: { token: string }) {
   const [form, setForm] = useState({ code: "", discount_percent: "20", max_uses: "100", expires_at: "" });
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState<number | null>(null);
+  const [openUsesId, setOpenUsesId] = useState<number | null>(null);
+  const [uses, setUses] = useState<PromoUse[]>([]);
+  const [usesLoading, setUsesLoading] = useState(false);
+
+  const toggleUses = (promoId: number) => {
+    if (openUsesId === promoId) { setOpenUsesId(null); return; }
+    setOpenUsesId(promoId);
+    setUsesLoading(true);
+    setUses([]);
+    adminReq(token, `promo_uses&promo_id=${promoId}`)
+      .then(d => setUses(d.uses || []))
+      .finally(() => setUsesLoading(false));
+  };
 
   const load = () => {
     setLoading(true);
@@ -168,12 +193,13 @@ export function AdminPromos({ token }: { token: string }) {
               ? "text-white/30" : "text-emerald-400";
             const statusText = !p.active ? "Выкл" : expired ? "Истёк" : exhausted ? "Исчерпан" : "Активен";
             return (
-              <div key={p.id} className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              <div key={p.id} className="rounded-2xl px-4 py-3"
                 style={{
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.07)",
                   opacity: (!p.active || expired || exhausted) ? 0.65 : 1,
                 }}>
+                <div className="flex items-center gap-3">
                 {/* Код + скидка */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -198,6 +224,12 @@ export function AdminPromos({ token }: { token: string }) {
 
                 {/* Кнопки */}
                 <div className="flex items-center gap-1.5">
+                  <button onClick={() => toggleUses(p.id)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90"
+                    style={{ background: openUsesId === p.id ? "rgba(255,45,120,0.18)" : "rgba(255,255,255,0.06)" }}
+                    title="Кто применил">
+                    <Icon name="Users" size={14} className={openUsesId === p.id ? "text-pink-400" : "text-white/40"} />
+                  </button>
                   <button onClick={() => handleToggle(p.id)} disabled={busy === p.id}
                     className="w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90"
                     style={{ background: p.active ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.06)" }}
@@ -214,6 +246,43 @@ export function AdminPromos({ token }: { token: string }) {
                     <Icon name="Trash2" size={13} className="text-red-400/60" />
                   </button>
                 </div>
+                </div>
+
+                {/* Список применений */}
+                {openUsesId === p.id && (
+                  <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+                    {usesLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Icon name="Loader2" size={20} className="text-white/30 animate-spin" />
+                      </div>
+                    ) : uses.length === 0 ? (
+                      <p className="text-white/30 text-xs text-center py-3">Промокод ещё никто не применял</p>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        <p className="text-white/40 text-[11px] mb-1">Применили — {uses.length}</p>
+                        {uses.map(u => (
+                          <div key={u.id} className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
+                            style={{ background: "rgba(255,255,255,0.03)" }}>
+                            <img src={u.photo_url || "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg"}
+                              className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-xs font-semibold truncate">
+                                {u.name}{u.username ? ` · @${u.username}` : ""}
+                              </p>
+                              <p className="text-white/35 text-[10px] truncate">{u.email}</p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-pink-400 text-[11px] font-semibold">−{u.discount_percent}%</p>
+                              <p className="text-white/30 text-[10px]">
+                                {new Date(u.used_at).toLocaleString("ru", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

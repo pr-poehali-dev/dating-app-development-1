@@ -695,6 +695,27 @@ def handler(event: dict, context) -> dict:
             rows = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'promos': rows})
 
+        # ── Промокоды: кто применил (когда и какой) ──────────────────────────
+        if action == 'promo_uses':
+            promo_id = params.get('promo_id')
+            where = "WHERE pu.promo_code_id = %s" if promo_id else ""
+            args = (int(promo_id),) if promo_id else ()
+            cur.execute(
+                "SELECT pu.id, pu.used_at, "
+                "p.code, p.discount_percent, "
+                "u.id as user_id, u.name, u.email, u.username, u.photo_url "
+                "FROM promo_code_uses pu "
+                "JOIN promo_codes p ON p.id = pu.promo_code_id "
+                "JOIN users u ON u.id = pu.user_id "
+                f"{where} "
+                "ORDER BY pu.used_at DESC LIMIT 200",
+                args
+            )
+            cols = ['id', 'used_at', 'code', 'discount_percent',
+                    'user_id', 'name', 'email', 'username', 'photo_url']
+            uses = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'uses': uses})
+
         # ── Промокоды: создать ────────────────────────────────────────────────
         if action == 'promo_create':
             code = body.get('code', '').strip().upper()
