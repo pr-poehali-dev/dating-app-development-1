@@ -112,26 +112,26 @@ export function ProfileInfoSection({
 
       {/* Рост / Вес / Статус */}
       {(currentProfile.height || currentProfile.weight || (currentProfile.relationship_status && currentProfile.relationship_status !== "hidden")) && (
-        <div className="flex flex-wrap gap-1.5 px-5 pb-3">
-          {currentProfile.height && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
-              style={{ background: "rgba(255,255,255,0.1)" }}>
-              <Icon name="Ruler" size={11} className="text-white/50" />{currentProfile.height} см
-            </span>
-          )}
-          {currentProfile.weight && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
-              style={{ background: "rgba(255,255,255,0.1)" }}>
-              <Icon name="Weight" size={11} className="text-white/50" />{currentProfile.weight} кг
-            </span>
-          )}
-          {currentProfile.relationship_status && currentProfile.relationship_status !== "hidden" && RS_LABEL[currentProfile.relationship_status] && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs text-white/75"
-              style={{ background: "rgba(255,255,255,0.1)" }}>
-              <Icon name="Heart" size={11} className="text-white/50" />
-              {RS_LABEL[currentProfile.relationship_status]}
-            </span>
-          )}
+        <div className="px-5 pb-3">
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 px-3.5 py-2 rounded-2xl text-xs text-white/75"
+            style={{ background: "rgba(255,255,255,0.1)" }}>
+            {currentProfile.height && (
+              <span className="flex items-center gap-1">
+                <Icon name="Ruler" size={11} className="text-white/50" />{currentProfile.height} см
+              </span>
+            )}
+            {currentProfile.weight && (
+              <span className="flex items-center gap-1">
+                <Icon name="Weight" size={11} className="text-white/50" />{currentProfile.weight} кг
+              </span>
+            )}
+            {currentProfile.relationship_status && currentProfile.relationship_status !== "hidden" && RS_LABEL[currentProfile.relationship_status] && (
+              <span className="flex items-center gap-1">
+                <Icon name="Heart" size={11} className="text-white/50" />
+                {RS_LABEL[currentProfile.relationship_status]}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
