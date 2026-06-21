@@ -52,16 +52,7 @@ export function ProfilePhotoSection({
   onTouchEnd,
 }: ProfilePhotoSectionProps) {
   const [burst, setBurst] = useState(false);
-
-  const coverGradient =
-    profileGender === "male"
-      ? "linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #3b82f6 100%)"
-      : profileGender === "female"
-      ? "linear-gradient(135deg, #be185d 0%, #ec4899 45%, #f472b6 100%)"
-      : "linear-gradient(135deg, #6d28d9 0%, #9333ea 45%, #a855f7 100%)";
-  const coverHearts = `url("data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='46' height='46' viewBox='0 0 24 24' fill='rgba(255,255,255,0.18)'><path d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/></svg>`
-  )}")`;
+  void profileGender;
 
   const handleLikeClick = () => {
     if (liked) return;
@@ -83,13 +74,9 @@ export function ProfilePhotoSection({
                 style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
             </>
           ) : (
-            <div className="w-full h-full relative overflow-hidden" style={{ background: coverGradient }}>
-              <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full blur-2xl opacity-60"
-                style={{ background: "radial-gradient(circle, rgba(255,255,255,0.35), transparent 70%)" }} />
-              <div className="absolute inset-0"
-                style={{ backgroundImage: coverHearts, backgroundSize: "46px 46px" }} />
-              <Icon name="Heart" size={72} className="absolute -right-3 -top-3 text-white/20" fallback="Heart" />
-              <Icon name="Heart" size={40} className="absolute left-6 bottom-2 text-white/20" fallback="Heart" />
+            <div className="w-full h-full relative overflow-hidden">
+              <ProtectedImage src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg"
+                className="w-full h-full" style={{ objectFit: "cover" }} />
             </div>
           )}
 

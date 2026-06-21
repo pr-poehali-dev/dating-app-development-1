@@ -3,52 +3,13 @@ import { type User } from "@/lib/api";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
-// Дефолтный гендерный фон обложки: парни — синий, девушки — розовый, остальные — фиолетовый
-function genderCover(gender?: string): { gradient: string; heart: string; glow: string } {
-  if (gender === "male") {
-    return {
-      gradient: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 45%, #3b82f6 100%)",
-      heart: "rgba(255,255,255,0.16)",
-      glow: "rgba(96,165,250,0.55)",
-    };
-  }
-  if (gender === "female") {
-    return {
-      gradient: "linear-gradient(135deg, #be185d 0%, #ec4899 45%, #f472b6 100%)",
-      heart: "rgba(255,255,255,0.18)",
-      glow: "rgba(244,114,182,0.55)",
-    };
-  }
-  return {
-    gradient: "linear-gradient(135deg, #6d28d9 0%, #9333ea 45%, #a855f7 100%)",
-    heart: "rgba(255,255,255,0.16)",
-    glow: "rgba(168,85,247,0.5)",
-  };
-}
+// Единый стандартный фон обложки для всех (если своя обложка не загружена)
+const DEFAULT_COVER = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg";
 
-function DefaultCover({ gender }: { gender?: string }) {
-  const c = genderCover(gender);
-  const heartSvg = encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24' fill='${c.heart}'><path d='M12 21s-6.7-4.35-9.33-8.07C.9 10.3 1.4 7 4.1 5.6c1.9-.98 4.1-.4 5.4 1.1L12 9.2l2.5-2.5c1.3-1.5 3.5-2.08 5.4-1.1 2.7 1.4 3.2 4.7 1.43 7.33C18.7 16.65 12 21 12 21z'/></svg>`
-  );
+function DefaultCover() {
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: c.gradient }}>
-      {/* Светящиеся пятна */}
-      <div className="absolute -top-10 -right-8 w-40 h-40 rounded-full blur-2xl opacity-70"
-        style={{ background: `radial-gradient(circle, ${c.glow}, transparent 70%)` }} />
-      <div className="absolute -bottom-12 -left-10 w-44 h-44 rounded-full blur-2xl opacity-55"
-        style={{ background: `radial-gradient(circle, ${c.glow}, transparent 70%)` }} />
-      {/* Паттерн сердечек */}
-      <div className="absolute inset-0"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,${heartSvg}")`,
-          backgroundSize: "46px 46px",
-          opacity: 1,
-        }} />
-      {/* Декоративные сердца поверх */}
-      <Icon name="Heart" size={72} className="absolute -right-3 -top-3 text-white/20" fallback="Heart" />
-      <Icon name="Heart" size={40} className="absolute left-6 bottom-2 text-white/20" fallback="Heart" />
-      <Icon name="Heart" size={28} className="absolute left-1/3 top-4 text-white/15" fallback="Heart" />
+    <div className="absolute inset-0 overflow-hidden">
+      <img src={DEFAULT_COVER} className="w-full h-full object-cover" />
     </div>
   );
 }
@@ -106,7 +67,7 @@ export function ProfileHeader({
           {localCover
             ? <img src={localCover} className="w-full h-full object-cover"
                 style={{ opacity: coverUploading ? 0.5 : 1 }} />
-            : <DefaultCover gender={currentUser.gender} />}
+            : <DefaultCover />}
           {localCover && (
             <div className="absolute inset-0"
               style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
