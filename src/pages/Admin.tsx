@@ -8,8 +8,9 @@ import { AnalyticsTab } from "@/components/admin/AdminAnalytics";
 import { SecurityTab } from "@/components/admin/AdminSecurity";
 import { MarketingTab } from "@/components/admin/AdminMarketing";
 import { SubscriptionsTab } from "@/components/admin/AdminSubscriptions";
+import { AdminPromos } from "@/components/admin/AdminPromos";
 
-type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing" | "subscriptions";
+type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing" | "subscriptions" | "promos";
 
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function Admin() {
@@ -37,6 +38,7 @@ export default function Admin() {
     { id: "security",      label: "Безопасность", icon: "Shield",        group: "Настройки" },
     { id: "marketing",     label: "Маркетинг",    icon: "Megaphone",     group: "Настройки" },
     { id: "subscriptions", label: "Подписки",     icon: "Crown",         group: "Настройки" },
+    { id: "promos",        label: "Промокоды",    icon: "Tag",           group: "Настройки" },
   ];
 
   const groups = ["Обзор", "Управление", "Настройки"];
@@ -109,6 +111,7 @@ export default function Admin() {
           {tab === "security"      && <SecurityTab      token={token} />}
           {tab === "marketing"     && <MarketingTab     token={token} />}
           {tab === "subscriptions" && <SubscriptionsTab token={token} />}
+          {tab === "promos"        && <AdminPromos      token={token} />}
         </main>
       </div>
     </div>

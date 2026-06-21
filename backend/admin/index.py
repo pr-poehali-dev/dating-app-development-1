@@ -682,6 +682,61 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Промокоды: список ─────────────────────────────────────────────────
+        if action == 'promos':
+            cur.execute("""
+                SELECT p.id, p.code, p.discount_percent, p.max_uses, p.used_count,
+                       p.expires_at, p.active, p.created_at
+                FROM promo_codes p
+                ORDER BY p.created_at DESC
+            """)
+            cols = ['id', 'code', 'discount_percent', 'max_uses', 'used_count',
+                    'expires_at', 'active', 'created_at']
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'promos': rows})
+
+        # ── Промокоды: создать ────────────────────────────────────────────────
+        if action == 'promo_create':
+            code = body.get('code', '').strip().upper()
+            discount = int(body.get('discount_percent', 0))
+            max_uses = int(body.get('max_uses', 1))
+            expires_at = body.get('expires_at') or None
+            if not code:
+                return resp(400, {'error': 'Введи код'})
+            if not (1 <= discount <= 100):
+                return resp(400, {'error': 'Скидка должна быть от 1 до 100'})
+            cur.execute("SELECT id FROM promo_codes WHERE code = %s", (code,))
+            if cur.fetchone():
+                return resp(400, {'error': f'Промокод «{code}» уже существует'})
+            cur.execute(
+                "INSERT INTO promo_codes (code, discount_percent, max_uses, expires_at) "
+                "VALUES (%s, %s, %s, %s) RETURNING id",
+                (code, discount, max_uses, expires_at)
+            )
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            return resp(200, {'ok': True, 'id': new_id})
+
+        # ── Промокоды: деактивировать/активировать ───────────────────────────
+        if action == 'promo_toggle':
+            promo_id = body.get('id')
+            if not promo_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("UPDATE promo_codes SET active = NOT active WHERE id = %s RETURNING active", (promo_id,))
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'active': row[0] if row else False})
+
+        # ── Промокоды: удалить ────────────────────────────────────────────────
+        if action == 'promo_delete':
+            promo_id = body.get('id')
+            if not promo_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM promo_code_uses WHERE promo_code_id = %s", (promo_id,))
+            cur.execute("DELETE FROM promo_codes WHERE id = %s", (promo_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
