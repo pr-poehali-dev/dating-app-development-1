@@ -147,9 +147,9 @@ export function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
   onClose: () => void;
 }) {
   const items = [
-    { icon: "Image", label: "Опубликовать фото", sub: "Поделись моментом", action: onPhoto, color: "#FF2D78" },
-    { icon: "Film", label: "Видеоистория", sub: "Короткое видео на 24 часа", action: onStory, color: "#9B59B6" },
-    { icon: "Radio", label: "Начать Live", sub: "Прямой эфир для всех", action: onLive, color: "#EF4444" },
+    { icon: "Image", label: "Опубликовать фото", sub: "Поделись моментом", action: onPhoto, color: "#FF2D78", soon: false },
+    { icon: "Film", label: "Видеоистория", sub: "Короткое видео на 24 часа", action: onStory, color: "#9B59B6", soon: true },
+    { icon: "Radio", label: "Начать Live", sub: "Прямой эфир для всех", action: onLive, color: "#EF4444", soon: false },
   ];
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
@@ -162,16 +162,24 @@ export function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
         <p className="text-white/40 text-xs uppercase tracking-widest px-5 mb-3">Создать</p>
         <div className="flex flex-col pb-8">
           {items.map((item) => (
-            <button key={item.label}
-              onClick={() => { item.action(); onClose(); }}
-              className="flex items-center gap-4 px-5 py-4 hover:bg-white/5 transition-colors text-left">
+            <button key={item.label} disabled={item.soon}
+              onClick={() => { if (item.soon) return; item.action(); onClose(); }}
+              className={`flex items-center gap-4 px-5 py-4 transition-colors text-left ${item.soon ? "cursor-not-allowed opacity-50" : "hover:bg-white/5"}`}>
               <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
                 style={{ background: `${item.color}22` }}>
                 <Icon name={item.icon as "Image" | "Film" | "Radio"} size={20} style={{ color: item.color }} />
               </div>
-              <div>
-                <p className="text-white font-semibold text-sm">{item.label}</p>
-                <p className="text-white/40 text-xs mt-0.5">{item.sub}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-semibold text-sm">{item.label}</p>
+                  {item.soon && (
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.55)" }}>
+                      СКОРО
+                    </span>
+                  )}
+                </div>
+                <p className="text-white/40 text-xs mt-0.5">{item.soon ? "Появится в следующем обновлении" : item.sub}</p>
               </div>
             </button>
           ))}
