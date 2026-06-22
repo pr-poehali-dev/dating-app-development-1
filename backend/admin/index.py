@@ -5,6 +5,7 @@
 """
 import json
 import os
+import time
 import psycopg2
 
 CORS = {
@@ -755,6 +756,93 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'id обязателен'})
             cur.execute("DELETE FROM promo_code_uses WHERE promo_code_id = %s", (promo_id,))
             cur.execute("DELETE FROM promo_codes WHERE id = %s", (promo_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Запросы от органов власти: список ────────────────────────────────
+        if action == 'gov_requests':
+            cur.execute("""
+                SELECT id, request_number, authority, subject, user_id, user_email,
+                       status, notes, admin_notes, data_exported_at, created_at
+                FROM gov_requests ORDER BY created_at DESC LIMIT 200
+            """)
+            cols = ['id', 'request_number', 'authority', 'subject', 'user_id', 'user_email',
+                    'status', 'notes', 'admin_notes', 'data_exported_at', 'created_at']
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'requests': rows})
+
+        # ── Запросы от органов власти: создать ───────────────────────────────
+        if action == 'gov_request_create':
+            request_number = body.get('request_number', '').strip()
+            authority = body.get('authority', '').strip()
+            subject = body.get('subject', '').strip()
+            user_email = body.get('user_email', '').strip()
+            notes = body.get('notes', '').strip()
+            if not authority or not subject:
+                return resp(400, {'error': 'authority и subject обязательны'})
+            user_id = None
+            if user_email:
+                cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (user_email,))
+                row = cur.fetchone()
+                if row:
+                    user_id = row[0]
+            cur.execute(
+                "INSERT INTO gov_requests (request_number, authority, subject, user_id, user_email, notes) "
+                "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id",
+                (request_number or f'GOV-{int(time.time())}', authority, subject, user_id, user_email or None, notes or None)
+            )
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            return resp(200, {'ok': True, 'id': new_id})
+
+        # ── Запросы от органов власти: выгрузить данные пользователя ─────────
+        if action == 'gov_request_export':
+            req_id = body.get('id')
+            if not req_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("SELECT user_id, user_email FROM gov_requests WHERE id = %s", (req_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Запрос не найден'})
+            user_id, user_email = row
+            user_data = {}
+            if user_id:
+                cur.execute(
+                    "SELECT id, name, email, username, age, city, bio, gender, created_at, last_seen, premium "
+                    "FROM users WHERE id = %s", (user_id,)
+                )
+                u = cur.fetchone()
+                if u:
+                    user_data['profile'] = dict(zip(
+                        ['id', 'name', 'email', 'username', 'age', 'city', 'bio', 'gender', 'created_at', 'last_seen', 'premium'], u
+                    ))
+                cur.execute("SELECT COUNT(*) FROM messages WHERE sender_id = %s", (user_id,))
+                user_data['messages_count'] = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM likes WHERE from_user_id = %s", (user_id,))
+                user_data['likes_given'] = cur.fetchone()[0]
+                cur.execute("SELECT COUNT(*) FROM matches WHERE user1_id = %s OR user2_id = %s", (user_id, user_id))
+                user_data['matches_count'] = cur.fetchone()[0]
+                cur.execute("SELECT token, created_at, expires_at FROM sessions WHERE user_id = %s ORDER BY created_at DESC LIMIT 10", (user_id,))
+                user_data['sessions'] = [dict(zip(['token', 'created_at', 'expires_at'], s)) for s in cur.fetchall()]
+            cur.execute(
+                "UPDATE gov_requests SET status = 'exported', data_exported_at = NOW(), updated_at = NOW() WHERE id = %s",
+                (req_id,)
+            )
+            conn.commit()
+            return resp(200, {'ok': True, 'user_data': user_data})
+
+        # ── Запросы от органов власти: обновить статус / заметки ─────────────
+        if action == 'gov_request_update':
+            req_id = body.get('id')
+            new_status = body.get('status', '')
+            admin_notes = body.get('admin_notes', '')
+            if not req_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute(
+                "UPDATE gov_requests SET status = COALESCE(NULLIF(%s,''), status), "
+                "admin_notes = COALESCE(NULLIF(%s,''), admin_notes), updated_at = NOW() WHERE id = %s",
+                (new_status or None, admin_notes or None, req_id)
+            )
             conn.commit()
             return resp(200, {'ok': True})
 
