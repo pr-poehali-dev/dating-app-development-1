@@ -79,30 +79,18 @@ def handler(event: dict, context) -> dict:
         def ext_for(ct):
             return "mp4" if "mp4" in ct else ("webm" if "webm" in ct else "mov")
 
-        # Режим 1: загрузка через бэкенд (base64 в теле)
-        if action == "upload":
-            import base64
+        # Режим 1: presigned URL (без ContentType в подписи — браузер не ставит его автоматически)
+        if action == "presign":
             content_type = body.get("content_type", "video/mp4")
-            data_b64 = body.get("data", "")
-            duration = body.get("duration", 0)
-            if not data_b64:
-                return resp(400, {"error": "data обязателен"})
-            try:
-                video_bytes = base64.b64decode(data_b64)
-            except Exception:
-                return resp(400, {"error": "Неверный формат данных"})
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext_for(content_type)}"
-            s3.put_object(Bucket="files", Key=key, Body=video_bytes, ContentType=content_type)
-            video_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-            cur.execute(
-                "INSERT INTO stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
-                (user[0], video_url, duration)
+            upload_url = s3.generate_presigned_url(
+                "put_object",
+                Params={"Bucket": "files", "Key": key},
+                ExpiresIn=600,
             )
-            row = cur.fetchone()
-            conn.commit()
-            return resp(200, {"id": row[0], "video_url": video_url, "created_at": str(row[1]), "expires_at": str(row[2])})
+            return resp(200, {"upload_url": upload_url, "key": key})
 
-        # Режим 2 (legacy): создать запись после прямой загрузки
+        # Режим 2: создать запись в БД после успешной прямой загрузки
         if action == "create":
             key = body.get("key") or ""
             duration = body.get("duration", 0)

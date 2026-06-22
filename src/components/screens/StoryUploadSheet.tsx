@@ -33,36 +33,46 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
       const token = localStorage.getItem("spark_token") || "";
       const duration = videoRef.current?.duration || 0;
 
-      // Читаем файл как base64
-      setProgress(10);
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(10 + Math.round((e.loaded / e.total) * 50));
-        };
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(",")[1]);
-        };
-        reader.onerror = () => reject(new Error("Ошибка чтения файла"));
-        reader.readAsDataURL(file);
-      });
-      setProgress(65);
-
-      // Загружаем через бэкенд
-      const res = await fetch(STORIES_URL, {
+      // Шаг 1: получаем presigned URL
+      setProgress(8);
+      const presignRes = await fetch(STORIES_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({
-          action: "upload",
-          content_type: file.type,
-          data,
-          duration: Math.round(duration),
-        }),
+        body: JSON.stringify({ action: "presign", content_type: file.type }),
       });
-      setProgress(95);
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
+      if (!presignRes.ok) {
+        const d = await presignRes.json().catch(() => ({}));
+        setError(d.error || "Ошибка подготовки загрузки");
+        return;
+      }
+      const { upload_url, key } = await presignRes.json();
+      setProgress(15);
+
+      // Шаг 2: PUT напрямую в S3 — без Content-Type заголовка (не в подписи)
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", upload_url);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(15 + Math.round((e.loaded / e.total) * 75));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Ошибка загрузки файла (${xhr.status})`));
+        };
+        xhr.onerror = () => reject(new Error("Ошибка соединения при загрузке"));
+        // Отправляем как Blob без Content-Type — S3 не проверяет его в подписи
+        xhr.send(new Blob([file]));
+      });
+      setProgress(92);
+
+      // Шаг 3: создаём запись истории
+      const createRes = await fetch(STORIES_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify({ action: "create", key, duration: Math.round(duration) }),
+      });
+      if (!createRes.ok) {
+        const d = await createRes.json().catch(() => ({}));
         setError(d.error || "Ошибка публикации");
         return;
       }
