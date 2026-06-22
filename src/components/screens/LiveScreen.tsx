@@ -254,7 +254,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
           stopAllPeers(); loadStreams(); return;
         }
         setActiveStream((prev) => prev ? { ...prev, viewers_count: res.stream.viewers_count, hearts_count: res.stream.hearts_count } : prev);
-        if (!isStreamingRef.current && res.stream.hearts_count > lastHeartsCountRef.current) {
+        if (res.stream.hearts_count > lastHeartsCountRef.current) {
           const diff = res.stream.hearts_count - lastHeartsCountRef.current;
           for (let i = 0; i < Math.min(diff, 5); i++) {
             const id = Date.now() + i;
@@ -389,6 +389,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
       setStreamTitle("");
       setActiveStream(res.stream);
       setChatMsgs([]); setLastMsgId(0); lastMsgIdRef.current = 0;
+      lastHeartsCountRef.current = 0;
       startStreamerSignaling(res.stream.id);
     } catch (e: unknown) {
       void e;
@@ -411,8 +412,6 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
     const text = chatInput.trim(); setChatInput("");
     try {
       const res = await liveApi.chat(activeStream.id, text);
-      lastMsgIdRef.current = res.message.id;
-      setLastMsgId(res.message.id);
       setChatMsgs((prev) => {
         if (prev.some((m) => m.id === res.message.id)) return prev;
         return [...prev, res.message];
