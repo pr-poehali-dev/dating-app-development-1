@@ -30,6 +30,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
           background: "rgba(12,8,22,0.85)",
           backdropFilter: "blur(40px) saturate(180%)",
           borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderRadius: "20px 20px 0 0",
           boxShadow: "0 -8px 32px rgba(0,0,0,0.4), 0 -1px 0 rgba(255,255,255,0.05)",
         }}>
         <div className="flex items-center justify-around">
