@@ -148,7 +148,7 @@ export function StoryViewer({ groups, initialGroupIndex = 0, onClose, currentUse
         <div className="absolute bottom-10 left-0 right-0 z-10 flex justify-center">
           <button
             onClick={async () => {
-              const token = localStorage.getItem("auth_token");
+              const token = localStorage.getItem("spark_token");
               await fetch(STORIES_URL, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json", "X-Auth-Token": token || "" },
