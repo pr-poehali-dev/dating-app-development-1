@@ -145,9 +145,11 @@ export function StoryViewer({ groups, initialGroupIndex = 0, onClose, currentUse
 
       {/* Кнопка удалить (своя история) */}
       {isOwn && (
-        <div className="absolute bottom-10 left-0 right-0 z-10 flex justify-center">
+        <div className="absolute bottom-10 left-0 right-0 z-40 flex justify-center pointer-events-none">
           <button
-            onClick={async () => {
+            onPointerDown={e => e.stopPropagation()}
+            onClick={async (e) => {
+              e.stopPropagation();
               const token = localStorage.getItem("spark_token");
               await fetch(STORIES_URL, {
                 method: "DELETE",
@@ -156,7 +158,7 @@ export function StoryViewer({ groups, initialGroupIndex = 0, onClose, currentUse
               });
               onClose();
             }}
-            className="flex items-center gap-2 bg-black/60 text-white/70 text-sm px-4 py-2 rounded-full border border-white/10"
+            className="flex items-center gap-2 bg-black/60 text-white/70 text-sm px-4 py-2 rounded-full border border-white/10 pointer-events-auto"
           >
             <Icon name="Trash2" size={15} />
             Удалить историю
