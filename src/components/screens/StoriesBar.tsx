@@ -53,22 +53,22 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
         {/* Добавить свою историю */}
         {onAddStory && (
           <button
-            onClick={handleSoonClick}
+            onClick={onAddStory}
             className="flex-shrink-0 flex flex-col items-center gap-2 active:scale-95 transition-transform"
             style={{ scrollSnapAlign: "start" }}>
-            <div className="relative opacity-60">
+            <div className="relative">
               <div className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
                 style={{
-                  background: "rgba(255,255,255,0.12)",
+                  background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
                   padding: "2px",
                 }}>
                 <div className="w-full h-full rounded-full flex items-center justify-center"
                   style={{ background: "#1a1625" }}>
-                  <Icon name="Clock" size={22} className="text-white/60" />
+                  <Icon name="Plus" size={22} className="text-white" />
                 </div>
               </div>
             </div>
-            <span className="text-white/40 text-[10px] font-medium w-[64px] text-center leading-tight">Скоро в обновлении</span>
+            <span className="text-white/70 text-[10px] font-medium w-[64px] text-center leading-tight">Моя история</span>
           </button>
         )}
 
