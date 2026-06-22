@@ -148,7 +148,7 @@ export function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
 }) {
   const items = [
     { icon: "Image", label: "Опубликовать фото", sub: "Поделись моментом", action: onPhoto, color: "#FF2D78", soon: false },
-    { icon: "Film", label: "Видеоистория", sub: "Короткое видео на 24 часа", action: onStory, color: "#9B59B6", soon: true },
+    { icon: "Film", label: "Видеоистория", sub: "Короткое видео на 24 часа", action: onStory, color: "#9B59B6", soon: false },
     { icon: "Radio", label: "Начать Live", sub: "Прямой эфир для всех", action: onLive, color: "#EF4444", soon: false },
   ];
   return (
