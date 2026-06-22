@@ -51,7 +51,7 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
 
     try {
       const duration = videoRef.current?.duration || 0;
-      const CHUNK = 3 * 1024 * 1024; // 3 МБ
+      const CHUNK = 1 * 1024 * 1024; // 1 МБ
 
       // Шаг 1: инициализация
       setProgress(5);
@@ -59,19 +59,17 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
 
       // Шаг 2: чанки
       const totalChunks = Math.ceil(file.size / CHUNK);
-      const parts: { etag: string; part_number: number }[] = [];
 
       for (let i = 0; i < totalChunks; i++) {
         const chunk = file.slice(i * CHUNK, (i + 1) * CHUNK);
         const data = await toBase64(chunk);
-        const part = await post({ action: "upload_chunk", upload_id, key, part_number: i + 1, data });
-        parts.push({ etag: part.etag, part_number: part.part_number });
+        await post({ action: "upload_chunk", upload_id, data });
         setProgress(5 + Math.round(((i + 1) / totalChunks) * 85));
       }
 
       // Шаг 3: завершение
       setProgress(92);
-      await post({ action: "upload_complete", upload_id, key, parts, duration: Math.round(duration) });
+      await post({ action: "upload_complete", upload_id, key, duration: Math.round(duration) });
 
       setProgress(100);
       onUploaded?.();

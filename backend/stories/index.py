@@ -1,7 +1,7 @@
 """
 Видеоистории: загрузка, получение и удаление сторис (24 часа).
 """
-import json, os, uuid, boto3, psycopg2
+import json, os, uuid, boto3, psycopg2, base64
 
 CORS = {
     "Access-Control-Allow-Origin": "*",
@@ -79,42 +79,54 @@ def handler(event: dict, context) -> dict:
         def ext_for(ct):
             return "mp4" if "mp4" in ct else ("webm" if "webm" in ct else "mov")
 
-        # Режим 1: инициализировать multipart upload
+        # Режим 1: инициализировать загрузку
         if action == "upload_init":
-            import base64
             content_type = body.get("content_type", "video/mp4")
+            upload_id = str(uuid.uuid4())
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext_for(content_type)}"
-            mp = s3.create_multipart_upload(Bucket="files", Key=key, ContentType=content_type)
-            return resp(200, {"upload_id": mp["UploadId"], "key": key})
+            tmp_path = f"/tmp/{upload_id}.bin"
+            open(tmp_path, "wb").close()
+            meta_path = f"/tmp/{upload_id}.meta"
+            with open(meta_path, "w") as mf:
+                json.dump({"key": key, "content_type": content_type}, mf)
+            return resp(200, {"upload_id": upload_id, "key": key})
 
-        # Режим 2: загрузить один чанк
+        # Режим 2: дописать чанк во временный файл
         if action == "upload_chunk":
-            import base64
             upload_id = body.get("upload_id", "")
-            key = body.get("key", "")
-            part_number = int(body.get("part_number", 1))
             data_b64 = body.get("data", "")
-            if not all([upload_id, key, data_b64]):
-                return resp(400, {"error": "upload_id, key, data обязательны"})
+            if not upload_id or not data_b64:
+                return resp(400, {"error": "upload_id и data обязательны"})
+            tmp_path = f"/tmp/{upload_id}.bin"
+            if not os.path.exists(tmp_path):
+                return resp(400, {"error": "Сессия загрузки не найдена, начни заново"})
             chunk_bytes = base64.b64decode(data_b64)
-            part = s3.upload_part(
-                Bucket="files", Key=key,
-                UploadId=upload_id, PartNumber=part_number, Body=chunk_bytes
-            )
-            return resp(200, {"etag": part["ETag"], "part_number": part_number})
+            with open(tmp_path, "ab") as f:
+                f.write(chunk_bytes)
+            return resp(200, {"ok": True})
 
-        # Режим 3: завершить multipart upload и создать историю
+        # Режим 3: завершить — загрузить в S3 и создать историю
         if action == "upload_complete":
             upload_id = body.get("upload_id", "")
             key = body.get("key", "")
-            parts = body.get("parts", [])
             duration = body.get("duration", 0)
-            if not all([upload_id, key, parts]):
-                return resp(400, {"error": "upload_id, key, parts обязательны"})
-            s3.complete_multipart_upload(
-                Bucket="files", Key=key, UploadId=upload_id,
-                MultipartUpload={"Parts": [{"ETag": p["etag"], "PartNumber": p["part_number"]} for p in parts]}
-            )
+            if not upload_id or not key:
+                return resp(400, {"error": "upload_id и key обязательны"})
+            tmp_path = f"/tmp/{upload_id}.bin"
+            meta_path = f"/tmp/{upload_id}.meta"
+            if not os.path.exists(tmp_path):
+                return resp(400, {"error": "Файл не найден, начни загрузку заново"})
+            content_type = "video/mp4"
+            if os.path.exists(meta_path):
+                with open(meta_path) as mf:
+                    meta = json.load(mf)
+                content_type = meta.get("content_type", content_type)
+            with open(tmp_path, "rb") as f:
+                video_bytes = f.read()
+            os.remove(tmp_path)
+            if os.path.exists(meta_path):
+                os.remove(meta_path)
+            s3.put_object(Bucket="files", Key=key, Body=video_bytes, ContentType=content_type)
             video_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             cur.execute(
                 "INSERT INTO stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
