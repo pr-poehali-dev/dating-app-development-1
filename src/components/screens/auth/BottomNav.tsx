@@ -27,11 +27,11 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
       <div
         className="relative z-10 px-4 pb-safe pt-2"
         style={{
-          background: "rgba(35,22,55,0.92)",
-          backdropFilter: "blur(40px) saturate(180%)",
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          background: "rgba(18,12,28,0.97)",
+          backdropFilter: "blur(24px)",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
           borderRadius: "20px 20px 0 0",
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.4), 0 -1px 0 rgba(255,255,255,0.05)",
+          boxShadow: "0 -4px 20px rgba(0,0,0,0.3)",
         }}>
         <div className="flex items-center justify-around">
           {items.map((item) => {
