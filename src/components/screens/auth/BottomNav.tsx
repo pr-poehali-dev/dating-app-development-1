@@ -12,81 +12,145 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
   ];
 
   return (
-    <div className="relative z-10 px-3 pb-3 pt-2"
-      style={{
-        background: "var(--spark-nav-bg)",
-        backdropFilter: "blur(32px)",
-        borderTop: "1px solid var(--spark-nav-border)",
-        boxShadow: "var(--spark-nav-shadow)",
-      }}>
-      {/* Плавающая таблетка */}
-      <div className="flex items-center justify-around rounded-2xl px-1 py-1"
+    <>
+      <style>{`
+        @keyframes navPing {
+          0%   { transform: scale(1); opacity: 1; }
+          75%  { transform: scale(2); opacity: 0; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+        @keyframes navGlow {
+          0%, 100% { opacity: 0.7; }
+          50%       { opacity: 1; }
+        }
+      `}</style>
+      <div
+        className="relative z-10 px-4 pb-safe pt-2"
         style={{
-          background: "var(--spark-nav-pill)",
-          border: "1px solid var(--spark-nav-pill-border)",
+          background: "rgba(12,8,22,0.85)",
+          backdropFilter: "blur(40px) saturate(180%)",
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "0 -8px 32px rgba(0,0,0,0.4), 0 -1px 0 rgba(255,255,255,0.05)",
         }}>
-        {items.map((item) => {
-          const isActive = active === item.screen;
-          const isLive = item.screen === "live";
-          return (
-            <button
-              key={item.screen}
-              onClick={() => onChange(item.screen)}
-              className="relative flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all duration-200 active:scale-90"
-              style={{
-                minWidth: 52,
-                background: isActive
-                  ? "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.2))"
-                  : "transparent",
-              }}>
+        <div className="flex items-center justify-around">
+          {items.map((item) => {
+            const isActive = active === item.screen;
+            const isLive = item.screen === "live";
 
-              {/* Иконка */}
-              <div className="relative">
-                <Icon
-                  name={item.icon as "Sparkles"|"Compass"|"Flame"|"MessageCircle"|"CircleUser"}
-                  size={22}
-                  strokeWidth={isActive ? 2.2 : 1.6}
+            return (
+              <button
+                key={item.screen}
+                onClick={() => onChange(item.screen)}
+                className="relative flex flex-col items-center gap-1.5 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-90"
+              >
+                {/* Активный фон-пятно */}
+                {isActive && (
+                  <div
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: isLive
+                        ? "radial-gradient(ellipse at center, rgba(255,107,53,0.18) 0%, transparent 70%)"
+                        : "radial-gradient(ellipse at center, rgba(255,45,120,0.2) 0%, transparent 70%)",
+                    }}
+                  />
+                )}
+
+                {/* Иконка */}
+                <div className="relative">
+                  <div
+                    style={{
+                      filter: isActive
+                        ? isLive
+                          ? "drop-shadow(0 0 8px rgba(255,107,53,0.8))"
+                          : "drop-shadow(0 0 8px rgba(255,45,120,0.8))"
+                        : "none",
+                      transition: "filter 0.2s",
+                    }}
+                  >
+                    <Icon
+                      name={item.icon as "Sparkles"|"Compass"|"Flame"|"MessageCircle"|"CircleUser"}
+                      size={24}
+                      strokeWidth={isActive ? 2.5 : 1.5}
+                      style={{
+                        color: isActive
+                          ? isLive ? "#FF6B35" : "#FF2D78"
+                          : isLive
+                          ? "rgba(255,107,53,0.7)"
+                          : "rgba(255,255,255,0.35)",
+                        transition: "color 0.2s",
+                      }}
+                    />
+                  </div>
+
+                  {/* Бейдж */}
+                  {item.badge && (
+                    <div
+                      className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] text-white font-black"
+                      style={{
+                        background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
+                        boxShadow: "0 2px 8px rgba(255,45,120,0.7)",
+                      }}
+                    >
+                      {item.badge > 9 ? "9+" : item.badge}
+                    </div>
+                  )}
+
+                  {/* Пульс Live */}
+                  {isLive && !isActive && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
+                      style={{ background: "#FF6B35" }}
+                    >
+                      <span
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                          background: "#FF6B35",
+                          animation: "navPing 1.8s ease-out infinite",
+                        }}
+                      />
+                    </span>
+                  )}
+                </div>
+
+                {/* Лейбл */}
+                <span
+                  className="text-[10px] leading-none font-medium tracking-wide"
                   style={{
                     color: isActive
-                      ? "#FF2D78"
-                      : isLive
-                      ? "#FF6B35"
-                      : "var(--spark-nav-icon)",
-                    filter: isActive ? "drop-shadow(0 0 6px rgba(255,45,120,0.6))" : "none",
+                      ? isLive ? "#FF6B35" : "#FF2D78"
+                      : "rgba(255,255,255,0.3)",
+                    fontWeight: isActive ? 700 : 500,
+                    transition: "color 0.2s",
+                  }}
+                >
+                  {item.label}
+                </span>
+
+                {/* Точка-индикатор под активным */}
+                <div
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: isLive
+                      ? "linear-gradient(135deg,#FF6B35,#FFD700)"
+                      : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                    boxShadow: isActive
+                      ? isLive
+                        ? "0 0 8px rgba(255,107,53,0.9)"
+                        : "0 0 8px rgba(255,45,120,0.9)"
+                      : "none",
+                    opacity: isActive ? 1 : 0,
+                    transform: isActive ? "scale(1)" : "scale(0)",
+                    transition: "all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+                    marginTop: -2,
                   }}
                 />
-                {item.badge && (
-                  <div className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] text-white font-black"
-                    style={{
-                      background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
-                      boxShadow: "0 2px 8px rgba(255,45,120,0.6)",
-                    }}>
-                    {item.badge > 9 ? "9+" : item.badge}
-                  </div>
-                )}
-                {/* Пульс для Live */}
-                {isLive && !isActive && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full"
-                    style={{ background: "#FF6B35", boxShadow: "0 0 0 0 rgba(255,107,53,0.6)", animation: "ping 1.5s infinite" }} />
-                )}
-              </div>
-
-              {/* Лейбл */}
-              <span className="text-[10px] font-semibold leading-none"
-                style={{
-                  color: isActive
-                    ? "#FF2D78"
-                    : isLive
-                    ? "#FF6B35"
-                    : "var(--spark-nav-label)",
-                }}>
-                {item.label}
-              </span>
-
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
