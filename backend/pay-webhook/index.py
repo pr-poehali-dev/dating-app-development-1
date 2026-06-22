@@ -64,6 +64,31 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
     )
 
 
+def _apply_promo_from_metadata(cur, metadata: dict, user_id: int) -> None:
+    """Списывает промокод после успешной оплаты (если был передан)."""
+    promo_id = metadata.get('promo_id')
+    if not promo_id or not user_id:
+        return
+    try:
+        promo_id = int(promo_id)
+    except (TypeError, ValueError):
+        return
+    cur.execute(
+        "SELECT id FROM promo_code_uses WHERE promo_code_id = %s AND user_id = %s LIMIT 1",
+        (promo_id, user_id)
+    )
+    if cur.fetchone():
+        return
+    cur.execute(
+        "INSERT INTO promo_code_uses (promo_code_id, user_id) VALUES (%s, %s)",
+        (promo_id, user_id)
+    )
+    cur.execute(
+        "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s",
+        (promo_id,)
+    )
+
+
 def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
     """Активирует Premium после успешной оплаты подписки."""
     kind = metadata.get('kind', '') if metadata else ''
@@ -248,6 +273,7 @@ def handler(event: dict, context) -> dict:
             _create_gift_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _create_boost_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _create_premium_from_metadata(cur, payment_id, effective_metadata)
+            _apply_promo_from_metadata(cur, effective_metadata, _int(effective_metadata.get('user_id')))
 
         elif event_type == 'payment.canceled':
             cur.execute(

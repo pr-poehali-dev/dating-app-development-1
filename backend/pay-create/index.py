@@ -6,7 +6,7 @@ import psycopg2
 import urllib.request
 import urllib.parse
 import base64
-from datetime import datetime
+import datetime
 
 
 HEADERS_CORS = {
@@ -44,6 +44,7 @@ def handler(event: dict, context) -> dict:
     user_email = data.get('user_email', '')
     return_url = data.get('return_url', '')
     metadata = data.get('metadata', {})
+    promo_code = (metadata.get('promo_code') or '').strip().upper()
 
     if not amount or not return_url:
         return {
@@ -52,6 +53,52 @@ def handler(event: dict, context) -> dict:
             'body': json.dumps({'error': 'amount and return_url are required'}),
             'isBase64Encoded': False
         }
+
+    # Проверяем промокод и пересчитываем сумму на сервере
+    schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+    if promo_code:
+        dsn_check = os.environ.get('DATABASE_URL')
+        if dsn_check:
+            conn_check = psycopg2.connect(dsn_check, options=f"-c search_path={schema}")
+            cur_check = conn_check.cursor()
+            cur_check.execute(
+                "SELECT id, discount_percent, max_uses, used_count, expires_at, active "
+                "FROM promo_codes WHERE code = %s", (promo_code,)
+            )
+            promo_row = cur_check.fetchone()
+            user_id_int = int(metadata.get('user_id', 0) or 0)
+            promo_valid = False
+            promo_discount = 0
+            promo_id_val = None
+            if promo_row:
+                p_id, p_disc, p_max, p_used, p_exp, p_active = promo_row
+                now_utc = datetime.datetime.now(datetime.timezone.utc)
+                expired = p_exp and p_exp.tzinfo and now_utc > p_exp
+                if p_active and not expired and p_used < p_max:
+                    if user_id_int:
+                        cur_check.execute(
+                            "SELECT id FROM promo_code_uses WHERE promo_code_id = %s AND user_id = %s",
+                            (p_id, user_id_int)
+                        )
+                        already_used = cur_check.fetchone()
+                    else:
+                        already_used = None
+                    if not already_used:
+                        promo_valid = True
+                        promo_discount = p_disc
+                        promo_id_val = p_id
+            conn_check.close()
+            if not promo_valid:
+                return {
+                    'statusCode': 400,
+                    'headers': HEADERS_CORS,
+                    'body': json.dumps({'error': 'Промокод недействителен или уже использован'}),
+                    'isBase64Encoded': False
+                }
+            # Применяем скидку
+            amount = round(float(amount) * (1 - promo_discount / 100), 2)
+            metadata['promo_id'] = promo_id_val
+            metadata['promo_discount'] = promo_discount
 
     idempotence_key = str(uuid.uuid4())
 

@@ -407,9 +407,7 @@ def handler(event: dict, context) -> dict:
             cur.execute("SELECT id FROM promo_code_uses WHERE promo_code_id = %s AND user_id = %s", (promo_id, me['id']))
             if cur.fetchone():
                 return resp(400, {'error': 'Ты уже использовал этот промокод'})
-            cur.execute("INSERT INTO promo_code_uses (promo_code_id, user_id) VALUES (%s, %s)", (promo_id, me['id']))
-            cur.execute("UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s", (promo_id,))
-            conn.commit()
+            # Промокод не списываем здесь — он будет применён при оплате
             return resp(200, {'ok': True, 'discount_percent': discount, 'code': code})
 
         # Фото галереи другого пользователя

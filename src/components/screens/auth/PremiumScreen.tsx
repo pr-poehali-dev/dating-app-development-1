@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { postsApi2 } from "@/lib/api";
+import { postsApi2, profilesApi } from "@/lib/api";
 
 const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/defb6829-9c31-4270-b350-feadf9619079.jpg";
 
@@ -33,6 +33,28 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
   const [selected, setSelected] = useState(defaultSelected >= 0 ? defaultSelected : 1);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
+  const [promoCode, setPromoCode] = useState("");
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoError, setPromoError] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoApplied, setPromoApplied] = useState("");
+
+  const handleApplyPromo = async () => {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    setPromoLoading(true); setPromoError("");
+    try {
+      const res = await profilesApi.activatePromo(code);
+      setPromoDiscount(res.discount_percent);
+      setPromoApplied(res.code);
+      setPromoError("");
+    } catch (e: unknown) {
+      setPromoDiscount(0); setPromoApplied("");
+      setPromoError(e instanceof Error ? e.message : "Промокод не найден");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   const features = [
     { icon: "Heart",     label: "Безлимитные лайки каждый день" },
@@ -255,6 +277,50 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
         ))}
       </div>
 
+      {/* Промокод */}
+      <div className="px-4 mb-4">
+        {!promoApplied ? (
+          <div className="flex gap-2">
+            <input
+              value={promoCode}
+              onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleApplyPromo()}
+              placeholder="Промокод"
+              maxLength={32}
+              className="flex-1 px-3.5 py-2.5 rounded-2xl text-white text-sm font-mono font-semibold tracking-widest outline-none"
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: promoError ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                caretColor: "#FF2D78",
+              }}
+            />
+            <button
+              onClick={handleApplyPromo}
+              disabled={promoLoading || !promoCode.trim()}
+              className="px-4 py-2.5 rounded-2xl text-white text-sm font-bold disabled:opacity-40 transition-all active:scale-95"
+              style={{ background: "rgba(255,45,120,0.25)", border: "1px solid rgba(255,45,120,0.3)" }}>
+              {promoLoading
+                ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin block" />
+                : "Применить"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl"
+            style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }}>
+            <div className="flex items-center gap-2">
+              <Icon name="Tag" size={14} className="text-emerald-400" />
+              <span className="text-emerald-400 text-sm font-bold font-mono">{promoApplied}</span>
+              <span className="text-emerald-400 text-sm font-black">−{promoDiscount}%</span>
+            </div>
+            <button onClick={() => { setPromoApplied(""); setPromoDiscount(0); setPromoCode(""); }}
+              className="text-white/30 hover:text-white/60 transition-colors">
+              <Icon name="X" size={14} />
+            </button>
+          </div>
+        )}
+        {promoError && <p className="text-red-400 text-xs mt-1.5 px-1">{promoError}</p>}
+      </div>
+
       {/* Кнопка оплаты */}
       <div className="px-4 pb-8">
         {error && <p className="text-red-400 text-xs text-center mb-3">{error}</p>}
@@ -265,22 +331,32 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
             setPaying(true); setError("");
             try {
               const plan = plans[selected];
+              const rawAmount = plan.amount;
+              const finalAmount = promoDiscount > 0
+                ? Math.round(rawAmount * (1 - promoDiscount / 100))
+                : rawAmount;
               const res = await fetch("https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  amount: plan.amount,
-                  description: `LoveBloom Premium — ${plan.label}`,
+                  amount: finalAmount,
+                  description: `LoveBloom Premium — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
                   user_email: currentUser.email,
                   return_url: window.location.origin + "/?payment=success",
-                  metadata: { user_id: String(currentUser.id), user_name: currentUser.name, plan: plan.plan },
+                  metadata: {
+                    user_id: String(currentUser.id),
+                    user_name: currentUser.name,
+                    plan: plan.plan,
+                    promo_code: promoApplied || undefined,
+                    promo_discount: promoDiscount || undefined,
+                  },
                 }),
               });
               const data = await res.json();
               if (data.payment_url) {
                 window.location.href = data.payment_url;
               } else {
-                setError("Ошибка создания платежа. Попробуй ещё раз.");
+                setError(data.error || "Ошибка создания платежа. Попробуй ещё раз.");
               }
             } catch {
               setError("Ошибка соединения. Попробуй ещё раз.");
@@ -291,7 +367,9 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
           className="prem-btn w-full py-4 text-base font-black text-white disabled:opacity-60 flex items-center justify-center gap-2">
           {paying
             ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
-            : `Оплатить ${plans[selected].total || plans[selected].price}`
+            : promoDiscount > 0
+              ? `Оплатить ${Math.round(plans[selected].amount * (1 - promoDiscount / 100)).toLocaleString("ru")} ₽`
+              : `Оплатить ${plans[selected].total || plans[selected].price}`
           }
         </button>
         <p className="text-white/20 text-xs text-center mt-3 leading-relaxed">
