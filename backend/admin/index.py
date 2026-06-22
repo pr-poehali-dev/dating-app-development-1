@@ -759,6 +759,63 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Публикация поста от LoveBloom ────────────────────────────────────
+        if action == 'admin_post_create':
+            photo_url = body.get('photo_url', '').strip()
+            caption = body.get('caption', '').strip()
+            if not photo_url:
+                return resp(400, {'error': 'photo_url обязателен'})
+            LBLOOM_EMAIL = 'system@lbloom.ru'
+            LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg'
+            cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
+            row = cur.fetchone()
+            if row:
+                sys_id = row[0]
+            else:
+                cur.execute(
+                    "INSERT INTO users (name, email, password_hash, photo_url, verified) "
+                    "VALUES ('LoveBloom', %s, 'system', %s, TRUE) RETURNING id",
+                    (LBLOOM_EMAIL, LBLOOM_PHOTO)
+                )
+                sys_id = cur.fetchone()[0]
+            cur.execute(
+                "INSERT INTO posts (user_id, photo_url, caption) VALUES (%s, %s, %s) RETURNING id, created_at",
+                (sys_id, photo_url, caption or None)
+            )
+            post_row = cur.fetchone()
+            conn.commit()
+            return resp(200, {'ok': True, 'post_id': post_row[0], 'created_at': str(post_row[1])})
+
+        # ── Список постов от LoveBloom ────────────────────────────────────────
+        if action == 'admin_posts_list':
+            LBLOOM_EMAIL = 'system@lbloom.ru'
+            cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
+            row = cur.fetchone()
+            if not row:
+                return resp(200, {'posts': []})
+            sys_id = row[0]
+            cur.execute(
+                "SELECT p.id, p.photo_url, p.caption, p.created_at, "
+                "COUNT(DISTINCT pl.id) as likes "
+                "FROM posts p LEFT JOIN post_likes pl ON pl.post_id = p.id "
+                "WHERE p.user_id = %s GROUP BY p.id ORDER BY p.created_at DESC LIMIT 50",
+                (sys_id,)
+            )
+            cols = ['id', 'photo_url', 'caption', 'created_at', 'likes']
+            posts = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'posts': posts})
+
+        # ── Удалить пост LoveBloom ────────────────────────────────────────────
+        if action == 'admin_post_delete':
+            post_id = body.get('id')
+            if not post_id:
+                return resp(400, {'error': 'id обязателен'})
+            cur.execute("DELETE FROM post_likes WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM post_comments WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM posts WHERE id = %s", (post_id,))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # ── Запросы от органов власти: список ────────────────────────────────
         if action == 'gov_requests':
             cur.execute("""

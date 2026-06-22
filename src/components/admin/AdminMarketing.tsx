@@ -25,8 +25,22 @@ function SectionSwitch({ options, value, onChange }: {
   );
 }
 
+const ADMIN_URL = "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18";
+const LBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg";
+
+async function adminReq(token: string, action: string, body?: object) {
+  const res = await fetch(`${ADMIN_URL}?action=${action}`, {
+    method: body ? "POST" : "GET",
+    headers: { "Content-Type": "application/json", "X-Admin-Token": token },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return res.json();
+}
+
+type LBPost = { id: number; photo_url: string; caption: string | null; created_at: string; likes: number };
+
 export function MarketingTab({ token }: { token: string }) {
-  const [section, setSection] = useState<"push" | "banners">("push");
+  const [section, setSection] = useState<"push" | "banners" | "posts">("push");
 
   // ── Push ─────────────────────────────────────────────────────────────────────
   const [pushTitle, setPushTitle] = useState("");
@@ -70,7 +84,46 @@ export function MarketingTab({ token }: { token: string }) {
     await adminApi.bannerSave(token, { ...b, active: !b.active }).catch(() => {}); loadBanners();
   };
 
-  useEffect(() => { if (section === "banners") loadBanners(); }, [section]);
+  // ── Посты LoveBloom ──────────────────────────────────────────────────────────
+  const [posts, setPosts] = useState<LBPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postPhotoUrl, setPostPhotoUrl] = useState("");
+  const [postCaption, setPostCaption] = useState("");
+  const [postSaving, setPostSaving] = useState(false);
+  const [postResult, setPostResult] = useState<string | null>(null);
+
+  const loadPosts = () => {
+    setPostsLoading(true);
+    adminReq(token, "admin_posts_list")
+      .then(d => setPosts(d.posts || []))
+      .finally(() => setPostsLoading(false));
+  };
+
+  const handlePostCreate = async () => {
+    if (!postPhotoUrl.trim()) return;
+    setPostSaving(true); setPostResult(null);
+    try {
+      const r = await adminReq(token, "admin_post_create", { photo_url: postPhotoUrl.trim(), caption: postCaption.trim() });
+      if (r.ok) {
+        setPostResult("Пост опубликован в ленте!");
+        setPostPhotoUrl(""); setPostCaption("");
+        loadPosts();
+      } else {
+        setPostResult(r.error || "Ошибка");
+      }
+    } finally { setPostSaving(false); }
+  };
+
+  const handlePostDelete = async (id: number) => {
+    if (!confirm("Удалить пост из ленты?")) return;
+    await adminReq(token, "admin_post_delete", { id });
+    loadPosts();
+  };
+
+  useEffect(() => {
+    if (section === "banners") loadBanners();
+    else if (section === "posts") loadPosts();
+  }, [section]);
 
   const segments = [
     { id: "all",      label: "Все",          icon: "Users" },
@@ -81,10 +134,11 @@ export function MarketingTab({ token }: { token: string }) {
   return (
     <div className="flex flex-col gap-4">
       <SectionSwitch
-        value={section} onChange={v => setSection(v as "push" | "banners")}
+        value={section} onChange={v => setSection(v as "push" | "banners" | "posts")}
         options={[
           { id: "push",    label: "Push-рассылка", icon: "Bell" },
           { id: "banners", label: "Баннеры",        icon: "Image" },
+          { id: "posts",   label: "Посты",          icon: "Heart" },
         ]}
       />
 
@@ -290,6 +344,117 @@ export function MarketingTab({ token }: { token: string }) {
                       style={{ background: "rgba(239,68,68,0.1)" }}>
                       <Icon name="Trash2" size={12} style={{ color: "#F87171" }} />
                     </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ══ ПОСТЫ LOVEBLOOM ══ */}
+      {section === "posts" && (
+        <div className="flex flex-col gap-4">
+          {/* Форма публикации */}
+          <div className="rounded-2xl p-4 flex flex-col gap-3"
+            style={{ background: "rgba(255,45,120,0.05)", border: "1px solid rgba(255,45,120,0.18)" }}>
+            {/* Превью автора */}
+            <div className="flex items-center gap-3 pb-3"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <img src={LBLOOM_ICON} className="w-10 h-10 rounded-full object-cover"
+                style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
+              <div>
+                <p className="text-white font-bold text-sm">LoveBloom</p>
+                <p className="text-white/35 text-xs">Официальный аккаунт · публикация в ленте</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">URL изображения</label>
+              <input value={postPhotoUrl} onChange={e => setPostPhotoUrl(e.target.value)}
+                placeholder="https://cdn.poehali.dev/..."
+                className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+            </div>
+
+            {/* Превью фото */}
+            {postPhotoUrl.trim() && (
+              <div className="rounded-xl overflow-hidden" style={{ maxHeight: 240 }}>
+                <img src={postPhotoUrl.trim()} alt="preview" className="w-full object-cover"
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1">
+              <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Подпись (необязательно)</label>
+              <textarea value={postCaption} onChange={e => setPostCaption(e.target.value)}
+                placeholder="Текст поста от LoveBloom..." rows={3} maxLength={500}
+                className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+              <div className="flex justify-end">
+                <span className="text-white/20 text-xs">{postCaption.length}/500</span>
+              </div>
+            </div>
+
+            <button onClick={handlePostCreate} disabled={postSaving || !postPhotoUrl.trim()}
+              className="py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
+              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+              {postSaving
+                ? <><span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Публикую...</>
+                : <><Icon name="Send" size={15} />Опубликовать в ленте</>}
+            </button>
+
+            {postResult && (
+              <div className="px-3 py-2.5 rounded-xl text-sm text-center font-semibold"
+                style={{
+                  background: postResult.includes("Пост") ? "rgba(74,222,128,0.1)" : "rgba(239,68,68,0.1)",
+                  color: postResult.includes("Пост") ? "#4ADE80" : "#F87171",
+                }}>
+                {postResult}
+              </div>
+            )}
+          </div>
+
+          {/* Опубликованные посты */}
+          <div className="flex items-center justify-between px-1">
+            <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Опубликованные посты</p>
+            <button onClick={loadPosts} className="text-white/30 hover:text-white/60 transition-colors">
+              <Icon name="RefreshCw" size={13} />
+            </button>
+          </div>
+
+          {postsLoading ? <Spinner /> : posts.length === 0 ? (
+            <div className="flex flex-col items-center py-10 gap-3">
+              <Icon name="ImageOff" size={28} className="text-white/15" />
+              <p className="text-white/25 text-sm">Постов ещё нет</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {posts.map(p => (
+                <div key={p.id} className="rounded-2xl overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  {/* Шапка */}
+                  <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
+                    <img src={LBLOOM_ICON} className="w-7 h-7 rounded-full object-cover" />
+                    <div className="flex-1">
+                      <p className="text-white font-semibold text-xs">LoveBloom</p>
+                      <p className="text-white/30 text-[10px]">{new Date(p.created_at).toLocaleString("ru", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+                    </div>
+                    <button onClick={() => handlePostDelete(p.id)}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90"
+                      style={{ background: "rgba(239,68,68,0.1)" }}>
+                      <Icon name="Trash2" size={12} style={{ color: "#F87171" }} />
+                    </button>
+                  </div>
+                  {/* Фото */}
+                  <img src={p.photo_url} alt="" className="w-full object-cover" style={{ maxHeight: 200 }} />
+                  {/* Подпись + лайки */}
+                  <div className="px-3 py-2.5 flex items-center gap-3">
+                    {p.caption && <p className="text-white/70 text-xs flex-1 leading-relaxed">{p.caption}</p>}
+                    <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                      <Icon name="Heart" size={12} className="text-pink-400" />
+                      <span className="text-white/40 text-xs">{p.likes}</span>
+                    </div>
                   </div>
                 </div>
               ))}
