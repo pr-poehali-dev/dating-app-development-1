@@ -29,53 +29,49 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
     setProgress(0);
     setError("");
 
-    try {
+    const post = async (body: object) => {
       const token = localStorage.getItem("spark_token") || "";
+      const res = await fetch(STORIES_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": token },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || `Ошибка ${res.status}`);
+      return d;
+    };
+
+    const toBase64 = (blob: Blob): Promise<string> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("Ошибка чтения файла"));
+        reader.readAsDataURL(blob);
+      });
+
+    try {
       const duration = videoRef.current?.duration || 0;
+      const CHUNK = 3 * 1024 * 1024; // 3 МБ
 
-      // Шаг 1: получаем presigned URL
-      setProgress(8);
-      const presignRes = await fetch(STORIES_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ action: "presign", content_type: file.type }),
-      });
-      if (!presignRes.ok) {
-        const d = await presignRes.json().catch(() => ({}));
-        setError(d.error || "Ошибка подготовки загрузки");
-        return;
+      // Шаг 1: инициализация
+      setProgress(5);
+      const { upload_id, key } = await post({ action: "upload_init", content_type: file.type });
+
+      // Шаг 2: чанки
+      const totalChunks = Math.ceil(file.size / CHUNK);
+      const parts: { etag: string; part_number: number }[] = [];
+
+      for (let i = 0; i < totalChunks; i++) {
+        const chunk = file.slice(i * CHUNK, (i + 1) * CHUNK);
+        const data = await toBase64(chunk);
+        const part = await post({ action: "upload_chunk", upload_id, key, part_number: i + 1, data });
+        parts.push({ etag: part.etag, part_number: part.part_number });
+        setProgress(5 + Math.round(((i + 1) / totalChunks) * 85));
       }
-      const { upload_url, key } = await presignRes.json();
-      setProgress(15);
 
-      // Шаг 2: PUT напрямую в S3 — без Content-Type заголовка (не в подписи)
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", upload_url);
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(15 + Math.round((e.loaded / e.total) * 75));
-        };
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Ошибка загрузки файла (${xhr.status})`));
-        };
-        xhr.onerror = () => reject(new Error("Ошибка соединения при загрузке"));
-        // Отправляем как Blob без Content-Type — S3 не проверяет его в подписи
-        xhr.send(new Blob([file]));
-      });
+      // Шаг 3: завершение
       setProgress(92);
-
-      // Шаг 3: создаём запись истории
-      const createRes = await fetch(STORIES_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ action: "create", key, duration: Math.round(duration) }),
-      });
-      if (!createRes.ok) {
-        const d = await createRes.json().catch(() => ({}));
-        setError(d.error || "Ошибка публикации");
-        return;
-      }
+      await post({ action: "upload_complete", upload_id, key, parts, duration: Math.round(duration) });
 
       setProgress(100);
       onUploaded?.();

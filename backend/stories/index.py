@@ -79,18 +79,52 @@ def handler(event: dict, context) -> dict:
         def ext_for(ct):
             return "mp4" if "mp4" in ct else ("webm" if "webm" in ct else "mov")
 
-        # Режим 1: presigned URL (без ContentType в подписи — браузер не ставит его автоматически)
-        if action == "presign":
+        # Режим 1: инициализировать multipart upload
+        if action == "upload_init":
+            import base64
             content_type = body.get("content_type", "video/mp4")
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext_for(content_type)}"
-            upload_url = s3.generate_presigned_url(
-                "put_object",
-                Params={"Bucket": "files", "Key": key},
-                ExpiresIn=600,
-            )
-            return resp(200, {"upload_url": upload_url, "key": key})
+            mp = s3.create_multipart_upload(Bucket="files", Key=key, ContentType=content_type)
+            return resp(200, {"upload_id": mp["UploadId"], "key": key})
 
-        # Режим 2: создать запись в БД после успешной прямой загрузки
+        # Режим 2: загрузить один чанк
+        if action == "upload_chunk":
+            import base64
+            upload_id = body.get("upload_id", "")
+            key = body.get("key", "")
+            part_number = int(body.get("part_number", 1))
+            data_b64 = body.get("data", "")
+            if not all([upload_id, key, data_b64]):
+                return resp(400, {"error": "upload_id, key, data обязательны"})
+            chunk_bytes = base64.b64decode(data_b64)
+            part = s3.upload_part(
+                Bucket="files", Key=key,
+                UploadId=upload_id, PartNumber=part_number, Body=chunk_bytes
+            )
+            return resp(200, {"etag": part["ETag"], "part_number": part_number})
+
+        # Режим 3: завершить multipart upload и создать историю
+        if action == "upload_complete":
+            upload_id = body.get("upload_id", "")
+            key = body.get("key", "")
+            parts = body.get("parts", [])
+            duration = body.get("duration", 0)
+            if not all([upload_id, key, parts]):
+                return resp(400, {"error": "upload_id, key, parts обязательны"})
+            s3.complete_multipart_upload(
+                Bucket="files", Key=key, UploadId=upload_id,
+                MultipartUpload={"Parts": [{"ETag": p["etag"], "PartNumber": p["part_number"]} for p in parts]}
+            )
+            video_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            cur.execute(
+                "INSERT INTO stories (user_id, video_url, duration) VALUES (%s, %s, %s) RETURNING id, created_at, expires_at",
+                (user[0], video_url, duration)
+            )
+            row = cur.fetchone()
+            conn.commit()
+            return resp(200, {"id": row[0], "video_url": video_url, "created_at": str(row[1]), "expires_at": str(row[2])})
+
+        # Режим 4 (legacy): создать запись в БД после прямой загрузки
         if action == "create":
             key = body.get("key") or ""
             duration = body.get("duration", 0)
