@@ -151,7 +151,16 @@ export function SecurityTab({ token }: { token: string }) {
     setGovExporting(req.id);
     try {
       const res = await adminReq(token, "gov_request_export", { id: req.id });
-      setGovExportData({ id: req.id, data: res.user_data });
+      // Сохраняем данные для показа
+      setGovExportData({ id: req.id, data: res.user_data || {} });
+      // Скачиваем JSON-файл
+      const blob = new Blob([JSON.stringify(res.user_data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gov_request_${req.id}_${req.request_number || req.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
       loadGovReqs();
     } finally { setGovExporting(null); }
   };
@@ -388,24 +397,54 @@ export function SecurityTab({ token }: { token: string }) {
 
                   {/* Данные после экспорта */}
                   {govExportData?.id === req.id && (
-                    <div className="rounded-xl p-3 flex flex-col gap-1"
+                    <div className="rounded-xl p-3 flex flex-col gap-2"
                       style={{ background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.2)" }}>
-                      <p className="text-blue-400 text-[11px] font-bold mb-1">Данные пользователя</p>
-                      <pre className="text-white/60 text-[10px] leading-relaxed overflow-auto max-h-48 whitespace-pre-wrap">
+                      <div className="flex items-center justify-between">
+                        <p className="text-blue-400 text-[11px] font-bold">Выгруженные данные</p>
+                        <button
+                          onClick={() => {
+                            const blob = new Blob([JSON.stringify(govExportData.data, null, 2)], { type: "application/json" });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url; a.download = `gov_${req.id}.json`; a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="flex items-center gap-1 text-blue-400 text-[10px] font-bold hover:text-blue-300">
+                          <Icon name="Download" size={11} />Скачать снова
+                        </button>
+                      </div>
+                      <pre className="text-white/55 text-[10px] leading-relaxed overflow-auto max-h-52 whitespace-pre-wrap rounded-lg p-2"
+                        style={{ background: "rgba(0,0,0,0.3)" }}>
                         {JSON.stringify(govExportData.data, null, 2)}
                       </pre>
                     </div>
                   )}
 
+                  {/* Заметки администратора */}
+                  {req.admin_notes && (
+                    <div className="flex items-start gap-2 px-3 py-2 rounded-xl"
+                      style={{ background: "rgba(255,255,255,0.04)" }}>
+                      <Icon name="StickyNote" size={12} className="text-white/30 mt-0.5 flex-shrink-0" />
+                      <p className="text-white/50 text-xs">{req.admin_notes}</p>
+                    </div>
+                  )}
+
                   {/* Действия */}
                   <div className="flex gap-2 flex-wrap">
-                    {req.user_email && req.status !== "closed" && (
+                    {req.status !== "closed" && (
                       <button onClick={() => handleGovExport(req)} disabled={govExporting === req.id}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
                         style={{ background: "rgba(59,130,246,0.15)", color: "#60A5FA", border: "1px solid rgba(59,130,246,0.3)" }}>
                         {govExporting === req.id
                           ? <><span className="w-3 h-3 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />Выгрузка...</>
-                          : <><Icon name="Download" size={12} />Выгрузить данные</>}
+                          : <><Icon name="Download" size={12} />{req.data_exported_at ? "Выгрузить снова" : "Выгрузить данные"}</>}
+                      </button>
+                    )}
+                    {req.status !== "exported" && req.status !== "closed" && (
+                      <button onClick={() => handleGovStatus(req.id, "exported")}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        style={{ background: "rgba(96,165,250,0.1)", color: "#60A5FA", border: "1px solid rgba(96,165,250,0.2)" }}>
+                        <Icon name="Send" size={12} />Данные переданы
                       </button>
                     )}
                     {req.status !== "closed" && (

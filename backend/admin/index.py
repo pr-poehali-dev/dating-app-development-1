@@ -805,7 +805,13 @@ def handler(event: dict, context) -> dict:
             if not row:
                 return resp(404, {'error': 'Запрос не найден'})
             user_id, user_email = row
-            user_data = {}
+            user_data = {'request_id': req_id, 'user_email': user_email}
+            # Если user_id не сохранён, ищем по email
+            if not user_id and user_email:
+                cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (user_email,))
+                found = cur.fetchone()
+                if found:
+                    user_id = found[0]
             if user_id:
                 cur.execute(
                     "SELECT id, name, email, username, age, city, bio, gender, created_at, last_seen, premium "
