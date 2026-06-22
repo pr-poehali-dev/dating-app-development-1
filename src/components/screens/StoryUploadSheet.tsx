@@ -45,19 +45,20 @@ export function StoryUploadSheet({ onClose, onUploaded }: {
         setError(d.error || "Ошибка подготовки загрузки");
         return;
       }
-      const { upload_url, key } = await presignRes.json();
+      const { upload_url, key, content_type } = await presignRes.json();
       setProgress(15);
 
-      // Шаг 2: грузим файл напрямую в хранилище (без ручного Content-Type — он не в подписи)
+      // Шаг 2: грузим файл напрямую в хранилище (Content-Type включён в подпись)
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", upload_url);
+        xhr.setRequestHeader("Content-Type", content_type || file.type);
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(15 + Math.round((e.loaded / e.total) * 75));
         };
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Хранилище вернуло ошибку ${xhr.status}`));
+          else reject(new Error(`Ошибка загрузки файла (${xhr.status})`));
         };
         xhr.onerror = () => reject(new Error("Ошибка загрузки файла"));
         xhr.send(file);

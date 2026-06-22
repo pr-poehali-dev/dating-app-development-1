@@ -79,17 +79,16 @@ def handler(event: dict, context) -> dict:
         def ext_for(ct):
             return "mp4" if "mp4" in ct else ("webm" if "webm" in ct else "mov")
 
-        # Режим 1: presigned URL для прямой загрузки браузером (большие файлы)
-        # ContentType НЕ кладём в подпись — иначе S3 вернёт SignatureDoesNotMatch
+        # Режим 1: presigned URL для прямой загрузки браузером (ContentType включён в подпись)
         if action == "presign":
             content_type = body.get("content_type", "video/mp4")
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext_for(content_type)}"
             upload_url = s3.generate_presigned_url(
                 "put_object",
-                Params={"Bucket": "files", "Key": key},
+                Params={"Bucket": "files", "Key": key, "ContentType": content_type},
                 ExpiresIn=600,
             )
-            return resp(200, {"upload_url": upload_url, "key": key})
+            return resp(200, {"upload_url": upload_url, "key": key, "content_type": content_type})
 
         # Режим 2: создать запись в БД после успешной прямой загрузки
         if action == "create":
