@@ -191,12 +191,18 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
           </button>
         )}
 
-        <p className="text-white/20 text-[11px] text-center leading-relaxed">
-          Нажимая кнопку, ты соглашаешься с{" "}
+        <p className="text-white/40 text-xs text-center leading-relaxed px-2">
+          Нажимая «Войти» или «Продолжить», ты соглашаешься с нашими{" "}
           <button onClick={() => setShowRules(true)}
-            className="text-white/50 underline underline-offset-2 hover:text-white/70 transition-colors">
-            правилами сервиса
+            className="text-white font-bold hover:text-pink-300 transition-colors">
+            Условиями использования
           </button>
+          {" "}и{" "}
+          <button onClick={() => setShowRules(true)}
+            className="text-white font-bold hover:text-pink-300 transition-colors">
+            Политикой конфиденциальности
+          </button>
+          .
         </p>
       </div>
     </div>
