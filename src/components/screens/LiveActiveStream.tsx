@@ -57,7 +57,7 @@ export function LiveActiveStream({
   return (
     <div className="flex flex-col h-full relative"
       style={{ background: "#0a0014", opacity: leaving ? 0 : 1, transform: leaving ? "scale(0.97)" : "scale(1)", transition: "opacity 0.35s ease, transform 0.35s ease" }}>
-      <div className="relative flex-shrink-0" style={{ height: "45%" }}>
+      <div className="relative flex-shrink-0" style={{ height: "68%" }}>
         <div className="w-full h-full flex items-center justify-center overflow-hidden"
           style={{ background: "linear-gradient(135deg,#1a0030,#2d0050)" }}>
           {/* Видео всегда рендерится — стример видит себя, зритель получает поток через WebRTC */}
