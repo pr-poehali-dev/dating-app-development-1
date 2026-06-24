@@ -139,41 +139,28 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
         (user_id, notif_text)
     )
 
-    # Системное сообщение в чат — ищем любой матч пользователя
+    # Системное сообщение — всегда в личный матч пользователя с ботом LoveBloom (user_id=1)
+    # Это гарантирует что сообщение видит ТОЛЬКО сам пользователь
     sys_text = f"__PREMIUM__{plan_label}|{until_str}"
-    cur.execute(
-        "SELECT id FROM matches WHERE user1_id = %s OR user2_id = %s ORDER BY created_at DESC LIMIT 1",
-        (user_id, user_id)
-    )
-    match_row = cur.fetchone()
-    if match_row:
-        cur.execute(
-            "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
-            (match_row[0], user_id, sys_text)
-        )
-    else:
-        # Нет матчей — создаём системный матч с ботом (user_id=1)
-        # Проверяем, что бот существует и это не сам пользователь
-        if user_id != 1:
-            cur.execute("SELECT id FROM users WHERE id = 1 LIMIT 1")
-            if cur.fetchone():
-                # Ищем существующий системный матч
+    if user_id != 1:
+        cur.execute("SELECT id FROM users WHERE id = 1 LIMIT 1")
+        if cur.fetchone():
+            cur.execute(
+                "SELECT id FROM matches WHERE (user1_id = 1 AND user2_id = %s) OR (user1_id = %s AND user2_id = 1) LIMIT 1",
+                (user_id, user_id)
+            )
+            sys_match = cur.fetchone()
+            if not sys_match:
                 cur.execute(
-                    "SELECT id FROM matches WHERE (user1_id = 1 AND user2_id = %s) OR (user1_id = %s AND user2_id = 1) LIMIT 1",
-                    (user_id, user_id)
+                    "INSERT INTO matches (user1_id, user2_id) VALUES (1, %s) RETURNING id",
+                    (user_id,)
                 )
                 sys_match = cur.fetchone()
-                if not sys_match:
-                    cur.execute(
-                        "INSERT INTO matches (user1_id, user2_id) VALUES (1, %s) RETURNING id",
-                        (user_id,)
-                    )
-                    sys_match = cur.fetchone()
-                if sys_match:
-                    cur.execute(
-                        "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
-                        (sys_match[0], user_id, sys_text)
-                    )
+            if sys_match:
+                cur.execute(
+                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+                    (sys_match[0], 1, sys_text)
+                )
 
 
 def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
