@@ -270,6 +270,74 @@ def handler(event: dict, context) -> dict:
                     })
             return ok({"signals": signals})
 
+        # ── leaderboard ───────────────────────────────────────────────────────
+        if action == "leaderboard":
+            period = (event.get("queryStringParameters") or {}).get("period", "week")
+            # period: live | today | week | all
+            with conn.cursor() as cur:
+                if period == "live":
+                    cur.execute("""
+                        SELECT u.id, u.name, u.photo_url, u.premium,
+                               ls.viewers_count + ls.hearts_count AS score,
+                               ls.viewers_count, ls.hearts_count, ls.id AS stream_id
+                        FROM live_streams ls
+                        JOIN users u ON u.id = ls.user_id
+                        WHERE ls.status = 'active'
+                        ORDER BY score DESC
+                        LIMIT 50
+                    """)
+                elif period == "today":
+                    cur.execute("""
+                        SELECT u.id, u.name, u.photo_url, u.premium,
+                               COALESCE(SUM(ls.hearts_count), 0) AS score,
+                               COALESCE(SUM(ls.viewers_count), 0) AS viewers,
+                               COALESCE(SUM(ls.hearts_count), 0) AS hearts,
+                               NULL AS stream_id
+                        FROM users u
+                        JOIN live_streams ls ON ls.user_id = u.id
+                        WHERE ls.started_at >= NOW() - INTERVAL '1 day'
+                        GROUP BY u.id, u.name, u.photo_url, u.premium
+                        ORDER BY score DESC
+                        LIMIT 50
+                    """)
+                elif period == "all":
+                    cur.execute("""
+                        SELECT u.id, u.name, u.photo_url, u.premium,
+                               COALESCE(SUM(ls.hearts_count), 0) AS score,
+                               COALESCE(SUM(ls.viewers_count), 0) AS viewers,
+                               COALESCE(SUM(ls.hearts_count), 0) AS hearts,
+                               NULL AS stream_id
+                        FROM users u
+                        JOIN live_streams ls ON ls.user_id = u.id
+                        GROUP BY u.id, u.name, u.photo_url, u.premium
+                        ORDER BY score DESC
+                        LIMIT 50
+                    """)
+                else:  # week
+                    cur.execute("""
+                        SELECT u.id, u.name, u.photo_url, u.premium,
+                               COALESCE(SUM(ls.hearts_count), 0) AS score,
+                               COALESCE(SUM(ls.viewers_count), 0) AS viewers,
+                               COALESCE(SUM(ls.hearts_count), 0) AS hearts,
+                               NULL AS stream_id
+                        FROM users u
+                        JOIN live_streams ls ON ls.user_id = u.id
+                        WHERE ls.started_at >= date_trunc('week', NOW())
+                        GROUP BY u.id, u.name, u.photo_url, u.premium
+                        ORDER BY score DESC
+                        LIMIT 50
+                    """)
+                rows = cur.fetchall()
+            entries = []
+            for r in rows:
+                entries.append({
+                    "user_id": r[0], "name": r[1], "photo_url": r[2],
+                    "premium": bool(r[3]), "score": int(r[4] or 0),
+                    "viewers": int(r[5] or 0), "hearts": int(r[6] or 0),
+                    "stream_id": r[7],
+                })
+            return ok({"entries": entries, "period": period})
+
         return err("Unknown action")
 
     finally:

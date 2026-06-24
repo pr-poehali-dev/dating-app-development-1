@@ -146,7 +146,7 @@ export default function Index() {
       <div className="app-hearts-layer" />
       {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>
           {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}
           {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} onOpenSelf={() => setScreen("profile")} isPremium={!!currentUser.premium} currentUserId={currentUser.id} />}
           {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}

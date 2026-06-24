@@ -809,7 +809,23 @@ export const liveApi = {
     req<{ signals: { id: number; from_user_id: number; to_user_id: number | null; signal_type: string; payload: string }[] }>(
       "live", "signal_poll", {}, { stream_id: String(stream_id), last_id: String(last_id) }
     ),
+
+  leaderboard: (period: "live" | "today" | "week" | "all") =>
+    req<{ entries: LeaderboardEntry[]; period: string }>(
+      "live", "leaderboard", {}, { period }
+    ),
 };
+
+export interface LeaderboardEntry {
+  user_id: number;
+  name: string;
+  photo_url?: string;
+  premium: boolean;
+  score: number;
+  viewers: number;
+  hearts: number;
+  stream_id?: number | null;
+}
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export const adminApi = {
