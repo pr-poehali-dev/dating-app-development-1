@@ -21,6 +21,9 @@ def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
 
 def hash_password(p: str) -> str:
+    return hashlib.sha256(p.encode()).hexdigest()
+
+def hash_password_legacy(p: str) -> str:
     salt = os.environ.get('PASSWORD_SALT', 'lb_default_salt_v1')
     return hashlib.sha256(f"{salt}{p}".encode()).hexdigest()
 
@@ -129,12 +132,18 @@ def handler(event: dict, context) -> dict:
                 return resp(429, {'error': 'Слишком много попыток входа. Повтори через 15 минут.'})
             cur.execute("SELECT id, name, password_hash FROM users WHERE email = %s", (email,))
             row = cur.fetchone()
-            if not row or row[2] != hash_password(password):
+            stored_hash = row[2] if row else None
+            new_hash = hash_password(password)
+            legacy_hash = hash_password_legacy(password)
+            if not row or (stored_hash != new_hash and stored_hash != legacy_hash):
                 log_attempt(cur, ip, 'login', False, email)
                 audit(cur, 'login_failed', 'warning', ip=ip, email=email)
                 conn.commit()
                 return resp(401, {'error': 'Неверный email или пароль'})
             user_id = row[0]
+            # Миграция хеша: если хранился legacy — обновляем на основной
+            if stored_hash == legacy_hash and stored_hash != new_hash:
+                cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))
             cur.execute("UPDATE users SET online = TRUE, last_seen = NOW() WHERE id = %s", (user_id,))
@@ -329,7 +338,8 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'Новый пароль должен быть не менее 6 символов'})
             cur.execute("SELECT password_hash, email FROM users WHERE id = %s", (user_id,))
             row = cur.fetchone()
-            if not row or row[0] != hash_password(old_password):
+            stored = row[0] if row else None
+            if not row or (stored != hash_password(old_password) and stored != hash_password_legacy(old_password)):
                 audit(cur, 'change_password_failed', 'warning', ip=ip, user_id=user_id)
                 conn.commit()
                 return resp(400, {'error': 'Текущий пароль неверен'})
