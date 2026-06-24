@@ -27,8 +27,18 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
     (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } },
-          audio: true,
+          video: {
+            facingMode: "user",
+            width:  { ideal: 1920, min: 720 },
+            height: { ideal: 1920, min: 720 },
+            frameRate: { ideal: 60, min: 30 },
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            sampleRate: 48000,
+            channelCount: 2,
+          },
         });
         streamRef.current = stream;
         if (videoRef.current) {
@@ -47,14 +57,26 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
 
   const startRecording = () => {
     if (!streamRef.current) return;
-    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-      ? "video/webm;codecs=vp9,opus"
-      : MediaRecorder.isTypeSupported("video/webm")
-      ? "video/webm"
-      : "video/mp4";
+
+    // Выбираем лучший доступный кодек
+    const mimeType = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm;codecs=h264,opus",
+      "video/mp4;codecs=h264,aac",
+      "video/webm",
+      "video/mp4",
+    ].find(t => MediaRecorder.isTypeSupported(t)) ?? "video/webm";
+
     setResultMime(mimeType.split(";")[0]);
     chunksRef.current = [];
-    const mr = new MediaRecorder(streamRef.current, { mimeType });
+
+    // Максимальный битрейт: 8 Мбит/с видео + 192 кбит/с аудио
+    const mr = new MediaRecorder(streamRef.current, {
+      mimeType,
+      videoBitsPerSecond: 8_000_000,
+      audioBitsPerSecond: 192_000,
+    });
     mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     mr.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: mimeType.split(";")[0] });
@@ -64,7 +86,7 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
       setPhase("done");
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
-    mr.start(100);
+    mr.start(250);
     mediaRecorderRef.current = mr;
     setPhase("recording");
     setSecs(0);
