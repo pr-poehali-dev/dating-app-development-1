@@ -3,10 +3,27 @@ import { liveApi, type User, type LiveStream, type LiveMessage } from "@/lib/api
 import { LiveActiveStream } from "@/components/screens/LiveActiveStream";
 import { LiveStreamList } from "@/components/screens/LiveStreamList";
 
-// STUN серверы для WebRTC
+// ICE серверы для WebRTC (STUN + публичные TURN для обхода NAT)
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "stun:stun2.l.google.com:19302" },
+  // Публичные TURN серверы (open-relay) — помогают при строгом NAT
+  {
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
 ];
 
 export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed }: {
@@ -115,7 +132,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
         for (const sig of res.signals) {
           lastSignalIdRef.current = Math.max(lastSignalIdRef.current, sig.id);
           // Нас интересуют ТОЛЬКО сигналы адресованные нам
-          if (sig.to_user_id !== currentUser.id) continue;
+          if (sig.to_user_id !== null && sig.to_user_id !== currentUser.id) continue;
 
           if (sig.signal_type === "offer") {
             streamerId = sig.from_user_id;
@@ -150,7 +167,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
           }
         }
       } catch (e) { void e; }
-    }, 1500);
+    }, 600);
 
     // Шлём viewer_ready ПОСЛЕ запуска полла
     try {
@@ -238,7 +255,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
           }
         }
       } catch (e) { void e; }
-    }, 1500);
+    }, 600);
 
     void streamId;
   }, []);

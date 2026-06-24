@@ -179,13 +179,14 @@ def handler(event: dict, context) -> dict:
                 cur.execute(
                     """INSERT INTO live_messages (stream_id, user_id, text, author_name, author_photo)
                        VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at""",
-                    (stream_id, user["id"], text[:300], user["name"], user["photo_url"])
+                    (stream_id, user["id"], text[:300], user["name"] or "", user["photo_url"] or "")
                 )
                 mid, created_at = cur.fetchone()
                 conn.commit()
             msg = {
                 "id": mid, "stream_id": stream_id, "user_id": user["id"],
-                "text": text, "author_name": user["name"], "author_photo": user["photo_url"],
+                "text": text, "author_name": user["name"] or "",
+                "author_photo": user["photo_url"] or "",
                 "created_at": created_at.isoformat(),
             }
             return ok({"message": msg})
@@ -235,6 +236,10 @@ def handler(event: dict, context) -> dict:
                     """INSERT INTO live_signals (stream_id, from_user_id, to_user_id, signal_type, payload)
                        VALUES (%s, %s, %s, %s, %s) RETURNING id""",
                     (stream_id, user["id"], to_user_id, signal_type, payload)
+                )
+                # Чистим старые сигналы (старше 2 минут) чтобы не накапливались
+                cur.execute(
+                    "DELETE FROM live_signals WHERE created_at < NOW() - INTERVAL '2 minutes'"
                 )
                 conn.commit()
             return ok({"ok": True})
