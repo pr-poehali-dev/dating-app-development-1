@@ -155,9 +155,12 @@ def handler(event: dict, context) -> dict:
             online_only = params.get('online_only', '') == '1'
             new_only = params.get('new_only', '') == '1'
 
-            conditions = [f"(u.age IS NULL OR u.age BETWEEN {age_min} AND {age_max})",
-                          f"u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = {me['id']})",
-                          f"u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = {me['id']})"]
+            conditions = [
+                "(u.age IS NULL OR u.age BETWEEN %s AND %s)",
+                "u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = %s)",
+                "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
+            ]
+            q_params = [age_min, age_max, me['id'], me['id']]
 
             if looking_for == 'female':
                 conditions.append("u.gender = 'female'")
@@ -165,42 +168,47 @@ def handler(event: dict, context) -> dict:
                 conditions.append("u.gender = 'male'")
 
             if search:
-                safe = search.replace("'", "''")
                 if search.startswith('@'):
-                    uname = safe.lstrip('@')
-                    conditions.append(f"u.username ILIKE '%{uname}%'")
+                    conditions.append("u.username ILIKE %s")
+                    q_params.append(f'%{search.lstrip("@")}%')
                 else:
-                    conditions.append(f"(u.name ILIKE '%{safe}%' OR u.username ILIKE '%{safe}%')")
+                    conditions.append("(u.name ILIKE %s OR u.username ILIKE %s)")
+                    q_params.extend([f'%{search}%', f'%{search}%'])
 
             if city_filter_val:
-                safe_city = city_filter_val.replace("'", "''")
-                conditions.append(f"u.city ILIKE '%{safe_city}%'")
+                conditions.append("u.city ILIKE %s")
+                q_params.append(f'%{city_filter_val}%')
 
             if country_filter_val:
-                safe_country = country_filter_val.replace("'", "''")
-                conditions.append(f"u.country ILIKE '%{safe_country}%'")
+                conditions.append("u.country ILIKE %s")
+                q_params.append(f'%{country_filter_val}%')
 
             if online_only:
-                # Реальный онлайн: активность за последние 5 минут
                 conditions.append("u.last_seen > NOW() - INTERVAL '5 minutes'")
 
             if new_only:
-                # Новые: зарегистрированы за последние 7 дней
                 conditions.append("u.created_at > NOW() - INTERVAL '7 days'")
 
             geo_select = ""
             geo_order = "u.created_at DESC" if new_only else "u.last_seen DESC"
+            lat_f, lon_f = None, None
             if lat and lon and radius_km > 0:
                 try:
-                    lat_f, lon_f = float(lat), float(lon)
-                    geo_select = f", (6371 * acos(cos(radians({lat_f})) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians({lon_f})) + sin(radians({lat_f})) * sin(radians(u.latitude)))) AS distance_km"
-                    conditions.append(f"u.latitude IS NOT NULL AND u.longitude IS NOT NULL")
-                    conditions.append(f"(6371 * acos(cos(radians({lat_f})) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians({lon_f})) + sin(radians({lat_f})) * sin(radians(u.latitude)))) <= {radius_km}")
+                    lat_f = round(float(lat), 4)
+                    lon_f = round(float(lon), 4)
+                    geo_select = ", (6371 * acos(LEAST(1.0, cos(radians(%s)) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians(%s)) + sin(radians(%s)) * sin(radians(u.latitude))))) AS distance_km"
+                    conditions.append("u.latitude IS NOT NULL AND u.longitude IS NOT NULL")
+                    conditions.append("(6371 * acos(LEAST(1.0, cos(radians(%s)) * cos(radians(u.latitude)) * cos(radians(u.longitude) - radians(%s)) + sin(radians(%s)) * sin(radians(u.latitude))))) <= %s")
                     geo_order = "distance_km ASC"
                 except Exception:
-                    pass
+                    geo_select = ""
+                    lat_f = lon_f = None
 
             where_clause = " AND ".join(conditions)
+            if lat_f is not None:
+                all_params = [lat_f, lon_f, lat_f] + q_params + [lat_f, lon_f, lat_f, radius_km]
+            else:
+                all_params = q_params
             cur.execute(f"""
                 SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium, u.height, u.weight, u.relationship_status, u.last_seen, u.show_age,
                        (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted{geo_select}
@@ -208,7 +216,7 @@ def handler(event: dict, context) -> dict:
                 WHERE {where_clause}
                 ORDER BY boosted DESC, {geo_order}
                 LIMIT 60
-            """)
+            """, all_params)
             rows = cur.fetchall()
             cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium', 'height', 'weight', 'relationship_status', 'last_seen', 'show_age', 'boosted']
             if geo_select:

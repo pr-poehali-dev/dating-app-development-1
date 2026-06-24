@@ -34,11 +34,30 @@ def check_auth(event: dict) -> bool:
     )
     return token == ADMIN_TOKEN and bool(ADMIN_TOKEN)
 
+def get_ip(event: dict) -> str:
+    return (event.get('requestContext') or {}).get('identity', {}).get('sourceIp', 'unknown')
+
+def audit(cur, event_type: str, severity: str, ip: str = None, user_id: int = None, details: dict = None):
+    cur.execute(
+        "INSERT INTO security_events (event_type, severity, ip, user_id, details) VALUES (%s, %s, %s, %s, %s)",
+        (event_type, severity, ip, user_id, json.dumps(details or {}))
+    )
+
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
+    ip = get_ip(event)
     if not check_auth(event):
+        # Логируем неудачные попытки доступа к админке
+        try:
+            conn_tmp = get_conn()
+            cur_tmp = conn_tmp.cursor()
+            audit(cur_tmp, 'admin_auth_failed', 'critical', ip=ip)
+            conn_tmp.commit()
+            conn_tmp.close()
+        except Exception:
+            pass
         return resp(401, {'error': 'Нет доступа'})
 
     params = event.get('queryStringParameters') or {}
@@ -188,6 +207,7 @@ def handler(event: dict, context) -> dict:
                 (user_id, reason)
             )
             cur.execute("UPDATE sessions SET expires_at = NOW() WHERE user_id = %s", (user_id,))
+            audit(cur, 'admin_ban_user', 'warning', ip=ip, user_id=user_id, details={'reason': reason})
             conn.commit()
             return resp(200, {'ok': True})
 
@@ -197,6 +217,7 @@ def handler(event: dict, context) -> dict:
             if not user_id:
                 return resp(400, {'error': 'user_id обязателен'})
             cur.execute("DELETE FROM banned_users WHERE user_id = %s", (user_id,))
+            audit(cur, 'admin_unban_user', 'info', ip=ip, user_id=user_id)
             conn.commit()
             return resp(200, {'ok': True})
 
@@ -813,8 +834,36 @@ def handler(event: dict, context) -> dict:
             cur.execute("DELETE FROM post_likes WHERE post_id = %s", (post_id,))
             cur.execute("DELETE FROM post_comments WHERE post_id = %s", (post_id,))
             cur.execute("DELETE FROM posts WHERE id = %s", (post_id,))
+            audit(cur, 'admin_post_deleted', 'info', ip=ip, details={'post_id': post_id})
             conn.commit()
             return resp(200, {'ok': True})
+
+        # ── Журнал событий безопасности ──────────────────────────────────────
+        if action == 'security_events':
+            severity = params.get('severity', '')
+            limit = min(int(params.get('limit', 100)), 500)
+            if severity:
+                cur.execute(
+                    "SELECT id, event_type, severity, ip, user_id, email, details, created_at "
+                    "FROM security_events WHERE severity = %s ORDER BY created_at DESC LIMIT %s",
+                    (severity, limit)
+                )
+            else:
+                cur.execute(
+                    "SELECT id, event_type, severity, ip, user_id, email, details, created_at "
+                    "FROM security_events ORDER BY created_at DESC LIMIT %s",
+                    (limit,)
+                )
+            cols = ['id', 'event_type', 'severity', 'ip', 'user_id', 'email', 'details', 'created_at']
+            events = [dict(zip(cols, r)) for r in cur.fetchall()]
+            # Статистика за последние 24 часа
+            cur.execute("SELECT COUNT(*) FROM security_events WHERE created_at > NOW() - INTERVAL '24 hours'")
+            total_24h = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM security_events WHERE severity IN ('warning','critical') AND created_at > NOW() - INTERVAL '24 hours'")
+            alerts_24h = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(DISTINCT ip) FROM auth_attempts WHERE success = FALSE AND created_at > NOW() - INTERVAL '24 hours'")
+            suspicious_ips = cur.fetchone()[0]
+            return resp(200, {'events': events, 'stats': {'total_24h': total_24h, 'alerts_24h': alerts_24h, 'suspicious_ips': suspicious_ips}})
 
         # ── Запросы от органов власти: список ────────────────────────────────
         if action == 'gov_requests':
@@ -849,6 +898,7 @@ def handler(event: dict, context) -> dict:
                 (request_number or f'GOV-{int(time.time())}', authority, subject, user_id, user_email or None, notes or None)
             )
             new_id = cur.fetchone()[0]
+            audit(cur, 'gov_request_created', 'info', ip=ip, details={'authority': authority, 'request_number': request_number, 'subject': subject, 'user_email': user_email})
             conn.commit()
             return resp(200, {'ok': True, 'id': new_id})
 
@@ -891,6 +941,7 @@ def handler(event: dict, context) -> dict:
                 "UPDATE gov_requests SET status = 'exported', data_exported_at = NOW(), updated_at = NOW() WHERE id = %s",
                 (req_id,)
             )
+            audit(cur, 'gov_data_exported', 'critical', ip=ip, user_id=user_id, details={'req_id': req_id, 'user_email': user_email})
             conn.commit()
             return resp(200, {'ok': True, 'user_data': user_data})
 

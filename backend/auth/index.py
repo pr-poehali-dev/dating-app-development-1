@@ -21,7 +21,8 @@ def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
 
 def hash_password(p: str) -> str:
-    return hashlib.sha256(p.encode()).hexdigest()
+    salt = os.environ.get('PASSWORD_SALT', 'lb_default_salt_v1')
+    return hashlib.sha256(f"{salt}{p}".encode()).hexdigest()
 
 def get_token(event: dict) -> str:
     raw = (event.get('headers') or {}).get('Authorization', '') or \
@@ -30,8 +31,33 @@ def get_token(event: dict) -> str:
           (event.get('headers') or {}).get('x-authorization', '')
     return raw.replace('Bearer ', '').strip()
 
+def get_ip(event: dict) -> str:
+    return (event.get('requestContext') or {}).get('identity', {}).get('sourceIp', 'unknown')
+
 def resp(code: int, body: dict) -> dict:
-    return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False)}
+    return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False, default=str)}
+
+def check_rate_limit(cur, ip: str, action: str, max_attempts: int, window_minutes: int) -> bool:
+    """Возвращает True если лимит превышен"""
+    cur.execute(
+        "SELECT COUNT(*) FROM auth_attempts WHERE ip = %s AND action = %s AND success = FALSE "
+        "AND created_at > NOW() - INTERVAL '%s minutes'",
+        (ip, action, window_minutes)
+    )
+    count = cur.fetchone()[0]
+    return count >= max_attempts
+
+def log_attempt(cur, ip: str, action: str, success: bool, email: str = None):
+    cur.execute(
+        "INSERT INTO auth_attempts (ip, action, success, email) VALUES (%s, %s, %s, %s)",
+        (ip, action, success, email)
+    )
+
+def audit(cur, event_type: str, severity: str, ip: str = None, user_id: int = None, email: str = None, details: dict = None):
+    cur.execute(
+        "INSERT INTO security_events (event_type, severity, ip, user_id, email, details) VALUES (%s, %s, %s, %s, %s, %s)",
+        (event_type, severity, ip, user_id, email, json.dumps(details or {}))
+    )
 
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
@@ -41,6 +67,7 @@ def handler(event: dict, context) -> dict:
     action = params.get('action', '')
     token = get_token(event)
     body = json.loads(event.get('body') or '{}')
+    ip = get_ip(event)
 
     conn = get_conn()
     try:
@@ -52,8 +79,15 @@ def handler(event: dict, context) -> dict:
             name = body.get('name', '').strip()
             if not email or not password or not name:
                 return resp(400, {'error': 'Заполни все поля'})
+            # Rate limit: не более 5 регистраций с одного IP за 10 минут
+            if check_rate_limit(cur, ip, 'register', 5, 10):
+                audit(cur, 'register_rate_limit', 'warning', ip=ip, email=email)
+                conn.commit()
+                return resp(429, {'error': 'Слишком много попыток. Повтори через 10 минут.'})
             cur.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cur.fetchone():
+                log_attempt(cur, ip, 'register', False, email)
+                conn.commit()
                 return resp(400, {'error': 'Email уже занят'})
             cur.execute(
                 "INSERT INTO users (email, password_hash, name) VALUES (%s, %s, %s) RETURNING id",
@@ -64,6 +98,8 @@ def handler(event: dict, context) -> dict:
             cur.execute("UPDATE users SET username = %s WHERE id = %s", (username, user_id))
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
+            log_attempt(cur, ip, 'register', True, email)
+            audit(cur, 'register', 'info', ip=ip, user_id=user_id, email=email)
             conn.commit()
             cur.execute(
                 "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
@@ -81,14 +117,24 @@ def handler(event: dict, context) -> dict:
         if action == 'login':
             email = body.get('email', '').strip().lower()
             password = body.get('password', '')
+            # Rate limit: не более 10 попыток с одного IP за 15 минут
+            if check_rate_limit(cur, ip, 'login', 10, 15):
+                audit(cur, 'login_rate_limit', 'warning', ip=ip, email=email)
+                conn.commit()
+                return resp(429, {'error': 'Слишком много попыток входа. Повтори через 15 минут.'})
             cur.execute("SELECT id, name, password_hash FROM users WHERE email = %s", (email,))
             row = cur.fetchone()
             if not row or row[2] != hash_password(password):
+                log_attempt(cur, ip, 'login', False, email)
+                audit(cur, 'login_failed', 'warning', ip=ip, email=email)
+                conn.commit()
                 return resp(401, {'error': 'Неверный email или пароль'})
             user_id = row[0]
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
             cur.execute("UPDATE users SET online = TRUE, last_seen = NOW() WHERE id = %s", (user_id,))
+            log_attempt(cur, ip, 'login', True, email)
+            audit(cur, 'login_success', 'info', ip=ip, user_id=user_id, email=email)
             conn.commit()
             cur.execute(
                 "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
