@@ -199,7 +199,20 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
 
             if (streamRef.current) {
               streamRef.current.getTracks().forEach((track) => {
-                pc.addTrack(track, streamRef.current!);
+                const sender = pc.addTrack(track, streamRef.current!);
+                // Максимальный битрейт: 8 Мбит/с видео, 192 кбит/с аудио
+                if (track.kind === "video") {
+                  const params = sender.getParameters();
+                  if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+                  params.encodings[0].maxBitrate = 8_000_000;
+                  params.encodings[0].maxFramerate = 60;
+                  sender.setParameters(params).catch(() => {});
+                } else if (track.kind === "audio") {
+                  const params = sender.getParameters();
+                  if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+                  params.encodings[0].maxBitrate = 192_000;
+                  sender.setParameters(params).catch(() => {});
+                }
               });
             }
 
@@ -350,7 +363,10 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
     setSwitchingCamera(true);
     const nextFacing = facingMode === "user" ? "environment" : "user";
     try {
-      const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: nextFacing }, audio: true });
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: nextFacing, width: { ideal: 1920, min: 1280 }, height: { ideal: 1080, min: 720 }, frameRate: { ideal: 60, min: 30 } },
+        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000, channelCount: 2 },
+      });
       // Заменяем треки в существующих peer-соединениях
       peerConnsRef.current.forEach((pc) => {
         const senders = pc.getSenders();
@@ -378,7 +394,21 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
     // Пробуем получить поток с разными ограничениями (от идеальных к минимальным)
     let mediaStream: MediaStream | null = null;
     const attempts: MediaStreamConstraints[] = [
-      { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true },
+      {
+        video: {
+          facingMode: "user",
+          width:     { ideal: 1920, min: 1280 },
+          height:    { ideal: 1080, min: 720 },
+          frameRate: { ideal: 60,   min: 30 },
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 48000,
+          channelCount: 2,
+        },
+      },
+      { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: true },
       { video: { facingMode: "user" }, audio: true },
       { video: true, audio: true },
       { video: true, audio: false },
