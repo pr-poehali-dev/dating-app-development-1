@@ -53,7 +53,6 @@ async function req<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store",
       ...(token ? { Authorization: token } : {}),
       ...(options.headers || {}),
     },
