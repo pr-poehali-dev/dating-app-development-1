@@ -3,10 +3,11 @@ import Icon from "@/components/ui/icon";
 import { profilesApi, authApi, blocksApi, notifSettingsApi, type User, type BlockedUser } from "@/lib/api";
 import { SettingsScreenContent } from "@/components/screens/SettingsScreenContent";
 import { PasswordModal, DeleteAccountModal } from "@/components/screens/SettingsModals";
+import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
 export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium }: {
-  screen: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
+  screen: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
   currentUser: User;
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
@@ -182,6 +183,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     private_photos: "Приватные фото",
     blocked: "Заблокированные",
     help: "Помощь и поддержка",
+    security: "Безопасность",
   };
 
   const saveAccount = async () => {
@@ -239,7 +241,12 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
       </div>
 
       {/* Контент */}
-      <SettingsScreenContent
+      {screen === "security" && (
+        <div className="flex-1 overflow-y-auto pb-8">
+          <SecurityPanel onLogout={onLogout} />
+        </div>
+      )}
+      {screen !== "security" && <SettingsScreenContent
         screen={screen}
         currentUser={currentUser}
         onPremium={onPremium}
@@ -272,7 +279,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         blocksLoading={blocksLoading}
         unblocking={unblocking}
         onUnblock={handleUnblock}
-      />
+      />}
 
       {/* Модалы */}
       {pwModal && (

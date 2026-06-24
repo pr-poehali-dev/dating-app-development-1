@@ -34,6 +34,10 @@ def get_token(event: dict) -> str:
 def get_ip(event: dict) -> str:
     return (event.get('requestContext') or {}).get('identity', {}).get('sourceIp', 'unknown')
 
+def get_ua(event: dict) -> str:
+    h = event.get('headers') or {}
+    return (h.get('User-Agent') or h.get('user-agent') or '')[:300]
+
 def resp(code: int, body: dict) -> dict:
     return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False, default=str)}
 
@@ -68,6 +72,7 @@ def handler(event: dict, context) -> dict:
     token = get_token(event)
     body = json.loads(event.get('body') or '{}')
     ip = get_ip(event)
+    ua = get_ua(event)
 
     conn = get_conn()
     try:
@@ -97,7 +102,7 @@ def handler(event: dict, context) -> dict:
             username = f"LoveBloom_{user_id}"
             cur.execute("UPDATE users SET username = %s WHERE id = %s", (username, user_id))
             new_token = secrets.token_hex(32)
-            cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
+            cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))
             log_attempt(cur, ip, 'register', True, email)
             audit(cur, 'register', 'info', ip=ip, user_id=user_id, email=email)
             conn.commit()
@@ -131,7 +136,7 @@ def handler(event: dict, context) -> dict:
                 return resp(401, {'error': 'Неверный email или пароль'})
             user_id = row[0]
             new_token = secrets.token_hex(32)
-            cur.execute("INSERT INTO sessions (user_id, token) VALUES (%s, %s)", (user_id, new_token))
+            cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))
             cur.execute("UPDATE users SET online = TRUE, last_seen = NOW() WHERE id = %s", (user_id,))
             log_attempt(cur, ip, 'login', True, email)
             audit(cur, 'login_success', 'info', ip=ip, user_id=user_id, email=email)
@@ -297,12 +302,106 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'heartbeat':
-            # Обновляем last_seen и online пока пользователь активен
             cur.execute(
                 "UPDATE users SET online = TRUE, last_seen = NOW() "
                 "WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW())",
                 (token,)
             )
+            cur.execute(
+                "UPDATE sessions SET last_active = NOW() WHERE token = %s AND expires_at > NOW()",
+                (token,)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Смена пароля ──────────────────────────────────────────────────────
+        if action == 'change_password':
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            user_id = sess[0]
+            old_password = body.get('old_password', '')
+            new_password = body.get('new_password', '')
+            if not old_password or not new_password:
+                return resp(400, {'error': 'Укажи текущий и новый пароль'})
+            if len(new_password) < 6:
+                return resp(400, {'error': 'Новый пароль должен быть не менее 6 символов'})
+            cur.execute("SELECT password_hash, email FROM users WHERE id = %s", (user_id,))
+            row = cur.fetchone()
+            if not row or row[0] != hash_password(old_password):
+                audit(cur, 'change_password_failed', 'warning', ip=ip, user_id=user_id)
+                conn.commit()
+                return resp(400, {'error': 'Текущий пароль неверен'})
+            cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (hash_password(new_password), user_id))
+            # Инвалидируем все остальные сессии (кроме текущей)
+            cur.execute(
+                "UPDATE sessions SET expires_at = NOW() WHERE user_id = %s AND token != %s",
+                (user_id, token)
+            )
+            audit(cur, 'change_password', 'info', ip=ip, user_id=user_id, email=row[1])
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Список активных сессий ────────────────────────────────────────────
+        if action == 'list_sessions':
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            user_id = sess[0]
+            cur.execute(
+                """SELECT id, token, ip, user_agent, created_at, last_active, expires_at
+                   FROM sessions
+                   WHERE user_id = %s AND expires_at > NOW()
+                   ORDER BY last_active DESC NULLS LAST
+                   LIMIT 20""",
+                (user_id,)
+            )
+            sessions = []
+            for r in cur.fetchall():
+                sessions.append({
+                    'id': r[0],
+                    'is_current': r[1] == token,
+                    'ip': r[2] or 'unknown',
+                    'user_agent': r[3] or '',
+                    'created_at': str(r[4]) if r[4] else None,
+                    'last_active': str(r[5]) if r[5] else None,
+                    'expires_at': str(r[6]) if r[6] else None,
+                })
+            return resp(200, {'sessions': sessions})
+
+        # ── Завершить конкретную сессию ───────────────────────────────────────
+        if action == 'end_session':
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            user_id = sess[0]
+            session_id = body.get('session_id')
+            if not session_id:
+                return resp(400, {'error': 'session_id обязателен'})
+            # Можно завершить только свою сессию
+            cur.execute(
+                "UPDATE sessions SET expires_at = NOW() WHERE id = %s AND user_id = %s",
+                (session_id, user_id)
+            )
+            audit(cur, 'session_ended', 'info', ip=ip, user_id=user_id, details={'session_id': session_id})
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Завершить все остальные сессии ────────────────────────────────────
+        if action == 'end_all_sessions':
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            user_id = sess[0]
+            cur.execute(
+                "UPDATE sessions SET expires_at = NOW() WHERE user_id = %s AND token != %s",
+                (user_id, token)
+            )
+            audit(cur, 'all_sessions_ended', 'warning', ip=ip, user_id=user_id)
             conn.commit()
             return resp(200, {'ok': True})
 

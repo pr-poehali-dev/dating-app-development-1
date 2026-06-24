@@ -16,7 +16,7 @@ function DefaultCover() {
   );
 }
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 
 export function ProfileHeader({
@@ -298,6 +298,14 @@ export function ProfileTopBar({
                     action: () => { onSettingsScreen("blocked"); onMenuToggle(false); },
                     iconBg: "rgba(255,255,255,0.07)",
                     iconColor: "text-white/50",
+                  },
+                  {
+                    icon: "ShieldCheck" as const,
+                    label: "Безопасность",
+                    sub: "Пароль, устройства, сессии",
+                    action: () => { onSettingsScreen("security"); onMenuToggle(false); },
+                    iconBg: "rgba(255,45,120,0.12)",
+                    iconColor: "text-pink-400",
                   },
                   {
                     icon: "HelpCircle" as const,

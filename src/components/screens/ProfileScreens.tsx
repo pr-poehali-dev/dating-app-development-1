@@ -14,7 +14,7 @@ import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
 

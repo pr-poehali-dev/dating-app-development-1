@@ -53,6 +53,7 @@ async function req<T>(
     ...options,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       ...(token ? { Authorization: token } : {}),
       ...(options.headers || {}),
     },
@@ -85,6 +86,17 @@ async function req<T>(
   if (!res.ok) throw new Error((data.error as string) || "Ошибка сервера");
   return data as T;
 }
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+export type SessionInfo = {
+  id: number;
+  is_current: boolean;
+  ip: string;
+  user_agent: string;
+  created_at: string | null;
+  last_active: string | null;
+  expires_at: string | null;
+};
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 export const authApi = {
@@ -133,6 +145,24 @@ export const authApi = {
       body: JSON.stringify({ reported_id, reason, comment }),
     }),
   heartbeat: () => req<{ ok: boolean }>("auth", "heartbeat", { method: "POST" }),
+
+  changePassword: (old_password: string, new_password: string) =>
+    req<{ ok: boolean }>("auth", "change_password", {
+      method: "POST",
+      body: JSON.stringify({ old_password, new_password }),
+    }),
+
+  listSessions: () =>
+    req<{ sessions: SessionInfo[] }>("auth", "list_sessions"),
+
+  endSession: (session_id: number) =>
+    req<{ ok: boolean }>("auth", "end_session", {
+      method: "POST",
+      body: JSON.stringify({ session_id }),
+    }),
+
+  endAllSessions: () =>
+    req<{ ok: boolean }>("auth", "end_all_sessions", { method: "POST" }),
 };
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
