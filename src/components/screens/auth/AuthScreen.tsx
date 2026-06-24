@@ -363,7 +363,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
 
               <div className="rounded-xl px-4 py-3 mt-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="text-white/35 text-[11px] leading-relaxed text-center">
-                  По вопросам: <span className="text-white/55">support@lovebloom.app</span>
+                  По вопросам: <span className="text-white/55">info@lbloom.ru</span>
                 </p>
               </div>
             </>)}
@@ -428,7 +428,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
                     "Право на исправление: скорректировать неточные данные через настройки профиля.",
                     "Право на удаление: потребовать удаления данных — обрабатывается в течение 30 дней.",
                     "Право на ограничение обработки: заблокировать использование данных в маркетинговых целях.",
-                    "Право на возражение: отозвать согласие на обработку данных, направив запрос на privacy@lovebloom.app.",
+                    "Право на возражение: отозвать согласие на обработку данных, направив запрос на info@lbloom.ru.",
                     "Право на жалобу: обратиться в Роскомнадзор (rkn.gov.ru) при нарушении прав.",
                   ]
                 },
@@ -482,7 +482,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
 
               <div className="rounded-xl px-4 py-3 mt-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="text-white/35 text-[11px] leading-relaxed text-center">
-                  Запросы по персональным данным: <span className="text-white/55">privacy@lovebloom.app</span>
+                  Запросы по персональным данным: <span className="text-white/55">info@lbloom.ru</span>
                   <br />Роскомнадзор: <span className="text-white/55">rkn.gov.ru</span>
                 </p>
               </div>
