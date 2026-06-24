@@ -483,7 +483,6 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
               <div className="rounded-xl px-4 py-3 mt-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <p className="text-white/35 text-[11px] leading-relaxed text-center">
                   Запросы по персональным данным: <span className="text-white/55">info@lbloom.ru</span>
-                  <br />Роскомнадзор: <span className="text-white/55">rkn.gov.ru</span>
                 </p>
               </div>
             </>)}
