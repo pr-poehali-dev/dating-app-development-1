@@ -102,7 +102,12 @@ export function FollowersModal({
                       <p className="text-white font-semibold text-sm truncate">
                         {user.name}{user.age ? `, ${user.age}` : ""}
                       </p>
-                      {user.verified && <Icon name="BadgeCheck" size={14} className="text-blue-400 flex-shrink-0" />}
+                      {user.verified && (
+                        <div className="flex-shrink-0 flex items-center justify-center"
+                          style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 1.5px rgba(14,165,233,0.35), 0 2px 5px rgba(14,165,233,0.4)" }}>
+                          <Icon name="Check" size={10} className="text-white" />
+                        </div>
+                      )}
                     </div>
                     {isUserOnline(user.last_seen, user.online) ? (
                       <p className="text-green-400 text-[11px] mt-0.5">в сети</p>

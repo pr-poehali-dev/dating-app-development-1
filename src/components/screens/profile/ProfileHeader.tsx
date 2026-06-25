@@ -69,9 +69,14 @@ export function ProfileHeader({
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}
           </h3>
           {currentUser.verified && (
-            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(59,130,246,0.2)" }}>
-              <Icon name="BadgeCheck" size={14} className="text-blue-400" />
+            <div className="flex-shrink-0 flex items-center justify-center"
+              style={{
+                width: 22, height: 22,
+                borderRadius: "50%",
+                background: "linear-gradient(135deg,#1a78f2,#0ea5e9)",
+                boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 8px rgba(14,165,233,0.45)",
+              }}>
+              <Icon name="Check" size={13} className="text-white" style={{ strokeWidth: 3 }} />
             </div>
           )}
         </div>

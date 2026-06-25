@@ -189,9 +189,9 @@ export function ProfilePhotoSection({
               {profileName}{profileAge ? `, ${profileAge}` : ""}
             </h2>
             {profileVerified && (
-              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(59,130,246,0.25)", border: "1px solid rgba(59,130,246,0.4)" }}>
-                <Icon name="BadgeCheck" size={13} className="text-blue-400" />
+              <div className="flex-shrink-0 flex items-center justify-center"
+                style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 6px rgba(14,165,233,0.45)" }}>
+                <Icon name="Check" size={11} className="text-white" />
               </div>
             )}
             {profilePremium && (

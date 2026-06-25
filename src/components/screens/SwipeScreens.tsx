@@ -143,8 +143,9 @@ function SwipeCard({
             {profile.name}{showAge && profile.age ? `, ${profile.age}` : ""}
           </h2>
           {profile.verified && (
-            <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)" }}>
-              <Icon name="Check" size={12} className="text-white" />
+            <div className="flex-shrink-0 flex items-center justify-center"
+              style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 8px rgba(14,165,233,0.5)" }}>
+              <Icon name="Check" size={13} className="text-white" />
             </div>
           )}
           {profile.premium && (

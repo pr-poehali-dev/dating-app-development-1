@@ -144,7 +144,7 @@ export function PeopleGrid({
               {/* Верификация */}
               {p.verified && !isLocked && !isMe && (
                 <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ background: "rgba(59,130,246,0.9)", boxShadow: "0 0 6px rgba(59,130,246,0.5)" }}>
+                  style={{ background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 1.5px rgba(14,165,233,0.4), 0 2px 6px rgba(14,165,233,0.5)" }}>
                   <Icon name="Check" size={10} className="text-white" />
                 </div>
               )}
