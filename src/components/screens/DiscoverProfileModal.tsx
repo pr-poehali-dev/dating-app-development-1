@@ -437,6 +437,19 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         </div>
       )}
 
+      {showMsgInput && (
+        <ProfileSendMessageSheet
+          profileName={currentProfile.name}
+          profilePhoto={currentProfile.photo_url || mainPhoto}
+          msgText={msgText}
+          sendingMsg={sendingMsg}
+          msgSent={msgSent}
+          onClose={() => { setShowMsgInput(false); setMsgSent(false); setMsgText(""); }}
+          onMsgChange={setMsgText}
+          onSend={handleSendMsg}
+        />
+      )}
+
       {showGiftSheet && (
         <ProfileGiftSheet
           recipientName={currentProfile.name}
