@@ -190,8 +190,8 @@ export function ProfilePhotoSection({
             </h2>
             {profileVerified && (
               <div className="flex-shrink-0 flex items-center justify-center"
-                style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 6px rgba(14,165,233,0.45)" }}>
-                <Icon name="Check" size={11} className="text-white" />
+                style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 2px rgba(255,45,120,0.3), 0 2px 8px rgba(255,45,120,0.45)" }}>
+                <Icon name="BadgeCheck" size={14} className="text-white" />
               </div>
             )}
             {profilePremium && (

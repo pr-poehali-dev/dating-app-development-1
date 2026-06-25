@@ -104,8 +104,8 @@ export function FollowersModal({
                       </p>
                       {user.verified && (
                         <div className="flex-shrink-0 flex items-center justify-center"
-                          style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 1.5px rgba(14,165,233,0.35), 0 2px 5px rgba(14,165,233,0.4)" }}>
-                          <Icon name="Check" size={10} className="text-white" />
+                          style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 1.5px rgba(255,45,120,0.3), 0 2px 6px rgba(255,45,120,0.45)" }}>
+                          <Icon name="BadgeCheck" size={12} className="text-white" />
                         </div>
                       )}
                     </div>

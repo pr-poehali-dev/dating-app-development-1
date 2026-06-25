@@ -73,10 +73,10 @@ export function ProfileHeader({
               style={{
                 width: 22, height: 22,
                 borderRadius: "50%",
-                background: "linear-gradient(135deg,#1a78f2,#0ea5e9)",
-                boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 8px rgba(14,165,233,0.45)",
+                background: "linear-gradient(135deg,#FF2D78,#C061FF)",
+                boxShadow: "0 0 0 2px rgba(255,45,120,0.3), 0 2px 10px rgba(255,45,120,0.5)",
               }}>
-              <Icon name="Check" size={13} className="text-white" style={{ strokeWidth: 3 }} />
+              <Icon name="BadgeCheck" size={15} className="text-white" />
             </div>
           )}
         </div>

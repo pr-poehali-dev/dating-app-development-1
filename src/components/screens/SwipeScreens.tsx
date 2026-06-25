@@ -144,8 +144,8 @@ function SwipeCard({
           </h2>
           {profile.verified && (
             <div className="flex-shrink-0 flex items-center justify-center"
-              style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#1a78f2,#0ea5e9)", boxShadow: "0 0 0 2px rgba(14,165,233,0.35), 0 2px 8px rgba(14,165,233,0.5)" }}>
-              <Icon name="Check" size={13} className="text-white" />
+              style={{ width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 2px rgba(255,45,120,0.3), 0 2px 10px rgba(255,45,120,0.5)" }}>
+              <Icon name="BadgeCheck" size={16} className="text-white" />
             </div>
           )}
           {profile.premium && (
