@@ -46,7 +46,8 @@ export function ProfileCoverAvatar({
             src={localCover}
             className="w-full h-full"
             style={{
-              objectFit: "contain",
+              objectFit: "cover",
+              objectPosition: "center top",
               opacity: coverUploading ? 0.5 : 1,
               transition: "opacity 0.2s",
             }}
