@@ -18,7 +18,23 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
   ],
+  iceCandidatePoolSize: 10,
 };
 
 export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitiator, initialOffer, earlyIce, onClose }: Props) {
@@ -100,14 +116,26 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     onClose();
   }, [stopAll, matchId, onClose]);
 
+  const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+    width: { ideal: 1280, max: 1920 },
+    height: { ideal: 720, max: 1080 },
+    frameRate: { ideal: 30, max: 30 },
+    facingMode: "user",
+  };
+  const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+  };
+
   const getMedia = async () => {
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS });
     } catch {
       // Попробовать только аудио если нет камеры
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: AUDIO_CONSTRAINTS });
         setMediaError("Камера недоступна — звонок только с аудио");
       } catch (e) {
         const err = e as { name?: string };
@@ -138,7 +166,16 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const buildPeer = (stream: MediaStream) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     pcRef.current = pc;
-    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    stream.getTracks().forEach(t => {
+      const sender = pc.addTrack(t, stream);
+      if (t.kind === "video") {
+        const params = sender.getParameters();
+        if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+        params.encodings[0].maxBitrate = 2_500_000;
+        params.encodings[0].maxFramerate = 30;
+        sender.setParameters(params).catch(() => {});
+      }
+    });
 
     const remoteStream = new MediaStream();
     remoteStreamRef.current = remoteStream;
