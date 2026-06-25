@@ -8,6 +8,7 @@ interface Props {
   isPremium?: boolean;
   onClose: () => void;
   onPremium?: () => void;
+  onOpenProfile?: (userId: number) => void;
 }
 
 function timeAgo(iso: string) {
@@ -18,7 +19,7 @@ function timeAgo(iso: string) {
   return `${Math.floor(diff / 86400)} д назад`;
 }
 
-export function PeopleViewersSheet({ isPremium, onClose, onPremium }: Props) {
+export function PeopleViewersSheet({ isPremium, onClose, onPremium, onOpenProfile }: Props) {
   const [viewers, setViewers] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,24 +34,23 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium }: Props) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
-      onClick={onClose}>
-      <div className="w-full max-w-sm animate-slide-up"
-        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0", maxHeight: "75dvh", display: "flex", flexDirection: "column" }}
-        onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1 flex-shrink-0" style={{ background: "rgba(255,255,255,0.18)" }} />
-        <div className="flex items-center justify-between px-5 py-3 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <h3 className="text-white font-bold text-base flex items-center gap-2">
-            <Icon name="Eye" size={18} className="text-white/60" />
-            Кто смотрел профиль
-            {viewers.length > 0 && <span className="text-white/40 text-sm font-normal">· {viewers.length}</span>}
-          </h3>
-          <button onClick={onClose}><Icon name="X" size={20} className="text-white/50" /></button>
-        </div>
+    <div className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "var(--spark-dark2,#1a1625)" }}>
+      <div className="flex items-center gap-3 px-4 flex-shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 12px)", paddingBottom: "12px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+        <button onClick={onClose}
+          className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90"
+          style={{ background: "rgba(255,255,255,0.08)" }}>
+          <Icon name="ArrowLeft" size={20} className="text-white" />
+        </button>
+        <h3 className="text-white font-bold text-base flex items-center gap-2">
+          <Icon name="Eye" size={18} className="text-white/60" />
+          Кто смотрел профиль
+          {viewers.length > 0 && <span className="text-white/40 text-sm font-normal">· {viewers.length}</span>}
+        </h3>
+      </div>
 
-        <div className="overflow-y-auto flex-1 px-5 py-3 pb-6">
+      <div className="overflow-y-auto flex-1 px-5 py-3 pb-6">
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
@@ -81,7 +81,12 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium }: Props) {
               )}
               <div className="grid grid-cols-3 gap-2">
                 {viewers.map((v, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1.5 pt-3 pb-2.5 px-1 rounded-2xl"
+                  <button key={i} type="button"
+                    onClick={() => {
+                      if (isPremium && v.from_user_id) onOpenProfile?.(v.from_user_id);
+                      else if (!isPremium) { onClose(); onPremium?.(); }
+                    }}
+                    className="flex flex-col items-center gap-1.5 pt-3 pb-2.5 px-1 rounded-2xl transition-all active:scale-95"
                     style={{ background: "rgba(255,255,255,0.05)" }}>
                     <div className="relative w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0">
                       <img
@@ -101,12 +106,11 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium }: Props) {
                       <div className="h-3 w-12 rounded-full mx-auto" style={{ background: "rgba(255,255,255,0.15)" }} />
                     )}
                     <p className="text-white/30 text-[10px] text-center">{timeAgo(v.created_at)}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

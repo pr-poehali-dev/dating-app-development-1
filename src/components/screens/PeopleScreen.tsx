@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, notificationsApi, type Profile, type DiscoverParams } from "@/lib/api";
+import { profilesApi, notificationsApi, postsApi, type Profile, type DiscoverParams } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PeopleFilterSheet } from "@/components/screens/people/PeopleFilterSheet";
@@ -28,6 +28,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [activeTab, setActiveTab] = useState<"all" | "online" | "new">("all");
   const [selected, setSelected] = useState<Profile | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
+  const [viewerProfile, setViewerProfile] = useState<Profile | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
@@ -78,6 +79,15 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       .then(d => setViewersCount(d.notifications.filter(n => n.type === "view").length))
       .catch(() => {});
   }, []);
+
+  const handleOpenViewerProfile = (userId: number) => {
+    postsApi.getUserProfile(userId)
+      .then((d) => {
+        setShowViewers(false);
+        setViewerProfile(d.profile);
+      })
+      .catch(() => {});
+  };
 
   const handleSearch = (val: string) => {
     setSearch(val);
@@ -134,6 +144,17 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
           onLike={(p) => setLikedIds((prev) => new Set([...prev, p.id]))}
           onOpenChat={(matchId) => { setSelected(null); onOpenChat?.(matchId); }}
           onGoToChats={() => { setSelected(null); onGoToChats?.(); }}
+        />
+      )}
+      {viewerProfile && (
+        <DiscoverProfileModal
+          profile={viewerProfile}
+          profiles={[viewerProfile]}
+          profileIndex={0}
+          onClose={() => setViewerProfile(null)}
+          onLike={(p) => setLikedIds((prev) => new Set([...prev, p.id]))}
+          onOpenChat={(matchId) => { setViewerProfile(null); onOpenChat?.(matchId); }}
+          onGoToChats={() => { setViewerProfile(null); onGoToChats?.(); }}
         />
       )}
       {showFilters && (
@@ -225,6 +246,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
           isPremium={isPremium}
           onClose={() => setShowViewers(false)}
           onPremium={onPremium}
+          onOpenProfile={handleOpenViewerProfile}
         />
       )}
 
