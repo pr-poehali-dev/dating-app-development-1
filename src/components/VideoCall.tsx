@@ -88,7 +88,11 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     pcRef.current = pc;
     stream.getTracks().forEach(t => pc.addTrack(t, stream));
     pc.ontrack = (e) => {
-      if (remoteVideoRef.current) remoteVideoRef.current.srcObject = e.streams[0];
+      const remoteStream = e.streams[0];
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.play().catch(() => {});
+      }
       setCallState("connected");
       startTimer();
     };
@@ -96,6 +100,9 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       if (e.candidate) {
         messagesApi.signalSend(matchId, "ice", JSON.stringify(e.candidate)).catch(() => {});
       }
+    };
+    pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") setCallState("connected");
     };
     return pc;
   };
@@ -126,8 +133,6 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await messagesApi.signalSend(matchId, "answer", JSON.stringify(answer));
-      setCallState("connected");
-      startTimer();
     } catch (e) {
       console.error("[VideoCall] acceptCall error:", e);
     }
@@ -183,9 +188,17 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   return (
     <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#0d0b14" }}>
       <div className="flex-1 relative overflow-hidden">
-        {callState === "connected" ? (
-          <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-        ) : (
+        {/* Remote video — всегда в DOM чтобы srcObject успел установиться */}
+        <video
+          ref={remoteVideoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover"
+          style={{ display: callState === "connected" ? "block" : "none" }}
+        />
+
+        {/* Экран ожидания */}
+        {callState !== "connected" && (
           <div className="w-full h-full flex flex-col items-center justify-center gap-4 px-6">
             <img src={partnerPhoto} className="w-28 h-28 rounded-full object-cover border-4 border-white/20" />
             <p className="text-white text-xl font-semibold">{partnerName}</p>
@@ -211,6 +224,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
           </div>
         )}
 
+        {/* Своё видео — всегда в DOM */}
         <div className="absolute bottom-4 right-4 w-24 h-32 rounded-2xl overflow-hidden border-2 border-white/20 shadow-xl">
           <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
           {!camOn && (
