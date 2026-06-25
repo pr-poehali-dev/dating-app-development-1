@@ -10,6 +10,7 @@ import { EditProfileModal } from "@/components/screens/EditProfileModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
 import { ProfilePhotoSection } from "@/components/screens/profile/ProfilePhotoSection";
+import { ProfilePhotosScreen } from "@/components/screens/profile/ProfilePhotosScreen";
 import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
@@ -49,6 +50,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [settingsScreen, setSettingsScreen] = useState<null | SettingsScreen>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showPhotosScreen, setShowPhotosScreen] = useState(false);
 
   const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
   const toggleTheme = () => {
@@ -199,6 +201,30 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         <EditProfileModal user={currentUser} onSave={onProfileUpdate} onClose={() => setEditOpen(false)} />
       )}
 
+      {/* ── Полноэкранный экран управления фото ── */}
+      {showPhotosScreen && (
+        <ProfilePhotosScreen
+          currentUser={currentUser}
+          localPhoto={localPhoto}
+          localCover={localCover}
+          photoUploading={photoUploading}
+          coverUploading={coverUploading}
+          galleryPhotos={galleryPhotos}
+          galleryLoading={galleryLoading}
+          galleryUploading={galleryUploading}
+          galleryDeleteId={galleryDeleteId}
+          onCoverUpload={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
+          onCoverDelete={() => { setLocalCover(""); onProfileUpdate({ cover_url: "" }); profilesApi.deleteCover().catch(() => {}); }}
+          onAvatarUpload={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
+          onPhotoDelete={() => { setLocalPhoto(""); onPhotoUpdate(""); onProfileUpdate({ photo_url: "" }); profilesApi.deletePhoto().catch(() => {}); }}
+          onGalleryAdd={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
+          onGalleryDelete={handleGalleryDelete}
+          onPremium={onPremium}
+          onSettingsPrivate={() => { setShowPhotosScreen(false); setSettingsScreen("private_photos"); }}
+          onClose={() => setShowPhotosScreen(false)}
+        />
+      )}
+
       {/* ── Лайтбокс фото ── */}
       {lightboxIdx !== null && allPhotos.length > 0 && (
         <ProfileLightbox
@@ -257,7 +283,17 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               setLightboxIdx(0);
             }
           }}
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => {
+            if (tab === "photos") {
+              if (galleryPhotos.length === 0 && !galleryLoading) {
+                setGalleryLoading(true);
+                profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
+              }
+              setShowPhotosScreen(true);
+            } else {
+              setActiveTab(tab);
+            }
+          }}
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}
