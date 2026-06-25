@@ -824,6 +824,9 @@ export const liveApi = {
 
   myStreams: () =>
     req<{ streams: MyStream[] }>("live", "my_streams"),
+
+  clearMyStreams: () =>
+    req<{ ok: boolean }>("live", "clear_my_streams", { method: "POST" }),
 };
 
 export interface LeaderboardEntry {

@@ -346,7 +346,7 @@ def handler(event: dict, context) -> dict:
                 cur.execute("""
                     SELECT id, title, status, viewers_count, hearts_count, started_at, ended_at
                     FROM live_streams
-                    WHERE user_id = %s
+                    WHERE user_id = %s AND hidden = FALSE
                     ORDER BY started_at DESC
                     LIMIT 30
                 """, (user["id"],))
@@ -366,6 +366,18 @@ def handler(event: dict, context) -> dict:
                     "duration_sec": duration_sec,
                 })
             return ok({"streams": streams})
+
+        # ── clear_my_streams ──────────────────────────────────────────────────
+        if action == "clear_my_streams":
+            if not user:
+                return err("Unauthorized", 401)
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE live_streams SET hidden = TRUE WHERE user_id = %s AND status = 'ended'",
+                    (user["id"],)
+                )
+                conn.commit()
+            return ok({"ok": True})
 
         return err("Unknown action")
 

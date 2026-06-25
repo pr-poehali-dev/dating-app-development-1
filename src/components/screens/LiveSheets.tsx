@@ -148,6 +148,8 @@ function BlacklistSheet({ onClose }: { onClose: () => void }) {
 function RecentStreamsSheet({ onClose }: { onClose: () => void }) {
   const [streams, setStreams] = useState<MyStream[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     liveApi.myStreams()
@@ -155,6 +157,17 @@ function RecentStreamsSheet({ onClose }: { onClose: () => void }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleClear = async () => {
+    if (!confirmClear) { setConfirmClear(true); return; }
+    setClearing(true);
+    try {
+      await liveApi.clearMyStreams();
+      setStreams([]);
+      setConfirmClear(false);
+    } catch { /* ignore */ }
+    setClearing(false);
+  };
 
   const fmt = (sec: number | null) => {
     if (!sec) return null;
@@ -181,7 +194,21 @@ function RecentStreamsSheet({ onClose }: { onClose: () => void }) {
         <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-1" style={{ background: "rgba(255,255,255,0.18)" }} />
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <h3 className="text-white font-bold text-base">Недавние трансляции</h3>
-          <button onClick={onClose}><Icon name="X" size={20} className="text-white/40" /></button>
+          <div className="flex items-center gap-2">
+            {streams.length > 0 && (
+              <button onClick={handleClear} disabled={clearing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
+                style={confirmClear
+                  ? { background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", color: "#f87171" }
+                  : { background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.4)" }}>
+                {clearing
+                  ? <Icon name="Loader2" size={12} className="animate-spin" />
+                  : <Icon name="Trash2" size={12} />}
+                {confirmClear ? "Точно?" : "Очистить"}
+              </button>
+            )}
+            <button onClick={onClose}><Icon name="X" size={20} className="text-white/40" /></button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-10 flex flex-col gap-2" style={{ scrollbarWidth: "none" }}>
           {loading ? (
