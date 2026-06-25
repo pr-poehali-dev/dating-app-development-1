@@ -43,6 +43,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const [camOn, setCamOn] = useState(true);
   const [duration, setDuration] = useState(0);
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [switchingCam, setSwitchingCam] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -56,6 +57,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     (earlyIce || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean) as RTCIceCandidateInit[]
   );
   const remoteDescSetRef = useRef(false);
+  const facingModeRef = useRef<"user" | "environment">("user");
 
   const ringCtxRef = useRef<AudioContext | null>(null);
   const ringTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -116,12 +118,13 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     onClose();
   }, [stopAll, matchId, onClose]);
 
-  const VIDEO_CONSTRAINTS: MediaTrackConstraints = {
+  const buildVideoConstraints = (): MediaTrackConstraints => ({
     width: { ideal: 1280, max: 1920 },
     height: { ideal: 720, max: 1080 },
     frameRate: { ideal: 30, max: 30 },
-    facingMode: "user",
-  };
+    facingMode: facingModeRef.current,
+  });
+  const VIDEO_CONSTRAINTS = buildVideoConstraints();
   const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
     echoCancellation: { ideal: true },
     noiseSuppression: { ideal: true },
@@ -334,6 +337,41 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     setCamOn(v => !v);
   };
 
+  const switchCamera = async () => {
+    if (switchingCam) return;
+    setSwitchingCam(true);
+    const next = facingModeRef.current === "user" ? "environment" : "user";
+    try {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { ...buildVideoConstraints(), facingMode: { ideal: next } },
+        audio: false,
+      });
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      if (!newVideoTrack) throw new Error("no video track");
+
+      // Заменяем трек в исходящем соединении без пересоздания звонка
+      const sender = pcRef.current?.getSenders().find(s => s.track?.kind === "video");
+      if (sender) await sender.replaceTrack(newVideoTrack);
+
+      // Обновляем локальный поток: убираем старый видеотрек, добавляем новый
+      const oldTrack = localStreamRef.current?.getVideoTracks()[0];
+      if (oldTrack && localStreamRef.current) {
+        localStreamRef.current.removeTrack(oldTrack);
+        oldTrack.stop();
+        localStreamRef.current.addTrack(newVideoTrack);
+      }
+      if (localVideoRef.current) localVideoRef.current.srcObject = localStreamRef.current;
+
+      newVideoTrack.enabled = camOn;
+      facingModeRef.current = next;
+    } catch {
+      setMediaError("Не удалось переключить камеру");
+      setTimeout(() => setMediaError(null), 2500);
+    } finally {
+      setSwitchingCam(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "#0d0b14" }}>
       <div className="flex-1 relative overflow-hidden">
@@ -418,6 +456,12 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
               className="w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90"
               style={{ background: camOn ? "rgba(255,255,255,0.15)" : "rgba(255,45,120,0.4)" }}>
               <Icon name={camOn ? "Video" : "VideoOff"} size={22} className="text-white" />
+            </button>
+            <button onClick={switchCamera} disabled={switchingCam}
+              className="w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-50"
+              style={{ background: "rgba(255,255,255,0.15)" }}>
+              <Icon name={switchingCam ? "Loader" : "SwitchCamera"} size={22}
+                className={`text-white ${switchingCam ? "animate-spin" : ""}`} />
             </button>
           </>
         )}
