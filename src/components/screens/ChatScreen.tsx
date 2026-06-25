@@ -27,7 +27,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [vanishPhotos, setVanishPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [showAwardPicker, setShowAwardPicker] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
-  const [videoCall, setVideoCall] = useState<{ isInitiator: boolean; offerPayload?: string } | null>(null);
+  const [videoCall, setVideoCall] = useState<{ isInitiator: boolean; offerPayload?: string; earlyIce?: string[] } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showVideoCircle, setShowVideoCircle] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -66,16 +66,22 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
 
   useEffect(() => {
     if (videoCall) return;
+    let stopped = false;
     const interval = setInterval(async () => {
+      if (stopped) return;
       try {
         const { signals } = await messagesApi.signalPoll(matchId);
         const offerSig = signals.find(s => s.signal_type === "offer");
         if (offerSig) {
-          setVideoCall({ isInitiator: false, offerPayload: offerSig.payload });
+          // буферизуем ICE, пришедшие вместе с offer, чтобы не потерять их
+          const earlyIce = signals.filter(s => s.signal_type === "ice").map(s => s.payload);
+          stopped = true;
+          clearInterval(interval);
+          setVideoCall({ isInitiator: false, offerPayload: offerSig.payload, earlyIce });
         }
       } catch { /* ignore */ }
-    }, 2000);
-    return () => clearInterval(interval);
+    }, 1200);
+    return () => { stopped = true; clearInterval(interval); };
   }, [matchId, videoCall]);
 
   const startRecording = async () => {
@@ -331,6 +337,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerPhoto={partnerPhoto}
           isInitiator={videoCall.isInitiator}
           initialOffer={videoCall.offerPayload}
+          earlyIce={videoCall.earlyIce}
           onClose={() => setVideoCall(null)}
         />
       )}

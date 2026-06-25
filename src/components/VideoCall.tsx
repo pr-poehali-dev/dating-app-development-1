@@ -10,6 +10,7 @@ interface Props {
   partnerPhoto: string;
   isInitiator: boolean;
   initialOffer?: string;
+  earlyIce?: string[];
   onClose: () => void;
 }
 
@@ -20,7 +21,7 @@ const ICE_SERVERS = {
   ],
 };
 
-export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitiator, initialOffer, onClose }: Props) {
+export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitiator, initialOffer, earlyIce, onClose }: Props) {
   const [callState, setCallState] = useState<CallState>(isInitiator ? "calling" : "incoming");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -29,11 +30,16 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingOfferRef = useRef<string | null>(initialOffer ?? null);
+  const iceBufferRef = useRef<RTCIceCandidateInit[]>(
+    (earlyIce || []).map(p => { try { return JSON.parse(p); } catch { return null; } }).filter(Boolean) as RTCIceCandidateInit[]
+  );
+  const remoteDescSetRef = useRef(false);
 
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
@@ -83,18 +89,39 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     return stream;
   };
 
+  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const connectedRef = useRef(false);
+
+  const markConnected = () => {
+    if (connectedRef.current) return;
+    connectedRef.current = true;
+    setCallState("connected");
+    startTimer();
+  };
+
   const buildPeer = (stream: MediaStream) => {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     pcRef.current = pc;
     stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+    const remoteStream = new MediaStream();
+    remoteStreamRef.current = remoteStream;
+
     pc.ontrack = (e) => {
-      const remoteStream = e.streams[0];
+      e.streams[0]?.getTracks().forEach(t => {
+        if (!remoteStream.getTracks().some(x => x.id === t.id)) remoteStream.addTrack(t);
+      });
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.muted = false;
+        remoteVideoRef.current.volume = 1;
         remoteVideoRef.current.play().catch(() => {});
       }
-      setCallState("connected");
-      startTimer();
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = remoteStream;
+        remoteAudioRef.current.play().catch(() => {});
+      }
+      markConnected();
     };
     pc.onicecandidate = (e) => {
       if (e.candidate) {
@@ -102,7 +129,10 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       }
     };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") setCallState("connected");
+      if (pc.connectionState === "connected") markConnected();
+      if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
+        setMediaError("Соединение прервано");
+      }
     };
     return pc;
   };
@@ -130,6 +160,12 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       const stream = await getMedia();
       const pc = buildPeer(stream);
       await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerPayload)));
+      remoteDescSetRef.current = true;
+      // применяем буферизованные ICE-кандидаты
+      for (const c of iceBufferRef.current) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* ignore */ }
+      }
+      iceBufferRef.current = [];
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await messagesApi.signalSend(matchId, "answer", JSON.stringify(answer));
@@ -150,12 +186,21 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
           if (sig.signal_type === "answer" && pcRef.current) {
             try {
               await pcRef.current.setRemoteDescription(new RTCSessionDescription(JSON.parse(sig.payload)));
+              remoteDescSetRef.current = true;
+              for (const c of iceBufferRef.current) {
+                try { await pcRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch { /* ignore */ }
+              }
+              iceBufferRef.current = [];
             } catch { /* ignore */ }
           }
-          if (sig.signal_type === "ice" && pcRef.current) {
-            try {
-              await pcRef.current.addIceCandidate(new RTCIceCandidate(JSON.parse(sig.payload)));
-            } catch { /* ignore */ }
+          if (sig.signal_type === "ice") {
+            const cand = JSON.parse(sig.payload);
+            if (pcRef.current && remoteDescSetRef.current) {
+              try { await pcRef.current.addIceCandidate(new RTCIceCandidate(cand)); } catch { /* ignore */ }
+            } else {
+              // буферизуем пока не установлен remoteDescription
+              iceBufferRef.current.push(cand);
+            }
           }
           if (sig.signal_type === "hangup") {
             stopAll();
@@ -166,7 +211,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       } catch { /* ignore */ }
     };
 
-    pollRef.current = setInterval(poll, 1500);
+    pollRef.current = setInterval(poll, 1000);
     if (isInitiator) startCall();
 
     return () => {
@@ -196,6 +241,8 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
           className="w-full h-full object-cover"
           style={{ display: callState === "connected" ? "block" : "none" }}
         />
+        {/* Отдельный audio чтобы звук гарантированно играл */}
+        <audio ref={remoteAudioRef} autoPlay />
 
         {/* Экран ожидания */}
         {callState !== "connected" && (
