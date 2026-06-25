@@ -80,7 +80,7 @@ export function ProfileLegalSheet({
               </div>
             ))}
             <div className="rounded-xl px-4 py-3 mt-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <p className="text-white/35 text-[11px] leading-relaxed text-center">Вопросы и обращения: <span className="text-white/55">support@app.ru</span></p>
+              <p className="text-white/35 text-[11px] leading-relaxed text-center">Вопросы и обращения: <span className="text-white/55">info@lbloom.ru</span></p>
             </div>
           </>)}
 
