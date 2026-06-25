@@ -54,6 +54,10 @@ export function useLiveWebRTC(currentUserId: number) {
     let streamerId: number | null = null;
     const pendingIce: RTCIceCandidateInit[] = [];
 
+    // Указываем браузеру, что хотим принимать видео и аудио
+    pc.addTransceiver("video", { direction: "recvonly" });
+    pc.addTransceiver("audio", { direction: "recvonly" });
+
     pc.ontrack = (e) => {
       if (videoRef.current && e.streams[0]) {
         videoRef.current.srcObject = e.streams[0];
@@ -74,6 +78,7 @@ export function useLiveWebRTC(currentUserId: number) {
 
     lastSignalIdRef.current = 0;
 
+    // Сначала запускаем поллинг, потом отправляем viewer_ready
     signalPollRef.current = setInterval(async () => {
       if (!activeStreamIdRef.current || !viewerPcRef.current) return;
       try {
@@ -114,8 +119,9 @@ export function useLiveWebRTC(currentUserId: number) {
           }
         }
       } catch (e) { void e; }
-    }, 600);
+    }, 400);
 
+    // viewer_ready после старта поллинга — стример успеет получить сигнал
     try {
       await liveApi.signalSend(streamId, "viewer_ready", JSON.stringify({ user_id: currentUserId }));
     } catch (e) { void e; }

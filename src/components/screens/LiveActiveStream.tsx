@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { type LiveStream, type LiveMessage } from "@/lib/api";
 
@@ -45,6 +45,7 @@ export function LiveActiveStream({
 }: LiveActiveStreamProps) {
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [viewerMuted, setViewerMuted] = useState(true);
+  const [connectTimeout, setConnectTimeout] = useState(false);
 
   const tapToPlay = () => {
     const el = videoRef.current;
@@ -53,6 +54,14 @@ export function LiveActiveStream({
     setViewerMuted(false);
     el.play().catch(() => {});
   };
+
+  // Если через 12 секунд видео не пошло — прячем спиннер
+  useEffect(() => {
+    if (!isStreaming) {
+      const t = setTimeout(() => setConnectTimeout(true), 12000);
+      return () => clearTimeout(t);
+    }
+  }, [isStreaming]);
 
   return (
     <div className="flex flex-col h-full relative"
@@ -117,10 +126,16 @@ export function LiveActiveStream({
                   <span className="text-white/80 text-xs font-semibold">{activeStream.hearts_count}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-white/30 text-xs">
-                <div className="w-3 h-3 rounded-full border-2 border-pink-400 border-t-transparent animate-spin" />
-                Подключение к трансляции...
-              </div>
+              {connectTimeout ? (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-white/40 text-xs text-center">Не удалось получить видео.<br />Возможно, трансляция завершилась.</p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-white/30 text-xs">
+                  <div className="w-3 h-3 rounded-full border-2 border-pink-400 border-t-transparent animate-spin" />
+                  Подключение к трансляции...
+                </div>
+              )}
             </div>
           )}
         </div>
