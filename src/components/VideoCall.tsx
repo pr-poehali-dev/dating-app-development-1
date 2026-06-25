@@ -25,6 +25,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [duration, setDuration] = useState(0);
+  const [mediaError, setMediaError] = useState<string | null>(null);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -59,7 +60,24 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   }, [stopAll, matchId, onClose]);
 
   const getMedia = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch {
+      // Попробовать только аудио если нет камеры
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+        setMediaError("Камера недоступна — звонок только с аудио");
+      } catch (e) {
+        const err = e as { name?: string };
+        if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+          setMediaError("Разреши доступ к микрофону в настройках браузера");
+        } else {
+          setMediaError("Не удалось получить доступ к микрофону или камере");
+        }
+        throw e;
+      }
+    }
     localStreamRef.current = stream;
     if (localVideoRef.current) localVideoRef.current.srcObject = stream;
     return stream;
@@ -168,7 +186,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
         {callState === "connected" ? (
           <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+          <div className="w-full h-full flex flex-col items-center justify-center gap-4 px-6">
             <img src={partnerPhoto} className="w-28 h-28 rounded-full object-cover border-4 border-white/20" />
             <p className="text-white text-xl font-semibold">{partnerName}</p>
             <p className="text-white/50 text-sm animate-pulse">
@@ -176,6 +194,13 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
               {callState === "incoming" && "Входящий видеозвонок"}
               {callState === "ended" && "Звонок завершён"}
             </p>
+            {mediaError && (
+              <div className="mt-2 px-4 py-3 rounded-2xl text-center max-w-xs"
+                style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)" }}>
+                <p className="text-red-300 text-sm leading-relaxed">{mediaError}</p>
+                <p className="text-white/30 text-xs mt-1">Проверь разрешения в браузере и попробуй снова</p>
+              </div>
+            )}
           </div>
         )}
 
