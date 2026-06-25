@@ -123,14 +123,33 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     facingMode: "user",
   };
   const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
-    echoCancellation: true,
-    noiseSuppression: true,
-    autoGainControl: true,
+    echoCancellation: { ideal: true },
+    noiseSuppression: { ideal: true },
+    autoGainControl: { ideal: true },
+    channelCount: { ideal: 1 },
+    sampleRate: { ideal: 48000 },
     // @ts-expect-error — нестандартные, но поддерживаемые браузерами параметры подавления эха
+    latency: { ideal: 0.01 },
     googEchoCancellation: true,
+    googEchoCancellation2: true,
     googAutoGainControl: true,
     googNoiseSuppression: true,
+    googNoiseSuppression2: true,
     googHighpassFilter: true,
+    googTypingNoiseDetection: true,
+    googAudioMirroring: false,
+  };
+
+  const applyEchoConstraints = async (stream: MediaStream) => {
+    const audioTrack = stream.getAudioTracks()[0];
+    if (!audioTrack) return;
+    try {
+      await audioTrack.applyConstraints({
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      });
+    } catch { /* ignore */ }
   };
 
   const getMedia = async () => {
@@ -152,6 +171,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
         throw e;
       }
     }
+    await applyEchoConstraints(stream);
     localStreamRef.current = stream;
     if (localVideoRef.current) localVideoRef.current.srcObject = stream;
     return stream;
@@ -198,7 +218,8 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       // Звук собеседника воспроизводим ТОЛЬКО через audio-элемент
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.volume = 1;
+        // Чуть ниже максимума — динамики меньше «фонят» в микрофон, меньше эха
+        remoteAudioRef.current.volume = 0.85;
         remoteAudioRef.current.play().catch(() => {});
       }
       markConnected();
