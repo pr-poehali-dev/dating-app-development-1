@@ -4,8 +4,9 @@ import Icon from "@/components/ui/icon";
 
 const STORIES_URL = "https://functions.poehali.dev/bb965e64-26b6-440e-9d6d-c746aa07b497";
 
-export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
+export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refreshKey }: {
   currentUserId?: number;
+  currentUserPhoto?: string | null;
   onAddStory?: () => void;
   refreshKey?: number;
 }) {
@@ -57,14 +58,26 @@ export function StoriesBar({ currentUserId, onAddStory, refreshKey }: {
             className="flex-shrink-0 flex flex-col items-center gap-2 active:scale-95 transition-transform"
             style={{ scrollSnapAlign: "start" }}>
             <div className="relative">
-              <div className="w-[62px] h-[62px] rounded-full flex items-center justify-center"
+              <div className="w-[62px] h-[62px] rounded-full"
                 style={{
                   background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
                   padding: "2px",
                 }}>
-                <div className="w-full h-full rounded-full flex items-center justify-center"
-                  style={{ background: "#1a1625" }}>
-                  <Icon name="Plus" size={22} className="text-white" />
+                <div className="w-full h-full rounded-full overflow-hidden relative"
+                  style={{ border: "2px solid #1a1625" }}>
+                  {currentUserPhoto
+                    ? <img src={currentUserPhoto} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center" style={{ background: "#1a1625" }}>
+                        <Icon name="Plus" size={22} className="text-white" />
+                      </div>
+                  }
+                  {/* Иконка + поверх фото */}
+                  {currentUserPhoto && (
+                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", border: "2px solid #1a1625" }}>
+                      <Icon name="Plus" size={10} className="text-white" />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
