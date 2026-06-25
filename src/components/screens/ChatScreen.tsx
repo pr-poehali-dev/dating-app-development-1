@@ -147,18 +147,23 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.target;
+    const file = input.files?.[0];
     if (!file) return;
-    e.target.value = "";
     setShowPlus(false);
+
+    const fileType = file.type || "image/jpeg";
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
+      if (!base64) { input.value = ""; return; }
       try {
-        const res = await messagesApi.uploadChatPhoto(matchId, base64, file.type);
+        const res = await messagesApi.uploadChatPhoto(matchId, base64, fileType);
         await sendSystem(`__VANISH__${res.photo_url}`);
       } catch { /* ignore */ }
+      finally { input.value = ""; }
     };
+    reader.onerror = () => { input.value = ""; };
     reader.readAsDataURL(file);
   };
 

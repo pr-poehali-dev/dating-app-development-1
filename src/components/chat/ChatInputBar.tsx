@@ -35,7 +35,7 @@ export function ChatInputBar({
 }: Props) {
 
   const plusItems = [
-    { icon: "Image",  label: "Галерея",    action: () => { fileRef.current?.click(); onTogglePlus(); }, color: "#3B82F6" },
+    { icon: "Image",  label: "Галерея",    action: () => { fileRef.current?.click(); setTimeout(onTogglePlus, 300); }, color: "#3B82F6" },
     { icon: "Timer",  label: "Исчезает",   action: onOpenVanishPicker,                                   color: "#9B59B6" },
     { icon: "MapPin", label: "Локация",    action: onSendLocation, loading: geoLoading,                  color: "#10B981" },
     { icon: "Circle", label: "Кружок",     action: onOpenVideoCircle,                                    color: "#FF6B35" },
@@ -68,8 +68,21 @@ export function ChatInputBar({
         </div>
       )}
 
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFileSelect} />
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFileSelect} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        onChange={onFileSelect}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden", zIndex: -1, left: 0, bottom: 0 }}
+      />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={onFileSelect}
+        style={{ position: "absolute", width: 1, height: 1, opacity: 0, overflow: "hidden", zIndex: -1, left: 0, bottom: 0 }}
+      />
 
       {/* Эмодзи-панель */}
       {showEmoji && (
