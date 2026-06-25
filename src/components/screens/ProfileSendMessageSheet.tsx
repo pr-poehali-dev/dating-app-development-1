@@ -29,8 +29,8 @@ export function ProfileSendMessageSheet({
         <div className="rounded-3xl p-5 flex flex-col gap-4"
           style={{ background: "var(--spark-card)", border: "1px solid var(--spark-input-border)" }}>
           <div className="flex items-center gap-3">
-            <img src={profilePhoto || ""} className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
+            <img src={profilePhoto || ""} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0"
+              style={{ border: "2px solid rgba(255,45,120,0.4)" }} />
             <div>
               <p className="text-white font-semibold text-sm">{profileName}</p>
               <p className="text-white/40 text-xs">Первое сообщение</p>
