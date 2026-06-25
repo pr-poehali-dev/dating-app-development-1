@@ -41,6 +41,40 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   );
   const remoteDescSetRef = useRef(false);
 
+  const ringCtxRef = useRef<AudioContext | null>(null);
+  const ringTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopRingtone = useCallback(() => {
+    if (ringTimerRef.current) { clearInterval(ringTimerRef.current); ringTimerRef.current = null; }
+    if (ringCtxRef.current) { ringCtxRef.current.close().catch(() => {}); ringCtxRef.current = null; }
+  }, []);
+
+  const startRingtone = useCallback(() => {
+    try {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AC();
+      ringCtxRef.current = ctx;
+      const playBeep = () => {
+        if (!ringCtxRef.current) return;
+        const now = ctx.currentTime;
+        [0, 0.4].forEach(offset => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 480;
+          gain.gain.setValueAtTime(0, now + offset);
+          gain.gain.linearRampToValueAtTime(0.25, now + offset + 0.05);
+          gain.gain.linearRampToValueAtTime(0, now + offset + 0.3);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + 0.3);
+        });
+      };
+      playBeep();
+      ringTimerRef.current = setInterval(playBeep, 2000);
+    } catch { /* ignore */ }
+  }, []);
+
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -54,10 +88,11 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const stopAll = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
+    stopRingtone();
     localStreamRef.current?.getTracks().forEach(t => t.stop());
     pcRef.current?.close();
     pcRef.current = null;
-  }, []);
+  }, [stopRingtone]);
 
   const handleClose = useCallback(() => {
     stopAll();
@@ -95,6 +130,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const markConnected = () => {
     if (connectedRef.current) return;
     connectedRef.current = true;
+    stopRingtone();
     setCallState("connected");
     startTimer();
   };
@@ -156,6 +192,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       console.warn("[VideoCall] acceptCall: no offer payload");
       return;
     }
+    stopRingtone();
     try {
       const stream = await getMedia();
       const pc = buildPeer(stream);
@@ -213,9 +250,11 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
 
     pollRef.current = setInterval(poll, 1000);
     if (isInitiator) startCall();
+    if (!isInitiator) startRingtone();
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      stopRingtone();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, isInitiator]);
