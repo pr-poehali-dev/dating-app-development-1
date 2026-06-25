@@ -141,16 +141,8 @@ export function PeopleGrid({
                 </div>
               )}
 
-              {/* Верификация */}
-              {p.verified && !isLocked && !isMe && (
-                <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 1.5px rgba(255,45,120,0.35), 0 2px 6px rgba(255,45,120,0.5)" }}>
-                  <Icon name="BadgeCheck" size={13} className="text-white" />
-                </div>
-              )}
-
               {/* Лайкнут */}
-              {isLiked && !isLocked && !p.verified && !isMe && (
+              {isLiked && !isLocked && !isMe && (
                 <div className="absolute top-2 left-2 w-5 h-5 rounded-full flex items-center justify-center"
                   style={{ background: "rgba(255,45,120,0.9)", boxShadow: "0 0 6px rgba(255,45,120,0.5)" }}>
                   <Icon name="Heart" size={10} className="text-white" />
