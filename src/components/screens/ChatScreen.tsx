@@ -27,7 +27,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [vanishPhotos, setVanishPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [showAwardPicker, setShowAwardPicker] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
-  const [videoCall, setVideoCall] = useState<{ isInitiator: boolean } | null>(null);
+  const [videoCall, setVideoCall] = useState<{ isInitiator: boolean; offerPayload?: string } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showVideoCircle, setShowVideoCircle] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -69,8 +69,9 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
     const interval = setInterval(async () => {
       try {
         const { signals } = await messagesApi.signalPoll(matchId);
-        if (signals.some(s => s.signal_type === "offer")) {
-          setVideoCall({ isInitiator: false });
+        const offerSig = signals.find(s => s.signal_type === "offer");
+        if (offerSig) {
+          setVideoCall({ isInitiator: false, offerPayload: offerSig.payload });
         }
       } catch { /* ignore */ }
     }, 2000);
@@ -329,6 +330,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerName={partnerName}
           partnerPhoto={partnerPhoto}
           isInitiator={videoCall.isInitiator}
+          initialOffer={videoCall.offerPayload}
           onClose={() => setVideoCall(null)}
         />
       )}

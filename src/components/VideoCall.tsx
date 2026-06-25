@@ -9,6 +9,7 @@ interface Props {
   partnerName: string;
   partnerPhoto: string;
   isInitiator: boolean;
+  initialOffer?: string;
   onClose: () => void;
 }
 
@@ -19,7 +20,7 @@ const ICE_SERVERS = {
   ],
 };
 
-export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitiator, onClose }: Props) {
+export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitiator, initialOffer, onClose }: Props) {
   const [callState, setCallState] = useState<CallState>(isInitiator ? "calling" : "incoming");
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
@@ -31,7 +32,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   const localStreamRef = useRef<MediaStream | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pendingOfferRef = useRef<string | null>(null);
+  const pendingOfferRef = useRef<string | null>(initialOffer ?? null);
 
   const formatDuration = (s: number) => {
     const m = Math.floor(s / 60);
@@ -88,13 +89,18 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await messagesApi.signalSend(matchId, "offer", JSON.stringify(offer));
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error("[VideoCall] startCall error:", e);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   const acceptCall = useCallback(async () => {
     const offerPayload = pendingOfferRef.current;
-    if (!offerPayload) return;
+    if (!offerPayload) {
+      console.warn("[VideoCall] acceptCall: no offer payload");
+      return;
+    }
     try {
       const stream = await getMedia();
       const pc = buildPeer(stream);
@@ -104,7 +110,9 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       await messagesApi.signalSend(matchId, "answer", JSON.stringify(answer));
       setCallState("connected");
       startTimer();
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error("[VideoCall] acceptCall error:", e);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, startTimer]);
 
@@ -113,14 +121,18 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       try {
         const { signals } = await messagesApi.signalPoll(matchId);
         for (const sig of signals) {
-          if (sig.signal_type === "offer") {
+          if (sig.signal_type === "offer" && !pendingOfferRef.current) {
             pendingOfferRef.current = sig.payload;
           }
           if (sig.signal_type === "answer" && pcRef.current) {
-            await pcRef.current.setRemoteDescription(new RTCSessionDescription(JSON.parse(sig.payload)));
+            try {
+              await pcRef.current.setRemoteDescription(new RTCSessionDescription(JSON.parse(sig.payload)));
+            } catch { /* ignore */ }
           }
           if (sig.signal_type === "ice" && pcRef.current) {
-            await pcRef.current.addIceCandidate(new RTCIceCandidate(JSON.parse(sig.payload)));
+            try {
+              await pcRef.current.addIceCandidate(new RTCIceCandidate(JSON.parse(sig.payload)));
+            } catch { /* ignore */ }
           }
           if (sig.signal_type === "hangup") {
             stopAll();
