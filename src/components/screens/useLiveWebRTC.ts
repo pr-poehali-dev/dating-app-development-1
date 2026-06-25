@@ -49,12 +49,21 @@ export function useLiveWebRTC(currentUserId: number) {
   }, []);
 
   const startViewerWebRTC = useCallback(async (streamId: number) => {
+    // Закрываем предыдущее соединение если есть
+    if (viewerPcRef.current) {
+      viewerPcRef.current.close();
+      viewerPcRef.current = null;
+    }
+    if (signalPollRef.current) {
+      clearInterval(signalPollRef.current);
+      signalPollRef.current = null;
+    }
+
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     viewerPcRef.current = pc;
     let streamerId: number | null = null;
     const pendingIce: RTCIceCandidateInit[] = [];
 
-    // Указываем браузеру, что хотим принимать видео и аудио
     pc.addTransceiver("video", { direction: "recvonly" });
     pc.addTransceiver("audio", { direction: "recvonly" });
 
@@ -76,9 +85,23 @@ export function useLiveWebRTC(currentUserId: number) {
       }
     };
 
-    lastSignalIdRef.current = 0;
+    // Получаем текущий максимальный signal id перед отправкой viewer_ready
+    // чтобы не подхватить старые offer от предыдущих зрителей
+    let startSignalId = 0;
+    try {
+      const probe = await liveApi.signalPoll(streamId, 0);
+      if (probe.signals.length > 0) {
+        startSignalId = probe.signals[probe.signals.length - 1].id;
+      }
+    } catch (e) { void e; }
+    lastSignalIdRef.current = startSignalId;
 
-    // Сначала запускаем поллинг, потом отправляем viewer_ready
+    // Отправляем viewer_ready — стример начнёт создавать offer
+    try {
+      await liveApi.signalSend(streamId, "viewer_ready", JSON.stringify({ user_id: currentUserId }));
+    } catch (e) { void e; }
+
+    // Запускаем поллинг сигналов
     signalPollRef.current = setInterval(async () => {
       if (!activeStreamIdRef.current || !viewerPcRef.current) return;
       try {
@@ -88,17 +111,21 @@ export function useLiveWebRTC(currentUserId: number) {
           if (sig.to_user_id !== null && sig.to_user_id !== currentUserId) continue;
 
           if (sig.signal_type === "offer") {
+            // Если уже есть remoteDescription — игнорируем повторный offer
+            if (viewerPcRef.current.remoteDescription) continue;
             streamerId = sig.from_user_id;
             try {
               const offer = JSON.parse(sig.payload) as RTCSessionDescriptionInit;
               await viewerPcRef.current.setRemoteDescription(offer);
-              const answer = await viewerPcRef.current.createAnswer();
-              await viewerPcRef.current.setLocalDescription(answer);
 
+              // Применяем накопленные ICE кандидаты
               for (const c of pendingIce) {
-                try { await viewerPcRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { void e; }
+                try { await viewerPcRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { void _; }
               }
               pendingIce.length = 0;
+
+              const answer = await viewerPcRef.current.createAnswer();
+              await viewerPcRef.current.setLocalDescription(answer);
 
               await liveApi.signalSend(
                 activeStreamIdRef.current!,
@@ -107,6 +134,7 @@ export function useLiveWebRTC(currentUserId: number) {
                 streamerId
               ).catch(() => {});
             } catch (e) { console.warn("viewer offer error", e); }
+
           } else if (sig.signal_type === "ice_streamer") {
             try {
               const candidate = JSON.parse(sig.payload);
@@ -115,20 +143,22 @@ export function useLiveWebRTC(currentUserId: number) {
               } else {
                 pendingIce.push(candidate);
               }
-            } catch (e) { void e; }
+            } catch (_) { void _; }
           }
         }
       } catch (e) { void e; }
-    }, 400);
-
-    // viewer_ready после старта поллинга — стример успеет получить сигнал
-    try {
-      await liveApi.signalSend(streamId, "viewer_ready", JSON.stringify({ user_id: currentUserId }));
-    } catch (e) { void e; }
+    }, 500);
   }, [currentUserId]);
 
   const startStreamerSignaling = useCallback((streamId: number) => {
     lastSignalIdRef.current = 0;
+
+    // Инициализируем last_id до начала поллинга, чтобы не подхватить старые сигналы
+    liveApi.signalPoll(streamId, 0).then(res => {
+      if (res.signals.length > 0) {
+        lastSignalIdRef.current = res.signals[res.signals.length - 1].id;
+      }
+    }).catch(() => {});
 
     signalPollRef.current = setInterval(async () => {
       if (!isStreamingRef.current || !activeStreamIdRef.current) return;
@@ -139,28 +169,20 @@ export function useLiveWebRTC(currentUserId: number) {
 
           if (sig.signal_type === "viewer_ready") {
             const viewerId = sig.from_user_id;
+            // Закрываем старое соединение с этим зрителем если есть
             if (peerConnsRef.current.has(viewerId)) {
               peerConnsRef.current.get(viewerId)!.close();
               peerConnsRef.current.delete(viewerId);
             }
+            pendingViewerIceRef.current.delete(viewerId);
+
             const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
             peerConnsRef.current.set(viewerId, pc);
 
+            // Добавляем треки без setParameters — параметры нельзя менять до negotiation
             if (streamRef.current) {
               streamRef.current.getTracks().forEach((track) => {
-                const sender = pc.addTrack(track, streamRef.current!);
-                if (track.kind === "video") {
-                  const params = sender.getParameters();
-                  if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-                  params.encodings[0].maxBitrate = 8_000_000;
-                  params.encodings[0].maxFramerate = 60;
-                  sender.setParameters(params).catch(() => {});
-                } else if (track.kind === "audio") {
-                  const params = sender.getParameters();
-                  if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-                  params.encodings[0].maxBitrate = 192_000;
-                  sender.setParameters(params).catch(() => {});
-                }
+                pc.addTrack(track, streamRef.current!);
               });
             }
 
@@ -189,13 +211,14 @@ export function useLiveWebRTC(currentUserId: number) {
           } else if (sig.signal_type === "answer") {
             const viewerId = sig.from_user_id;
             const pc = peerConnsRef.current.get(viewerId);
-            if (pc) {
+            if (pc && pc.signalingState === "have-local-offer") {
               try {
                 const answer = JSON.parse(sig.payload) as RTCSessionDescriptionInit;
                 await pc.setRemoteDescription(answer);
+                // Применяем накопленные ICE кандидаты от зрителя
                 const pending = pendingViewerIceRef.current.get(viewerId) || [];
                 for (const c of pending) {
-                  try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (e) { void e; }
+                  try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { void _; }
                 }
                 pendingViewerIceRef.current.delete(viewerId);
               } catch (e) { console.warn("answer error", e); }
@@ -212,13 +235,12 @@ export function useLiveWebRTC(currentUserId: number) {
                 arr.push(candidate);
                 pendingViewerIceRef.current.set(viewerId, arr);
               }
-            } catch (e) { void e; }
+            } catch (_) { void _; }
           }
         }
       } catch (e) { void e; }
-    }, 600);
+    }, 500);
 
-    void streamId;
   }, []);
 
   return {

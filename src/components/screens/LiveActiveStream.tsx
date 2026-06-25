@@ -55,13 +55,20 @@ export function LiveActiveStream({
     el.play().catch(() => {});
   };
 
-  // Если через 12 секунд видео не пошло — прячем спиннер
+  // Сбрасываем состояние при каждой смене трансляции
+  useEffect(() => {
+    setVideoPlaying(false);
+    setViewerMuted(true);
+    setConnectTimeout(false);
+  }, [activeStream.id]);
+
+  // Если через 30 секунд видео не пошло — показываем сообщение (только для зрителя)
   useEffect(() => {
     if (!isStreaming) {
-      const t = setTimeout(() => setConnectTimeout(true), 12000);
+      const t = setTimeout(() => setConnectTimeout(true), 30000);
       return () => clearTimeout(t);
     }
-  }, [isStreaming]);
+  }, [isStreaming, activeStream.id]);
 
   return (
     <div className="flex flex-col h-full relative"
