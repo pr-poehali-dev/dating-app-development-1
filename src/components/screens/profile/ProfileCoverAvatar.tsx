@@ -20,6 +20,7 @@ export function ProfileCoverAvatar({
   coverUploading,
   onAvatarClick,
   onCoverClick,
+  onCoverOpen,
 }: {
   currentUser: User;
   localPhoto: string;
@@ -28,28 +29,46 @@ export function ProfileCoverAvatar({
   coverUploading: boolean;
   onAvatarClick: () => void;
   onCoverClick: () => void;
+  onCoverOpen?: () => void;
 }) {
   const displayPhoto = localPhoto || FALLBACK_PHOTO;
 
   return (
     <div className="relative w-full" style={{ marginBottom: 52 }}>
       {/* Обложка */}
-      <div className="w-full overflow-hidden relative" style={{ height: 150 }}>
-        {localCover
-          ? <img src={localCover} className="w-full h-full object-cover"
-              style={{ opacity: coverUploading ? 0.5 : 1 }} />
-          : <DefaultCover />}
-        {localCover && (
-          <div className="absolute inset-0"
-            style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(10,6,20,0.55) 100%)" }} />
+      <div
+        className="w-full overflow-hidden relative"
+        style={{ height: 180, background: "#000", cursor: localCover ? "pointer" : "default" }}
+        onClick={localCover && onCoverOpen ? onCoverOpen : undefined}
+      >
+        {localCover ? (
+          <img
+            src={localCover}
+            className="w-full h-full"
+            style={{
+              objectFit: "contain",
+              opacity: coverUploading ? 0.5 : 1,
+              transition: "opacity 0.2s",
+            }}
+          />
+        ) : (
+          <DefaultCover />
         )}
+
+        {/* Градиент снизу */}
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(10,6,20,0.6) 100%)" }} />
+
         {coverUploading && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-7 h-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
           </div>
         )}
+
+        {/* Кнопка смены фона */}
         {!coverUploading && (
-          <button onClick={onCoverClick}
+          <button
+            onClick={e => { e.stopPropagation(); onCoverClick(); }}
             className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
             style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.18)" }}>
             <Icon name="ImagePlus" size={12} />Фон

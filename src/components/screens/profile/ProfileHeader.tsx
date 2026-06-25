@@ -17,6 +17,7 @@ export function ProfileHeader({
   onEditOpen,
   onAvatarClick,
   onCoverClick,
+  onCoverOpen,
   onTabChange,
   onSettingsScreen,
   onLogout,
@@ -33,6 +34,7 @@ export function ProfileHeader({
   onEditOpen: () => void;
   onAvatarClick: () => void;
   onCoverClick: () => void;
+  onCoverOpen?: () => void;
   onTabChange: (tab: ActiveTab) => void;
   onSettingsScreen: (s: SettingsScreen) => void;
   onLogout: () => void;
@@ -55,6 +57,7 @@ export function ProfileHeader({
         coverUploading={coverUploading}
         onAvatarClick={onAvatarClick}
         onCoverClick={onCoverClick}
+        onCoverOpen={onCoverOpen}
       />
 
       {photoError && <p className="text-red-400 text-xs mb-1 text-center px-4">{photoError}</p>}

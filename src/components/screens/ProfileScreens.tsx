@@ -74,8 +74,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [photoUploadMode, setPhotoUploadMode] = useState<"cover" | "avatar" | "gallery">("avatar");
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
-  // Все фото для лайтбокса: аватар + галерея
+  // Все фото для лайтбокса: обложка + аватар + галерея
   const allPhotos = [
+    ...(localCover ? [localCover] : []),
     ...(localPhoto ? [localPhoto] : []),
     ...galleryPhotos.map(p => p.photo_url),
   ];
@@ -247,6 +248,15 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             setLightboxIdx(0);
           }}
           onCoverClick={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
+          onCoverOpen={() => {
+            if (localCover) {
+              if (galleryPhotos.length === 0 && !galleryLoading) {
+                setGalleryLoading(true);
+                profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
+              }
+              setLightboxIdx(0);
+            }
+          }}
           onTabChange={setActiveTab}
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
