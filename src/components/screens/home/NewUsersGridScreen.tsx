@@ -12,6 +12,7 @@ interface Props {
 
 const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 3;
+const BOT_IDS = new Set([22]);
 
 export function NewUsersGridScreen({ isPremium, onProfile, onPremium, onBack }: Props) {
   const [users, setUsers] = useState<Profile[]>([]);
@@ -19,7 +20,7 @@ export function NewUsersGridScreen({ isPremium, onProfile, onPremium, onBack }: 
 
   useEffect(() => {
     profilesApi.getDiscover({ new_only: true })
-      .then(d => setUsers(d.profiles))
+      .then(d => setUsers(d.profiles.filter(u => !BOT_IDS.has(u.id))))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

@@ -12,6 +12,7 @@ interface Props {
 
 const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 3;
+const BOT_IDS = new Set([22]);
 
 export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid }: Props) {
   const [users, setUsers] = useState<Profile[]>([]);
@@ -22,7 +23,7 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
   useEffect(() => {
     profilesApi.getDiscover({ online_only: false })
       .then(async d => {
-        const list = d.profiles.slice(0, 9);
+        const list = d.profiles.filter(u => !BOT_IDS.has(u.id)).slice(0, 9);
         setUsers(list);
         const statuses = await Promise.allSettled(
           list.map(u => profilesApi.subscriptionStatus(u.id))

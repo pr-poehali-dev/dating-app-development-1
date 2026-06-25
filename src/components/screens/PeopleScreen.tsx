@@ -25,7 +25,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<DiscoverParams>({});
-  const [activeTab, setActiveTab] = useState<"all" | "online" | "new">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "online">("all");
   const [selected, setSelected] = useState<Profile | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number>(0);
   const [showFilters, setShowFilters] = useState(false);
@@ -91,13 +91,12 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
     load(p, search);
   };
 
-  const handleTabChange = (tab: "all" | "online" | "new") => {
+  const handleTabChange = (tab: "all" | "online") => {
     setActiveTab(tab);
     const p: DiscoverParams = { ...filters };
     delete p.online_only;
     delete p.new_only;
     if (tab === "online") p.online_only = true;
-    else if (tab === "new") p.new_only = true;
     load(p, search);
   };
 
@@ -109,16 +108,18 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
     filters.online_only,
   ].filter(Boolean).length;
 
+  const BOT_IDS = new Set([22]);
+
   const tabs = [
     { id: "all" as const, label: "Все" },
     { id: "online" as const, label: "Онлайн" },
-    { id: "new" as const, label: "Новые" },
   ];
 
   // На вкладке «Онлайн» дополнительно фильтруем по реальному статусу (last_seen < 5 мин)
-  const displayProfiles = activeTab === "online"
+  const displayProfiles = (activeTab === "online"
     ? profiles.filter((p) => isUserOnline(p.last_seen, p.online))
-    : profiles;
+    : profiles
+  ).filter(p => !BOT_IDS.has(p.id));
 
   return (
     <>
