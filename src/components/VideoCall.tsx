@@ -126,6 +126,11 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     echoCancellation: true,
     noiseSuppression: true,
     autoGainControl: true,
+    // @ts-expect-error — нестандартные, но поддерживаемые браузерами параметры подавления эха
+    googEchoCancellation: true,
+    googAutoGainControl: true,
+    googNoiseSuppression: true,
+    googHighpassFilter: true,
   };
 
   const getMedia = async () => {
@@ -184,14 +189,16 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       e.streams[0]?.getTracks().forEach(t => {
         if (!remoteStream.getTracks().some(x => x.id === t.id)) remoteStream.addTrack(t);
       });
+      // Видео — без звука (muted), чтобы не дублировать аудио и не было эха
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
-        remoteVideoRef.current.muted = false;
-        remoteVideoRef.current.volume = 1;
+        remoteVideoRef.current.muted = true;
         remoteVideoRef.current.play().catch(() => {});
       }
+      // Звук собеседника воспроизводим ТОЛЬКО через audio-элемент
       if (remoteAudioRef.current) {
         remoteAudioRef.current.srcObject = remoteStream;
+        remoteAudioRef.current.volume = 1;
         remoteAudioRef.current.play().catch(() => {});
       }
       markConnected();
@@ -314,10 +321,11 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
           ref={remoteVideoRef}
           autoPlay
           playsInline
+          muted
           className="w-full h-full object-cover"
           style={{ display: callState === "connected" ? "block" : "none" }}
         />
-        {/* Отдельный audio чтобы звук гарантированно играл */}
+        {/* Звук собеседника — только здесь, чтобы не было эха */}
         <audio ref={remoteAudioRef} autoPlay />
 
         {/* Экран ожидания */}
