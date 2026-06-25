@@ -38,7 +38,7 @@ export function ProfileCoverAvatar({
       {/* Обложка */}
       <div
         className="w-full overflow-hidden relative"
-        style={{ height: 180, background: "#000", cursor: localCover ? "pointer" : "default" }}
+        style={{ height: 320, cursor: localCover ? "pointer" : "default" }}
         onClick={localCover && onCoverOpen ? onCoverOpen : undefined}
       >
         {localCover ? (
@@ -58,7 +58,7 @@ export function ProfileCoverAvatar({
 
         {/* Градиент снизу */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(to bottom, transparent 40%, rgba(10,6,20,0.6) 100%)" }} />
+          style={{ background: "linear-gradient(to bottom, transparent 45%, rgba(10,6,20,0.85) 100%)" }} />
 
         {coverUploading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
