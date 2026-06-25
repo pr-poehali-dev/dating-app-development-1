@@ -8,6 +8,7 @@ const URLS = {
   notifications: "https://functions.poehali.dev/5249d7a9-31e2-4ab5-a2da-6b72346e5de4",
   push: "https://functions.poehali.dev/282c24e0-ca25-4712-ad58-26c7742c2653",
   live: "https://functions.poehali.dev/f113fa74-fe31-48da-ae7d-362a933b5294",
+  feedback: "https://functions.poehali.dev/2a5b54bc-ebf4-4dd3-b9e1-8cac88e504c3",
 };
 
 function getToken(): string {
@@ -820,6 +821,9 @@ export const liveApi = {
     req<{ entries: LeaderboardEntry[]; period: string }>(
       "live", "leaderboard", {}, { period }
     ),
+
+  myStreams: () =>
+    req<{ streams: MyStream[] }>("live", "my_streams"),
 };
 
 export interface LeaderboardEntry {
@@ -832,6 +836,26 @@ export interface LeaderboardEntry {
   hearts: number;
   stream_id?: number | null;
 }
+
+export interface MyStream {
+  id: number;
+  title: string;
+  status: string;
+  viewers_count: number;
+  hearts_count: number;
+  started_at: string | null;
+  ended_at: string | null;
+  duration_sec: number | null;
+}
+
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+export const feedbackApi = {
+  send: (text: string, rating?: number, category?: string) =>
+    req<{ ok: boolean; id: number }>("feedback", "", {
+      method: "POST",
+      body: JSON.stringify({ text, rating, category: category || "general" }),
+    }),
+};
 
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export const adminApi = {

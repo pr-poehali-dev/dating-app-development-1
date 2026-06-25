@@ -338,6 +338,35 @@ def handler(event: dict, context) -> dict:
                 })
             return ok({"entries": entries, "period": period})
 
+        # ── my_streams ────────────────────────────────────────────────────────
+        if action == "my_streams":
+            if not user:
+                return err("Unauthorized", 401)
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT id, title, status, viewers_count, hearts_count, started_at, ended_at
+                    FROM live_streams
+                    WHERE user_id = %s
+                    ORDER BY started_at DESC
+                    LIMIT 30
+                """, (user["id"],))
+                rows = cur.fetchall()
+            streams = []
+            for r in rows:
+                started = r[5]
+                ended = r[6]
+                duration_sec = None
+                if started and ended:
+                    duration_sec = int((ended - started).total_seconds())
+                streams.append({
+                    "id": r[0], "title": r[1], "status": r[2],
+                    "viewers_count": r[3], "hearts_count": r[4],
+                    "started_at": started.isoformat() if started else None,
+                    "ended_at": ended.isoformat() if ended else None,
+                    "duration_sec": duration_sec,
+                })
+            return ok({"streams": streams})
+
         return err("Unknown action")
 
     finally:
