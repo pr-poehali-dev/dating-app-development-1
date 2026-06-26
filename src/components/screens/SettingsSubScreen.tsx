@@ -132,6 +132,25 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [video, setVideo] = useState({ autoAccept: false, blurBg: true, mirrorCamera: true });
   const [privacy, setPrivacy] = useState({ showOnline: true, showDistance: true, readReceipts: true, searchable: true });
 
+  const [incognito, setIncognito] = useState(currentUser.incognito ?? false);
+  const [incognitoLoading, setIncognitoLoading] = useState(false);
+
+  useEffect(() => {
+    if (screen === "privacy") {
+      profilesApi.getIncognito().then(r => setIncognito(r.incognito)).catch(() => {});
+    }
+  }, [screen]);
+
+  const handleIncognitoToggle = async () => {
+    if (!currentUser.premium) return;
+    setIncognitoLoading(true);
+    try {
+      const r = await profilesApi.toggleIncognito();
+      setIncognito(r.incognito);
+    } catch { /* ignore */ }
+    finally { setIncognitoLoading(false); }
+  };
+
   // Приватные фото
   type PrivatePhoto = { id: number; photo_url: string; created_at: string };
   const [privatePhotos, setPrivatePhotos] = useState<PrivatePhoto[]>([]);
@@ -279,6 +298,9 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         blocksLoading={blocksLoading}
         unblocking={unblocking}
         onUnblock={handleUnblock}
+        incognito={incognito}
+        incognitoLoading={incognitoLoading}
+        onIncognitoToggle={handleIncognitoToggle}
       />}
 
       {/* Модалы */}

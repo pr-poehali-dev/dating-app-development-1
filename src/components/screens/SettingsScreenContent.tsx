@@ -53,6 +53,11 @@ interface SettingsScreenContentProps {
   blocksLoading: boolean;
   unblocking: number | null;
   onUnblock: (id: number) => void;
+
+  // incognito
+  incognito: boolean;
+  incognitoLoading: boolean;
+  onIncognitoToggle: () => void;
 }
 
 export function SettingsScreenContent({
@@ -88,6 +93,9 @@ export function SettingsScreenContent({
   blocksLoading,
   unblocking,
   onUnblock,
+  incognito,
+  incognitoLoading,
+  onIncognitoToggle,
 }: SettingsScreenContentProps) {
   return (
     <div className="flex-1 overflow-y-auto pb-8">
@@ -124,6 +132,9 @@ export function SettingsScreenContent({
         blocksLoading={blocksLoading}
         unblocking={unblocking}
         onUnblock={onUnblock}
+        incognito={incognito}
+        incognitoLoading={incognitoLoading}
+        onIncognitoToggle={onIncognitoToggle}
       />
 
       <SettingsHelpPanel

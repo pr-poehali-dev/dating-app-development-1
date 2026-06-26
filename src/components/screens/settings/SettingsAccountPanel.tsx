@@ -54,6 +54,11 @@ interface Props {
   blocksLoading: boolean;
   unblocking: number | null;
   onUnblock: (id: number) => void;
+
+  // incognito
+  incognito: boolean;
+  incognitoLoading: boolean;
+  onIncognitoToggle: () => void;
 }
 
 export function SettingsAccountPanel({
@@ -89,6 +94,9 @@ export function SettingsAccountPanel({
   blocksLoading,
   unblocking,
   onUnblock,
+  incognito,
+  incognitoLoading,
+  onIncognitoToggle,
 }: Props) {
   const privateInputRef = useRef<HTMLInputElement>(null);
 
@@ -284,19 +292,73 @@ export function SettingsAccountPanel({
 
       {/* ── Конфиденциальность ── */}
       {screen === "privacy" && (
-        <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Показывать онлайн" sub="Другие видят, когда ты в сети">
-            <Toggle value={privacy.showOnline} onChange={() => onPrivacyToggle("showOnline")} />
-          </Row>
-          <Row label="Показывать расстояние" sub="Дистанция в профиле">
-            <Toggle value={privacy.showDistance} onChange={() => onPrivacyToggle("showDistance")} />
-          </Row>
-          <Row label="Прочитано" sub="Отметки о прочтении сообщений">
-            <Toggle value={privacy.readReceipts} onChange={() => onPrivacyToggle("readReceipts")} />
-          </Row>
-          <Row label="Доступен для поиска" sub="Твой профиль видят в рекомендациях">
-            <Toggle value={privacy.searchable} onChange={() => onPrivacyToggle("searchable")} />
-          </Row>
+        <div className="mx-5 flex flex-col gap-3">
+
+          {/* Инкогнито — выделенная карточка */}
+          <div className="rounded-2xl overflow-hidden"
+            style={{ background: incognito ? "rgba(155,89,182,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${incognito ? "rgba(155,89,182,0.35)" : "rgba(255,255,255,0.08)"}`, transition: "all 0.3s" }}>
+            <div className="px-4 py-3 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: incognito ? "rgba(155,89,182,0.25)" : "rgba(255,255,255,0.07)" }}>
+                <Icon name="EyeOff" size={18} className={incognito ? "text-purple-400" : "text-white/35"} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-white text-sm font-semibold">Режим инкогнито</p>
+                  {!currentUser.premium && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                      Premium
+                    </span>
+                  )}
+                </div>
+                <p className="text-white/40 text-xs mt-0.5">
+                  {incognito ? "Ты скрыт — тебя не видят в сетке" : "Ты пропадёшь из поиска и сетки"}
+                </p>
+              </div>
+              {currentUser.premium ? (
+                <button onClick={onIncognitoToggle} disabled={incognitoLoading}
+                  className="flex-shrink-0 w-12 h-6 rounded-full relative transition-all duration-300 disabled:opacity-50"
+                  style={{ background: incognito ? "linear-gradient(90deg,#9B59B6,#6C3483)" : "rgba(255,255,255,0.12)" }}>
+                  <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300"
+                    style={{ left: incognito ? "26px" : "2px" }} />
+                  {incognitoLoading && (
+                    <Icon name="Loader2" size={12} className="absolute inset-0 m-auto animate-spin text-white/60" />
+                  )}
+                </button>
+              ) : (
+                <button onClick={onPremium}
+                  className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-xl"
+                  style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
+                  Открыть
+                </button>
+              )}
+            </div>
+            {incognito && (
+              <div className="px-4 pb-3">
+                <div className="flex items-center gap-1.5 text-purple-400 text-xs">
+                  <Icon name="ShieldCheck" size={12} />
+                  <span>Активен · тебя не видят другие пользователи</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Остальные настройки */}
+          <div className="glass-card overflow-hidden">
+            <Row label="Показывать онлайн" sub="Другие видят, когда ты в сети">
+              <Toggle value={privacy.showOnline} onChange={() => onPrivacyToggle("showOnline")} />
+            </Row>
+            <Row label="Показывать расстояние" sub="Дистанция в профиле">
+              <Toggle value={privacy.showDistance} onChange={() => onPrivacyToggle("showDistance")} />
+            </Row>
+            <Row label="Прочитано" sub="Отметки о прочтении сообщений">
+              <Toggle value={privacy.readReceipts} onChange={() => onPrivacyToggle("readReceipts")} />
+            </Row>
+            <Row label="Доступен для поиска" sub="Твой профиль видят в рекомендациях">
+              <Toggle value={privacy.searchable} onChange={() => onPrivacyToggle("searchable")} />
+            </Row>
+          </div>
         </div>
       )}
 

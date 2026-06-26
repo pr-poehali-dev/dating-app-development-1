@@ -159,6 +159,7 @@ def handler(event: dict, context) -> dict:
                 "(u.age IS NULL OR u.age BETWEEN %s AND %s)",
                 "u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = %s)",
                 "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
+                "u.incognito = FALSE",
             ]
             q_params = [age_min, age_max, me['id'], me['id']]
 
@@ -235,6 +236,23 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'profiles': profiles_list})
 
         # Сохранить геолокацию
+        # ── Инкогнито ──────────────────────────────────────────────────────────
+        if action == 'toggle_incognito':
+            # Только для premium-пользователей
+            cur.execute("SELECT premium FROM users WHERE id = %s", (me['id'],))
+            row = cur.fetchone()
+            if not row or not row[0]:
+                return resp(403, {'error': 'Режим инкогнито доступен только с Premium-подпиской'})
+            cur.execute("UPDATE users SET incognito = NOT incognito WHERE id = %s RETURNING incognito", (me['id'],))
+            new_val = cur.fetchone()[0]
+            conn.commit()
+            return resp(200, {'ok': True, 'incognito': new_val})
+
+        if action == 'get_incognito':
+            cur.execute("SELECT incognito FROM users WHERE id = %s", (me['id'],))
+            row = cur.fetchone()
+            return resp(200, {'incognito': row[0] if row else False})
+
         if action == 'update_geo':
             body = json.loads(event.get('body') or '{}')
             lat_v = float(body.get('lat', 0))

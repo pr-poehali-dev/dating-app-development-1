@@ -298,6 +298,12 @@ export const profilesApi = {
 
   userGifts: (user_id: number) =>
     req<{ ok: boolean; gifts: MyGift[] }>("profiles", "user_gifts", { method: "GET" }, { user_id: String(user_id) }),
+
+  getIncognito: () =>
+    req<{ incognito: boolean }>("profiles", "get_incognito", { method: "GET" }),
+
+  toggleIncognito: () =>
+    req<{ ok: boolean; incognito: boolean }>("profiles", "toggle_incognito", { method: "POST" }),
 };
 
 // ─── Verify ───────────────────────────────────────────────────────────────────
@@ -562,6 +568,7 @@ export interface User {
   cover_url?: string;
   email_verified?: boolean;
   show_age?: boolean;
+  incognito?: boolean;
 }
 
 export interface Profile {
