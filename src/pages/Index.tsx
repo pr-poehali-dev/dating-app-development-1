@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
+import { useSwipeNav } from "@/hooks/useSwipeNav";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -83,6 +84,9 @@ export default function Index() {
 
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
+
+  const handleSwipeNav = useCallback((s: string) => setScreen(s as Screen), []);
+  useSwipeNav(mainScreens, screen, handleSwipeNav, isMain);
 
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
   const [joinStream, setJoinStream] = useState<LiveStream | null>(null);
