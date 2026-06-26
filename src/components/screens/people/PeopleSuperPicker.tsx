@@ -1,5 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -68,6 +70,85 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const RADIUS_PRESETS = [5, 10, 25, 50, 100];
+
+function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number) => void }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const circleRef = useRef<L.Circle | null>(null);
+  const markerRef = useRef<L.CircleMarker | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || leafletMap.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [55.751244, 37.618423],
+      zoom: 10,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+    }).addTo(map);
+
+    const circle = L.circle(map.getCenter(), {
+      radius: radius * 1000,
+      color: "#FF2D78",
+      fillColor: "#FF2D78",
+      fillOpacity: 0.12,
+      weight: 2,
+    }).addTo(map);
+
+    const marker = L.circleMarker(map.getCenter(), {
+      radius: 7,
+      color: "#FF2D78",
+      fillColor: "#FF2D78",
+      fillOpacity: 1,
+      weight: 2,
+    }).addTo(map);
+
+    map.on("click", (e) => {
+      circle.setLatLng(e.latlng);
+      marker.setLatLng(e.latlng);
+    });
+
+    leafletMap.current = map;
+    circleRef.current = circle;
+    markerRef.current = marker;
+
+    return () => { map.remove(); leafletMap.current = null; };
+  }, []);
+
+  useEffect(() => {
+    circleRef.current?.setRadius(radius * 1000);
+  }, [radius]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div ref={mapRef} className="w-full rounded-xl overflow-hidden" style={{ height: 200 }} />
+      <div className="flex items-center justify-between px-1">
+        <span className="text-white/40 text-xs">Радиус</span>
+        <span className="text-white font-semibold text-sm">{radius} км</span>
+      </div>
+      <input type="range" min={1} max={200} value={radius}
+        onChange={e => onChange(+e.target.value)}
+        className="w-full accent-pink-500" />
+      <div className="flex gap-1.5 flex-wrap">
+        {RADIUS_PRESETS.map(r => (
+          <button key={r} onClick={() => onChange(r)}
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+            style={radius === r
+              ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+              : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            {r} км
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -192,28 +273,9 @@ export function PeopleSuperPicker({
                 </div>
               </button>
               {superRadiusOpen && (
-                <div className="px-4 pb-4 pt-1 flex flex-col gap-3"
-                  style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-white/40 text-xs">расстояние</span>
-                      <span className="text-white font-semibold text-sm">{superRadius} км</span>
-                    </div>
-                    <input type="range" min={1} max={300} value={superRadius}
-                      onChange={e => setSuperRadius(+e.target.value)}
-                      className="w-full accent-pink-500" />
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {[5, 10, 25, 50, 100].map(r => (
-                      <button key={r} onClick={() => setSuperRadius(r)}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
-                        style={superRadius === r
-                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                          : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
-                        {r} км
-                      </button>
-                    ))}
-                  </div>
+                <div className="px-4 pb-4 pt-3"
+                  style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <RadiusMap radius={superRadius} onChange={setSuperRadius} />
                 </div>
               )}
             </div>
