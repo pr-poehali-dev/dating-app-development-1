@@ -41,9 +41,9 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
       <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
         {/* Маска сверху и снизу */}
         <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, #080808 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, rgba(10,6,18,0.95) 0%, transparent 100%)" }} />
         <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, #080808 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, rgba(10,6,18,0.95) 0%, transparent 100%)" }} />
         {/* Выделение активного элемента */}
         <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
           style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
@@ -119,7 +119,7 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
           </p>
 
           <div className="rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(255,255,255,0.06)", background: "#080808" }}>
+            style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.04)" }}>
 
             {/* Drum picker */}
             <div className="px-4 py-3 flex flex-col gap-0">
