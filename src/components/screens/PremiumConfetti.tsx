@@ -1,49 +1,80 @@
 import { useEffect, useRef } from "react";
 
-// Генерируем частицы конфетти как в Telegram
 const COLORS = [
   "#FF2D78", "#FF6B35", "#FCD34D", "#34D399",
   "#60A5FA", "#A78BFA", "#F472B6", "#FBBF24",
   "#4ADE80", "#818CF8", "#FB923C", "#38BDF8",
 ];
 
-const SHAPES = ["rect", "circle", "ribbon"] as const;
+const SHAPES = ["rect", "circle", "ribbon", "star"] as const;
 
 interface Particle {
   id: number;
-  x: number;
-  vx: number;
-  vy: number;
+  x: number;       // % от ширины
+  y: number;       // % от высоты (100 = низ)
+  vx: number;      // px/frame горизонталь
+  vy: number;      // px/frame вертикаль (отрицательная = вверх)
   rotation: number;
   rotationSpeed: number;
   color: string;
   shape: typeof SHAPES[number];
-  size: number;
+  w: number;
+  h: number;
   opacity: number;
-  y: number;
+  born: number;    // timestamp рождения
 }
 
-function makeParticles(count: number): Particle[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    x: 20 + Math.random() * 60,        // % от ширины экрана
-    y: -10 - Math.random() * 20,        // стартуют чуть выше экрана
-    vx: (Math.random() - 0.5) * 4,     // горизонтальная скорость
-    vy: 2 + Math.random() * 5,          // вертикальная скорость (вниз)
-    rotation: Math.random() * 360,
-    rotationSpeed: (Math.random() - 0.5) * 12,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)],
-    shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
-    size: 6 + Math.random() * 10,
-    opacity: 1,
-  }));
+// originX — % от ширины откуда стреляем, spread — угловой разброс в градусах
+function makeParticles(count: number, originX: number, spread: number, born: number): Particle[] {
+  return Array.from({ length: count }, (_, i) => {
+    // Угол: от 60° до 120° (вверх), плюс разброс
+    const baseAngle = 90; // прямо вверх
+    const halfSpread = spread / 2;
+    const angleDeg = baseAngle - halfSpread + Math.random() * spread;
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const speed = 28 + Math.random() * 32;
+
+    return {
+      id: born * 1000 + i,
+      x: originX + (Math.random() - 0.5) * 4,
+      y: 102,                               // стартуют чуть ниже экрана
+      vx: Math.cos(angleRad) * speed,
+      vy: -Math.sin(angleRad) * speed,      // отрицательная = вверх
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 14,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      shape: SHAPES[Math.floor(Math.random() * SHAPES.length)],
+      w: 7 + Math.random() * 9,
+      h: 4 + Math.random() * 6,
+      opacity: 1,
+      born,
+    };
+  });
+}
+
+function drawStar(ctx: CanvasRenderingContext2D, r: number) {
+  const spikes = 5;
+  const outerR = r;
+  const innerR = r * 0.45;
+  let rot = (Math.PI / 2) * 3;
+  const step = Math.PI / spikes;
+  ctx.beginPath();
+  ctx.moveTo(0, -outerR);
+  for (let i = 0; i < spikes; i++) {
+    ctx.lineTo(Math.cos(rot) * outerR, Math.sin(rot) * outerR);
+    rot += step;
+    ctx.lineTo(Math.cos(rot) * innerR, Math.sin(rot) * innerR);
+    rot += step;
+  }
+  ctx.lineTo(0, -outerR);
+  ctx.closePath();
+  ctx.fill();
 }
 
 export function PremiumConfetti() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const rafRef = useRef<number>(0);
-  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -58,28 +89,64 @@ export function PremiumConfetti() {
     resize();
     window.addEventListener("resize", resize);
 
-    // Два залпа: сразу и через 600ms
-    particlesRef.current = makeParticles(80);
+    const GRAVITY = 0.55;     // ускорение вниз px/frame²
+    const AIR = 0.988;        // сопротивление воздуха
+    const FADE_START = 3200;  // ms до начала угасания
+    const FADE_DURATION = 1800;
+
+    // Залп 1: два «выстрела» снизу слева и справа
+    const t0 = Date.now();
+    particlesRef.current = [
+      ...makeParticles(55, 28, 70, t0),
+      ...makeParticles(55, 72, 70, t0),
+    ];
+
+    // Залп 2 через 400ms — центр
     setTimeout(() => {
-      particlesRef.current = [...particlesRef.current, ...makeParticles(60)];
-    }, 600);
+      const t1 = Date.now();
+      particlesRef.current = [
+        ...particlesRef.current,
+        ...makeParticles(50, 50, 90, t1),
+      ];
+    }, 400);
+
+    // Залп 3 через 900ms — края снова
+    setTimeout(() => {
+      const t2 = Date.now();
+      particlesRef.current = [
+        ...particlesRef.current,
+        ...makeParticles(40, 15, 60, t2),
+        ...makeParticles(40, 85, 60, t2),
+      ];
+    }, 900);
 
     const draw = () => {
-      const elapsed = Date.now() - startTimeRef.current;
+      const now = Date.now();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particlesRef.current = particlesRef.current
         .map(p => {
-          const newVy = p.vy + 0.12;          // гравитация
-          const newVx = p.vx * 0.995;         // затухание по X
-          const newY  = p.y + newVy;
-          const newX  = p.x + newVx / canvas.width * 100;
-          const newRot = p.rotation + p.rotationSpeed;
-          // fade out после 3 сек
-          const fade = elapsed > 3000 ? Math.max(0, 1 - (elapsed - 3000) / 1500) : 1;
-          return { ...p, y: newY, x: newX, vy: newVy, vx: newVx, rotation: newRot, opacity: fade };
+          const age = now - p.born;
+          const fade = age > FADE_START
+            ? Math.max(0, 1 - (age - FADE_START) / FADE_DURATION)
+            : 1;
+
+          const newVx = p.vx * AIR;
+          const newVy = p.vy * AIR + GRAVITY;
+          const newX = p.x + (newVx / canvas.width) * 100;
+          const newY = p.y + (newVy / canvas.height) * 100;
+
+          return {
+            ...p,
+            vx: newVx,
+            vy: newVy,
+            x: newX,
+            y: newY,
+            rotation: p.rotation + p.rotationSpeed,
+            opacity: fade,
+          };
         })
-        .filter(p => p.y < 110 && p.opacity > 0);  // убираем за экраном
+        .filter(p => p.opacity > 0 && p.y < 115);
 
       for (const p of particlesRef.current) {
         const px = (p.x / 100) * canvas.width;
@@ -93,19 +160,21 @@ export function PremiumConfetti() {
 
         if (p.shape === "circle") {
           ctx.beginPath();
-          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
           ctx.fill();
         } else if (p.shape === "rect") {
-          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        } else if (p.shape === "ribbon") {
+          ctx.fillRect(-p.w, -p.h / 4, p.w * 2, p.h / 2);
         } else {
-          // ribbon — длинная полоска
-          ctx.fillRect(-p.size, -p.size / 6, p.size * 2, p.size / 3);
+          drawStar(ctx, p.w / 2);
         }
 
         ctx.restore();
       }
 
-      if (elapsed < 5000 || particlesRef.current.length > 0) {
+      const elapsed = now - t0;
+      if (elapsed < 6000 || particlesRef.current.length > 0) {
         rafRef.current = requestAnimationFrame(draw);
       }
     };
