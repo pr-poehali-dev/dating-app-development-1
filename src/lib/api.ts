@@ -957,7 +957,43 @@ export const adminApi = {
     adminReq<{ ok: boolean; id: number }>('create_plan', { method: 'POST', body: JSON.stringify(fields) }, token),
   deletePlan: (token: string, id: number) =>
     adminReq<{ ok: boolean }>('delete_plan', { method: 'POST', body: JSON.stringify({ id }) }, token),
+
+  contentPosts: (token: string, page = 1) =>
+    adminReq<{ posts: AdminContentPost[]; total: number; page: number }>('content_posts', {}, token, { page: String(page) }),
+
+  contentPhotos: (token: string, page = 1) =>
+    adminReq<{ photos: AdminContentPhoto[]; page: number }>('content_photos', {}, token, { page: String(page) }),
+
+  deletePost: (token: string, post_id: number) =>
+    adminReq<{ ok: boolean }>('delete_post', { method: 'POST', body: JSON.stringify({ post_id }) }, token),
+
+  deleteProfilePhoto: (token: string, user_id: number, photo_url: string, photo_type: string) =>
+    adminReq<{ ok: boolean }>('delete_profile_photo', { method: 'POST', body: JSON.stringify({ user_id, photo_url, photo_type }) }, token),
+
+  sendWarning: (token: string, user_id: number, text: string) =>
+    adminReq<{ ok: boolean }>('send_warning', { method: 'POST', body: JSON.stringify({ user_id, text }) }, token),
 };
+
+export interface AdminContentPost {
+  id: number;
+  user_id: number;
+  photo_url: string;
+  caption?: string;
+  created_at: string;
+  user_name: string;
+  username?: string;
+  user_photo?: string;
+}
+
+export interface AdminContentPhoto {
+  type: 'cover' | 'gallery';
+  user_id: number;
+  photo_url: string;
+  user_name: string;
+  username?: string;
+  user_photo?: string;
+  created_at: string;
+}
 
 export interface PremiumPlan {
   id: number;

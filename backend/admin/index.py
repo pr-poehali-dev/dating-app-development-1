@@ -960,6 +960,118 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── Контент: список постов на модерацию ──────────────────────────────
+        if action == 'content_posts':
+            page = int(params.get('page', 1))
+            per_page = 20
+            offset = (page - 1) * per_page
+            cur.execute(
+                "SELECT p.id, p.user_id, p.photo_url, p.caption, p.created_at, "
+                "u.name, u.username, u.photo_url as user_photo "
+                "FROM posts p JOIN users u ON u.id = p.user_id "
+                "ORDER BY p.created_at DESC LIMIT %s OFFSET %s",
+                (per_page, offset)
+            )
+            rows = cur.fetchall()
+            posts = [dict(zip(['id','user_id','photo_url','caption','created_at','user_name','username','user_photo'], r)) for r in rows]
+            cur.execute("SELECT COUNT(*) FROM posts")
+            total = cur.fetchone()[0]
+            return resp(200, {'posts': posts, 'total': total, 'page': page})
+
+        # ── Контент: список фото профилей на модерацию ───────────────────────
+        if action == 'content_photos':
+            page = int(params.get('page', 1))
+            per_page = 20
+            offset = (page - 1) * per_page
+            # cover_url + profile_photos
+            cur.execute(
+                "SELECT 'cover' as type, u.id as user_id, u.cover_url as photo_url, u.name, u.username, u.photo_url as user_photo, u.created_at "
+                "FROM users u WHERE u.cover_url IS NOT NULL AND u.cover_url != '' "
+                "UNION ALL "
+                "SELECT 'gallery' as type, pp.user_id, pp.photo_url, u.name, u.username, u.photo_url as user_photo, pp.created_at "
+                "FROM profile_photos pp JOIN users u ON u.id = pp.user_id "
+                "ORDER BY created_at DESC LIMIT %s OFFSET %s",
+                (per_page, offset)
+            )
+            rows = cur.fetchall()
+            photos = [dict(zip(['type','user_id','photo_url','user_name','username','user_photo','created_at'], r)) for r in rows]
+            return resp(200, {'photos': photos, 'page': page})
+
+        # ── Удалить пост от имени модератора ─────────────────────────────────
+        if action == 'delete_post':
+            post_id = body.get('post_id')
+            if not post_id:
+                return resp(400, {'error': 'post_id обязателен'})
+            cur.execute("SELECT user_id, photo_url FROM posts WHERE id = %s", (post_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пост не найден'})
+            user_id, photo_url = row
+            cur.execute("DELETE FROM post_likes WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM post_comments WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM posts WHERE id = %s", (post_id,))
+            audit(cur, 'admin_delete_post', 'warning', ip=ip, user_id=user_id, details={'post_id': post_id, 'photo_url': photo_url})
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Удалить фото профиля / обложку ───────────────────────────────────
+        if action == 'delete_profile_photo':
+            user_id = body.get('user_id')
+            photo_url = body.get('photo_url')
+            photo_type = body.get('photo_type', 'gallery')  # 'gallery' | 'cover'
+            if not user_id or not photo_url:
+                return resp(400, {'error': 'user_id и photo_url обязательны'})
+            if photo_type == 'cover':
+                cur.execute("UPDATE users SET cover_url = NULL WHERE id = %s AND cover_url = %s", (user_id, photo_url))
+            else:
+                cur.execute("DELETE FROM profile_photos WHERE user_id = %s AND photo_url = %s", (user_id, photo_url))
+            audit(cur, 'admin_delete_photo', 'warning', ip=ip, user_id=user_id, details={'photo_type': photo_type, 'photo_url': photo_url})
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # ── Отправить предупреждение пользователю от LoveBloom ───────────────
+        if action == 'send_warning':
+            user_id = body.get('user_id')
+            warning_text = body.get('text', '').strip()
+            if not user_id or not warning_text:
+                return resp(400, {'error': 'user_id и text обязательны'})
+            # Ищем/создаём системного пользователя LoveBloom (id=1 или специальный)
+            cur.execute("SELECT id FROM users WHERE username = 'lovebloom' LIMIT 1")
+            sys_row = cur.fetchone()
+            if sys_row:
+                system_id = sys_row[0]
+            else:
+                # Fallback: используем первый аккаунт или создаём матч-запись с system_id=0
+                system_id = None
+
+            if system_id and system_id != user_id:
+                # Ищем или создаём матч между LoveBloom и пользователем
+                u1, u2 = min(system_id, user_id), max(system_id, user_id)
+                cur.execute("SELECT id FROM matches WHERE user1_id = %s AND user2_id = %s", (u1, u2))
+                match_row = cur.fetchone()
+                if match_row:
+                    match_id = match_row[0]
+                else:
+                    cur.execute("INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id", (u1, u2))
+                    match_id = cur.fetchone()[0]
+                cur.execute(
+                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id",
+                    (match_id, system_id, warning_text)
+                )
+                msg_id = cur.fetchone()[0]
+            else:
+                # Если нет системного юзера — шлём через support ticket
+                cur.execute(
+                    "INSERT INTO support_tickets (user_id, message, reply, status, replied_at) "
+                    "VALUES (%s, %s, %s, 'closed', NOW()) RETURNING id",
+                    (user_id, '⚠️ Уведомление от модератора', warning_text)
+                )
+                msg_id = cur.fetchone()[0]
+
+            audit(cur, 'admin_warning_sent', 'info', ip=ip, user_id=user_id, details={'text': warning_text[:200]})
+            conn.commit()
+            return resp(200, {'ok': True, 'msg_id': msg_id})
+
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 
     finally:
