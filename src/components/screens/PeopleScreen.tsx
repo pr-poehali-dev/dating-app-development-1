@@ -47,6 +47,13 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [advancedAgeMin, setAdvancedAgeMin] = useState(18);
   const [advancedAgeMax, setAdvancedAgeMax] = useState(60);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  // Супер подъём — фильтры
+  const [superAgeMin, setSuperAgeMin] = useState(18);
+  const [superAgeMax, setSuperAgeMax] = useState(60);
+  const [superRadius, setSuperRadius] = useState(50);
+  const [superPhotoOnly, setSuperPhotoOnly] = useState(false);
+  const [superAgeOpen, setSuperAgeOpen] = useState(false);
+  const [superRadiusOpen, setSuperRadiusOpen] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const { pay: payBoost, loading: boostPaying } = useYookassa(PAY_CREATE_URL);
 
@@ -75,9 +82,9 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
     setPromoInput(""); setPromoCode(null); setPromoDiscount(0); setPromoError(null);
   };
 
-  const handleBuyBoost = async (boostType: "promote" | "super", amount: number, description: string) => {
+  const handleBuyBoost = async (boostType: "promote" | "super", amount: number, description: string, extraMeta?: Record<string, string>) => {
     const token = localStorage.getItem("spark_token") || "";
-    const metadata: Record<string, string> = { kind: "boost", boost_type: boostType, sender_token: token };
+    const metadata: Record<string, string> = { kind: "boost", boost_type: boostType, sender_token: token, ...extraMeta };
     if (currentUserId) metadata.user_id = String(currentUserId);
     if (promoCode) metadata.promo_code = promoCode;
     await payBoost({
@@ -566,29 +573,108 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
             <div className="px-4 pb-1">
               <p className="text-white font-bold text-base mb-3">Выбери фильтры</p>
               <div className="flex flex-col gap-3">
-                {[
-                  { label: "Возраст", icon: "ChevronRight" as const },
-                  { label: "Радиус", icon: "ChevronRight" as const },
-                ].map(({ label }) => (
-                  <button key={label}
-                    className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
-                    style={{ border: "1.5px solid rgba(255,255,255,0.18)", background: "transparent" }}>
-                    <span className="text-white font-medium text-base">{label}</span>
-                    <Icon name="ChevronRight" size={20} className="text-white/60" />
-                  </button>
-                ))}
-                {/* Только фото — toggle */}
-                <div className="w-full flex items-center justify-between px-4 py-4 rounded-2xl"
-                  style={{ border: "1.5px solid rgba(255,255,255,0.18)" }}>
-                  <span className="text-white font-medium text-base">Только фото</span>
+
+                {/* Возраст */}
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1.5px solid rgba(255,255,255,0.18)" }}>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setVerifiedOnly(v => !v); }}
-                    className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
-                    style={{ background: verifiedOnly ? "white" : "rgba(255,255,255,0.25)" }}>
-                    <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
-                      style={{ left: verifiedOnly ? "calc(100% - 26px)" : "2px", background: verifiedOnly ? "#111111" : "white" }} />
+                    onClick={() => { setSuperAgeOpen(v => !v); setSuperRadiusOpen(false); }}
+                    className="w-full flex items-center justify-between px-4 py-4 transition-all active:scale-[0.98]"
+                    style={{ background: superAgeOpen ? "rgba(255,255,255,0.05)" : "transparent" }}>
+                    <span className="text-white font-medium text-base">Возраст</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/50 text-sm">{superAgeMin}–{superAgeMax} лет</span>
+                      <Icon name={superAgeOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
+                    </div>
                   </button>
+                  {superAgeOpen && (
+                    <div className="px-4 pb-4 pt-1 flex flex-col gap-4" style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-white/40 text-xs">от</span>
+                          <span className="text-white font-semibold text-sm">{superAgeMin}</span>
+                        </div>
+                        <input type="range" min={18} max={80} value={superAgeMin}
+                          onChange={e => setSuperAgeMin(Math.min(+e.target.value, superAgeMax - 1))}
+                          className="w-full accent-pink-500" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-white/40 text-xs">до</span>
+                          <span className="text-white font-semibold text-sm">{superAgeMax}</span>
+                        </div>
+                        <input type="range" min={18} max={80} value={superAgeMax}
+                          onChange={e => setSuperAgeMax(Math.max(+e.target.value, superAgeMin + 1))}
+                          className="w-full accent-pink-500" />
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {([[18,25],[25,35],[35,45],[45,60]] as const).map(([a,b]) => {
+                          const active = superAgeMin === a && superAgeMax === b;
+                          return (
+                            <button key={`${a}-${b}`} onClick={() => { setSuperAgeMin(a); setSuperAgeMax(b); }}
+                              className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                              style={active
+                                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                                : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                              {a}–{b}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Радиус */}
+                <div className="rounded-2xl overflow-hidden" style={{ border: "1.5px solid rgba(255,255,255,0.18)" }}>
+                  <button
+                    onClick={() => { setSuperRadiusOpen(v => !v); setSuperAgeOpen(false); }}
+                    className="w-full flex items-center justify-between px-4 py-4 transition-all active:scale-[0.98]"
+                    style={{ background: superRadiusOpen ? "rgba(255,255,255,0.05)" : "transparent" }}>
+                    <span className="text-white font-medium text-base">Радиус</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white/50 text-sm">{superRadius} км</span>
+                      <Icon name={superRadiusOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
+                    </div>
+                  </button>
+                  {superRadiusOpen && (
+                    <div className="px-4 pb-4 pt-1 flex flex-col gap-3" style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-white/40 text-xs">расстояние</span>
+                          <span className="text-white font-semibold text-sm">{superRadius} км</span>
+                        </div>
+                        <input type="range" min={1} max={300} value={superRadius}
+                          onChange={e => setSuperRadius(+e.target.value)}
+                          className="w-full accent-pink-500" />
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {[5, 10, 25, 50, 100].map(r => (
+                          <button key={r} onClick={() => setSuperRadius(r)}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                            style={superRadius === r
+                              ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
+                              : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            {r} км
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Только фото — toggle */}
+                <button
+                  onClick={() => setSuperPhotoOnly(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
+                  style={{ border: `1.5px solid ${superPhotoOnly ? "rgba(255,45,120,0.5)" : "rgba(255,255,255,0.18)"}`, background: superPhotoOnly ? "rgba(255,45,120,0.08)" : "transparent" }}>
+                  <span className="text-white font-medium text-base">Только фото</span>
+                  <div className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
+                    style={{ background: superPhotoOnly ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.2)" }}>
+                    <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
+                      style={{ left: superPhotoOnly ? "calc(100% - 26px)" : "2px" }} />
+                  </div>
+                </button>
+
               </div>
             </div>
 
@@ -630,7 +716,10 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
             <div className="px-4 pt-4">
               <button
                 disabled={boostPaying}
-                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
+                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля", {
+                  age_min: String(superAgeMin), age_max: String(superAgeMax),
+                  radius_km: String(superRadius), photo_only: String(superPhotoOnly),
+                })}
                 className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
                 style={{ background: "white", color: "#111111" }}>
                 {boostPaying
