@@ -33,7 +33,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
           borderRadius: "20px 20px 0 0",
           boxShadow: "0 -4px 20px rgba(0,0,0,0.3)",
         }}>
-        <div className="flex items-center justify-around">
+        <div className="flex items-center justify-around -mt-1">
           {items.map((item) => {
             const isActive = active === item.screen;
             const isLive = item.screen === "live";
