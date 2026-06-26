@@ -1,26 +1,39 @@
 import { useRef, useCallback } from "react";
 import { liveApi } from "@/lib/api";
 
+// Надёжные публичные STUN серверы (без бесплатных TURN — они лагают)
 export const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun2.l.google.com:19302" },
-  {
-    urls: "turn:openrelay.metered.ca:80",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:openrelay.metered.ca:443",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
-  {
-    urls: "turn:openrelay.metered.ca:443?transport=tcp",
-    username: "openrelayproject",
-    credential: "openrelayproject",
-  },
+  { urls: "stun:stun3.l.google.com:19302" },
+  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:stun.cloudflare.com:3478" },
 ];
+
+// Лимиты битрейта (bps)
+const VIDEO_MAX_BITRATE = 1_200_000;  // 1.2 Mbps — достаточно для 720p
+const AUDIO_MAX_BITRATE = 64_000;     // 64 kbps
+
+async function applyBitrateLimit(pc: RTCPeerConnection) {
+  const senders = pc.getSenders();
+  for (const sender of senders) {
+    if (!sender.track) continue;
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) {
+        params.encodings = [{}];
+      }
+      if (sender.track.kind === "video") {
+        params.encodings[0].maxBitrate = VIDEO_MAX_BITRATE;
+        params.encodings[0].scaleResolutionDownBy = 1.0;
+      } else if (sender.track.kind === "audio") {
+        params.encodings[0].maxBitrate = AUDIO_MAX_BITRATE;
+      }
+      await sender.setParameters(params);
+    } catch (_) { void _; }
+  }
+}
 
 export function useLiveWebRTC(currentUserId: number) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -32,6 +45,9 @@ export function useLiveWebRTC(currentUserId: number) {
   const signalPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const activeStreamIdRef = useRef<number | null>(null);
   const pendingViewerIceRef = useRef<Map<number, RTCIceCandidateInit[]>>(new Map());
+  // Флаги для защиты от параллельных поллинг-вызовов
+  const viewerPollingRef = useRef(false);
+  const streamerPollingRef = useRef(false);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -49,7 +65,6 @@ export function useLiveWebRTC(currentUserId: number) {
   }, []);
 
   const startViewerWebRTC = useCallback(async (streamId: number) => {
-    // Закрываем предыдущее соединение если есть
     if (viewerPcRef.current) {
       viewerPcRef.current.close();
       viewerPcRef.current = null;
@@ -59,7 +74,12 @@ export function useLiveWebRTC(currentUserId: number) {
       signalPollRef.current = null;
     }
 
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({
+      iceServers: ICE_SERVERS,
+      iceTransportPolicy: "all",
+      bundlePolicy: "max-bundle",
+      rtcpMuxPolicy: "require",
+    });
     viewerPcRef.current = pc;
     let streamerId: number | null = null;
     const pendingIce: RTCIceCandidateInit[] = [];
@@ -85,8 +105,7 @@ export function useLiveWebRTC(currentUserId: number) {
       }
     };
 
-    // Получаем текущий максимальный signal id перед отправкой viewer_ready
-    // чтобы не подхватить старые offer от предыдущих зрителей
+    // Получаем текущий максимальный signal id
     let startSignalId = 0;
     try {
       const probe = await liveApi.signalPoll(streamId, 0);
@@ -96,14 +115,16 @@ export function useLiveWebRTC(currentUserId: number) {
     } catch (e) { void e; }
     lastSignalIdRef.current = startSignalId;
 
-    // Отправляем viewer_ready — стример начнёт создавать offer
+    // Сообщаем стримеру что зритель готов
     try {
       await liveApi.signalSend(streamId, "viewer_ready", JSON.stringify({ user_id: currentUserId }));
     } catch (e) { void e; }
 
-    // Запускаем поллинг сигналов
+    // Поллинг сигналов с защитой от параллельных вызовов
     signalPollRef.current = setInterval(async () => {
       if (!activeStreamIdRef.current || !viewerPcRef.current) return;
+      if (viewerPollingRef.current) return; // предыдущий запрос ещё не завершился
+      viewerPollingRef.current = true;
       try {
         const res = await liveApi.signalPoll(activeStreamIdRef.current, lastSignalIdRef.current);
         for (const sig of res.signals) {
@@ -111,14 +132,12 @@ export function useLiveWebRTC(currentUserId: number) {
           if (sig.to_user_id !== null && sig.to_user_id !== currentUserId) continue;
 
           if (sig.signal_type === "offer") {
-            // Если уже есть remoteDescription — игнорируем повторный offer
             if (viewerPcRef.current.remoteDescription) continue;
             streamerId = sig.from_user_id;
             try {
               const offer = JSON.parse(sig.payload) as RTCSessionDescriptionInit;
               await viewerPcRef.current.setRemoteDescription(offer);
 
-              // Применяем накопленные ICE кандидаты
               for (const c of pendingIce) {
                 try { await viewerPcRef.current.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { void _; }
               }
@@ -147,13 +166,13 @@ export function useLiveWebRTC(currentUserId: number) {
           }
         }
       } catch (e) { void e; }
-    }, 500);
+      finally { viewerPollingRef.current = false; }
+    }, 800);
   }, [currentUserId]);
 
   const startStreamerSignaling = useCallback((streamId: number) => {
     lastSignalIdRef.current = 0;
 
-    // Инициализируем last_id до начала поллинга, чтобы не подхватить старые сигналы
     liveApi.signalPoll(streamId, 0).then(res => {
       if (res.signals.length > 0) {
         lastSignalIdRef.current = res.signals[res.signals.length - 1].id;
@@ -162,6 +181,8 @@ export function useLiveWebRTC(currentUserId: number) {
 
     signalPollRef.current = setInterval(async () => {
       if (!isStreamingRef.current || !activeStreamIdRef.current) return;
+      if (streamerPollingRef.current) return; // защита от параллельных запросов
+      streamerPollingRef.current = true;
       try {
         const res = await liveApi.signalPoll(activeStreamIdRef.current, lastSignalIdRef.current);
         for (const sig of res.signals) {
@@ -169,17 +190,20 @@ export function useLiveWebRTC(currentUserId: number) {
 
           if (sig.signal_type === "viewer_ready") {
             const viewerId = sig.from_user_id;
-            // Закрываем старое соединение с этим зрителем если есть
             if (peerConnsRef.current.has(viewerId)) {
               peerConnsRef.current.get(viewerId)!.close();
               peerConnsRef.current.delete(viewerId);
             }
             pendingViewerIceRef.current.delete(viewerId);
 
-            const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            const pc = new RTCPeerConnection({
+              iceServers: ICE_SERVERS,
+              iceTransportPolicy: "all",
+              bundlePolicy: "max-bundle",
+              rtcpMuxPolicy: "require",
+            });
             peerConnsRef.current.set(viewerId, pc);
 
-            // Добавляем треки без setParameters — параметры нельзя менять до negotiation
             if (streamRef.current) {
               streamRef.current.getTracks().forEach((track) => {
                 pc.addTrack(track, streamRef.current!);
@@ -215,7 +239,10 @@ export function useLiveWebRTC(currentUserId: number) {
               try {
                 const answer = JSON.parse(sig.payload) as RTCSessionDescriptionInit;
                 await pc.setRemoteDescription(answer);
-                // Применяем накопленные ICE кандидаты от зрителя
+
+                // Применяем битрейт-лимит после установки соединения
+                await applyBitrateLimit(pc);
+
                 const pending = pendingViewerIceRef.current.get(viewerId) || [];
                 for (const c of pending) {
                   try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) { void _; }
@@ -239,7 +266,8 @@ export function useLiveWebRTC(currentUserId: number) {
           }
         }
       } catch (e) { void e; }
-    }, 500);
+      finally { streamerPollingRef.current = false; }
+    }, 800);
 
   }, []);
 

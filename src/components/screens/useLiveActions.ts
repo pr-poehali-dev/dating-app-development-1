@@ -108,8 +108,8 @@ export function useLiveActions({
     const nextFacing = facingMode === "user" ? "environment" : "user";
     try {
       const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: nextFacing, width: { ideal: 1920, min: 1280 }, height: { ideal: 1080, min: 720 }, frameRate: { ideal: 60, min: 30 } },
-        audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 48000, channelCount: 2 },
+        video: { facingMode: nextFacing, width: { ideal: 1280, max: 1280 }, height: { ideal: 720, max: 720 }, frameRate: { ideal: 30, max: 30 } },
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 48000 },
       });
       peerConnsRef.current.forEach((pc) => {
         const senders = pc.getSenders();
@@ -136,20 +136,21 @@ export function useLiveActions({
     let mediaStream: MediaStream | null = null;
     const attempts: MediaStreamConstraints[] = [
       {
+        // 720p/30fps — оптимально для мобильного стриминга
         video: {
           facingMode: "user",
-          width:     { ideal: 1920, min: 1280 },
-          height:    { ideal: 1080, min: 720 },
-          frameRate: { ideal: 60,   min: 30 },
+          width:     { ideal: 1280, max: 1280 },
+          height:    { ideal: 720,  max: 720 },
+          frameRate: { ideal: 30,   max: 30 },
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
+          autoGainControl: true,
           sampleRate: 48000,
-          channelCount: 2,
         },
       },
-      { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } }, audio: true },
+      { video: { facingMode: "user", width: { ideal: 854 }, height: { ideal: 480 }, frameRate: { ideal: 25 } }, audio: true },
       { video: { facingMode: "user" }, audio: true },
       { video: true, audio: true },
       { video: true, audio: false },
