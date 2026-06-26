@@ -63,6 +63,11 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
         )
     )
 
+    # Уведомление отправителю от бота
+    if sender_id:
+        sys_text = f"__GIFT_BOT__{gift_emoji}|{gift_name}"
+        _send_bot_message(cur, sender_id, sys_text)
+
 
 def _apply_promo_from_metadata(cur, metadata: dict, user_id: int) -> None:
     """Списывает промокод после успешной оплаты (если был передан)."""
@@ -139,9 +144,12 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
         (user_id, notif_text)
     )
 
-    # Системное сообщение — всегда в личный матч пользователя с ботом LoveBloom
-    # Это гарантирует что сообщение видит ТОЛЬКО сам пользователь
     sys_text = f"__PREMIUM__{plan_label}|{until_str}"
+    _send_bot_message(cur, user_id, sys_text)
+
+
+def _send_bot_message(cur, user_id: int, sys_text: str) -> None:
+    """Отправляет системное сообщение от бота LoveBloom пользователю."""
     LBLOOM_EMAIL = 'system@lbloom.ru'
     LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg'
     cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
@@ -152,28 +160,29 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
             (LBLOOM_EMAIL, LBLOOM_PHOTO)
         )
         bot_row = cur.fetchone()
-    if bot_row and bot_row[0] != user_id:
-        bot_id = bot_row[0]
+    if not bot_row or bot_row[0] == user_id:
+        return
+    bot_id = bot_row[0]
+    cur.execute(
+        "SELECT id FROM matches WHERE (user1_id = %s AND user2_id = %s) OR (user1_id = %s AND user2_id = %s) LIMIT 1",
+        (bot_id, user_id, user_id, bot_id)
+    )
+    match_row = cur.fetchone()
+    if not match_row:
         cur.execute(
-            "SELECT id FROM matches WHERE (user1_id = %s AND user2_id = %s) OR (user1_id = %s AND user2_id = %s) LIMIT 1",
-            (bot_id, user_id, user_id, bot_id)
+            "INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id",
+            (bot_id, user_id)
         )
-        sys_match = cur.fetchone()
-        if not sys_match:
-            cur.execute(
-                "INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id",
-                (bot_id, user_id)
-            )
-            sys_match = cur.fetchone()
-        if sys_match:
-            cur.execute(
-                "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
-                (sys_match[0], bot_id, sys_text)
-            )
+        match_row = cur.fetchone()
+    if match_row:
+        cur.execute(
+            "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+            (match_row[0], bot_id, sys_text)
+        )
 
 
 def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
-    """Создаёт буст профиля после успешной оплаты."""
+    """Создаёт буст профиля после успешной оплаты и отправляет уведомление в чат."""
     if not metadata or metadata.get('kind') != 'boost':
         return
 
@@ -186,19 +195,25 @@ def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: fl
         if row:
             user_id = row[0]
     if not user_id:
+        user_id = _int(metadata.get('user_id'))
+    if not user_id:
         return
 
     cur.execute("SELECT id FROM profile_boosts WHERE payment_id = %s LIMIT 1", (payment_id,))
     if cur.fetchone():
         return
 
-    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
+    expires_at = datetime.datetime.now() + datetime.timedelta(hours=1)
+    expires_str = expires_at.strftime('%d.%m.%Y %H:%M')
 
     cur.execute(
         "INSERT INTO profile_boosts (user_id, boost_type, payment_id, amount, expires_at) "
         "VALUES (%s, %s, %s, %s, %s)",
         (user_id, boost_type, payment_id, amount, expires_at)
     )
+
+    sys_text = f"__BOOST__{boost_type}|{expires_str}"
+    _send_bot_message(cur, user_id, sys_text)
 
 
 def handler(event: dict, context) -> dict:

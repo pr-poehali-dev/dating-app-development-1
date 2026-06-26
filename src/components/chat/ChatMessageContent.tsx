@@ -238,6 +238,82 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
       </div>
     );
   }
+  if (text.startsWith("__BOOST__")) {
+    const payload = text.slice(9); // "promote|31.12.2026 15:30" или "super|..."
+    const [boostType, until] = payload.split("|");
+    const isSuper = boostType === "super";
+    return (
+      <div className="flex flex-col items-center gap-3 py-4 px-5 select-none"
+        style={{
+          background: isSuper
+            ? "linear-gradient(135deg, rgba(155,89,182,0.15) 0%, rgba(255,45,120,0.12) 100%)"
+            : "linear-gradient(135deg, rgba(255,45,120,0.12) 0%, rgba(255,107,53,0.1) 100%)",
+          border: `1.5px solid ${isSuper ? "rgba(155,89,182,0.35)" : "rgba(255,45,120,0.3)"}`,
+          borderRadius: 20,
+          minWidth: 220,
+          maxWidth: 280,
+          boxShadow: isSuper ? "0 4px 24px rgba(155,89,182,0.2)" : "0 4px 24px rgba(255,45,120,0.2)",
+        }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background: isSuper ? "linear-gradient(135deg,#9B59B6,#FF2D78)" : "linear-gradient(135deg,#FF2D78,#FF6B35)",
+            boxShadow: isSuper ? "0 4px 16px rgba(155,89,182,0.5)" : "0 4px 16px rgba(255,45,120,0.5)",
+          }}>
+          <span style={{ fontSize: 28 }}>{isSuper ? "⭐" : "🚀"}</span>
+        </div>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-white font-black text-base tracking-wide">
+            {isSuper ? "Супер подъём" : "Продвижение профиля"}
+          </span>
+          <span className="text-white/60 text-xs font-semibold">
+            {isSuper ? "Максимальная видимость активирована" : "Профиль поднят в поиске"}
+          </span>
+          {until && (
+            <span className="text-white/35 text-[11px]">активен до {until}</span>
+          )}
+        </div>
+        <div className="flex flex-col gap-1 w-full">
+          {(isSuper
+            ? ["Приоритет в поиске", "Фильтры по аудитории", "Максимум показов"]
+            : ["Подъём в ближайшей сетке", "Больше просмотров профиля", "Новые знакомства"]
+          ).map(f => (
+            <div key={f} className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: isSuper ? "linear-gradient(135deg,#9B59B6,#FF2D78)" : "linear-gradient(135deg,#FF2D78,#FF6B35)" }}>
+                <Icon name="Check" size={9} className="text-white" />
+              </div>
+              <span className="text-white/55 text-[11px]">{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (text.startsWith("__GIFT_BOT__")) {
+    const payload = text.slice(12); // "emoji|name"
+    const [emoji, name] = payload.split("|");
+    return (
+      <div className="flex flex-col items-center gap-3 py-4 px-5 select-none"
+        style={{
+          background: "linear-gradient(135deg, rgba(252,211,77,0.12) 0%, rgba(255,45,120,0.1) 100%)",
+          border: "1.5px solid rgba(252,211,77,0.3)",
+          borderRadius: 20,
+          minWidth: 220,
+          maxWidth: 280,
+          boxShadow: "0 4px 24px rgba(252,211,77,0.15)",
+        }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FCD34D,#F59E0B)", boxShadow: "0 4px 16px rgba(252,211,77,0.5)" }}>
+          <span style={{ fontSize: 32 }}>{emoji || "🎁"}</span>
+        </div>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-white font-black text-base tracking-wide">Подарок отправлен!</span>
+          <span className="text-white/60 text-xs font-semibold">{name || "Подарок"}</span>
+          <span className="text-white/35 text-[11px]">появится в профиле получателя</span>
+        </div>
+      </div>
+    );
+  }
   if (text === "❤️") {
     return <HeartMessage />;
   }
