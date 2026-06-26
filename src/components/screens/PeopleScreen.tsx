@@ -33,6 +33,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [showViewers, setShowViewers] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
   const [showBoosts, setShowBoosts] = useState(false);
+  const [boostSelected, setBoostSelected] = useState<"promote"|"super">("promote");
   const [promoInput, setPromoInput] = useState("");
   const [promoCode, setPromoCode] = useState<string | null>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -285,106 +286,67 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
 
       {showBoosts && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
           onClick={() => { setShowBoosts(false); resetPromo(); }}>
           <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-8"
-            style={{ background: "var(--spark-dark2,#1a1030)" }}
+            style={{ background: "#111111" }}
             onClick={e => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-4"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                  <Icon name="Zap" size={16} className="text-white" />
-                </div>
-                <p className="text-white font-bold text-base">Купить бусты профиля</p>
-              </div>
-              <button onClick={() => { setShowBoosts(false); resetPromo(); }} className="text-white/40 hover:text-white/70">
-                <Icon name="X" size={20} />
+
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.18)" }} />
+            </div>
+
+            {/* Закрыть */}
+            <div className="flex justify-end px-4 pt-1 pb-0">
+              <button onClick={() => { setShowBoosts(false); resetPromo(); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,255,255,0.1)" }}>
+                <Icon name="X" size={16} className="text-white/70" />
               </button>
             </div>
 
-            <style>{`
-              @keyframes gradientSpin {
-                0%   { background-position: 0% 50%; }
-                25%  { background-position: 100% 0%; }
-                50%  { background-position: 100% 100%; }
-                75%  { background-position: 0% 100%; }
-                100% { background-position: 0% 50%; }
-              }
-              .boost-card-1 {
-                background: linear-gradient(135deg, #FF2D78, #FF6B35, #9B59B6, #3B82F6, #FF2D78);
-                background-size: 300% 300%;
-                animation: gradientSpin 4s ease infinite;
-                border: none !important;
-              }
-              .boost-card-2 {
-                background: linear-gradient(135deg, #9B59B6, #FF2D78, #FFD700, #FF6B35, #9B59B6);
-                background-size: 300% 300%;
-                animation: gradientSpin 4s ease infinite reverse;
-                border: none !important;
-              }
-              .boost-inner {
-                background: rgba(10,5,20,0.72);
-                backdrop-filter: blur(12px);
-                border-radius: 14px;
-              }
-              .boost-icon-1 {
-                background: linear-gradient(135deg, #FF2D78, #FF6B35, #9B59B6);
-                background-size: 200% 200%;
-                animation: gradientSpin 3s ease infinite;
-              }
-              .boost-icon-2 {
-                background: linear-gradient(135deg, #9B59B6, #FFD700, #FF2D78);
-                background-size: 200% 200%;
-                animation: gradientSpin 3s ease infinite reverse;
-              }
-            `}</style>
-            <div className="px-4 pt-4 flex flex-col gap-3">
-              {/* Boost 1 */}
-              <button
-                disabled={boostPaying}
-                onClick={() => handleBuyBoost("promote", 350, "Продвижение профиля в сетку")}
-                className="w-full rounded-2xl p-[2px] text-left transition-all active:scale-[0.98] disabled:opacity-60 boost-card-1">
-                <div className="boost-inner w-full p-4 flex items-center gap-4 rounded-2xl">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 boost-icon-1">
-                    {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Rocket" size={22} className="text-white" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-sm">Продвинуть профиль</p>
-                    <p className="text-white/45 text-xs mt-0.5">Продвинуть в ближайшую сетку</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">350 ₽</p>}
-                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{discountedPrice(350)} ₽</p>
-                  </div>
-                </div>
-              </button>
+            {/* Заголовок */}
+            <div className="px-6 pt-2 pb-5 text-center">
+              <h2 className="text-white font-bold text-2xl leading-tight mb-2">Купить бусты профиля</h2>
+              <p className="text-white/50 text-sm leading-relaxed">
+                Получай больше просмотров и чатов, подняв свой профиль наверх списка для всех людей рядом
+              </p>
+            </div>
 
-              {/* Boost 2 */}
-              <button
-                disabled={boostPaying}
-                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
-                className="w-full rounded-2xl p-[2px] text-left transition-all active:scale-[0.98] disabled:opacity-60 boost-card-2">
-                <div className="boost-inner w-full p-4 flex items-center gap-4 rounded-2xl">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 boost-icon-2">
-                    {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Star" size={22} className="text-white" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-sm">Супер подъём</p>
-                    <p className="text-white/45 text-xs mt-0.5">Выбери людей, которые тебе нравятся</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">550 ₽</p>}
-                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{discountedPrice(550)} ₽</p>
-                  </div>
-                </div>
-              </button>
+            {/* Тарифы */}
+            <div className="px-4 flex flex-col gap-3">
+              {([
+                { type: "promote" as const, label: "Boost 1 Hour", amount: 350 },
+                { type: "super"   as const, label: "5 Boosts 1 Hour", amount: 550 },
+              ] as const).map(({ type, label, amount }) => {
+                const selected = boostSelected === type;
+                return (
+                  <button key={type} onClick={() => setBoostSelected(type)}
+                    className="w-full flex items-center justify-between px-4 py-4 rounded-2xl text-left transition-all active:scale-[0.98]"
+                    style={{
+                      background: selected ? "rgba(255,255,255,0.08)" : "transparent",
+                      border: selected ? "1.5px solid rgba(255,255,255,0.55)" : "1.5px solid rgba(255,255,255,0.15)",
+                    }}>
+                    <div className="flex items-center gap-3">
+                      {/* Радио */}
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ border: selected ? "none" : "1.5px solid rgba(255,255,255,0.4)", background: selected ? "white" : "transparent" }}>
+                        {selected && <div className="w-2.5 h-2.5 rounded-full" style={{ background: "#111111" }} />}
+                      </div>
+                      <span className="text-white font-medium text-base">{label}</span>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">{amount.toLocaleString("ru")} ₽</p>}
+                      <span className="text-white font-semibold text-base">{discountedPrice(amount).toLocaleString("ru")} ₽</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Промокод */}
-            <div className="px-4 pt-4">
+            <div className="px-4 pt-3">
               {promoCode ? (
                 <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-2xl"
                   style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)" }}>
@@ -413,14 +375,37 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                       onClick={handleApplyPromo}
                       disabled={promoChecking || !promoInput.trim()}
                       className="px-5 py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
-                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                      {promoChecking ? <Icon name="Loader2" size={16} className="animate-spin" /> : "Применить"}
+                      style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                      {promoChecking ? <Icon name="Loader2" size={16} className="animate-spin text-white" /> : "Применить"}
                     </button>
                   </div>
                   {promoError && <p className="text-red-400 text-xs mt-2 px-1">{promoError}</p>}
                 </>
               )}
             </div>
+
+            {/* Кнопка купить */}
+            <div className="px-4 pt-4">
+              <button
+                disabled={boostPaying}
+                onClick={() => {
+                  if (boostSelected === "promote") handleBuyBoost("promote", 350, "Boost 1 Hour");
+                  else handleBuyBoost("super", 550, "5 Boosts 1 Hour");
+                }}
+                className="w-full py-4 rounded-2xl font-bold text-base text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+                style={{ background: "white", color: "#111111" }}>
+                {boostPaying
+                  ? <Icon name="Loader2" size={20} className="animate-spin text-black" />
+                  : <>
+                      <Icon name="Zap" size={18} style={{ color: "#111111" }} />
+                      <span style={{ color: "#111111" }}>
+                        Продолжить · {discountedPrice(boostSelected === "promote" ? 350 : 550).toLocaleString("ru")} ₽
+                      </span>
+                    </>
+                }
+              </button>
+            </div>
+
           </div>
         </div>
       )}
