@@ -448,8 +448,8 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
 
             <div className="px-4 flex flex-col gap-3">
               {([
-                { type: "promote" as const, label: "Boost 1 Hour", sub: "Подъём на 1 час", amount: 350 },
-                { type: "super"   as const, label: "5 Boosts 1 Hour", sub: "Пакет из 5 бустов по 1 часу", amount: 550 },
+                { type: "promote" as const, label: "Подъём на 1 час", sub: "Поднять профиль в сетке на 1 час", amount: 350 },
+                { type: "super"   as const, label: "5 подъёмов на 1 час", sub: "Пакет из 5 бустов по 1 часу", amount: 550 },
               ] as const).map(({ type, label, sub, amount }) => {
                 const selected = boostSelected === type;
                 return (
