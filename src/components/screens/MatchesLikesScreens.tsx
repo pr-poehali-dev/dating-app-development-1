@@ -128,6 +128,10 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
               : m.last_msg.startsWith("__LOC__") ? "📍 Геолокация"
               : m.last_msg.startsWith("__GIFT__") ? "🎁 Подарок"
               : m.last_msg.startsWith("__VIDEOCIRCLE__") ? "⭕ Видео-кружок"
+              : m.last_msg.includes("GEO_DENIED") ? "📍 Геолокация недоступна"
+              : m.last_msg.startsWith("__VCALL__") ? "📹 Видеозвонок"
+              : m.last_msg.startsWith("__AWARD__") ? "🏆 Награда"
+              : m.last_msg.startsWith("__") ? ""
               : m.last_msg;
 
             const timeStr = m.last_msg_time
