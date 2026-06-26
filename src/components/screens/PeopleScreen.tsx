@@ -34,6 +34,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [viewersCount, setViewersCount] = useState(0);
   const [showBoosts, setShowBoosts] = useState(false);
   const [showBoostPicker, setShowBoostPicker] = useState(false);
+  const [showSuperPicker, setShowSuperPicker] = useState(false);
   const [boostSelected, setBoostSelected] = useState<"promote"|"super">("promote");
   const [promoInput, setPromoInput] = useState("");
   const [promoCode, setPromoCode] = useState<string | null>(null);
@@ -363,22 +364,21 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                 </div>
               </button>
 
-              {/* Boost 2 — сразу оплата */}
+              {/* Boost 2 — открывает super picker */}
               <button
                 disabled={boostPaying}
-                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
+                onClick={() => { setShowBoosts(false); setShowSuperPicker(true); }}
                 className="w-full rounded-2xl p-[2px] text-left transition-all active:scale-[0.98] disabled:opacity-60 boost-card-2">
                 <div className="boost-inner w-full p-4 flex items-center gap-4 rounded-2xl">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 boost-icon-2">
-                    {boostPaying ? <Icon name="Loader2" size={22} className="text-white animate-spin" /> : <Icon name="Star" size={22} className="text-white" />}
+                    <Icon name="Star" size={22} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-bold text-sm">Супер подъём</p>
                     <p className="text-white/45 text-xs mt-0.5">Максимальная видимость профиля</p>
                   </div>
                   <div className="flex-shrink-0 text-right">
-                    {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">550 ₽</p>}
-                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{discountedPrice(550)} ₽</p>
+                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>550 ₽</p>
                   </div>
                 </div>
               </button>
@@ -528,6 +528,117 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                   : <>
                       <Icon name="Zap" size={18} style={{ color: "#111111" }} />
                       <span>Продолжить · {discountedPrice(boostSelected === "promote" ? 350 : 550).toLocaleString("ru")} ₽</span>
+                    </>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Picker для "Супер подъём" */}
+      {showSuperPicker && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)" }}
+          onClick={() => { setShowSuperPicker(false); resetPromo(); }}>
+          <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-8"
+            style={{ background: "#111111" }}
+            onClick={e => e.stopPropagation()}>
+
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.18)" }} />
+            </div>
+            <div className="flex justify-end px-4 pt-1">
+              <button onClick={() => { setShowSuperPicker(false); resetPromo(); }}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,255,255,0.1)" }}>
+                <Icon name="X" size={16} className="text-white/70" />
+              </button>
+            </div>
+
+            <div className="px-6 pt-1 pb-5 text-center">
+              <h2 className="text-white font-bold text-2xl leading-tight mb-2">Супер подъём</h2>
+              <p className="text-white/50 text-sm leading-relaxed">
+                Больше просмотров и чатов от людей, которые тебе нравятся. Выбирай свои предпочтения и продвигайся умнее
+              </p>
+            </div>
+
+            <div className="px-4 pb-1">
+              <p className="text-white font-bold text-base mb-3">Выбери фильтры</p>
+              <div className="flex flex-col gap-3">
+                {[
+                  { label: "Возраст", icon: "ChevronRight" as const },
+                  { label: "Сексуальная роль", icon: "ChevronRight" as const },
+                  { label: "Радиус", icon: "ChevronRight" as const },
+                ].map(({ label }) => (
+                  <button key={label}
+                    className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
+                    style={{ border: "1.5px solid rgba(255,255,255,0.18)", background: "transparent" }}>
+                    <span className="text-white font-medium text-base">{label}</span>
+                    <Icon name="ChevronRight" size={20} className="text-white/60" />
+                  </button>
+                ))}
+                {/* Только фото — toggle */}
+                <div className="w-full flex items-center justify-between px-4 py-4 rounded-2xl"
+                  style={{ border: "1.5px solid rgba(255,255,255,0.18)" }}>
+                  <span className="text-white font-medium text-base">Только фото</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setVerifiedOnly(v => !v); }}
+                    className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
+                    style={{ background: verifiedOnly ? "white" : "rgba(255,255,255,0.25)" }}>
+                    <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
+                      style={{ left: verifiedOnly ? "calc(100% - 26px)" : "2px", background: verifiedOnly ? "#111111" : "white" }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Промокод */}
+            <div className="px-4 pt-4">
+              {promoCode ? (
+                <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-2xl"
+                  style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon name="BadgeCheck" size={18} className="text-green-400 flex-shrink-0" />
+                    <p className="text-green-400 text-sm font-semibold truncate">Промокод {promoCode} · −{promoDiscount}%</p>
+                  </div>
+                  <button onClick={resetPromo} className="text-white/40 hover:text-white/70 flex-shrink-0">
+                    <Icon name="X" size={18} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                      onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                      placeholder="Промокод"
+                      className="flex-1 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none uppercase tracking-wide"
+                      style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}
+                    />
+                    <button onClick={handleApplyPromo} disabled={promoChecking || !promoInput.trim()}
+                      className="px-5 py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
+                      style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)" }}>
+                      {promoChecking ? <Icon name="Loader2" size={16} className="animate-spin" /> : "Применить"}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-red-400 text-xs mt-2 px-1">{promoError}</p>}
+                </>
+              )}
+            </div>
+
+            <div className="px-4 pt-4">
+              <button
+                disabled={boostPaying}
+                onClick={() => handleBuyBoost("super", 550, "Супер подъём профиля")}
+                className="w-full py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
+                style={{ background: "white", color: "#111111" }}>
+                {boostPaying
+                  ? <Icon name="Loader2" size={20} className="animate-spin" style={{ color: "#111111" }} />
+                  : <>
+                      <Icon name="Zap" size={18} style={{ color: "#111111" }} />
+                      <span>Продолжить · {discountedPrice(550).toLocaleString("ru")} ₽</span>
                     </>
                 }
               </button>
