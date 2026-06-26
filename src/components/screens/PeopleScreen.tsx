@@ -568,7 +568,6 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
               <div className="flex flex-col gap-3">
                 {[
                   { label: "Возраст", icon: "ChevronRight" as const },
-                  { label: "Сексуальная роль", icon: "ChevronRight" as const },
                   { label: "Радиус", icon: "ChevronRight" as const },
                 ].map(({ label }) => (
                   <button key={label}
