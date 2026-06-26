@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 
 interface Props {
@@ -10,6 +10,79 @@ interface Props {
 }
 
 const AGE_PRESETS = [[18,25],[25,35],[35,45],[45,60]] as const;
+
+const ITEM_H = 56;
+const VISIBLE = 5;
+const AGES = Array.from({ length: 63 }, (_, i) => i + 18); // 18..80
+
+function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const scrollToIdx = useCallback((idx: number, smooth = true) => {
+    if (!listRef.current) return;
+    listRef.current.scrollTo({ top: idx * ITEM_H, behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  const onScroll = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(AGES.length - 1, idx));
+    if (AGES[clamped] !== value) onChange(AGES[clamped]);
+  };
+
+  const onScrollEnd = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    scrollToIdx(Math.max(0, Math.min(AGES.length - 1, idx)));
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 flex-1">
+      <span className="text-white/40 text-sm font-medium">{label}</span>
+      <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
+        {/* Маска сверху и снизу */}
+        <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, #0f0a1a 0%, transparent 100%)" }} />
+        <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, #0f0a1a 0%, transparent 100%)" }} />
+        {/* Выделение активного элемента */}
+        <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
+          style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
+        <div
+          ref={(el) => {
+            (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            if (el) {
+              const idx = AGES.indexOf(value);
+              el.scrollTop = (idx >= 0 ? idx : 0) * ITEM_H;
+            }
+          }}
+          onScroll={onScroll}
+          onScrollCapture={onScrollEnd}
+          className="h-full overflow-y-scroll"
+          style={{
+            scrollSnapType: "y mandatory",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            paddingTop: ITEM_H * 2,
+            paddingBottom: ITEM_H * 2,
+          }}
+        >
+          {AGES.map((age) => (
+            <div
+              key={age}
+              onClick={() => { onChange(age); scrollToIdx(AGES.indexOf(age)); }}
+              style={{ height: ITEM_H, scrollSnapAlign: "center" }}
+              className="flex items-center justify-center cursor-pointer select-none"
+            >
+              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-3xl" : "text-white/25 text-xl"}`}>
+                {age}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifiedOnly: initVerified, onApply, onClose }: Props) {
   const [ageMin, setAgeMin] = useState(initMin);
@@ -48,46 +121,17 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
           <div className="rounded-2xl overflow-hidden"
             style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
 
-            {/* Диапазон-шапка */}
-            <div className="px-4 py-3 flex items-center justify-between"
-              style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.1), rgba(155,89,182,0.08))" }}>
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.4)" }}>
-                  <Icon name="Cake" size={13} className="text-white" />
-                </div>
-                <span className="text-white font-semibold text-sm">Возраст</span>
-              </div>
-              <span className="text-sm font-bold"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                {ageMin} – {ageMax} лет
-              </span>
-            </div>
-
-            {/* Слайдеры */}
-            <div className="px-4 py-4 flex flex-col gap-4"
-              style={{ background: "rgba(255,255,255,0.03)" }}>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/40 text-xs">от</span>
-                  <span className="text-white font-semibold text-sm">{ageMin}</span>
-                </div>
-                <input type="range" min={18} max={80} value={ageMin}
-                  onChange={e => setAgeMin(Math.min(+e.target.value, ageMax - 1))}
-                  className="w-full accent-pink-500" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/40 text-xs">до</span>
-                  <span className="text-white font-semibold text-sm">{ageMax}</span>
-                </div>
-                <input type="range" min={18} max={80} value={ageMax}
-                  onChange={e => setAgeMax(Math.max(+e.target.value, ageMin + 1))}
-                  className="w-full accent-pink-500" />
+            {/* Drum picker */}
+            <div className="px-4 py-4 flex flex-col gap-0"
+              style={{ background: "rgba(255,255,255,0.02)" }}>
+              <div className="flex items-stretch gap-4">
+                <DrumPicker value={ageMin} onChange={v => setAgeMin(Math.min(v, ageMax - 1))} label="От" />
+                <div className="w-px self-stretch" style={{ background: "rgba(255,255,255,0.07)" }} />
+                <DrumPicker value={ageMax} onChange={v => setAgeMax(Math.max(v, ageMin + 1))} label="Кому" />
               </div>
 
               {/* Пресеты */}
-              <div className="flex gap-1.5 flex-wrap pt-1">
+              <div className="flex gap-1.5 flex-wrap pt-4 pb-1">
                 {AGE_PRESETS.map(([a, b]) => {
                   const active = ageMin === a && ageMax === b;
                   return (
