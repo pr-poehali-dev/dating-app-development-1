@@ -11,7 +11,7 @@ interface Props {
 
 const AGE_PRESETS = [[18,25],[25,35],[35,45],[45,60]] as const;
 
-const ITEM_H = 56;
+const ITEM_H = 44;
 const VISIBLE = 5;
 const AGES = Array.from({ length: 63 }, (_, i) => i + 18); // 18..80
 
@@ -41,9 +41,9 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
       <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
         {/* Маска сверху и снизу */}
         <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, #0f0a1a 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, #080808 0%, transparent 100%)" }} />
         <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, #0f0a1a 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, #080808 0%, transparent 100%)" }} />
         {/* Выделение активного элемента */}
         <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
           style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
@@ -73,7 +73,7 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
               style={{ height: ITEM_H, scrollSnapAlign: "center" }}
               className="flex items-center justify-center cursor-pointer select-none"
             >
-              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-3xl" : "text-white/25 text-xl"}`}>
+              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-2xl" : "text-white/25 text-lg"}`}>
                 {age}
               </span>
             </div>
@@ -119,11 +119,10 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
           </p>
 
           <div className="rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+            style={{ border: "1px solid rgba(255,255,255,0.06)", background: "#080808" }}>
 
             {/* Drum picker */}
-            <div className="px-4 py-4 flex flex-col gap-0"
-              style={{ background: "rgba(255,255,255,0.02)" }}>
+            <div className="px-4 py-3 flex flex-col gap-0">
               <div className="flex items-stretch gap-4">
                 <DrumPicker value={ageMin} onChange={v => setAgeMin(Math.min(v, ageMax - 1))} label="От" />
                 <div className="w-px self-stretch" style={{ background: "rgba(255,255,255,0.07)" }} />
