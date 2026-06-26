@@ -112,7 +112,14 @@ export function ProfileInfoSection({
 
       {/* Вкладки фото */}
       <div className="flex gap-2 px-5 pb-3">
-        <button onClick={() => onPhotoTabChange(photoTab === "public" || photoTab === "private" ? null : "public")}
+        <button onClick={() => {
+            if (photoTab === "public" || photoTab === "private") {
+              onPhotoTabChange(null);
+            } else {
+              onPhotoTabChange("public");
+              if (galleryPhotos.length > 0) setLightboxUrl(galleryPhotos[0].photo_url);
+            }
+          }}
           className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold transition-all ${photoTab === "public" || photoTab === "private" ? "text-white" : "text-white/60"}`}
           style={photoTab === "public" || photoTab === "private"
             ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
