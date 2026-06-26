@@ -33,6 +33,11 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [showViewers, setShowViewers] = useState(false);
   const [viewersCount, setViewersCount] = useState(0);
   const [showBoosts, setShowBoosts] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [promoChecking, setPromoChecking] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showExplore, setShowExplore] = useState(false);
   const [showTravel, setShowTravel] = useState(false);
@@ -42,13 +47,41 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const { pay: payBoost, loading: boostPaying } = useYookassa(PAY_CREATE_URL);
 
+  const discountedPrice = (amount: number) =>
+    promoDiscount > 0 ? Math.round(amount * (1 - promoDiscount / 100) * 100) / 100 : amount;
+
+  const handleApplyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code || promoChecking) return;
+    setPromoChecking(true);
+    setPromoError(null);
+    try {
+      const res = await profilesApi.activatePromo(code);
+      setPromoCode(res.code);
+      setPromoDiscount(res.discount_percent);
+    } catch (e) {
+      setPromoCode(null);
+      setPromoDiscount(0);
+      setPromoError(e instanceof Error ? e.message : "Промокод недействителен");
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
+  const resetPromo = () => {
+    setPromoInput(""); setPromoCode(null); setPromoDiscount(0); setPromoError(null);
+  };
+
   const handleBuyBoost = async (boostType: "promote" | "super", amount: number, description: string) => {
     const token = localStorage.getItem("spark_token") || "";
+    const metadata: Record<string, string> = { kind: "boost", boost_type: boostType, sender_token: token };
+    if (currentUserId) metadata.user_id = String(currentUserId);
+    if (promoCode) metadata.promo_code = promoCode;
     await payBoost({
       amount,
       description,
       returnUrl: window.location.origin + "/?payment=success",
-      metadata: { kind: "boost", boost_type: boostType, sender_token: token },
+      metadata,
     });
   };
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,7 +286,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       {showBoosts && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-          onClick={() => setShowBoosts(false)}>
+          onClick={() => { setShowBoosts(false); resetPromo(); }}>
           <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-8"
             style={{ background: "var(--spark-dark2,#1a1030)" }}
             onClick={e => e.stopPropagation()}>
@@ -267,7 +300,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                 </div>
                 <p className="text-white font-bold text-base">Купить бусты профиля</p>
               </div>
-              <button onClick={() => setShowBoosts(false)} className="text-white/40 hover:text-white/70">
+              <button onClick={() => { setShowBoosts(false); resetPromo(); }} className="text-white/40 hover:text-white/70">
                 <Icon name="X" size={20} />
               </button>
             </div>
@@ -323,7 +356,8 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                     <p className="text-white/45 text-xs mt-0.5">Продвинуть в ближайшую сетку</p>
                   </div>
                   <div className="flex-shrink-0 text-right">
-                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>350 ₽</p>
+                    {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">350 ₽</p>}
+                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{discountedPrice(350)} ₽</p>
                   </div>
                 </div>
               </button>
@@ -342,10 +376,50 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
                     <p className="text-white/45 text-xs mt-0.5">Выбери людей, которые тебе нравятся</p>
                   </div>
                   <div className="flex-shrink-0 text-right">
-                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>550 ₽</p>
+                    {promoDiscount > 0 && <p className="text-white/35 text-xs line-through">550 ₽</p>}
+                    <p className="font-bold text-base" style={{ background: "linear-gradient(90deg,#9B59B6,#FFD700)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{discountedPrice(550)} ₽</p>
                   </div>
                 </div>
               </button>
+            </div>
+
+            {/* Промокод */}
+            <div className="px-4 pt-4">
+              {promoCode ? (
+                <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-2xl"
+                  style={{ background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Icon name="BadgeCheck" size={18} className="text-green-400 flex-shrink-0" />
+                    <p className="text-green-400 text-sm font-semibold truncate">
+                      Промокод {promoCode} · −{promoDiscount}%
+                    </p>
+                  </div>
+                  <button onClick={resetPromo} className="text-white/40 hover:text-white/70 flex-shrink-0">
+                    <Icon name="X" size={18} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={promoInput}
+                      onChange={(e) => { setPromoInput(e.target.value.toUpperCase()); setPromoError(null); }}
+                      onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                      placeholder="Промокод"
+                      className="flex-1 text-white placeholder-white/30 rounded-2xl px-4 py-3 text-sm outline-none uppercase tracking-wide"
+                      style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}
+                    />
+                    <button
+                      onClick={handleApplyPromo}
+                      disabled={promoChecking || !promoInput.trim()}
+                      className="px-5 py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50 flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                      {promoChecking ? <Icon name="Loader2" size={16} className="animate-spin" /> : "Применить"}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-red-400 text-xs mt-2 px-1">{promoError}</p>}
+                </>
+              )}
             </div>
           </div>
         </div>
