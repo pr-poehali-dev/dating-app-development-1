@@ -168,7 +168,7 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   if (text === "__GRANT_PHOTO__") {
     return <GrantPhotoMessage out={out} partnerId={partnerId ?? 0} />;
   }
-  if (text === "__GEO_DENIED__") {
+  if (text === "__GEO_DENIED__" || text === "_GEO_DENIED_" || text.toUpperCase().includes("GEO_DENIED")) {
     return (
       <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
         style={{
