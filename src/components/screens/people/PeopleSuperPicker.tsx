@@ -1,5 +1,77 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+
+const ITEM_H = 44;
+const VISIBLE = 5;
+const AGES = Array.from({ length: 63 }, (_, i) => i + 18);
+
+function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const scrollToIdx = useCallback((idx: number, smooth = true) => {
+    if (!listRef.current) return;
+    listRef.current.scrollTo({ top: idx * ITEM_H, behavior: smooth ? "smooth" : "auto" });
+  }, []);
+
+  const onScroll = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(AGES.length - 1, idx));
+    if (AGES[clamped] !== value) onChange(AGES[clamped]);
+  };
+
+  const onScrollEnd = () => {
+    if (!listRef.current) return;
+    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
+    scrollToIdx(Math.max(0, Math.min(AGES.length - 1, idx)));
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 flex-1">
+      <span className="text-white/40 text-sm font-medium">{label}</span>
+      <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
+        <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
+        <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
+          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
+        <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
+          style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
+        <div
+          ref={(el) => {
+            (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            if (el) {
+              const idx = AGES.indexOf(value);
+              el.scrollTop = (idx >= 0 ? idx : 0) * ITEM_H;
+            }
+          }}
+          onScroll={onScroll}
+          onScrollEnd={onScrollEnd}
+          className="h-full overflow-y-scroll"
+          style={{
+            scrollSnapType: "y mandatory",
+            scrollSnapStop: "always",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            paddingTop: ITEM_H * 2,
+            paddingBottom: ITEM_H * 2,
+          }}
+        >
+          {AGES.map((age) => (
+            <div key={age}
+              onClick={() => { onChange(age); scrollToIdx(AGES.indexOf(age)); }}
+              style={{ height: ITEM_H, scrollSnapAlign: "center" }}
+              className="flex items-center justify-center cursor-pointer select-none">
+              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-2xl" : "text-white/25 text-lg"}`}>
+                {age}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   boostPaying: boolean;
@@ -81,35 +153,22 @@ export function PeopleSuperPicker({
                 </div>
               </button>
               {superAgeOpen && (
-                <div className="px-4 pb-4 pt-1 flex flex-col gap-4"
-                  style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-white/40 text-xs">от</span>
-                      <span className="text-white font-semibold text-sm">{superAgeMin}</span>
-                    </div>
-                    <input type="range" min={18} max={80} value={superAgeMin}
-                      onChange={e => setSuperAgeMin(Math.min(+e.target.value, superAgeMax - 1))}
-                      className="w-full accent-pink-500" />
+                <div className="px-4 pb-3 pt-2 flex flex-col gap-0"
+                  style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-stretch gap-4">
+                    <DrumPicker value={superAgeMin} onChange={v => setSuperAgeMin(Math.min(v, superAgeMax - 1))} label="От" />
+                    <div className="w-px self-stretch" style={{ background: "rgba(255,255,255,0.07)" }} />
+                    <DrumPicker value={superAgeMax} onChange={v => setSuperAgeMax(Math.max(v, superAgeMin + 1))} label="Кому" />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex justify-between">
-                      <span className="text-white/40 text-xs">до</span>
-                      <span className="text-white font-semibold text-sm">{superAgeMax}</span>
-                    </div>
-                    <input type="range" min={18} max={80} value={superAgeMax}
-                      onChange={e => setSuperAgeMax(Math.max(+e.target.value, superAgeMin + 1))}
-                      className="w-full accent-pink-500" />
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="flex gap-1.5 flex-wrap pt-3 pb-1">
                     {([[18,25],[25,35],[35,45],[45,60]] as const).map(([a,b]) => {
                       const active = superAgeMin === a && superAgeMax === b;
                       return (
                         <button key={`${a}-${b}`} onClick={() => { setSuperAgeMin(a); setSuperAgeMax(b); }}
                           className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
                           style={active
-                            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }
-                            : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}>
+                            ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                            : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
                           {a}–{b}
                         </button>
                       );
