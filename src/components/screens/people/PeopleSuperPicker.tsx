@@ -1,7 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -75,84 +73,7 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
   );
 }
 
-const RADIUS_PRESETS = [5, 10, 25, 50, 100];
 
-function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number) => void }) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<L.Map | null>(null);
-  const circleRef = useRef<L.Circle | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
-
-  useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
-
-    const map = L.map(mapRef.current, {
-      center: [55.751244, 37.618423],
-      zoom: 10,
-      zoomControl: false,
-      attributionControl: false,
-    });
-
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
-    }).addTo(map);
-
-    const circle = L.circle(map.getCenter(), {
-      radius: radius * 1000,
-      color: "#FF2D78",
-      fillColor: "#FF2D78",
-      fillOpacity: 0.12,
-      weight: 2,
-    }).addTo(map);
-
-    const marker = L.circleMarker(map.getCenter(), {
-      radius: 7,
-      color: "#FF2D78",
-      fillColor: "#FF2D78",
-      fillOpacity: 1,
-      weight: 2,
-    }).addTo(map);
-
-    map.on("click", (e) => {
-      circle.setLatLng(e.latlng);
-      marker.setLatLng(e.latlng);
-    });
-
-    leafletMap.current = map;
-    circleRef.current = circle;
-    markerRef.current = marker;
-
-    return () => { map.remove(); leafletMap.current = null; };
-  }, []);
-
-  useEffect(() => {
-    circleRef.current?.setRadius(radius * 1000);
-  }, [radius]);
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div ref={mapRef} className="w-full rounded-xl overflow-hidden" style={{ height: 200 }} />
-      <div className="flex items-center justify-between px-1">
-        <span className="text-white/40 text-xs">Радиус</span>
-        <span className="text-white font-semibold text-sm">{radius} км</span>
-      </div>
-      <input type="range" min={1} max={200} value={radius}
-        onChange={e => onChange(+e.target.value)}
-        className="w-full accent-pink-500" />
-      <div className="flex gap-1.5 flex-wrap">
-        {RADIUS_PRESETS.map(r => (
-          <button key={r} onClick={() => onChange(r)}
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
-            style={radius === r
-              ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-              : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {r} км
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 interface Props {
   boostPaying: boolean;
@@ -179,7 +100,6 @@ export function PeopleSuperPicker({
   const [superRadius, setSuperRadius] = useState(50);
   const [superPhotoOnly, setSuperPhotoOnly] = useState(false);
   const [superAgeOpen, setSuperAgeOpen] = useState(false);
-  const [superRadiusOpen, setSuperRadiusOpen] = useState(false);
 
   const discountedPrice = (amount: number) =>
     promoDiscount > 0 ? Math.round(amount * (1 - promoDiscount / 100) * 100) / 100 : amount;
@@ -224,7 +144,7 @@ export function PeopleSuperPicker({
             <div className="rounded-2xl overflow-hidden"
               style={{ border: superAgeOpen ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
               <button
-                onClick={() => { setSuperAgeOpen(v => !v); setSuperRadiusOpen(false); }}
+                onClick={() => setSuperAgeOpen(v => !v)}
                 className="w-full flex items-center justify-between px-4 py-4 transition-all active:scale-[0.98]"
                 style={{ background: superAgeOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
                 <span className="text-white font-medium text-base">Возраст</span>
@@ -259,26 +179,30 @@ export function PeopleSuperPicker({
               )}
             </div>
 
-            {/* Радиус */}
-            <div className="rounded-2xl overflow-hidden"
-              style={{ border: superRadiusOpen ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
-              <button
-                onClick={() => { setSuperRadiusOpen(v => !v); setSuperAgeOpen(false); }}
-                className="w-full flex items-center justify-between px-4 py-4 transition-all active:scale-[0.98]"
-                style={{ background: superRadiusOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
-                <span className="text-white font-medium text-base">Радиус</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-white/50 text-sm">{superRadius} км</span>
-                  <Icon name={superRadiusOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
+            {/* Глобальный поиск */}
+            <button
+              onClick={() => setSuperRadius(superRadius === 0 ? 50 : 0)}
+              className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
+              style={{
+                border: `1.5px solid ${superRadius === 0 ? "rgba(255,45,120,0.5)" : "rgba(255,255,255,0.1)"}`,
+                background: superRadius === 0 ? "rgba(255,45,120,0.08)" : "rgba(255,255,255,0.04)",
+              }}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: superRadius === 0 ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.07)" }}>
+                  <Icon name="Globe" size={15} className="text-white" />
                 </div>
-              </button>
-              {superRadiusOpen && (
-                <div className="px-4 pb-4 pt-3"
-                  style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <RadiusMap radius={superRadius} onChange={setSuperRadius} />
+                <div className="text-left">
+                  <p className="text-white font-medium text-base leading-tight">Глобальный поиск</p>
+                  <p className="text-white/40 text-xs mt-0.5">Показывать анкеты со всего мира</p>
                 </div>
-              )}
-            </div>
+              </div>
+              <div className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
+                style={{ background: superRadius === 0 ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.2)" }}>
+                <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
+                  style={{ left: superRadius === 0 ? "calc(100% - 26px)" : "2px" }} />
+              </div>
+            </button>
 
             {/* Только фото */}
             <button
