@@ -1,5 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 const ITEM_H = 44;
 const VISIBLE = 5;
@@ -74,6 +76,159 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
 }
 
 
+
+const RADIUS_PRESETS = [5, 10, 25, 50, 100];
+
+interface CityResult { display_name: string; lat: string; lon: string; }
+
+function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number) => void }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMap = useRef<L.Map | null>(null);
+  const circleRef = useRef<L.Circle | null>(null);
+  const markerRef = useRef<L.CircleMarker | null>(null);
+  const [cityQuery, setCityQuery] = useState("");
+  const [cityResults, setCityResults] = useState<CityResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [globalMode, setGlobalMode] = useState(false);
+
+  const moveMap = useCallback((lat: number, lon: number) => {
+    if (!leafletMap.current || !circleRef.current || !markerRef.current) return;
+    const latlng = L.latLng(lat, lon);
+    leafletMap.current.setView(latlng, 10, { animate: true });
+    circleRef.current.setLatLng(latlng);
+    markerRef.current.setLatLng(latlng);
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || leafletMap.current) return;
+    const map = L.map(mapRef.current, {
+      center: [55.751244, 37.618423], zoom: 9,
+      zoomControl: false, attributionControl: false,
+    });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19 }).addTo(map);
+    const circle = L.circle([55.751244, 37.618423], {
+      radius: radius * 1000, color: "#FF2D78", fillColor: "#FF2D78", fillOpacity: 0.13, weight: 2,
+    }).addTo(map);
+    const marker = L.circleMarker([55.751244, 37.618423], {
+      radius: 7, color: "#FF2D78", fillColor: "#FF2D78", fillOpacity: 1, weight: 2,
+    }).addTo(map);
+    map.on("click", (e) => {
+      circle.setLatLng(e.latlng);
+      marker.setLatLng(e.latlng);
+    });
+    leafletMap.current = map;
+    circleRef.current = circle;
+    markerRef.current = marker;
+    return () => { map.remove(); leafletMap.current = null; };
+  }, []);
+
+  useEffect(() => { circleRef.current?.setRadius(radius * 1000); }, [radius]);
+
+  const handleCityInput = (q: string) => {
+    setCityQuery(q);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (q.length < 2) { setCityResults([]); return; }
+    setSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=0`, {
+          headers: { "Accept-Language": "ru" }
+        });
+        const data = await res.json();
+        setCityResults(data);
+      } catch { setCityResults([]); }
+      setSearching(false);
+    }, 400);
+  };
+
+  const selectCity = (city: CityResult) => {
+    setCityQuery(city.display_name.split(",")[0]);
+    setCityResults([]);
+    moveMap(parseFloat(city.lat), parseFloat(city.lon));
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Поиск города */}
+      <div className="relative">
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <Icon name={searching ? "Loader2" : "Search"} size={14} className={`text-white/40 flex-shrink-0 ${searching ? "animate-spin" : ""}`} />
+          <input
+            value={cityQuery}
+            onChange={e => handleCityInput(e.target.value)}
+            placeholder="Поиск города..."
+            className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-white/30"
+          />
+          {cityQuery && <button onClick={() => { setCityQuery(""); setCityResults([]); }} className="text-white/30 active:text-white/60"><Icon name="X" size={13} /></button>}
+        </div>
+        {cityResults.length > 0 && (
+          <div className="absolute inset-x-0 top-full mt-1 z-20 rounded-xl overflow-hidden"
+            style={{ background: "#1a0d2e", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+            {cityResults.map((c, i) => (
+              <button key={i} onClick={() => selectCity(c)}
+                className="w-full text-left px-3 py-2.5 text-sm text-white/80 hover:text-white transition-colors flex items-center gap-2"
+                style={{ borderBottom: i < cityResults.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,45,120,0.08)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                <Icon name="MapPin" size={13} className="text-pink-400 flex-shrink-0" />
+                <span className="truncate">{c.display_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Карта */}
+      {!globalMode && (
+        <div ref={mapRef} className="w-full rounded-xl overflow-hidden" style={{ height: 180 }} />
+      )}
+
+      {/* Глобальный режим */}
+      <button onClick={() => setGlobalMode(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all active:scale-[0.98]"
+        style={{
+          border: `1px solid ${globalMode ? "rgba(255,45,120,0.4)" : "rgba(255,255,255,0.08)"}`,
+          background: globalMode ? "rgba(255,45,120,0.07)" : "rgba(255,255,255,0.04)",
+        }}>
+        <div className="flex items-center gap-2">
+          <Icon name="Globe" size={15} className={globalMode ? "text-pink-400" : "text-white/40"} />
+          <span className={`text-sm font-medium ${globalMode ? "text-white" : "text-white/60"}`}>Глобальный поиск</span>
+        </div>
+        <div className="relative w-10 h-6 rounded-full transition-all flex-shrink-0"
+          style={{ background: globalMode ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.15)" }}>
+          <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200"
+            style={{ left: globalMode ? "calc(100% - 22px)" : "2px" }} />
+        </div>
+      </button>
+
+      {/* Радиус */}
+      {!globalMode && (
+        <>
+          <div className="flex items-center justify-between px-1">
+            <span className="text-white/40 text-xs">Радиус поиска</span>
+            <span className="text-white font-semibold text-sm">{radius} км</span>
+          </div>
+          <input type="range" min={1} max={200} value={radius}
+            onChange={e => onChange(+e.target.value)}
+            className="w-full accent-pink-500" />
+          <div className="flex gap-1.5 flex-wrap">
+            {RADIUS_PRESETS.map(r => (
+              <button key={r} onClick={() => onChange(r)}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                style={radius === r
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.3)" }
+                  : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                {r} км
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   boostPaying: boolean;
@@ -179,30 +334,17 @@ export function PeopleSuperPicker({
               )}
             </div>
 
-            {/* Глобальный поиск */}
-            <button
-              onClick={() => setSuperRadius(superRadius === 0 ? 50 : 0)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
-              style={{
-                border: `1.5px solid ${superRadius === 0 ? "rgba(255,45,120,0.5)" : "rgba(255,255,255,0.1)"}`,
-                background: superRadius === 0 ? "rgba(255,45,120,0.08)" : "rgba(255,255,255,0.04)",
-              }}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: superRadius === 0 ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.07)" }}>
-                  <Icon name="Globe" size={15} className="text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="text-white font-medium text-base leading-tight">Глобальный поиск</p>
-                  <p className="text-white/40 text-xs mt-0.5">Показывать анкеты со всего мира</p>
-                </div>
+            {/* Карта + радиус */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
+              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <Icon name="MapPin" size={14} className="text-pink-400" />
+                <span className="text-white font-medium text-sm">Местоположение и радиус</span>
               </div>
-              <div className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
-                style={{ background: superRadius === 0 ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.2)" }}>
-                <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
-                  style={{ left: superRadius === 0 ? "calc(100% - 26px)" : "2px" }} />
+              <div className="px-4 py-3">
+                <RadiusMap radius={superRadius} onChange={setSuperRadius} />
               </div>
-            </button>
+            </div>
 
             {/* Только фото */}
             <button
