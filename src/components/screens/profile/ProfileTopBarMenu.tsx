@@ -115,15 +115,22 @@ export function ProfileTopBarMenu({
       )}
 
       {menuOpen && (
-        <div className="absolute right-0 top-12 z-50 min-w-[260px] flex flex-col overflow-y-auto"
+        <div className="fixed inset-0 z-[80] flex flex-col justify-end"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+          onClick={() => onMenuToggle(false)}>
+        <div className="w-full flex flex-col overflow-y-auto"
           style={{
-            background: "linear-gradient(160deg, rgba(28,18,45,0.99) 0%, rgba(18,10,30,0.99) 100%)",
-            border: "1px solid rgba(255,255,255,0.09)",
-            borderRadius: 20,
-            boxShadow: "0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset",
-            backdropFilter: "blur(32px)",
-            maxHeight: "calc(100dvh - 220px)",
-          }}>
+            background: "linear-gradient(180deg, #1a0a2e 0%, #120818 100%)",
+            borderRadius: "24px 24px 0 0",
+            boxShadow: "0 -4px 40px rgba(0,0,0,0.5)",
+            maxHeight: "90dvh",
+          }}
+          onClick={e => e.stopPropagation()}>
+
+          {/* Handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
+          </div>
 
           {/* Шапка — аватар + имя */}
           <div className="flex items-center gap-3 px-4 py-3.5"
@@ -205,6 +212,8 @@ export function ProfileTopBarMenu({
               </div>
             </button>
           </div>
+
+        </div>
         </div>
       )}
     </>
