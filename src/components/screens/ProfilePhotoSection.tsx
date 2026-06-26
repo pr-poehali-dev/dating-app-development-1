@@ -171,12 +171,18 @@ export function ProfilePhotoSection({
         {/* Кнопки шапки */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4 z-30">
           <button onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-full"
+            className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
             <Icon name="ChevronLeft" size={20} className="text-white" />
           </button>
+          {profileUsername && (
+            <span className="text-white/90 text-sm font-semibold tracking-wide px-2 truncate"
+              style={{ textShadow: "0 1px 6px rgba(0,0,0,0.7)" }}>
+              @{profileUsername}
+            </span>
+          )}
           <button onClick={onShowMenu}
-            className="flex items-center justify-center w-9 h-9 rounded-full"
+            className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
             <Icon name="MoreVertical" size={17} className="text-white/80" />
           </button>
