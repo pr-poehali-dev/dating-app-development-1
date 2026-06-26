@@ -14,6 +14,7 @@ interface ProfilePhotoSectionProps {
   profileUsername?: string;
   profileVerified?: boolean;
   profilePremium?: boolean;
+  profileBoosted?: boolean;
   profileOnline?: boolean;
   coverUrl?: string;
   profileGender?: string;
@@ -39,6 +40,7 @@ export function ProfilePhotoSection({
   profileUsername,
   profileVerified,
   profilePremium,
+  profileBoosted,
   profileOnline,
   onClose,
   onShowMenu,
@@ -212,6 +214,25 @@ export function ProfilePhotoSection({
                     background: "linear-gradient(75deg, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%)",
                     backgroundSize: "250% 100%",
                     animation: "goldShine 3.2s ease-in-out infinite",
+                  }} />
+              </span>
+            )}
+            {profileBoosted && (
+              <span className="relative inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full font-black leading-none tracking-wider select-none flex-shrink-0 overflow-hidden text-white"
+                style={{
+                  background: "linear-gradient(120deg,#FF2D78,#FF6B35,#9B59B6,#FF2D78)",
+                  backgroundSize: "200% 100%",
+                  border: "1px solid rgba(255,255,255,0.45)",
+                  boxShadow: "0 2px 12px rgba(255,45,120,0.65), inset 0 1px 1px rgba(255,255,255,0.45)",
+                  animation: "goldShimmer 2.2s linear infinite",
+                }}>
+                <Icon name="Zap" size={11} className="text-white" />
+                BOOST
+                <span className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(75deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%)",
+                    backgroundSize: "250% 100%",
+                    animation: "goldShine 3s ease-in-out infinite",
                   }} />
               </span>
             )}

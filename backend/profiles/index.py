@@ -683,13 +683,16 @@ def handler(event: dict, context) -> dict:
         if action == 'user_profile':
             uid = int(params.get('user_id', 0))
             cur.execute("""
-                SELECT id, name, age, city, bio, photo_url, tags, verified, online, last_seen, created_at
-                FROM users WHERE id = %s
+                SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.last_seen, u.created_at,
+                       u.username, u.premium, u.cover_url, u.gender, u.height, u.weight, u.relationship_status,
+                       (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted
+                FROM users u WHERE u.id = %s
             """, (uid,))
             row = cur.fetchone()
             if not row:
                 return resp(404, {'error': 'Пользователь не найден'})
-            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'last_seen', 'created_at']
+            cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'last_seen', 'created_at',
+                    'username', 'premium', 'cover_url', 'gender', 'height', 'weight', 'relationship_status', 'boosted']
             profile = dict(zip(cols, row))
             profile['created_at'] = str(profile['created_at'])
             profile['last_seen'] = str(profile['last_seen']) if profile['last_seen'] else None
