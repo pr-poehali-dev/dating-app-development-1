@@ -50,13 +50,21 @@ export function AuthForm({
       <div className="absolute inset-0 z-0">
         <img
           src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/4d4aa1bd-fe2c-46ae-b734-3f14fcfaced6.jpg"
+          alt=""
+          loading="eager"
           className="w-full h-full object-cover"
           style={{ opacity: 0.45 }}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(26,22,37,0.3) 0%, rgba(26,22,37,0.7) 45%, rgba(26,22,37,0.98) 75%)" }} />
       </div>
 
-      <div className="relative z-10 flex flex-col h-full">
+      <div
+        className="relative z-10 flex flex-col h-full"
+        style={{
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
 
         {/* Верхняя часть — лого */}
         <div className="flex-1 flex flex-col items-center justify-end pb-8 px-6">

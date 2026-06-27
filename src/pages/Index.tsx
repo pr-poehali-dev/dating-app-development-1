@@ -136,9 +136,9 @@ export default function Index() {
 
   if (!currentUser) {
     return (
-      <div className="app-bg flex justify-center">
+      <div className="app-bg flex justify-center" style={{ height: "100dvh", minHeight: "100vh" }}>
         <div className="app-hearts-layer" />
-        <div className="w-full max-w-sm relative z-10" style={{ height: "100dvh" }}>
+        <div className="w-full max-w-sm relative z-10 h-full">
           <AuthScreen onAuth={handleAuth} />
         </div>
       </div>
