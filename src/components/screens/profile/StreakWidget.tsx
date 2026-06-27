@@ -66,12 +66,13 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const nextReward = STREAK_REWARDS.find(r => r.days > data.current_streak);
 
   return (
-    <div className="w-full mt-5 mb-3 rounded-2xl overflow-hidden"
+    <div className="w-full mt-5 mb-3 rounded-2xl"
       style={{
         background: `linear-gradient(135deg, ${color}28 0%, rgba(155,89,182,0.15) 60%, rgba(255,45,120,0.12) 100%)`,
         border: `1px solid ${color}55`,
         boxShadow: `0 4px 20px ${color}22`,
-        isolation: "isolate",
+        borderRadius: "1rem",
+        overflow: "clip",
       }}>
       {/* Шапка */}
       <div className="flex items-center gap-2 px-3 py-2.5">
