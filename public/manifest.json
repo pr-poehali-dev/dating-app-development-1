@@ -2,14 +2,18 @@
   "id": "lovebloom-app-v1",
   "name": "LoveBloom",
   "short_name": "LoveBloom",
-  "description": "LoveBloom — найди свою любовь!",
+  "description": "LoveBloom — социальная сеть для знакомств и общения. Найди свою любовь!",
   "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#FF2D78",
-  "lang": "ru",
   "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "ru",
+  "background_color": "#1a1025",
+  "theme_color": "#FF2D78",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "categories": ["social", "lifestyle", "dating"],
   "icons": [
     {
       "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/03cd7dfb-872e-4460-b1fa-a3e2f995275b.png",
@@ -36,9 +40,51 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "LoveBloom — знакомства"
+      "label": "LoveBloom — знакомства на мобильном"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/661b079a-1e2a-4f6b-9da1-8a749a9355ff.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "LoveBloom — знакомства на десктопе"
     }
   ],
-  "categories": ["social", "lifestyle"],
-  "prefer_related_applications": false
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://love-bloom.ru/manifest.json",
+      "id": "lovebloom-app-v1"
+    }
+  ],
+  "prefer_related_applications": false,
+  "scope_extensions": [
+    { "origin": "https://love-bloom.ru" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Найти людей",
+      "short_name": "Поиск",
+      "description": "Перейти к поиску анкет",
+      "url": "/?tab=discover",
+      "icons": [
+        {
+          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/03cd7dfb-872e-4460-b1fa-a3e2f995275b.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Мои чаты",
+      "short_name": "Чаты",
+      "description": "Открыть список чатов",
+      "url": "/?tab=matches",
+      "icons": [
+        {
+          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/03cd7dfb-872e-4460-b1fa-a3e2f995275b.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
