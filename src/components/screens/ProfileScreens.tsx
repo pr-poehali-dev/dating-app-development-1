@@ -273,10 +273,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           photoUploading={photoUploading}
           coverUploading={coverUploading}
           photoError={photoError}
-          activeTab={activeTab}
           onEditOpen={() => setEditOpen(true)}
           onAvatarClick={() => {
-            // Загружаем галерею если ещё не загружали
             if (galleryPhotos.length === 0 && !galleryLoading) {
               setGalleryLoading(true);
               profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
@@ -293,17 +291,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               setLightboxIdx(0);
             }
           }}
-          onTabChange={(tab) => {
-            if (tab === "photos") {
-              if (galleryPhotos.length === 0 && !galleryLoading) {
-                setGalleryLoading(true);
-                profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
-              }
-              setShowPhotosScreen(true);
-            } else {
-              setActiveTab(tab);
-            }
-          }}
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}
@@ -312,6 +299,31 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         />
 
         <div className="flex flex-col items-center px-5">
+
+          {/* Табы: Фото / Подарки */}
+          <div className="w-full mt-3">
+            <div className="flex rounded-2xl gap-1 p-1"
+              style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)" }}>
+              {([
+                { key: "photos", icon: "Image", label: "Фото" },
+                { key: "gifts",  icon: "Gift",  label: "Подарки" },
+              ] as const).map(({ key, icon, label }) => {
+                const isActive = (activeTab as string) === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(isActive ? null : key as ActiveTab)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-[0.97]"
+                    style={isActive
+                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
+                      : { background: "transparent" }}>
+                    <Icon name={icon} size={15} className={isActive ? "text-white" : "text-white/60"} />
+                    <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/60"}`}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* 1. Фото / Приватные фото */}
           <ProfilePhotoSection
