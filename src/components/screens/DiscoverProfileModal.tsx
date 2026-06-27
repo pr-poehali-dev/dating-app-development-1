@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import Icon from "@/components/ui/icon";
 import { likesApi, profilesApi, notificationsApi, type Profile, type MyGift } from "@/lib/api";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
 import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
@@ -7,7 +6,9 @@ import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessage
 import { ProfilePhotoSection } from "@/components/screens/ProfilePhotoSection";
 import { ProfileInfoSection } from "@/components/screens/ProfileInfoSection";
 import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
-import { GiftsGrid } from "@/components/gifts/GiftsGrid";
+import { DiscoverHeartAnim } from "@/components/screens/profile/DiscoverHeartAnim";
+import { DiscoverFollowersSheet } from "@/components/screens/profile/DiscoverFollowersSheet";
+import { DiscoverUserGiftsSheet } from "@/components/screens/profile/DiscoverUserGiftsSheet";
 import { isUserOnline } from "@/lib/online";
 
 export const PROFILES_FALLBACK = [
@@ -114,7 +115,6 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const handleLike = async () => {
     if (liked || liking) return;
     setLiking(true);
-    // Запускаем анимацию сердца сразу
     setHeartAnim(true);
     setTimeout(() => setHeartAnim(false), 1000);
     try {
@@ -126,7 +126,6 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         setMatchId(res.match_id);
       }
       onLike(currentProfile);
-      // Тихо отправляем ❤️ в чат, но не открываем его
       try {
         const { messagesApi, matchesApi } = await import("@/lib/api");
         let resolvedMatchId = mid;
@@ -289,43 +288,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           scrollSnapType: "none",
         }}
       >
-        {/* ❤️ Анимация лайка */}
-        {heartAnim && (
-          <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-            <div style={{ animation: "heartPop 0.9s ease forwards" }}>
-              <span style={{ fontSize: 96, filter: "drop-shadow(0 0 24px rgba(255,45,120,0.8))" }}>❤️</span>
-            </div>
-            {/* Брызги */}
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="absolute w-3 h-3 rounded-full"
-                style={{
-                  background: i % 2 === 0 ? "#FF2D78" : "#FF6B9D",
-                  animation: `heartSpark${i} 0.8s ease forwards`,
-                  top: "50%", left: "50%",
-                  transform: `rotate(${i * 45}deg) translateY(-60px)`,
-                  opacity: 0,
-                  animationDelay: "0.1s",
-                }} />
-            ))}
-          </div>
-        )}
-        <style>{`
-          @keyframes heartPop {
-            0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
-            40%  { transform: scale(1.3) rotate(8deg);  opacity: 1; }
-            65%  { transform: scale(1.0) rotate(-4deg); opacity: 1; }
-            85%  { transform: scale(1.1) rotate(2deg);  opacity: 1; }
-            100% { transform: scale(0.8) rotate(0deg);  opacity: 0; }
-          }
-          @keyframes heartSpark0 { to { transform: rotate(0deg)   translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark1 { to { transform: rotate(45deg)  translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark2 { to { transform: rotate(90deg)  translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark3 { to { transform: rotate(135deg) translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark4 { to { transform: rotate(180deg) translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark5 { to { transform: rotate(225deg) translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark6 { to { transform: rotate(270deg) translateY(-80px) scale(0); opacity: 1; } }
-          @keyframes heartSpark7 { to { transform: rotate(315deg) translateY(-80px) scale(0); opacity: 1; } }
-        `}</style>
+        <DiscoverHeartAnim visible={heartAnim} />
+
         <ProfilePhotoSection
           currentPhoto={currentPhoto}
           photos={photos}
@@ -376,66 +340,14 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         />
       </div>
 
-      {showFollowers && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-          onClick={() => setShowFollowers(false)}>
-          <div className="w-full max-w-sm rounded-t-3xl flex flex-col"
-            style={{ background: "var(--spark-dark2,#1a1030)", maxHeight: "75dvh" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 pt-5 pb-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <p className="text-white font-bold text-base">Подписчики {currentProfile.name}</p>
-              <button onClick={() => setShowFollowers(false)} className="text-white/40">
-                <Icon name="X" size={20} />
-              </button>
-            </div>
-            <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-2 pb-8">
-              {followersLoading ? (
-                <div className="flex justify-center py-10">
-                  <Icon name="Loader2" size={28} className="text-white/30 animate-spin" />
-                </div>
-              ) : followersList.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 py-10">
-                  <Icon name="Users" size={36} className="text-white/15" />
-                  <p className="text-white/30 text-sm">Пока нет подписчиков</p>
-                </div>
-              ) : (
-                followersList.map(user => (
-                  <button key={user.id}
-                    onClick={() => { setViewFollowerProfile(user as Profile); setShowFollowers(false); }}
-                    className="flex items-center gap-3 p-2 rounded-2xl w-full text-left transition-all active:scale-95"
-                    style={{ background: "rgba(255,255,255,0.04)" }}>
-                    <div className="relative flex-shrink-0">
-                      <img src={user.photo_url || PROFILES_FALLBACK[0].photo}
-                        className="w-12 h-12 rounded-full object-cover"
-                        style={{ border: "2px solid rgba(255,45,120,0.3)" }} />
-                      {user.online && (
-                        <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"
-                          style={{ borderColor: "var(--spark-dark2,#1a1030)" }} />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-white font-semibold text-sm truncate">
-                          {user.name}{user.age ? `, ${user.age}` : ""}
-                        </p>
-                        {user.verified && (
-                          <div className="flex-shrink-0 flex items-center justify-center"
-                            style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 1.5px rgba(255,45,120,0.3), 0 2px 6px rgba(255,45,120,0.45)" }}>
-                            <Icon name="BadgeCheck" size={12} className="text-white" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Icon name="ChevronRight" size={16} className="text-white/25 flex-shrink-0" />
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <DiscoverFollowersSheet
+        visible={showFollowers}
+        profileName={currentProfile.name}
+        loading={followersLoading}
+        followers={followersList}
+        onClose={() => setShowFollowers(false)}
+        onSelectUser={user => setViewFollowerProfile(user)}
+      />
 
       {viewFollowerProfile && (
         <div className="fixed inset-0 z-[70]">
@@ -473,33 +385,13 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         />
       )}
 
-      {showUserGifts && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center"
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-          onClick={() => setShowUserGifts(false)}>
-          <div className="w-full max-w-sm rounded-t-3xl flex flex-col"
-            style={{ background: "var(--spark-dark2,#1a1030)", maxHeight: "75dvh" }}
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 pt-5 pb-3"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-              <div className="flex items-center gap-2">
-                <Icon name="Gift" size={18} style={{ color: "#FFD700" }} />
-                <p className="text-white font-bold text-base">Подарки {currentProfile.name}</p>
-              </div>
-              <button onClick={() => setShowUserGifts(false)} className="text-white/40">
-                <Icon name="X" size={20} />
-              </button>
-            </div>
-            <div className="overflow-y-auto flex-1 px-4 py-4 pb-8">
-              <GiftsGrid
-                gifts={userGifts}
-                loading={userGiftsLoading}
-                emptyText={`У ${currentProfile.name} пока нет подарков.\nБудь первым — подари что-нибудь!`}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <DiscoverUserGiftsSheet
+        visible={showUserGifts}
+        profileName={currentProfile.name}
+        gifts={userGifts}
+        loading={userGiftsLoading}
+        onClose={() => setShowUserGifts(false)}
+      />
     </>
   );
 }
