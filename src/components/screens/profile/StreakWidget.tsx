@@ -71,7 +71,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
     : 100;
 
   return (
-    <div className="mx-5 mb-4 rounded-3xl overflow-hidden"
+    <div className="mx-5 mt-4 mb-4 rounded-3xl overflow-hidden"
       style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
 
       {/* Заголовок */}
