@@ -33,13 +33,16 @@ def build_response(current, longest, total, active_today):
     }
 
 def handler(event: dict, context) -> dict:
-    """Стрики активности пользователя — получить (GET) и обновить (POST)."""
+    """Стрики активности пользователя — получить (GET) и обновить (POST).
+    GET ?user_id=N — публичный стрик другого пользователя."""
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
     headers = event.get("headers") or {}
     token = headers.get("X-Auth-Token") or headers.get("x-auth-token", "")
     method = event.get("httpMethod", "GET")
+    params = event.get("queryStringParameters") or {}
+    target_user_id = params.get("user_id")
 
     if not token:
         return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Unauthorized"})}
@@ -54,6 +57,19 @@ def handler(event: dict, context) -> dict:
         if not row:
             return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Unauthorized"})}
         user_id = row[0]
+
+        # Если запрашиваем чужой стрик — просто читаем и возвращаем
+        if method == "GET" and target_user_id and int(target_user_id) != user_id:
+            cur.execute("""
+                SELECT current_streak, longest_streak, last_active_date, total_days
+                FROM user_streaks WHERE user_id = %s
+            """, (int(target_user_id),))
+            r = cur.fetchone()
+            if not r:
+                return build_response(0, 0, 0, False)
+            c, l, la, t = r
+            today_d = date.today()
+            return build_response(c, l, t, la == today_d)
 
         today = date.today()
 

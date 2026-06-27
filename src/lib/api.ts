@@ -1038,6 +1038,12 @@ export const streaksApi = {
       headers: { "X-Auth-Token": token },
     }).then(r => r.json()) as Promise<StreakData>;
   },
+  getUser: (userId: number) => {
+    const token = getToken();
+    return fetch(`${URLS.streaks}?user_id=${userId}`, {
+      headers: { "X-Auth-Token": token },
+    }).then(r => r.json()) as Promise<StreakData>;
+  },
   checkin: () => {
     const token = getToken();
     return fetch(URLS.streaks, {

@@ -6,6 +6,7 @@ import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/Pr
 import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessageSheet";
 import { ProfilePhotoSection } from "@/components/screens/ProfilePhotoSection";
 import { ProfileInfoSection } from "@/components/screens/ProfileInfoSection";
+import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 import { isUserOnline } from "@/lib/online";
 
@@ -345,6 +346,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         />
+
+        <PublicStreakBadge userId={currentProfile.id} />
 
         <ProfileInfoSection
           currentProfile={currentProfile}
