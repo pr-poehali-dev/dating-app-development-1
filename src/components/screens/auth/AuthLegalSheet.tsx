@@ -33,9 +33,7 @@ export function AuthLegalSheet({
               <p className="text-white font-bold text-base">
                 {isTerms ? "Лицензионное соглашение" : "Политика конфиденциальности"}
               </p>
-              <p className="text-white/35 text-xs">
-                {isTerms ? "LoveBloom · Редакция от 27 июня 2026 г." : "Оператор: Исламгулов Б.Р. · 27 июня 2026 г."}
-              </p>
+              <p className="text-white/35 text-xs">LoveBloom · Редакция от 27 июня 2026 г.</p>
             </div>
           </div>
           <button onClick={onClose}
