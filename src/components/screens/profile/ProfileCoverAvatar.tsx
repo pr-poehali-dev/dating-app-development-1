@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
+import { getStreakReward } from "@/lib/streakRewards";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const DEFAULT_COVER = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg";
@@ -21,6 +22,7 @@ export function ProfileCoverAvatar({
   onAvatarClick,
   onCoverClick,
   onCoverOpen,
+  streakDays = 0,
 }: {
   currentUser: User;
   localPhoto: string;
@@ -30,8 +32,10 @@ export function ProfileCoverAvatar({
   onAvatarClick: () => void;
   onCoverClick: () => void;
   onCoverOpen?: () => void;
+  streakDays?: number;
 }) {
   const displayPhoto = localPhoto || FALLBACK_PHOTO;
+  const streakReward = getStreakReward(streakDays);
 
   return (
     <div className="relative w-full" style={{ marginBottom: 52 }}>
@@ -83,16 +87,30 @@ export function ProfileCoverAvatar({
           <div className="w-24 h-24 rounded-full"
             style={{
               padding: 3,
-              background: currentUser.premium
-                ? "linear-gradient(135deg,#FF2D78,#FFD700,#9B59B6)"
-                : "linear-gradient(135deg,#FF2D78,#9B59B6)",
-              boxShadow: "0 4px 20px rgba(255,45,120,0.45)",
+              background: streakReward
+                ? streakReward.ringColor
+                : currentUser.premium
+                  ? "linear-gradient(135deg,#FF2D78,#FFD700,#9B59B6)"
+                  : "linear-gradient(135deg,#FF2D78,#9B59B6)",
+              boxShadow: streakReward
+                ? streakReward.glow
+                : "0 4px 20px rgba(255,45,120,0.45)",
             }}>
             <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)]">
               <img src={displayPhoto} className="w-full h-full object-cover"
                 style={{ opacity: photoUploading ? 0.5 : 1 }} />
             </div>
           </div>
+          {/* Значок стрика на аватаре */}
+          {streakReward && (
+            <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-base z-10"
+              style={{
+                background: streakReward.ringColor,
+                boxShadow: `${streakReward.glow}, 0 0 0 2px var(--spark-dark)`,
+              }}>
+              {streakReward.badge}
+            </div>
+          )}
           {photoUploading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />

@@ -63,6 +63,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [profileData, setProfileData] = useState<{
     bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
   }>({ followers: 0, following: 0 });
+  const [profileStreakDays, setProfileStreakDays] = useState(0);
 
   const mainPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
 
@@ -72,10 +73,14 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     setPhotoIdx(0);
     setLoadingPhotos(true);
     setProfileData({ followers: 0, following: 0 });
+    setProfileStreakDays(0);
     setPrivateReqSent(false);
     setPhotoTab(null);
     setMatchId(null);
-    import("@/lib/api").then(({ postsApi, profilesApi }) => {
+    import("@/lib/api").then(({ postsApi, profilesApi, streaksApi }) => {
+      streaksApi.getUser(currentProfile.id)
+        .then(d => { if (d?.current_streak) setProfileStreakDays(d.current_streak); })
+        .catch(() => {});
       notificationsApi.trackView(currentProfile.id).catch(() => {});
       const profileReq = postsApi.getUserProfile(currentProfile.id)
         .then(d => {
@@ -345,6 +350,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           onOpenGiftSheet={() => { setShowGiftSheet(true); setGiftSelected(null); setGiftDone(null); }}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          streakDays={profileStreakDays}
         />
 
         <PublicStreakBadge userId={currentProfile.id} />

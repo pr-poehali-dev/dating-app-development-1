@@ -44,9 +44,13 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     if (currentUser.photo_url && !photoUploading) setLocalPhoto(currentUser.photo_url);
   }, [currentUser.photo_url, photoUploading]);
 
+  const [streakDays, setStreakDays] = useState(0);
+
   // Чекин стрика при открытии профиля
   useEffect(() => {
-    streaksApi.checkin().catch(() => {});
+    streaksApi.checkin()
+      .then(d => { if (d?.current_streak) setStreakDays(d.current_streak); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -304,6 +308,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           onLogout={onLogout}
           onVerify={onVerify}
           onPremium={onPremium}
+          streakDays={streakDays}
         />
 
         <div className="flex flex-col items-center px-5">

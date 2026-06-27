@@ -2,6 +2,7 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileCoverAvatar } from "@/components/screens/profile/ProfileCoverAvatar";
 import { ProfileTopBarMenu } from "@/components/screens/profile/ProfileTopBarMenu";
+import { getStreakReward } from "@/lib/streakRewards";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
@@ -14,6 +15,7 @@ export function ProfileHeader({
   coverUploading,
   photoError,
   activeTab,
+  streakDays = 0,
   onEditOpen,
   onAvatarClick,
   onCoverClick,
@@ -31,6 +33,7 @@ export function ProfileHeader({
   coverUploading: boolean;
   photoError: string;
   activeTab: ActiveTab;
+  streakDays?: number;
   onEditOpen: () => void;
   onAvatarClick: () => void;
   onCoverClick: () => void;
@@ -41,6 +44,7 @@ export function ProfileHeader({
   onVerify: () => void;
   onPremium: () => void;
 }) {
+  const streakReward = getStreakReward(streakDays);
   const tabs = [
     { key: "photos", icon: "Image", label: "Фото" },
     { key: "gifts",  icon: "Gift",  label: "Подарки" },
@@ -58,6 +62,7 @@ export function ProfileHeader({
         onAvatarClick={onAvatarClick}
         onCoverClick={onCoverClick}
         onCoverOpen={onCoverOpen}
+        streakDays={streakDays}
       />
 
       {photoError && <p className="text-red-400 text-xs mb-1 text-center px-4">{photoError}</p>}
@@ -96,6 +101,16 @@ export function ProfileHeader({
                 textShadow: "0 1px 0 rgba(255,255,255,0.4)",
               }}>
               ✦ PREMIUM
+            </span>
+          )}
+          {streakReward && (
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold leading-none"
+              style={{
+                background: `${streakReward.ringColor}`,
+                color: "#fff",
+                boxShadow: streakReward.glow,
+              }}>
+              {streakReward.badge} {streakReward.label}
             </span>
           )}
         </div>

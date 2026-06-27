@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { useState, useRef } from "react";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { getStreakReward } from "@/lib/streakRewards";
 
 interface ProfilePhotoSectionProps {
   currentPhoto: string;
@@ -26,6 +27,7 @@ interface ProfilePhotoSectionProps {
   onOpenGiftSheet: () => void;
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
+  streakDays?: number;
 }
 
 export function ProfilePhotoSection({
@@ -48,7 +50,9 @@ export function ProfilePhotoSection({
   onLike,
   onOpenChat,
   onOpenGiftSheet,
+  streakDays = 0,
 }: ProfilePhotoSectionProps) {
+  const streakReward = getStreakReward(streakDays);
   const [burst, setBurst] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const touchStartY = useRef(0);
@@ -240,6 +244,16 @@ export function ProfilePhotoSection({
                     backgroundSize: "250% 100%",
                     animation: "goldShine 3s ease-in-out infinite",
                   }} />
+              </span>
+            )}
+            {streakReward && (
+              <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold leading-none flex-shrink-0"
+                style={{
+                  background: streakReward.ringColor,
+                  boxShadow: streakReward.glow,
+                  color: "#fff",
+                }}>
+                {streakReward.badge} {streakReward.label}
               </span>
             )}
 

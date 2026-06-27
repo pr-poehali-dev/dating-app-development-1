@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { streaksApi, type StreakData } from "@/lib/api";
+import { STREAK_REWARDS, getEarnedRewards } from "@/lib/streakRewards";
 
 const MILESTONE_LABELS: Record<number, string> = {
   3:   "Начало",
@@ -148,29 +149,82 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
       )}
 
       {/* Milestones ряд */}
-      <div className="flex items-center gap-1 px-4 pb-4">
+      <div className="flex items-center gap-1 px-4 pb-3">
         {data.milestones.map(m => {
           const reached = data.current_streak >= m;
           const isCurrent = data.next_milestone === m;
+          const reward = STREAK_REWARDS.find(r => r.days === m);
           return (
             <div key={m} className="flex-1 flex flex-col items-center gap-0.5">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold"
                 style={{
-                  background: reached ? color : isCurrent ? `${color}33` : "rgba(255,255,255,0.06)",
+                  background: reached ? (reward?.ringColor ?? color) : isCurrent ? `${color}33` : "rgba(255,255,255,0.06)",
                   color: reached ? "#fff" : isCurrent ? color : "rgba(255,255,255,0.25)",
                   border: isCurrent ? `1.5px solid ${color}` : "none",
-                  boxShadow: reached ? `0 0 6px ${color}55` : "none",
+                  boxShadow: reached ? (reward?.glow ?? `0 0 6px ${color}55`) : "none",
+                  fontSize: reached ? 11 : undefined,
                 }}>
-                {reached ? "✓" : m}
+                {reached ? (reward?.badge ?? "✓") : m}
               </div>
               <p className="text-[8px] text-center leading-tight"
-                style={{ color: reached ? color : "rgba(255,255,255,0.2)" }}>
+                style={{ color: reached ? (reward?.color ?? color) : "rgba(255,255,255,0.2)" }}>
                 {MILESTONE_LABELS[m]}
               </p>
             </div>
           );
         })}
       </div>
+
+      {/* Раздел достижений */}
+      {(() => {
+        const earned = getEarnedRewards(data.current_streak);
+        const next = STREAK_REWARDS.find(r => r.days > data.current_streak);
+        return (
+          <div className="mx-3 mb-3 rounded-2xl overflow-hidden"
+            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.05)" }}>
+            <div className="px-3 pt-2.5 pb-1.5"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <p className="text-white/50 text-[11px] font-semibold">Достижения</p>
+            </div>
+            <div className="px-3 py-2 flex flex-col gap-1.5">
+              {earned.length === 0 ? (
+                <p className="text-white/25 text-xs py-1">Продолжай заходить — первая награда за 3 дня</p>
+              ) : (
+                earned.map(r => (
+                  <div key={r.days} className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                      style={{ background: r.ringColor, boxShadow: r.glow }}>
+                      {r.badge}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/80 text-xs font-semibold leading-tight">{r.label}</p>
+                      <p className="text-white/30 text-[10px]">Стрик {r.days}+ дней</p>
+                    </div>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ background: r.ringColor }}>
+                      <span className="text-[9px] text-white">✓</span>
+                    </div>
+                  </div>
+                ))
+              )}
+              {next && (
+                <div className="flex items-center gap-2.5 opacity-40 mt-0.5"
+                  style={{ borderTop: earned.length > 0 ? "1px solid rgba(255,255,255,0.05)" : "none", paddingTop: earned.length > 0 ? 6 : 0 }}>
+                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px dashed rgba(255,255,255,0.15)" }}>
+                    {next.badge}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white/60 text-xs font-semibold leading-tight">{next.label}</p>
+                    <p className="text-white/30 text-[10px]">Ещё {next.days - data.current_streak} дней</p>
+                  </div>
+                  <p className="text-white/30 text-[10px] flex-shrink-0">🔒</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
