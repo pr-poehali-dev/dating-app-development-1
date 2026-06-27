@@ -52,26 +52,26 @@ def handler(event: dict, context) -> dict:
 
         if action == 'list':
             uid = me['id']
-            cur.execute(f"""
+            cur.execute("""
                 SELECT
                     m.id as match_id,
-                    CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END as partner_id,
+                    CASE WHEN m.user1_id = %s THEN m.user2_id ELSE m.user1_id END as partner_id,
                     u.name, u.age, u.photo_url, u.online, u.last_seen,
                     (SELECT text FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg,
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1) as last_msg_time,
-                    (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != {uid} AND read_at IS NULL) as unread_count,
+                    (SELECT COUNT(*) FROM messages WHERE match_id = m.id AND sender_id != %s AND read_at IS NULL) as unread_count,
                     m.created_at
                 FROM matches m
-                JOIN users u ON u.id = CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END
-                WHERE (m.user1_id = {uid} OR m.user2_id = {uid})
-                AND CASE WHEN m.user1_id = {uid} THEN m.user2_id ELSE m.user1_id END NOT IN (
-                    SELECT blocked_id FROM user_blocks WHERE blocker_id = {uid}
+                JOIN users u ON u.id = CASE WHEN m.user1_id = %s THEN m.user2_id ELSE m.user1_id END
+                WHERE (m.user1_id = %s OR m.user2_id = %s)
+                AND CASE WHEN m.user1_id = %s THEN m.user2_id ELSE m.user1_id END NOT IN (
+                    SELECT blocked_id FROM user_blocks WHERE blocker_id = %s
                 )
                 ORDER BY COALESCE(
                     (SELECT created_at FROM messages WHERE match_id = m.id ORDER BY created_at DESC LIMIT 1),
                     m.created_at
                 ) DESC
-            """)
+            """, (uid, uid, uid, uid, uid, uid, uid))
             rows = cur.fetchall()
             cols = ['match_id', 'partner_id', 'name', 'age', 'photo_url', 'online', 'last_seen', 'last_msg', 'last_msg_time', 'unread_count', 'created_at']
             matches = []
@@ -132,7 +132,12 @@ def handler(event: dict, context) -> dict:
         # Зайти в трансляцию (инкремент зрителей)
         if action == 'live_join':
             body = json.loads(event.get('body') or '{}')
-            stream_id = int(body.get('stream_id', 0))
+            try:
+                stream_id = int(body.get('stream_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный stream_id'})
+            if not stream_id:
+                return resp(400, {'error': 'stream_id обязателен'})
             cur.execute("UPDATE live_streams SET viewers_count = viewers_count + 1 WHERE id=%s AND status='active'", (stream_id,))
             conn.commit()
             return resp(200, {'ok': True})
@@ -140,7 +145,12 @@ def handler(event: dict, context) -> dict:
         # Выйти из трансляции
         if action == 'live_leave':
             body = json.loads(event.get('body') or '{}')
-            stream_id = int(body.get('stream_id', 0))
+            try:
+                stream_id = int(body.get('stream_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный stream_id'})
+            if not stream_id:
+                return resp(400, {'error': 'stream_id обязателен'})
             cur.execute("UPDATE live_streams SET viewers_count = GREATEST(viewers_count - 1, 0) WHERE id=%s AND status='active'", (stream_id,))
             conn.commit()
             return resp(200, {'ok': True})
@@ -148,7 +158,12 @@ def handler(event: dict, context) -> dict:
         # Отправить сердечко
         if action == 'live_heart':
             body = json.loads(event.get('body') or '{}')
-            stream_id = int(body.get('stream_id', 0))
+            try:
+                stream_id = int(body.get('stream_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный stream_id'})
+            if not stream_id:
+                return resp(400, {'error': 'stream_id обязателен'})
             cur.execute("UPDATE live_streams SET hearts_count = hearts_count + 1 WHERE id=%s AND status='active'", (stream_id,))
             cur.execute("SELECT hearts_count FROM live_streams WHERE id=%s", (stream_id,))
             row = cur.fetchone()
@@ -158,7 +173,12 @@ def handler(event: dict, context) -> dict:
         # Написать в чат трансляции
         if action == 'live_chat':
             body = json.loads(event.get('body') or '{}')
-            stream_id = int(body.get('stream_id', 0))
+            try:
+                stream_id = int(body.get('stream_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный stream_id'})
+            if not stream_id:
+                return resp(400, {'error': 'stream_id обязателен'})
             text = body.get('text', '').strip()[:200]
             if not text:
                 return resp(400, {'error': 'Пустое сообщение'})
@@ -181,8 +201,11 @@ def handler(event: dict, context) -> dict:
 
         # Получить состояние трансляции + новые сообщения (polling)
         if action == 'live_poll':
-            stream_id = int(params.get('stream_id', 0))
-            since_id = int(params.get('since_id', 0))
+            try:
+                stream_id = int(params.get('stream_id', 0))
+                since_id = int(params.get('since_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректные параметры'})
             cur.execute("SELECT id, status, viewers_count, hearts_count, title FROM live_streams WHERE id=%s", (stream_id,))
             srow = cur.fetchone()
             if not srow:
@@ -202,7 +225,10 @@ def handler(event: dict, context) -> dict:
 
         if action == 'delete':
             body = json.loads(event.get('body') or '{}')
-            match_id = int(body.get('match_id', 0))
+            try:
+                match_id = int(body.get('match_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный match_id'})
             if not match_id:
                 return resp(400, {'error': 'match_id обязателен'})
             # Проверяем что пользователь участник матча

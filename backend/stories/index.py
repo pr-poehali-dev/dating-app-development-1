@@ -1,7 +1,11 @@
 """
 Видеоистории: загрузка, получение и удаление сторис (24 часа).
 """
-import json, os, uuid, boto3, psycopg2, base64
+import json, os, uuid, boto3, psycopg2, base64, re
+
+ALLOWED_CONTENT_TYPES = {"video/mp4", "video/webm", "video/quicktime"}
+MAX_FILE_SIZE = 200 * 1024 * 1024   # 200 МБ
+MAX_CHUNK_SIZE = 10 * 1024 * 1024   # 10 МБ на чанк
 
 CORS = {
     "Access-Control-Allow-Origin": "*",
@@ -82,13 +86,15 @@ def handler(event: dict, context) -> dict:
         # Режим 1: инициализировать загрузку
         if action == "upload_init":
             content_type = body.get("content_type", "video/mp4")
+            if content_type not in ALLOWED_CONTENT_TYPES:
+                return resp(400, {"error": "Недопустимый тип файла. Разрешены: mp4, webm, mov"})
             upload_id = str(uuid.uuid4())
             key = f"stories/{user[0]}/{uuid.uuid4()}.{ext_for(content_type)}"
             tmp_path = f"/tmp/{upload_id}.bin"
             open(tmp_path, "wb").close()
             meta_path = f"/tmp/{upload_id}.meta"
             with open(meta_path, "w") as mf:
-                json.dump({"key": key, "content_type": content_type}, mf)
+                json.dump({"key": key, "content_type": content_type, "user_id": user[0]}, mf)
             return resp(200, {"upload_id": upload_id, "key": key})
 
         # Режим 2: дописать чанк во временный файл
@@ -97,10 +103,23 @@ def handler(event: dict, context) -> dict:
             data_b64 = body.get("data", "")
             if not upload_id or not data_b64:
                 return resp(400, {"error": "upload_id и data обязательны"})
+            # Защита от Path Traversal
+            if not re.match(r"^[a-f0-9\-]{36}$", upload_id):
+                return resp(400, {"error": "Некорректный upload_id"})
             tmp_path = f"/tmp/{upload_id}.bin"
             if not os.path.exists(tmp_path):
                 return resp(400, {"error": "Сессия загрузки не найдена, начни заново"})
-            chunk_bytes = base64.b64decode(data_b64)
+            # Проверяем текущий размер
+            if os.path.getsize(tmp_path) >= MAX_FILE_SIZE:
+                return resp(413, {"error": "Размер файла превышен (макс. 200 МБ)"})
+            try:
+                chunk_bytes = base64.b64decode(data_b64)
+            except Exception:
+                return resp(400, {"error": "Некорректные данные base64"})
+            if len(chunk_bytes) > MAX_CHUNK_SIZE:
+                return resp(413, {"error": "Чанк слишком большой (макс. 10 МБ)"})
+            if os.path.getsize(tmp_path) + len(chunk_bytes) > MAX_FILE_SIZE:
+                return resp(413, {"error": "Размер файла превышен (макс. 200 МБ)"})
             with open(tmp_path, "ab") as f:
                 f.write(chunk_bytes)
             return resp(200, {"ok": True})
@@ -109,9 +128,16 @@ def handler(event: dict, context) -> dict:
         if action == "upload_complete":
             upload_id = body.get("upload_id", "")
             key = body.get("key", "")
-            duration = body.get("duration", 0)
+            try:
+                duration = int(body.get("duration", 0))
+            except (ValueError, TypeError):
+                duration = 0
+            duration = max(0, min(duration, 3600))
             if not upload_id or not key:
                 return resp(400, {"error": "upload_id и key обязательны"})
+            # Защита от Path Traversal
+            if not re.match(r"^[a-f0-9\-]{36}$", upload_id):
+                return resp(400, {"error": "Некорректный upload_id"})
             tmp_path = f"/tmp/{upload_id}.bin"
             meta_path = f"/tmp/{upload_id}.meta"
             if not os.path.exists(tmp_path):
@@ -121,6 +147,12 @@ def handler(event: dict, context) -> dict:
                 with open(meta_path) as mf:
                     meta = json.load(mf)
                 content_type = meta.get("content_type", content_type)
+                # Проверяем что ключ принадлежит этому пользователю
+                if meta.get("user_id") != user[0]:
+                    return resp(403, {"error": "Нет доступа"})
+            # Проверяем key соответствует ожидаемому формату stories/{user_id}/...
+            if not re.match(r"^stories/\d+/[a-f0-9\-]+\.(mp4|webm|mov)$", key):
+                return resp(400, {"error": "Некорректный key"})
             with open(tmp_path, "rb") as f:
                 video_bytes = f.read()
             os.remove(tmp_path)

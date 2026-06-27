@@ -81,10 +81,23 @@ def handler(event: dict, context) -> dict:
 
         if action == 'send':
             body = json.loads(event.get('body') or '{}')
-            to_id = body.get('to_user_id')
-            is_super = bool(body.get('is_super', False))
-            if not to_id:
+            try:
+                to_id = int(body.get('to_user_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный to_user_id'})
+            if not to_id or to_id <= 0:
                 return resp(400, {'error': 'Укажи to_user_id'})
+            if to_id == me['id']:
+                return resp(400, {'error': 'Нельзя лайкнуть самого себя'})
+            is_super_raw = body.get('is_super', False)
+            is_super = is_super_raw is True or is_super_raw == 1
+            # Проверяем блокировки
+            cur.execute(
+                "SELECT 1 FROM user_blocks WHERE (blocker_id=%s AND blocked_id=%s) OR (blocker_id=%s AND blocked_id=%s)",
+                (me['id'], to_id, to_id, me['id'])
+            )
+            if cur.fetchone():
+                return resp(403, {'error': 'Нет доступа'})
 
             cur.execute(
                 "INSERT INTO likes (from_user_id, to_user_id, is_super) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
