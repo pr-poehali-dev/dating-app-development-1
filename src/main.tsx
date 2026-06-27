@@ -9,6 +9,15 @@ if (localStorage.getItem("theme") === "light") {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
+const splash = document.getElementById("app-splash");
+if (splash) {
+  const hideSplash = () => {
+    splash.classList.add("splash-hidden");
+    setTimeout(() => splash.remove(), 500);
+  };
+  setTimeout(hideSplash, 600);
+}
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
