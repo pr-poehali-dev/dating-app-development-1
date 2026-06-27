@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 import Icon from "@/components/ui/icon";
 
 interface Props {
@@ -34,8 +34,10 @@ export function ChatInputBar({
   onFileSelect, onOpenVanishPicker, onSendLocation, onOpenVideoCall, onOpenAwardPicker, onOpenVideoCircle,
 }: Props) {
 
+  const [showPhotoMenu, setShowPhotoMenu] = useState(false);
+
   const plusItems = [
-    { icon: "Image",  label: "Галерея",    action: () => { fileRef.current?.click(); setTimeout(onTogglePlus, 300); }, color: "#3B82F6" },
+    { icon: "Image",  label: "Галерея",    action: () => { setShowPhotoMenu(true); setTimeout(onTogglePlus, 300); }, color: "#3B82F6" },
     { icon: "Timer",  label: "Исчезает",   action: onOpenVanishPicker,                                   color: "#9B59B6" },
     { icon: "MapPin", label: "Локация",    action: onSendLocation, loading: geoLoading,                  color: "#10B981" },
     { icon: "Circle", label: "Кружок",     action: onOpenVideoCircle,                                    color: "#FF6B35" },
@@ -43,6 +45,44 @@ export function ChatInputBar({
 
   return (
     <>
+      {/* Меню выбора фото (вместо системного диалога) */}
+      {showPhotoMenu && (
+        <div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowPhotoMenu(false)}>
+          <div className="w-full px-4 pb-8 pt-2" onClick={e => e.stopPropagation()}>
+            <div className="rounded-2xl overflow-hidden mb-3"
+              style={{ background: "rgba(30,20,45,0.97)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)" }}>
+              <p className="text-white/40 text-xs text-center py-3 border-b border-white/5 font-medium uppercase tracking-widest">
+                Добавить фото
+              </p>
+              <button
+                className="w-full flex items-center gap-4 px-5 py-4 active:bg-white/5 transition-colors border-b border-white/5"
+                onClick={() => { setShowPhotoMenu(false); cameraRef.current?.click(); }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(255,45,120,0.15)" }}>
+                  <Icon name="Camera" size={18} className="text-pink-400" />
+                </div>
+                <span className="text-white text-base font-medium">Сделать фото</span>
+              </button>
+              <button
+                className="w-full flex items-center gap-4 px-5 py-4 active:bg-white/5 transition-colors"
+                onClick={() => { setShowPhotoMenu(false); fileRef.current?.click(); }}>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(59,130,246,0.15)" }}>
+                  <Icon name="Image" size={18} className="text-blue-400" />
+                </div>
+                <span className="text-white text-base font-medium">Выбрать из галереи</span>
+              </button>
+            </div>
+            <button
+              className="w-full py-4 rounded-2xl text-white font-semibold text-base active:opacity-70 transition-opacity"
+              style={{ background: "rgba(30,20,45,0.97)", border: "1px solid rgba(255,255,255,0.1)" }}
+              onClick={() => setShowPhotoMenu(false)}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Плюс-меню */}
       {showPlus && (
         <div className="px-3 pb-3 pt-3"
