@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, type User, type MyGift } from "@/lib/api";
+import { profilesApi, streaksApi, type User, type MyGift } from "@/lib/api";
 
 // Re-exports
 export { EditProfileModal } from "@/components/screens/EditProfileModal";
@@ -14,6 +14,7 @@ import { ProfilePhotosScreen } from "@/components/screens/profile/ProfilePhotosS
 import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
+import { StreakWidget } from "@/components/screens/profile/StreakWidget";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
@@ -42,6 +43,11 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   useEffect(() => {
     if (currentUser.photo_url && !photoUploading) setLocalPhoto(currentUser.photo_url);
   }, [currentUser.photo_url, photoUploading]);
+
+  // Чекин стрика при открытии профиля
+  useEffect(() => {
+    streaksApi.checkin().catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (currentUser.cover_url && !coverUploading) setLocalCover(currentUser.cover_url);
@@ -357,6 +363,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               </div>
             </button>
           )}
+
+          {/* Стрик активности */}
+          <StreakWidget />
 
           {/* 3. О себе + статы + подписчики + дата */}
           <ProfileBioSection

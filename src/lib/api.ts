@@ -9,6 +9,7 @@ const URLS = {
   push: "https://functions.poehali.dev/282c24e0-ca25-4712-ad58-26c7742c2653",
   live: "https://functions.poehali.dev/f113fa74-fe31-48da-ae7d-362a933b5294",
   feedback: "https://functions.poehali.dev/2a5b54bc-ebf4-4dd3-b9e1-8cac88e504c3",
+  streaks: "https://functions.poehali.dev/3ce9087c-7bc0-41d7-9ed9-81ef6b7272dd",
 };
 
 function getToken(): string {
@@ -1017,4 +1018,31 @@ export interface PremiumPlan {
 
 export const postsApi2 = {
   getPremiumPlans: () => req<{ plans: { plan: string; label: string; price_per_month: number; total_amount: number; duration_months: number; popular: boolean }[] }>('profiles', 'get_premium_plans'),
+};
+
+export interface StreakData {
+  current_streak: number;
+  longest_streak: number;
+  total_days: number;
+  active_today: boolean;
+  streak_frozen: boolean;
+  next_milestone: number | null;
+  reached_milestone: boolean;
+  milestones: number[];
+}
+
+export const streaksApi = {
+  get: () => {
+    const token = getToken();
+    return fetch(URLS.streaks + "/", {
+      headers: { "X-Auth-Token": token },
+    }).then(r => r.json()) as Promise<StreakData>;
+  },
+  checkin: () => {
+    const token = getToken();
+    return fetch(URLS.streaks + "/", {
+      method: "POST",
+      headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
+    }).then(r => r.json()) as Promise<StreakData>;
+  },
 };

@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "GET streaks without token",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 401
+    }
+  ]
+}
