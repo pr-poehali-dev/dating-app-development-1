@@ -75,7 +75,7 @@ export function ProfileCoverAvatar({
           <button
             onClick={e => { e.stopPropagation(); onCoverClick(); }}
             className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.18)" }}>
+            style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}>
             <Icon name="ImagePlus" size={12} />Фон
           </button>
         )}

@@ -21,10 +21,10 @@ function getFlameColor(streak: number) {
 
 const ANIMATIONS = `
   @keyframes streak-fire {
-    0%,100% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 6px #f9731688); }
-    25%     { transform: scale(1.18) rotate(3deg);  filter: drop-shadow(0 0 12px #ef444499); }
-    50%     { transform: scale(1.08) rotate(-2deg); filter: drop-shadow(0 0 8px #f9731677); }
-    75%     { transform: scale(1.2)  rotate(4deg);  filter: drop-shadow(0 0 14px #ef4444aa); }
+    0%,100% { transform: scale(1) rotate(-3deg); }
+    25%     { transform: scale(1.18) rotate(3deg); }
+    50%     { transform: scale(1.08) rotate(-2deg); }
+    75%     { transform: scale(1.2)  rotate(4deg); }
   }
   @keyframes streak-bounce {
     0%,100% { transform: translateY(0) scale(1); }
@@ -100,6 +100,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
         background: `linear-gradient(135deg, ${color}28 0%, rgba(155,89,182,0.15) 60%, rgba(255,45,120,0.12) 100%)`,
         border: `1px solid ${color}55`,
         boxShadow: `0 4px 20px ${color}22`,
+        isolation: "isolate",
       }}>
       <style>{ANIMATIONS}</style>
 
