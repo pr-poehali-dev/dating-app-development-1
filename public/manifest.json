@@ -11,25 +11,57 @@
   "scope": "/",
   "icons": [
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/dbe4d103-58ff-41ca-955e-a9484ebb7897.jpg",
-      "sizes": "192x192",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "48x48",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/dbe4d103-58ff-41ca-955e-a9484ebb7897.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "72x72",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "96x96",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "144x144",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/6346cb9c-9cc7-4a6a-ae06-6c4866cda26e.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
     }
   ],
   "categories": ["social", "lifestyle"],
   "screenshots": [
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/51fe4ec6-6465-42e1-b1ed-df2cd706037f.jpg",
-      "sizes": "1024x1024",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/a910d905-c3e6-486b-89a4-4e005b20beb0.jpg",
+      "sizes": "1080x1920",
       "type": "image/jpeg",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "LoveBloom — знакомства"
     }
-  ]
+  ],
+  "prefer_related_applications": false
 }
