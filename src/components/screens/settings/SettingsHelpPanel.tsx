@@ -226,7 +226,6 @@ export function SettingsHelpPanel({ screen }: Props) {
             { icon: "MessageCircle", title: "Написать в поддержку",      sub: "Ответим в течение 24 часов",         id: "ticket"   },
             { icon: "BookOpen",      title: "Частые вопросы",             sub: "Ответы на популярные вопросы",       id: "faq"      },
             { icon: "FileText",      title: "Правила сообщества",         sub: "Как мы обеспечиваем безопасность",   id: "rules"    },
-            { icon: "Shield",        title: "Политика конфиденциальности",sub: "Как мы работаем с данными",          id: "privacy"  },
             { icon: "Info",          title: "О приложении",               sub: "LoveBloom v1.0",                     id: ""         },
           ] as const).map((item) => (
             <button key={item.title}
