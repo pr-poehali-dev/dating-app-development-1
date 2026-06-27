@@ -3,6 +3,7 @@ import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import { useSwipeNav } from "@/hooks/useSwipeNav";
+import { useBackButton } from "@/hooks/useBackButton";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -120,6 +121,24 @@ export default function Index() {
     setJoinStream(s);
     setScreen("live");
   };
+
+  // Системная кнопка "Назад" (Android) — навигация внутри приложения
+  const handleBackButton = useCallback((): boolean => {
+    if (screen === "chat") {
+      setChatId(null);
+      setScreen(prevScreen);
+      return true;
+    }
+    if (screen !== "discover") {
+      // Любой второстепенный экран — возвращаемся на главную
+      setScreen("discover");
+      return true;
+    }
+    // Уже на главном экране — позволяем выйти из приложения
+    return false;
+  }, [screen, prevScreen]);
+
+  useBackButton(currentUser ? screen : "auth", handleBackButton);
 
 
   if (authLoading) {
