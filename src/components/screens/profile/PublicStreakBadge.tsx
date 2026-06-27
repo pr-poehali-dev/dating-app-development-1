@@ -31,17 +31,32 @@ export function PublicStreakBadge({ userId }: { userId: number }) {
   const [data, setData] = useState<StreakData | null>(null);
 
   useEffect(() => {
+    const ZERO: StreakData = { current_streak: 0, longest_streak: 0, total_days: 0, active_today: false, streak_frozen: false, next_milestone: 3, reached_milestone: false, milestones: [3,7,14,30,60,100,365] };
     streaksApi.getUser(userId)
-      .then(d => { if (d && typeof d.current_streak === "number") setData(d); })
-      .catch(() => {});
+      .then(d => setData(d && typeof d.current_streak === "number" ? d : ZERO))
+      .catch(() => setData(ZERO));
   }, [userId]);
 
-  if (!data || data.current_streak === 0) return null;
+  if (!data) return null;
 
   const color = getFlameColor(data.current_streak);
   const progress = data.next_milestone
     ? Math.min((data.current_streak / data.next_milestone) * 100, 100)
     : 100;
+
+  // Нулевой стрик — компактный вид
+  if (data.current_streak === 0) {
+    return (
+      <div className="mx-5 mt-3 mb-1 rounded-2xl px-4 py-3 flex items-center gap-3"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <FlameIcon color="#9ca3af" size={20} />
+        <div>
+          <p className="text-white/50 text-sm font-semibold leading-tight">Стрик не начат</p>
+          <p className="text-white/25 text-[11px]">Ещё не заходил в приложение</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-5 mt-3 mb-1 rounded-2xl overflow-hidden"
