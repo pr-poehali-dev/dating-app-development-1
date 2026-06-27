@@ -57,10 +57,32 @@ export function ChatHeader({
         </button>
         {onCompatibility && (
           <button onClick={onCompatibility}
-            className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90 text-base"
-            style={{ background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.25)" }}
+            className="relative w-9 h-9 flex items-center justify-center rounded-full active:scale-90 text-base"
+            style={{ background: "rgba(255,45,120,0.18)", border: "1px solid rgba(255,45,120,0.4)" }}
             title="Испытание совместимости">
-            💘
+            {/* Пульсирующее кольцо */}
+            <span className="absolute inset-0 rounded-full"
+              style={{ animation: "compat-ping 2s ease-in-out infinite", background: "rgba(255,45,120,0.3)" }} />
+            <span className="absolute inset-0 rounded-full"
+              style={{ animation: "compat-ping 2s ease-in-out 0.6s infinite", background: "rgba(255,45,120,0.2)" }} />
+            {/* Иконка с покачиванием */}
+            <span style={{ display: "inline-block", animation: "compat-wiggle 2.5s ease-in-out infinite" }}>
+              💘
+            </span>
+            <style>{`
+              @keyframes compat-ping {
+                0% { transform: scale(1); opacity: 0.6; }
+                70% { transform: scale(1.7); opacity: 0; }
+                100% { transform: scale(1.7); opacity: 0; }
+              }
+              @keyframes compat-wiggle {
+                0%,100% { transform: rotate(0deg) scale(1); }
+                15% { transform: rotate(-15deg) scale(1.15); }
+                30% { transform: rotate(12deg) scale(1.1); }
+                45% { transform: rotate(-8deg) scale(1.05); }
+                60% { transform: rotate(5deg) scale(1); }
+              }
+            `}</style>
           </button>
         )}
         <button onClick={onVideoCall}
