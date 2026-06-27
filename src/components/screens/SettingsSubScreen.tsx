@@ -6,13 +6,14 @@ import { PasswordModal, DeleteAccountModal } from "@/components/screens/Settings
 import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
-export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium }: {
+export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium, onNavigate }: {
   screen: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
   currentUser: User;
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
   onLogout?: () => void;
   onPremium?: () => void;
+  onNavigate?: (s: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security") => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -301,6 +302,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         incognito={incognito}
         incognitoLoading={incognitoLoading}
         onIncognitoToggle={handleIncognitoToggle}
+        onOpenBlocked={() => onNavigate?.("blocked")}
       />}
 
       {/* Модалы */}

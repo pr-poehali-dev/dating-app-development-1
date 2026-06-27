@@ -60,6 +60,8 @@ interface Props {
   incognito: boolean;
   incognitoLoading: boolean;
   onIncognitoToggle: () => void;
+
+  onOpenBlocked: () => void;
 }
 
 export function SettingsAccountPanel(props: Props) {
@@ -107,6 +109,7 @@ export function SettingsAccountPanel(props: Props) {
           incognito={props.incognito}
           incognitoLoading={props.incognitoLoading}
           onIncognitoToggle={props.onIncognitoToggle}
+          onOpenBlocked={props.onOpenBlocked}
         />
       )}
 

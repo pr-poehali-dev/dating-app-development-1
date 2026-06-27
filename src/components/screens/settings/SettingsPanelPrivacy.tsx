@@ -27,6 +27,8 @@ interface Props {
   incognito: boolean;
   incognitoLoading: boolean;
   onIncognitoToggle: () => void;
+
+  onOpenBlocked: () => void;
 }
 
 export function SettingsPanelPrivacy({
@@ -48,6 +50,7 @@ export function SettingsPanelPrivacy({
   incognito,
   incognitoLoading,
   onIncognitoToggle,
+  onOpenBlocked,
 }: Props) {
   return (
     <>
@@ -119,6 +122,20 @@ export function SettingsPanelPrivacy({
               <Toggle value={privacy.searchable} onChange={() => onPrivacyToggle("searchable")} />
             </Row>
           </div>
+
+          {/* Заблокированные */}
+          <button onClick={onOpenBlocked}
+            className="glass-card overflow-hidden w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70 transition-opacity text-left">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.07)" }}>
+              <Icon name="Ban" size={15} className="text-white/50" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white/90 text-sm font-semibold leading-tight">Заблокированные</p>
+              <p className="text-white/30 text-[11px] leading-tight mt-0.5">Управление блокировками</p>
+            </div>
+            <Icon name="ChevronRight" size={14} className="text-white/20 flex-shrink-0" />
+          </button>
         </div>
       )}
 

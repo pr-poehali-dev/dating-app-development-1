@@ -67,15 +67,6 @@ export function ProfileTopBarMenu({
       badge: undefined,
     },
     {
-      icon: "Ban" as const,
-      label: "Заблокированные",
-      sub: "Управление блокировками",
-      action: () => { onSettingsScreen("blocked"); onMenuToggle(false); },
-      iconBg: "rgba(255,255,255,0.07)",
-      iconColor: "text-white/50",
-      badge: undefined,
-    },
-    {
       icon: "ShieldCheck" as const,
       label: "Безопасность",
       sub: "Пароль, устройства, сессии",

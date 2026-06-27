@@ -392,6 +392,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onClose={() => setSettingsScreen(null)}
             onLogout={onLogout}
             onPremium={onPremium}
+            onNavigate={setSettingsScreen}
           />
         </div>
       )}
