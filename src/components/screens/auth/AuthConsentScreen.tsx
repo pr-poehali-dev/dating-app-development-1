@@ -19,15 +19,15 @@ export function AuthConsentScreen({
     <div className="fixed inset-0 z-[100] flex flex-col"
       style={{ background: "linear-gradient(160deg,#0f0820,#1a0f35)" }}>
 
-      <div className="flex-shrink-0 flex flex-col items-center pt-12 pb-6 px-6">
-        <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4"
+      <div className="flex-shrink-0 flex items-center gap-3 pt-8 pb-4 px-5">
+        <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
           style={{ background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.2)" }}>
-          <Icon name="Scale" size={28} className="text-pink-400" />
+          <Icon name="Scale" size={17} className="text-pink-400" />
         </div>
-        <h2 className="text-white font-black text-2xl text-center">Правовые документы</h2>
-        <p className="text-white/45 text-sm text-center mt-2 leading-relaxed">
-          Прочитай и прими условия,<br />чтобы продолжить использование LoveBloom
-        </p>
+        <div>
+          <p className="text-white font-bold text-sm leading-tight">Правовые документы</p>
+          <p className="text-white/40 text-xs leading-tight mt-0.5">Прими условия, чтобы продолжить</p>
+        </div>
       </div>
 
       <div className="flex-shrink-0 px-5 pb-3">
