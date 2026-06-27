@@ -308,7 +308,7 @@ def handler(event: dict, context) -> dict:
                 except Exception as e:
                     conn.rollback()
                     print(f"[update_me error] {e}")
-                    return resp(500, {'error': f'Ошибка сохранения: {str(e)}'})
+                    return resp(500, {'error': 'Ошибка сохранения данных'})
             return resp(200, {'ok': True})
 
         if action == 'upload_photo':
@@ -760,17 +760,17 @@ def handler(event: dict, context) -> dict:
 
         # Лента постов всех пользователей
         if action == 'posts_feed':
-            cur.execute(f"""
+            cur.execute("""
                 SELECT p.id, p.user_id, p.photo_url, p.caption, p.created_at,
                        u.name, u.photo_url as author_photo,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
-                       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = {me['id']}) as liked_by_me,
+                       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = %s) as liked_by_me,
                        (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count
                 FROM posts p
                 JOIN users u ON u.id = p.user_id
                 ORDER BY p.created_at DESC
                 LIMIT 30
-            """)
+            """, (me['id'],))
             rows = cur.fetchall()
             cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'likes_count', 'liked_by_me', 'comments_count']
             posts = []
@@ -805,6 +805,8 @@ def handler(event: dict, context) -> dict:
             text = body.get('text', '').strip()
             if not text:
                 return resp(400, {'error': 'Пустой комментарий'})
+            if len(text) > 1000:
+                return resp(400, {'error': 'Комментарий слишком длинный (макс. 1000 символов)'})
             cur.execute(
                 "INSERT INTO post_comments (post_id, user_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
                 (post_id, me['id'], text)
@@ -917,8 +919,8 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             try:
                 send_verify_email(email, code, me['name'])
-            except Exception as e:
-                return resp(500, {'error': f'Ошибка отправки письма: {str(e)}'})
+            except Exception:
+                return resp(500, {'error': 'Ошибка отправки письма. Проверь email и попробуй позже.'})
             return resp(200, {'ok': True})
 
         if action == 'verify_email_confirm':

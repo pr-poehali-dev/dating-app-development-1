@@ -87,6 +87,12 @@ def handler(event: dict, context) -> dict:
             name = body.get('name', '').strip()
             if not email or not password or not name:
                 return resp(400, {'error': 'Заполни все поля'})
+            if len(password) < 6:
+                return resp(400, {'error': 'Пароль должен быть не менее 6 символов'})
+            if len(name) > 50:
+                return resp(400, {'error': 'Имя слишком длинное'})
+            if len(email) > 255 or '@' not in email:
+                return resp(400, {'error': 'Некорректный email'})
             # Rate limit: не более 5 регистраций с одного IP за 10 минут
             if check_rate_limit(cur, ip, 'register', 5, 10):
                 audit(cur, 'register_rate_limit', 'warning', ip=ip, email=email)

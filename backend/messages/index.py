@@ -83,9 +83,13 @@ def handler(event: dict, context) -> dict:
         cur = conn.cursor()
 
         if action == 'list':
-            match_id = int(params.get('match_id', 0))
+            try:
+                match_id = int(params.get('match_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный match_id'})
             cur.execute(
-                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
             )
             if not cur.fetchone():
                 return resp(403, {'error': 'Нет доступа'})
@@ -101,19 +105,26 @@ def handler(event: dict, context) -> dict:
                     'created_at': str(r[3]), 'out': r[1] == me['id'], 'read': r[4] is not None
                 })
             cur.execute(
-                f"UPDATE messages SET read_at = NOW() WHERE match_id = {match_id} AND sender_id != {me['id']} AND read_at IS NULL"
+                "UPDATE messages SET read_at = NOW() WHERE match_id = %s AND sender_id != %s AND read_at IS NULL",
+                (match_id, me['id'])
             )
             conn.commit()
             return resp(200, {'messages': msgs})
 
         if action == 'send':
             body = json.loads(event.get('body') or '{}')
-            match_id = int(body.get('match_id', 0))
+            try:
+                match_id = int(body.get('match_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный match_id'})
             text = body.get('text', '').strip()
             if not text:
                 return resp(400, {'error': 'Пустое сообщение'})
+            if len(text) > 5000:
+                return resp(400, {'error': 'Сообщение слишком длинное (макс. 5000 символов)'})
             cur.execute(
-                f"SELECT id, user1_id, user2_id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+                "SELECT id, user1_id, user2_id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
             )
             match_row = cur.fetchone()
             if not match_row:
@@ -180,7 +191,10 @@ def handler(event: dict, context) -> dict:
             match_id = int(body.get('match_id', 0))
             if not image_data or not match_id:
                 return resp(400, {'error': 'image и match_id обязательны'})
-            cur.execute(f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})")
+            cur.execute(
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
+            )
             if not cur.fetchone():
                 return resp(403, {'error': 'Нет доступа'})
             if ',' in image_data:
@@ -207,7 +221,8 @@ def handler(event: dict, context) -> dict:
             if not match_id or not signal_type or not payload:
                 return resp(400, {'error': 'match_id, signal_type, payload обязательны'})
             cur.execute(
-                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
             )
             if not cur.fetchone():
                 return resp(403, {'error': 'Нет доступа'})
@@ -220,9 +235,13 @@ def handler(event: dict, context) -> dict:
 
         # WebRTC сигналинг: получить новые сигналы (polling)
         if action == 'signal_poll':
-            match_id = int(params.get('match_id', 0))
+            try:
+                match_id = int(params.get('match_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный match_id'})
             cur.execute(
-                f"SELECT id FROM matches WHERE id = {match_id} AND (user1_id = {me['id']} OR user2_id = {me['id']})"
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
             )
             if not cur.fetchone():
                 return resp(403, {'error': 'Нет доступа'})

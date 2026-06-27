@@ -60,10 +60,21 @@ def handler(event: dict, context) -> dict:
 
         # ── Создать игру ──────────────────────────────────────────────────────
         if action == "create":
-            match_id = body.get("match_id")
-            partner_id = body.get("partner_id")
+            try:
+                match_id = int(body.get("match_id", 0))
+                partner_id = int(body.get("partner_id", 0))
+            except (ValueError, TypeError):
+                return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Некорректные параметры"})}
             if not match_id or not partner_id:
                 return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "match_id and partner_id required"})}
+
+            # Проверяем что пользователь участник этого матча
+            cur.execute(
+                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, user_id, user_id)
+            )
+            if not cur.fetchone():
+                return {"statusCode": 403, "headers": CORS, "body": json.dumps({"error": "Нет доступа к этому матчу"})}
 
             # Проверяем нет ли уже активной игры для этого матча
             cur.execute("""
@@ -159,8 +170,11 @@ def handler(event: dict, context) -> dict:
 
         # ── Ответить на вопросы ───────────────────────────────────────────────
         elif action == "answer":
-            game_id = body.get("game_id")
-            answers = body.get("answers", {})  # {question_idx: answer_idx}
+            try:
+                game_id = int(body.get("game_id", 0))
+            except (ValueError, TypeError):
+                return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Некорректный game_id"})}
+            answers = body.get("answers", {})
 
             cur.execute("SELECT created_by, partner_id, status FROM compatibility_games WHERE id = %s", (game_id,))
             game = cur.fetchone()
@@ -168,6 +182,11 @@ def handler(event: dict, context) -> dict:
                 return {"statusCode": 404, "headers": CORS, "body": json.dumps({"error": "Game not found"})}
 
             gcreator, gpartner, gstatus = game
+
+            # Проверяем что пользователь участник этой игры
+            if user_id != gcreator and user_id != gpartner:
+                return {"statusCode": 403, "headers": CORS, "body": json.dumps({"error": "Нет доступа к этой игре"})}
+
             if gstatus == "finished":
                 return {"statusCode": 400, "headers": CORS, "body": json.dumps({"error": "Game already finished"})}
 
