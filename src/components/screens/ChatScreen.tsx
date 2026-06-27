@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import Icon from "@/components/ui/icon";
 import { matchesApi, messagesApi, postsApi, profilesApi, type Message, type Profile } from "@/lib/api";
 import { VideoCircleRecorder } from "@/components/chat/VideoCircleRecorder";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
@@ -43,6 +44,11 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
+
+  // Свайп влево для удаления сообщения
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const [swipeId, setSwipeId] = useState<number | null>(null);
+  const [swipeDx, setSwipeDx] = useState(0);
 
   void currentUserId;
 
@@ -220,6 +226,44 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   };
   const cancelHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); };
 
+  const SWIPE_DELETE_THRESHOLD = 90;
+
+  const onMsgTouchStart = (e: React.TouchEvent, msg: Message) => {
+    startHold(msg);
+    swipeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    setSwipeId(msg.id);
+    setSwipeDx(0);
+  };
+
+  const onMsgTouchMove = (e: React.TouchEvent, msg: Message) => {
+    if (!swipeStart.current) { cancelHold(); return; }
+    const dx = e.touches[0].clientX - swipeStart.current.x;
+    const dy = e.touches[0].clientY - swipeStart.current.y;
+
+    // Вертикальное движение или свайп вправо — это скролл, отменяем
+    if (Math.abs(dy) > Math.abs(dx) || dx > 0) {
+      cancelHold();
+      swipeStart.current = null;
+      setSwipeId(null);
+      setSwipeDx(0);
+      return;
+    }
+
+    cancelHold();
+    if (swipeId === msg.id) {
+      setSwipeDx(Math.max(dx, -120));
+    }
+  };
+
+  const onMsgTouchEnd = (msg: Message) => {
+    cancelHold();
+    const reached = swipeDx <= -SWIPE_DELETE_THRESHOLD;
+    swipeStart.current = null;
+    setSwipeId(null);
+    setSwipeDx(0);
+    if (reached) handleDelete(msg);
+  };
+
   return (
     <>
       {contextMsg && (
@@ -230,7 +274,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
         />
       )}
 
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full" style={{ overscrollBehaviorX: "none" }}>
         <ChatHeader
           partnerName={partnerName}
           partnerPhoto={partnerPhoto}
@@ -249,7 +293,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
         />
 
         <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5"
-          style={{ background: "linear-gradient(180deg, rgba(15,10,26,0) 0%, rgba(10,5,20,0.3) 100%)" }}>
+          style={{ background: "linear-gradient(180deg, rgba(15,10,26,0) 0%, rgba(10,5,20,0.3) 100%)", overscrollBehaviorX: "none", touchAction: "pan-y" }}>
           {msgs.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
@@ -269,16 +313,35 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
               || msg.text.startsWith("__VIDEOCIRCLE__")
               || msg.text.startsWith("__PREMIUM__");
 
+            const isSwiping = swipeId === msg.id && swipeDx < 0;
+            const willDelete = swipeDx <= -90;
+
             return (
-              <div key={msg.id}
-                className={`flex flex-col ${msg.out ? "items-end" : "items-start"} ${deleting === msg.id ? "opacity-30" : ""} transition-opacity`}
-                style={{ marginBottom: 2 }}
+              <div key={msg.id} className="relative" style={{ marginBottom: 2 }}>
+                {isSwiping && (
+                  <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-3 pointer-events-none"
+                    style={{ width: Math.min(-swipeDx, 120) }}>
+                    <div className="flex items-center justify-center rounded-full transition-colors"
+                      style={{
+                        width: 36, height: 36,
+                        background: willDelete ? "#FF2D78" : "rgba(255,45,120,0.25)",
+                      }}>
+                      <Icon name="Trash2" size={18} className="text-white" />
+                    </div>
+                  </div>
+                )}
+              <div
+                className={`flex flex-col ${msg.out ? "items-end" : "items-start"} ${deleting === msg.id ? "opacity-30" : ""}`}
+                style={{
+                  transform: isSwiping ? `translateX(${swipeDx}px)` : undefined,
+                  transition: swipeId === msg.id ? "none" : "transform 0.2s ease, opacity 0.2s",
+                }}
                 onMouseDown={() => startHold(msg)}
                 onMouseUp={cancelHold}
                 onMouseLeave={cancelHold}
-                onTouchStart={() => startHold(msg)}
-                onTouchEnd={cancelHold}
-                onTouchMove={cancelHold}>
+                onTouchStart={(e) => onMsgTouchStart(e, msg)}
+                onTouchMove={(e) => onMsgTouchMove(e, msg)}
+                onTouchEnd={() => onMsgTouchEnd(msg)}>
 
                 {isSpecial ? (
                   /* Спец. сообщения без пузыря */
@@ -298,6 +361,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                     </span>
                   </div>
                 )}
+              </div>
               </div>
             );
           })}
