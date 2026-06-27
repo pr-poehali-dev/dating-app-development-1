@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
-import Icon from "@/components/ui/icon";
-import { type User, type BlockedUser, verifyApi } from "@/lib/api";
-import { Toggle, Row } from "@/components/screens/SettingsUIKit";
+import { type User, type BlockedUser } from "@/lib/api";
+import { SettingsPanelAccount } from "./SettingsPanelAccount";
+import { SettingsPanelPrivacy } from "./SettingsPanelPrivacy";
+import { SettingsPanelPrivatePhotos } from "./SettingsPanelPrivatePhotos";
+import { SettingsPanelBlocked } from "./SettingsPanelBlocked";
 
 type PrivatePhoto = { id: number; photo_url: string; created_at: string };
 
@@ -61,480 +62,73 @@ interface Props {
   onIncognitoToggle: () => void;
 }
 
-export function SettingsAccountPanel({
-  screen,
-  currentUser,
-  onPremium,
-  name,
-  username,
-  usernameError,
-  saved,
-  onNameChange,
-  onUsernameChange,
-  onSaveAccount,
-  privacy,
-  onPrivacyToggle,
-  notif,
-  onNotifToggle,
-  isDark,
-  appear,
-  onToggleTheme,
-  onAppearToggle,
-  sounds,
-  onSoundsToggle,
-  video,
-  onVideoToggle,
-  privatePhotos,
-  privateLoading,
-  privateUploading,
-  privateError,
-  onPrivateUpload,
-  onPrivateDelete,
-  blocks,
-  blocksLoading,
-  unblocking,
-  onUnblock,
-  incognito,
-  incognitoLoading,
-  onIncognitoToggle,
-}: Props) {
-  const privateInputRef = useRef<HTMLInputElement>(null);
-
-  // Email verification state
-  const [emailStep, setEmailStep] = useState<"idle" | "sent" | "done">("idle");
-  const [emailSending, setEmailSending] = useState(false);
-  const [emailCode, setEmailCode] = useState("");
-  const [emailConfirming, setEmailConfirming] = useState(false);
-  const [emailError, setEmailError] = useState("");
-
-  const handleSendCode = async () => {
-    if (!currentUser.email) return;
-    setEmailSending(true); setEmailError("");
-    try {
-      await verifyApi.sendEmailCode(currentUser.email);
-      setEmailStep("sent");
-    } catch { setEmailError("Ошибка отправки. Попробуй снова."); }
-    finally { setEmailSending(false); }
-  };
-
-  const handleConfirmCode = async () => {
-    if (!emailCode.trim() || !currentUser.email) return;
-    setEmailConfirming(true); setEmailError("");
-    try {
-      await verifyApi.confirmEmailCode(currentUser.email, emailCode.trim());
-      setEmailStep("done");
-    } catch { setEmailError("Неверный или истёкший код."); }
-    finally { setEmailConfirming(false); }
-  };
+export function SettingsAccountPanel(props: Props) {
+  const { screen } = props;
 
   return (
     <>
-      {/* ── Аккаунт ── */}
       {screen === "account" && (
-        <div className="px-5 flex flex-col gap-4">
-          <div className="glass-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/5">
-              <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Имя</p>
-              <input value={name} onChange={(e) => onNameChange(e.target.value)}
-                className="w-full bg-transparent text-white text-sm outline-none placeholder-white/30"
-                placeholder="Твоё имя" />
-            </div>
-            <div className="px-4 py-3 border-b border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-white/40 text-xs uppercase tracking-widest">Имя пользователя</p>
-                {!currentUser.premium && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
-                    Premium
-                  </span>
-                )}
-              </div>
-              {currentUser.premium ? (
-                <>
-                  <div className="flex items-center gap-1">
-                    <span className="text-white/30 text-sm">@</span>
-                    <input value={username} onChange={(e) => onUsernameChange(e.target.value.toLowerCase())}
-                      className="flex-1 bg-transparent text-white text-sm outline-none placeholder-white/30 font-mono"
-                      placeholder="username" maxLength={50} />
-                  </div>
-                  {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
-                  <p className="text-white/25 text-xs mt-1">Только a-z, 0-9, _ и . (3–50 символов)</p>
-                </>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <span className="text-white/50 text-sm font-mono">@{username || currentUser.username || "—"}</span>
-                  <button onClick={onPremium} className="text-xs px-3 py-1.5 rounded-xl font-semibold"
-                    style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
-                    Изменить
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-white/40 text-xs uppercase tracking-widest">Электронная почта</p>
-                {(currentUser.email_verified || emailStep === "done") ? (
-                  <span className="text-xs font-semibold text-green-400 flex items-center gap-1">
-                    <Icon name="CheckCircle" size={12} />Подтверждена
-                  </span>
-                ) : (
-                  <span className="text-xs text-white/30">Не подтверждена</span>
-                )}
-              </div>
-              <input value={currentUser.email || ""} readOnly type="email"
-                className="w-full bg-transparent text-white text-sm outline-none placeholder-white/30 opacity-70" />
-
-              {/* Блок подтверждения */}
-              {!currentUser.email_verified && emailStep !== "done" && (
-                <div className="mt-3">
-                  {emailStep === "idle" && (
-                    <button
-                      onClick={handleSendCode}
-                      disabled={emailSending}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all disabled:opacity-50"
-                      style={{ background: "rgba(255,45,120,0.12)", color: "#FF2D78" }}>
-                      {emailSending
-                        ? <><Icon name="Loader2" size={12} className="animate-spin" />Отправка...</>
-                        : <><Icon name="Mail" size={12} />Подтвердить почту</>}
-                    </button>
-                  )}
-                  {emailStep === "sent" && (
-                    <div className="flex flex-col gap-2">
-                      <p className="text-white/50 text-xs">Код отправлен на {currentUser.email}</p>
-                      <div className="flex gap-2">
-                        <input
-                          value={emailCode}
-                          onChange={e => { setEmailCode(e.target.value); setEmailError(""); }}
-                          placeholder="Введи 6-значный код"
-                          maxLength={6}
-                          type="number"
-                          className="flex-1 bg-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none border border-white/15 focus:border-pink-500/60 font-mono tracking-widest placeholder-white/30"
-                        />
-                        <button
-                          onClick={handleConfirmCode}
-                          disabled={emailConfirming || emailCode.length < 6}
-                          className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50 flex items-center gap-1"
-                          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                          {emailConfirming
-                            ? <Icon name="Loader2" size={13} className="animate-spin" />
-                            : "OK"}
-                        </button>
-                      </div>
-                      <button onClick={() => setEmailStep("idle")} className="text-white/30 text-xs text-left">
-                        Отправить снова
-                      </button>
-                    </div>
-                  )}
-                  {emailError && <p className="text-red-400 text-xs mt-1">{emailError}</p>}
-                </div>
-              )}
-              {emailStep === "done" && (
-                <p className="text-green-400 text-xs mt-2 flex items-center gap-1">
-                  <Icon name="CheckCircle" size={12} />Почта успешно подтверждена!
-                </p>
-              )}
-            </div>
-          </div>
-          <button onClick={onSaveAccount}
-            className="btn-grad py-3.5 text-sm font-semibold text-white rounded-2xl flex items-center justify-center gap-2">
-            {saved ? <><Icon name="Check" size={16} className="text-white" />Сохранено!</> : "Сохранить изменения"}
-          </button>
-
-          {/* Приватные фото */}
-          <div className="glass-card overflow-hidden">
-            <button
-              onClick={() => {
-                const input = document.createElement("input");
-                input.type = "file";
-                input.accept = "image/jpeg,image/png,image/webp";
-                input.onchange = (e) => {
-                  const file = (e.target as HTMLInputElement).files?.[0];
-                  if (file) onPrivateUpload(file);
-                };
-                input.click();
-              }}
-              disabled={privateUploading}
-              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-white/5 transition-colors"
-              style={{ borderBottom: privatePhotos.length > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined }}>
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "rgba(255,45,120,0.12)" }}>
-                  {privateUploading
-                    ? <Icon name="Loader2" size={14} className="text-pink-400 animate-spin" />
-                    : <Icon name="Lock" size={14} className="text-pink-400" />}
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm font-medium text-left">Приватные фото</p>
-                  <p className="text-white/35 text-xs text-left">{privatePhotos.length > 0 ? `${privatePhotos.length} фото` : "Добавить закрытые фото"}</p>
-                </div>
-              </div>
-              <Icon name="Plus" size={16} className="text-white/30" />
-            </button>
-            {privateError && <p className="text-red-400 text-xs px-4 pb-2">{privateError}</p>}
-            {privatePhotos.length > 0 && (
-              <div className="grid grid-cols-3 gap-1 p-2">
-                {privatePhotos.map(ph => (
-                  <div key={ph.id} className="relative" style={{ aspectRatio: "1" }}>
-                    <img src={ph.photo_url} className="w-full h-full object-cover rounded-xl" />
-                    <button
-                      onClick={() => onPrivateDelete(ph.id)}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: "rgba(0,0,0,0.65)" }}>
-                      <Icon name="X" size={10} className="text-white" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <SettingsPanelAccount
+          currentUser={props.currentUser}
+          onPremium={props.onPremium}
+          name={props.name}
+          username={props.username}
+          usernameError={props.usernameError}
+          saved={props.saved}
+          onNameChange={props.onNameChange}
+          onUsernameChange={props.onUsernameChange}
+          onSaveAccount={props.onSaveAccount}
+          privatePhotos={props.privatePhotos}
+          privateLoading={props.privateLoading}
+          privateUploading={props.privateUploading}
+          privateError={props.privateError}
+          onPrivateUpload={props.onPrivateUpload}
+          onPrivateDelete={props.onPrivateDelete}
+        />
       )}
 
-      {/* ── Конфиденциальность ── */}
-      {screen === "privacy" && (
-        <div className="mx-5 flex flex-col gap-3">
-
-          {/* Инкогнито — выделенная карточка */}
-          <div className="rounded-2xl overflow-hidden"
-            style={{ background: incognito ? "rgba(155,89,182,0.12)" : "rgba(255,255,255,0.05)", border: `1px solid ${incognito ? "rgba(155,89,182,0.35)" : "rgba(255,255,255,0.08)"}`, transition: "all 0.3s" }}>
-            <div className="px-4 py-3 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: incognito ? "rgba(155,89,182,0.25)" : "rgba(255,255,255,0.07)" }}>
-                <Icon name="EyeOff" size={18} className={incognito ? "text-purple-400" : "text-white/35"} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-white text-sm font-semibold">Режим инкогнито</p>
-                  {!currentUser.premium && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
-                      Premium
-                    </span>
-                  )}
-                </div>
-                <p className="text-white/40 text-xs mt-0.5">
-                  {incognito ? "Ты скрыт — тебя не видят в сетке" : "Ты пропадёшь из поиска и сетки"}
-                </p>
-              </div>
-              {currentUser.premium ? (
-                <button onClick={onIncognitoToggle} disabled={incognitoLoading}
-                  className="flex-shrink-0 w-12 h-6 rounded-full relative transition-all duration-300 disabled:opacity-50"
-                  style={{ background: incognito ? "linear-gradient(90deg,#9B59B6,#6C3483)" : "rgba(255,255,255,0.12)" }}>
-                  <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300"
-                    style={{ left: incognito ? "26px" : "2px" }} />
-                  {incognitoLoading && (
-                    <Icon name="Loader2" size={12} className="absolute inset-0 m-auto animate-spin text-white/60" />
-                  )}
-                </button>
-              ) : (
-                <button onClick={onPremium}
-                  className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-xl"
-                  style={{ background: "rgba(255,45,120,0.15)", color: "#FF2D78" }}>
-                  Открыть
-                </button>
-              )}
-            </div>
-            {incognito && (
-              <div className="px-4 pb-3">
-                <div className="flex items-center gap-1.5 text-purple-400 text-xs">
-                  <Icon name="ShieldCheck" size={12} />
-                  <span>Активен · тебя не видят другие пользователи</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Остальные настройки */}
-          <div className="glass-card overflow-hidden">
-            <Row label="Показывать онлайн" sub="Другие видят, когда ты в сети">
-              <Toggle value={privacy.showOnline} onChange={() => onPrivacyToggle("showOnline")} />
-            </Row>
-            <Row label="Показывать расстояние" sub="Дистанция в профиле">
-              <Toggle value={privacy.showDistance} onChange={() => onPrivacyToggle("showDistance")} />
-            </Row>
-            <Row label="Прочитано" sub="Отметки о прочтении сообщений">
-              <Toggle value={privacy.readReceipts} onChange={() => onPrivacyToggle("readReceipts")} />
-            </Row>
-            <Row label="Доступен для поиска" sub="Твой профиль видят в рекомендациях">
-              <Toggle value={privacy.searchable} onChange={() => onPrivacyToggle("searchable")} />
-            </Row>
-          </div>
-        </div>
+      {["privacy", "notifications", "appearance", "sounds", "videochat"].includes(screen) && (
+        <SettingsPanelPrivacy
+          screen={screen}
+          currentUser={props.currentUser}
+          onPremium={props.onPremium}
+          privacy={props.privacy}
+          onPrivacyToggle={props.onPrivacyToggle}
+          notif={props.notif}
+          onNotifToggle={props.onNotifToggle}
+          isDark={props.isDark}
+          appear={props.appear}
+          onToggleTheme={props.onToggleTheme}
+          onAppearToggle={props.onAppearToggle}
+          sounds={props.sounds}
+          onSoundsToggle={props.onSoundsToggle}
+          video={props.video}
+          onVideoToggle={props.onVideoToggle}
+          incognito={props.incognito}
+          incognitoLoading={props.incognitoLoading}
+          onIncognitoToggle={props.onIncognitoToggle}
+        />
       )}
 
-      {/* ── Уведомления ── */}
-      {screen === "notifications" && (
-        <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Новые совпадения" sub="Когда кто-то ответил взаимностью">
-            <Toggle value={notif.matches} onChange={() => onNotifToggle("matches")} />
-          </Row>
-          <Row label="Сообщения" sub="Входящие сообщения в чатах">
-            <Toggle value={notif.messages} onChange={() => onNotifToggle("messages")} />
-          </Row>
-          <Row label="Лайки" sub="Кто оценил твой профиль">
-            <Toggle value={notif.likes} onChange={() => onNotifToggle("likes")} />
-          </Row>
-          <Row label="Акции и новости" sub="Промо и обновления приложения">
-            <Toggle value={notif.promo} onChange={() => onNotifToggle("promo")} />
-          </Row>
-        </div>
-      )}
-
-      {/* ── Внешний вид ── */}
-      {screen === "appearance" && (
-        <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Тёмная тема" sub="Тёмный фон интерфейса">
-            <Toggle value={isDark} onChange={onToggleTheme} />
-          </Row>
-          <Row label="Компактные карточки" sub="Меньше информации на карточке">
-            <Toggle value={appear.compactCards} onChange={() => onAppearToggle("compactCards")} />
-          </Row>
-          <Row label="Показывать возраст" sub="Возраст отображается в профиле">
-            <Toggle value={appear.showAge} onChange={() => onAppearToggle("showAge")} />
-          </Row>
-        </div>
-      )}
-
-      {/* ── Звуки ── */}
-      {screen === "sounds" && (
-        <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Звук сообщений" sub="Звук при входящем сообщении">
-            <Toggle value={sounds.messages} onChange={() => onSoundsToggle("messages")} />
-          </Row>
-          <Row label="Звук совпадений" sub="Звук при новом совпадении">
-            <Toggle value={sounds.matches} onChange={() => onSoundsToggle("matches")} />
-          </Row>
-          <Row label="Звук уведомлений" sub="Остальные уведомления">
-            <Toggle value={sounds.notifications} onChange={() => onSoundsToggle("notifications")} />
-          </Row>
-        </div>
-      )}
-
-      {/* ── Видеочат ── */}
-      {screen === "videochat" && (
-        <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Авто-принятие звонков" sub="Видеозвонки принимаются автоматически">
-            <Toggle value={video.autoAccept} onChange={() => onVideoToggle("autoAccept")} />
-          </Row>
-          <Row label="Размытый фон" sub="Скрывать фон во время звонка">
-            <Toggle value={video.blurBg} onChange={() => onVideoToggle("blurBg")} />
-          </Row>
-          <Row label="Зеркальная камера" sub="Отразить изображение камеры">
-            <Toggle value={video.mirrorCamera} onChange={() => onVideoToggle("mirrorCamera")} />
-          </Row>
-        </div>
-      )}
-
-      {/* ── Приватные фото ── */}
       {screen === "private_photos" && (
-        <div className="px-5 flex flex-col gap-4">
-          <div className="glass-card p-4 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,45,120,0.15)" }}>
-                <Icon name="Lock" size={20} className="text-pink-500" />
-              </div>
-              <div>
-                <p className="text-white font-semibold text-sm">Приватные фото</p>
-                <p className="text-white/50 text-xs">Доступны только по запросу</p>
-              </div>
-            </div>
-            <p className="text-white/50 text-xs leading-relaxed">Добавь фото в приватный альбом. Другие пользователи смогут запросить доступ, и ты решишь — открыть или нет.</p>
-          </div>
-
-          <input ref={privateInputRef} type="file" accept="image/*" className="hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) onPrivateUpload(f); e.target.value = ""; }} />
-
-          <div className="glass-card px-4 py-3 flex items-center gap-3">
-            <Icon name="Info" size={16} className="text-white/30 flex-shrink-0" />
-            <p className="text-white/40 text-xs leading-relaxed">
-              {currentUser.premium
-                ? `Подписка: максимум 2 фото (загружено ${privatePhotos.length}/2)`
-                : `Бесплатно: 1 фото (загружено ${privatePhotos.length}/1). Подписка даёт 2 фото`}
-            </p>
-          </div>
-
-          {privateError && <p className="text-red-400 text-sm text-center px-1">{privateError}</p>}
-
-          {privateLoading ? (
-            <div className="flex justify-center py-8"><Icon name="Loader2" size={28} className="text-white/30 animate-spin" /></div>
-          ) : privatePhotos.length === 0 ? (
-            <div className="glass-card p-8 flex flex-col items-center gap-3 rounded-3xl" style={{ border: "2px dashed rgba(255,255,255,0.1)" }}>
-              <Icon name="ImagePlus" size={36} className="text-white/20" />
-              <p className="text-white/30 text-sm text-center">У тебя пока нет приватных фото</p>
-              <button onClick={() => privateInputRef.current?.click()} disabled={privateUploading}
-                className="btn-grad px-5 py-2 text-sm font-semibold text-white rounded-2xl disabled:opacity-50">
-                {privateUploading ? "Загрузка..." : "Добавить фото"}
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-2">
-                {privatePhotos.map(p => (
-                  <div key={p.id} className="relative aspect-square rounded-2xl overflow-hidden">
-                    <img src={p.photo_url} className="w-full h-full object-cover" />
-                    <button onClick={() => onPrivateDelete(p.id)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
-                      style={{ background: "rgba(0,0,0,0.6)" }}>
-                      <Icon name="X" size={12} className="text-white" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              {((currentUser.premium && privatePhotos.length < 2) || (!currentUser.premium && privatePhotos.length < 1)) && (
-                <button onClick={() => privateInputRef.current?.click()} disabled={privateUploading}
-                  className="btn-grad py-2.5 text-sm font-semibold text-white rounded-2xl disabled:opacity-50">
-                  {privateUploading ? "Загрузка..." : "Добавить ещё фото"}
-                </button>
-              )}
-            </>
-          )}
-        </div>
+        <SettingsPanelPrivatePhotos
+          currentUser={props.currentUser}
+          privatePhotos={props.privatePhotos}
+          privateLoading={props.privateLoading}
+          privateUploading={props.privateUploading}
+          privateError={props.privateError}
+          onPrivateUpload={props.onPrivateUpload}
+          onPrivateDelete={props.onPrivateDelete}
+        />
       )}
 
-      {/* ── Заблокированные ── */}
       {screen === "blocked" && (
-        <div className="px-5 flex flex-col gap-3">
-          <p className="text-white/40 text-xs">Заблокированные не могут видеть твой профиль и писать тебе</p>
-          {blocksLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="w-7 h-7 rounded-full border-2 border-white/20 border-t-white/60 animate-spin" />
-            </div>
-          ) : blocks.length === 0 ? (
-            <div className="glass-card p-8 flex flex-col items-center gap-3 mt-2">
-              <Icon name="Ban" size={40} className="text-white/20" />
-              <p className="text-white/30 text-sm text-center">Список заблокированных пуст</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {blocks.map(user => (
-                <div key={user.id} className="glass-card px-4 py-3 flex items-center gap-3">
-                  {user.photo_url ? (
-                    <img src={user.photo_url} alt={user.name}
-                      className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-                  ) : (
-                    <div className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center"
-                      style={{ background: "rgba(255,255,255,0.08)" }}>
-                      <Icon name="User" size={20} className="text-white/30" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate">{user.name}</p>
-                    {user.age && <p className="text-white/40 text-xs">{user.age} лет</p>}
-                  </div>
-                  <button
-                    disabled={unblocking === user.id}
-                    onClick={() => onUnblock(user.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-50 text-white/70"
-                    style={{ background: "rgba(255,255,255,0.08)" }}>
-                    {unblocking === user.id
-                      ? <><Icon name="Loader2" size={13} className="animate-spin" />Ждите</>
-                      : <><Icon name="UserCheck" size={13} />Разблокировать</>}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <SettingsPanelBlocked
+          blocks={props.blocks}
+          blocksLoading={props.blocksLoading}
+          unblocking={props.unblocking}
+          onUnblock={props.onUnblock}
+        />
       )}
     </>
   );
