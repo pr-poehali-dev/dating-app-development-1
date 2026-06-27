@@ -48,11 +48,17 @@ export function PublicStreakBadge({ userId }: { userId: number }) {
   if (data.current_streak === 0) {
     return (
       <div className="mx-5 mt-3 mb-1 rounded-2xl px-4 py-3 flex items-center gap-3"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-        <FlameIcon color="#9ca3af" size={20} />
+        style={{
+          background: "linear-gradient(135deg, rgba(107,114,128,0.15) 0%, rgba(75,85,99,0.1) 100%)",
+          border: "1px solid rgba(156,163,175,0.2)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.2)",
+        }}>
+        <div style={{ filter: "drop-shadow(0 0 4px rgba(156,163,175,0.4))" }}>
+          <FlameIcon color="#9ca3af" size={22} />
+        </div>
         <div>
-          <p className="text-white/50 text-sm font-semibold leading-tight">Стрик не начат</p>
-          <p className="text-white/25 text-[11px]">Ещё не заходил в приложение</p>
+          <p className="text-white/60 text-sm font-semibold leading-tight">Стрик не начат</p>
+          <p className="text-white/30 text-[11px]">Ещё не заходил в приложение</p>
         </div>
       </div>
     );
