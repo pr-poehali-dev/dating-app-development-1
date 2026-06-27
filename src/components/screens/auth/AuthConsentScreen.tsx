@@ -138,16 +138,38 @@ export function AuthConsentScreen({
             </p>
           </div>
 
-          {/* Описание платформы */}
-          <div className="px-4 py-2.5" style={{ background: "#f0f0f2" }}>
-            <p className="text-gray-500 text-xs leading-relaxed">
-              Настройки конфиденциальности на платформе для запросов согласия LoveBloom
-            </p>
-          </div>
-
           {/* Карточки */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3"
+          <div className="flex-1 overflow-y-auto flex flex-col gap-0"
             style={{ scrollbarWidth: "none" }}>
+
+            {/* Управление данными */}
+            <div className="px-5 pt-5 pb-4 bg-white">
+              <h3 className="text-gray-900 font-bold text-lg mb-2">Управление данными</h3>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                Вы можете указать, как следует использовать ваши персональные данные. Ниже приведён список того, для чего сервису нужно ваше разрешение.
+              </p>
+            </div>
+
+            {/* Подзаголовок */}
+            <div className="flex items-center gap-2 px-5 py-2.5"
+              style={{ background: "#f0f0f2" }}>
+              <p className="text-gray-500 text-xs flex-1">Параметры обработки данных LoveBloom</p>
+              <button onClick={() => setInfoKey(infoKey === "_tcf" ? null : "_tcf")}
+                className="w-5 h-5 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0">
+                <Icon name="HelpCircle" size={11} className="text-gray-400" />
+              </button>
+            </div>
+            {infoKey === "_tcf" && (
+              <div className="px-5 py-3 text-xs text-gray-500 leading-relaxed"
+                style={{ background: "#f7f7f9", borderBottom: "1px solid #e5e7eb" }}>
+                Параметры обработки данных определяют, в каких целях LoveBloom и его технические партнёры
+                могут обрабатывать ваши персональные данные. Для каждого параметра вы можете дать
+                или отозвать своё согласие. Некоторые виды обработки осуществляются на основании
+                законного интереса и не требуют вашего согласия, однако вы вправе возразить против них.
+              </div>
+            )}
+
+            <div className="px-4 py-3 flex flex-col gap-3">
             {DATA_SETTINGS.map(item => (
               <div key={item.key} className="rounded-2xl bg-white px-4 py-4 flex flex-col gap-2"
                 style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}>
@@ -209,7 +231,9 @@ export function AuthConsentScreen({
                 </div>
               </div>
             ))}
+            </div>
 
+            <div className="px-4 pb-3 flex flex-col gap-3">
             {/* Хранение настроек */}
             <div className="rounded-2xl bg-white px-4 py-4 flex flex-col gap-2"
               style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}>
@@ -229,11 +253,12 @@ export function AuthConsentScreen({
             </div>
 
             {/* Настройки доступа */}
-            <button className="py-3 text-center"
+            <button className="py-3 text-center w-full"
               style={{ color: "#FF2D78" }}
               onClick={() => {}}>
               <p className="font-semibold text-sm">Настройки доступа поставщиков</p>
             </button>
+            </div>
           </div>
 
           {/* Кнопки */}
