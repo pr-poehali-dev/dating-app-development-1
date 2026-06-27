@@ -64,7 +64,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const nextReward = STREAK_REWARDS.find(r => r.days > data.current_streak);
 
   return (
-    <div className="mx-5 mt-3 mb-3 rounded-2xl overflow-hidden"
+    <div className="mx-5 mt-5 mb-3 rounded-2xl overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${color}18 0%, rgba(155,89,182,0.1) 60%, rgba(255,45,120,0.07) 100%)`,
         border: `1px solid ${color}35`,
