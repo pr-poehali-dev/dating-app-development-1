@@ -1034,13 +1034,13 @@ export interface StreakData {
 export const streaksApi = {
   get: () => {
     const token = getToken();
-    return fetch(URLS.streaks + "/", {
+    return fetch(URLS.streaks, {
       headers: { "X-Auth-Token": token },
     }).then(r => r.json()) as Promise<StreakData>;
   },
   checkin: () => {
     const token = getToken();
-    return fetch(URLS.streaks + "/", {
+    return fetch(URLS.streaks, {
       method: "POST",
       headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
     }).then(r => r.json()) as Promise<StreakData>;

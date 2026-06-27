@@ -1,10 +1,10 @@
 import json
 import os
-from datetime import date, datetime
+from datetime import date
 import psycopg2
 
 def get_db():
-    return psycopg2.connect(os.environ["DATABASE_URL"])
+    return psycopg2.connect(os.environ["DATABASE_URL"], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
 
 CORS = {
     "Access-Control-Allow-Origin": "*",

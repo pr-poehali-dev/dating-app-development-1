@@ -36,20 +36,31 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const [loading, setLoading] = useState(true);
   const [celebrating, setCelebrating] = useState(false);
 
+  const FALLBACK: StreakData = { current_streak: 0, longest_streak: 0, total_days: 0, active_today: false, streak_frozen: false, next_milestone: 3, reached_milestone: false, milestones: [3,7,14,30,60,100,365] };
+
   useEffect(() => {
-    streaksApi.get().then(d => {
-      setData(d);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    streaksApi.get()
+      .then(d => {
+        setData(d && typeof d.current_streak === "number" ? d : FALLBACK);
+        setLoading(false);
+      })
+      .catch(() => {
+        setData(FALLBACK);
+        setLoading(false);
+      });
   }, []);
 
   const handleCheckin = async () => {
     if (data?.active_today) return;
-    const updated = await streaksApi.checkin();
-    if (updated.reached_milestone) setCelebrating(true);
-    setData(updated);
-    onCheckin?.();
-    setTimeout(() => setCelebrating(false), 2000);
+    try {
+      const updated = await streaksApi.checkin();
+      if (updated && typeof updated.current_streak === "number") {
+        if (updated.reached_milestone) setCelebrating(true);
+        setData(updated);
+        onCheckin?.();
+        setTimeout(() => setCelebrating(false), 2000);
+      }
+    } catch { /* ignore */ }
   };
 
   if (loading || !data) return null;
