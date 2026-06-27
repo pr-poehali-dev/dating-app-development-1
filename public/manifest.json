@@ -16,21 +16,21 @@
   "categories": ["social", "lifestyle", "dating"],
   "icons": [
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/8dcb0207-d783-4aa2-9371-0baf8a9587b7.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/03cd7dfb-872e-4460-b1fa-a3e2f995275b.png",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/8dcb0207-d783-4aa2-9371-0baf8a9587b7.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/7f6a4d91-3e00-44d9-a406-f95ab5bd0fed.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/8dcb0207-d783-4aa2-9371-0baf8a9587b7.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/7f6a4d91-3e00-44d9-a406-f95ab5bd0fed.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
