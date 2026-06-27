@@ -78,10 +78,22 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
   }, []);
 
   useEffect(() => {
-    const isAtTop = () => window.scrollY <= 0 && document.documentElement.scrollTop <= 0;
+    // Проверяем, что ни один скролл-контейнер под пальцем не прокручен вниз.
+    // Лента скроллится во вложенном div с overflow, поэтому window.scrollY тут не подходит.
+    const isScrolledFromTop = (target: EventTarget | null) => {
+      let el = target as HTMLElement | null;
+      while (el && el !== document.body && el !== document.documentElement) {
+        const oy = getComputedStyle(el).overflowY;
+        const scrollable = (oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight;
+        if (scrollable && el.scrollTop > 0) return true;
+        el = el.parentElement;
+      }
+      return window.scrollY > 0 || document.documentElement.scrollTop > 0;
+    };
 
     const onTouchStart = (e: TouchEvent) => {
-      if (!isAtTop()) return;
+      // Запускаем жест только если ничего не прокручено вниз от самого верха
+      if (isScrolledFromTop(e.target)) { pulling.current = false; return; }
       startY.current = e.touches[0].clientY;
       startX.current = e.touches[0].clientX;
       pulling.current = true;
@@ -95,11 +107,14 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       // Игнорируем, если жест скорее горизонтальный (свайп) или вверх
       if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) { pulling.current = false; return; }
 
+      // Если в процессе контейнер оказался прокручен — отменяем (это обычный скролл)
+      if (isScrolledFromTop(e.target)) { pulling.current = false; return; }
+
       // Пока не потянули достаточно — не вмешиваемся, даём листать ленту нативно
       if (dy < ACTIVATE_AT) return;
 
       // Подавляем нативный скролл только после активации
-      if (isAtTop()) e.preventDefault();
+      e.preventDefault();
 
       const adjusted = dy - ACTIVATE_AT;
       const clamped = Math.min(adjusted, MAX_PULL);
