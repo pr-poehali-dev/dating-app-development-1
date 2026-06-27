@@ -188,15 +188,15 @@ export function AuthForm({
           )}
 
           <p className="text-white/40 text-xs text-center leading-relaxed px-2">
-            Нажимая «Войти» или «Продолжить», ты соглашаешься с нашими{" "}
+            Продолжая, ты принимаешь{" "}
             <button onClick={onOpenTerms} className="text-white font-bold hover:text-pink-300 transition-colors">
-              Условиями использования
+              Лицензионное соглашение
             </button>
             {" "}и{" "}
             <button onClick={onOpenPrivacy} className="text-white font-bold hover:text-pink-300 transition-colors">
-              Политикой конфиденциальности
+              Политику конфиденциальности
             </button>
-            .
+            {" "}LoveBloom
           </p>
         </div>
       </div>
