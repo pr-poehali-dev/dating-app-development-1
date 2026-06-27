@@ -1,10 +1,12 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const THRESHOLD = 72;
-const MAX_PULL = 110;
+const THRESHOLD = 120;
+const MAX_PULL = 160;
+const ACTIVATE_AT = 24;
 
 export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
   const startY = useRef(0);
+  const startX = useRef(0);
   const pulling = useRef(false);
   const indicator = useRef<HTMLDivElement | null>(null);
   const refreshing = useRef(false);
@@ -81,18 +83,26 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
     const onTouchStart = (e: TouchEvent) => {
       if (!isAtTop()) return;
       startY.current = e.touches[0].clientY;
+      startX.current = e.touches[0].clientX;
       pulling.current = true;
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (!pulling.current || refreshing.current) return;
       const dy = e.touches[0].clientY - startY.current;
-      if (dy <= 0) { pulling.current = false; return; }
+      const dx = e.touches[0].clientX - startX.current;
 
-      // Подавляем нативный скролл при потягивании вниз от верха
-      if (isAtTop() && dy > 4) e.preventDefault();
+      // Игнорируем, если жест скорее горизонтальный (свайп) или вверх
+      if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) { pulling.current = false; return; }
 
-      const clamped = Math.min(dy, MAX_PULL);
+      // Пока не потянули достаточно — не вмешиваемся, даём листать ленту нативно
+      if (dy < ACTIVATE_AT) return;
+
+      // Подавляем нативный скролл только после активации
+      if (isAtTop()) e.preventDefault();
+
+      const adjusted = dy - ACTIVATE_AT;
+      const clamped = Math.min(adjusted, MAX_PULL);
       const progress = clamped / THRESHOLD;
       const el = getIndicator();
 
@@ -114,7 +124,7 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
     const onTouchEnd = async (e: TouchEvent) => {
       if (!pulling.current || refreshing.current) return;
       pulling.current = false;
-      const dy = e.changedTouches[0].clientY - startY.current;
+      const dy = e.changedTouches[0].clientY - startY.current - ACTIVATE_AT;
       const el = getIndicator();
 
       if (dy >= THRESHOLD) {
