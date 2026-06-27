@@ -33,7 +33,7 @@ export function ProfileBioSection({
   return (
     <>
       {/* О себе */}
-      <div className="w-full mt-6 rounded-2xl p-3"
+      <div className="w-full mt-2 rounded-2xl p-3"
         style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1.5">
