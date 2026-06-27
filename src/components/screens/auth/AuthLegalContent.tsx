@@ -195,9 +195,6 @@ export function AuthLegalContent({ tab }: { tab: "terms" | "privacy" }) {
 
   return (
     <>
-      <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(155,89,182,0.08)", border: "1px solid rgba(155,89,182,0.2)" }}>
-        <p className="text-purple-300 text-[11px] leading-relaxed font-semibold">Оператор: Исламгулов Богдан Русланович · Редакция от 27 июня 2026 г.</p>
-      </div>
       {PRIVACY_SECTIONS.map(section => (
         <div key={section.title} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
