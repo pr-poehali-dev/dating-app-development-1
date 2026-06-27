@@ -194,7 +194,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
           </div>
 
           {/* Достижения */}
-          <div className="px-3 pb-3 flex flex-col gap-2 mt-4"
+          <div className="px-3 pb-3 flex flex-col gap-2 mt-8"
             style={{ borderTop: `1px solid rgba(255,255,255,0.07)` }}>
             <p className="text-white/55 text-[10px] font-bold uppercase tracking-widest pt-2">Достижения</p>
             {earned.length === 0 ? (
