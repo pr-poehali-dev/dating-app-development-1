@@ -12,8 +12,28 @@ CORS = {
     "Access-Control-Allow-Headers": "Content-Type, X-User-Id, X-Auth-Token",
 }
 
+MILESTONES = [3, 7, 14, 30, 60, 100, 365]
+
+def build_response(current, longest, total, active_today):
+    next_milestone = next((m for m in MILESTONES if m > current), None)
+    reached_milestone = current in MILESTONES
+    return {
+        "statusCode": 200,
+        "headers": CORS,
+        "body": json.dumps({
+            "current_streak": current,
+            "longest_streak": longest,
+            "total_days": total,
+            "active_today": bool(active_today),
+            "streak_frozen": False,
+            "next_milestone": next_milestone,
+            "reached_milestone": reached_milestone,
+            "milestones": MILESTONES,
+        })
+    }
+
 def handler(event: dict, context) -> dict:
-    """Стрики активности пользователя — получить и обновить."""
+    """Стрики активности пользователя — получить (GET) и обновить (POST)."""
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
@@ -28,8 +48,8 @@ def handler(event: dict, context) -> dict:
     try:
         cur = conn.cursor()
 
-        # Получаем пользователя по токену
-        cur.execute("SELECT id FROM sessions WHERE token = %s", (token,))
+        # Получаем user_id из сессии
+        cur.execute("SELECT user_id FROM sessions WHERE token = %s", (token,))
         row = cur.fetchone()
         if not row:
             return {"statusCode": 401, "headers": CORS, "body": json.dumps({"error": "Unauthorized"})}
@@ -37,93 +57,55 @@ def handler(event: dict, context) -> dict:
 
         today = date.today()
 
-        # Убеждаемся что запись существует
+        # Читаем текущее состояние стрика
         cur.execute("""
-            INSERT INTO user_streaks (user_id, current_streak, longest_streak, total_days, last_active_date)
-            VALUES (%s, 0, 0, 0, NULL)
-            ON CONFLICT (user_id) DO NOTHING
+            SELECT current_streak, longest_streak, last_active_date, total_days
+            FROM user_streaks WHERE user_id = %s
         """, (user_id,))
-        conn.commit()
+        existing = cur.fetchone()
 
-        if method == "POST":
-            # Обновляем стрик (вызывается при любой активности)
-            cur.execute("""
-                SELECT current_streak, longest_streak, last_active_date, total_days, streak_frozen
-                FROM user_streaks WHERE user_id = %s
-            """, (user_id,))
-            s = cur.fetchone()
-            current, longest, last_active, total, frozen = s
+        if existing is None:
+            # Первый раз — создаём запись
+            current, longest, last_active, total = 0, 0, None, 0
+        else:
+            current, longest, last_active, total = existing
 
-            new_current = current
-            new_total = total
+        active_today = (last_active == today)
 
+        if method == "POST" and not active_today:
+            # Считаем новый стрик
             if last_active is None:
-                # Первый вход
                 new_current = 1
                 new_total = 1
-            elif last_active == today:
-                # Уже заходили сегодня — ничего не меняем
-                pass
             elif (today - last_active).days == 1:
-                # Заход подряд
                 new_current = current + 1
                 new_total = total + 1
             else:
-                # Пропустил день — сброс (если не заморожен)
-                if frozen:
-                    # Заморозка сохраняет стрик
-                    new_current = current
-                    new_total = total + 1
-                else:
-                    new_current = 1
-                    new_total = total + 1
+                # Пропустил день — сброс
+                new_current = 1
+                new_total = total + 1
 
             new_longest = max(longest, new_current)
 
-            cur.execute("""
-                UPDATE user_streaks
-                SET current_streak = %s, longest_streak = %s, total_days = %s,
-                    last_active_date = %s, streak_frozen = FALSE, updated_at = NOW()
-                WHERE user_id = %s
-            """, (new_current, new_longest, new_total, today, user_id))
+            if existing is None:
+                cur.execute("""
+                    INSERT INTO user_streaks
+                        (user_id, current_streak, longest_streak, total_days, last_active_date, updated_at)
+                    VALUES (%s, %s, %s, %s, %s, NOW())
+                """, (user_id, new_current, new_longest, new_total, today))
+            else:
+                cur.execute("""
+                    UPDATE user_streaks
+                    SET current_streak = %s, longest_streak = %s, total_days = %s,
+                        last_active_date = %s, updated_at = NOW()
+                    WHERE user_id = %s
+                """, (new_current, new_longest, new_total, today, user_id))
+
             conn.commit()
+            return build_response(new_current, new_longest, new_total, True)
 
-            current = new_current
-            longest = new_longest
-            total = new_total
+        # GET или уже отметился сегодня
+        return build_response(current, longest, total, active_today)
 
-        else:
-            # GET — просто читаем
-            cur.execute("""
-                SELECT current_streak, longest_streak, last_active_date, total_days, streak_frozen
-                FROM user_streaks WHERE user_id = %s
-            """, (user_id,))
-            s = cur.fetchone()
-            current, longest, last_active, total, frozen = s
-
-        # Вычисляем milestone и награду
-        milestones = [3, 7, 14, 30, 60, 100, 365]
-        next_milestone = next((m for m in milestones if m > current), None)
-        reached_milestone = current in milestones
-
-        # Проверяем активность сегодня
-        cur.execute("SELECT last_active_date FROM user_streaks WHERE user_id = %s", (user_id,))
-        row2 = cur.fetchone()
-        active_today = row2 and row2[0] == today
-
-        return {
-            "statusCode": 200,
-            "headers": CORS,
-            "body": json.dumps({
-                "current_streak": current,
-                "longest_streak": longest,
-                "total_days": total,
-                "active_today": bool(active_today),
-                "streak_frozen": False,
-                "next_milestone": next_milestone,
-                "reached_milestone": reached_milestone,
-                "milestones": milestones,
-            })
-        }
     finally:
         conn.close()
