@@ -8,47 +8,84 @@ const LOGO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac9
 const DATA_SETTINGS = [
   {
     title: "Персонализация подбора анкет",
-    desc: "Информация о вашей активности в сервисе (лайки, просмотры, предпочтения) используется для подбора наиболее подходящих вам людей и улучшения алгоритмов совместимости.",
+    desc: "Информация о вашей активности в сервисе (лайки, просмотры, предпочтения) используется для подбора наиболее подходящих вам людей и улучшения алгоритмов совместимости. Мы анализируем взаимные реакции пользователей, чтобы повысить качество рекомендаций.",
     key: "personalization",
+    hasLegitimate: false,
   },
   {
     title: "Хранение и доступ к информации на устройстве",
-    desc: "Данные для входа, настройки и идентификаторы сессии сохраняются в защищённом хранилище вашего устройства (cookie, localStorage) для обеспечения работы сервиса.",
+    desc: "Данные для входа, настройки и идентификаторы сессии сохраняются в защищённом хранилище вашего устройства (cookie, localStorage) для обеспечения работы сервиса. Без этого авторизация и сохранение настроек невозможны.",
     key: "storage",
+    hasLegitimate: false,
   },
   {
     title: "Обеспечение безопасности и предотвращение мошенничества",
-    desc: "Ваши данные могут использоваться для мониторинга и предотвращения подозрительных действий, защиты аккаунта и выявления нарушений правил сервиса.",
+    desc: "Ваши данные могут использоваться для мониторинга и предотвращения подозрительных действий, защиты аккаунта и выявления нарушений правил сервиса. Обработка в целях безопасности осуществляется на основании законного интереса.",
     key: "security",
+    hasLegitimate: true,
+    legitimateOn: true,
   },
   {
     title: "Улучшение сервиса и аналитика",
-    desc: "Агрегированные данные об использовании сервиса помогают нам улучшать функциональность, исправлять ошибки и развивать новые возможности для пользователей.",
+    desc: "Агрегированные данные об использовании сервиса помогают нам улучшать функциональность, исправлять ошибки и развивать новые возможности. Информация о вашем взаимодействии с функциями сервиса может быть очень полезна для его совершенствования.",
     key: "analytics",
+    hasLegitimate: true,
+    legitimateOn: true,
+  },
+  {
+    title: "Определение эффективности контента",
+    desc: "Информация о том, какой контент продемонстрирован вам и как вы взаимодействуете с ним, может быть использована для определения того, насколько эффективно контент достигает своей цели.",
+    key: "effectiveness",
+    hasLegitimate: true,
+    legitimateOn: true,
+  },
+  {
+    title: "Понимание аудитории с помощью статистики",
+    desc: "Отчёты могут создаваться на основе комбинации наборов данных (таких как профили пользователей, статистика активности) для понимания характеристик аудитории сервиса в совокупности.",
+    key: "audience",
+    hasLegitimate: true,
+    legitimateOn: true,
+  },
+  {
+    title: "Разработка и совершенствование сервисов",
+    desc: "Информация о вашей деятельности на этом сервисе, например ваше взаимодействие с контентом, может быть очень полезна для разработки и совершенствования функций и возможностей LoveBloom.",
+    key: "development",
+    hasLegitimate: true,
+    legitimateOn: true,
+  },
+  {
+    title: "Использование ограниченных данных для выбора контента",
+    desc: "Контент, продемонстрированный вам на этом сервисе, может быть основан на ограниченных данных, таких как веб-сайт или приложение, которые вы используете, ваше приблизительное местоположение или тип устройства.",
+    key: "limited",
+    hasLegitimate: true,
+    legitimateOn: true,
   },
   {
     title: "Идентификация устройства",
     desc: "Ваше устройство может быть идентифицировано на основе технических параметров (IP-адрес, тип браузера, операционная система) для обеспечения безопасности и корректной работы сервиса.",
     key: "device",
+    hasLegitimate: false,
   },
   {
     title: "Использование данных геолокации",
-    desc: "С вашего согласия ваше местоположение может использоваться для показа людей рядом с вами. Данные геолокации обрабатываются только при наличии явного разрешения.",
+    desc: "С вашего согласия ваше точное местоположение (в радиусе менее 500 м) может использоваться для показа людей рядом с вами, указанного в настоящем уведомлении. Данные геолокации обрабатываются только при наличии явного разрешения.",
     key: "geo",
+    hasLegitimate: false,
   },
 ];
 
-function Toggle({ value, onChange }: { value: boolean; onChange: () => void }) {
+function Toggle({ value, onChange, disabled, color }: { value: boolean; onChange: () => void; disabled?: boolean; color?: string }) {
   return (
     <button
-      onClick={onChange}
+      onClick={disabled ? undefined : onChange}
       className="relative flex-shrink-0 transition-all"
       style={{
-        width: 44, height: 26,
-        borderRadius: 13,
-        background: value ? "#FF2D78" : "#d1d5db",
+        width: 44, height: 26, borderRadius: 13,
+        background: value ? (color || "#FF2D78") : "#d1d5db",
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled && !value ? 0.5 : 1,
       }}>
-      <div className="absolute top-1 w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-all"
+      <div className="absolute rounded-full bg-white shadow-sm transition-all"
         style={{ left: value ? 22 : 3, width: 18, height: 18, top: 4 }} />
     </button>
   );
@@ -69,17 +106,12 @@ export function AuthConsentScreen({
   const [showDetails, setShowDetails] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [consents, setConsents] = useState<Record<string, boolean>>({
-    personalization: false,
-    storage: false,
-    security: true,
-    analytics: false,
-    device: false,
-    geo: false,
-  });
+  const [infoKey, setInfoKey] = useState<string | null>(null);
+  const [consents, setConsents] = useState<Record<string, boolean>>(
+    Object.fromEntries(DATA_SETTINGS.map(s => [s.key, false]))
+  );
 
-  const toggleConsent = (key: string) =>
-    setConsents(p => ({ ...p, [key]: !p[key] }));
+  const toggleConsent = (key: string) => setConsents(p => ({ ...p, [key]: !p[key] }));
 
   const acceptAll = () => {
     setConsents(Object.fromEntries(DATA_SETTINGS.map(s => [s.key, true])));
@@ -106,38 +138,102 @@ export function AuthConsentScreen({
             </p>
           </div>
 
+          {/* Описание платформы */}
+          <div className="px-4 py-2.5" style={{ background: "#f0f0f2" }}>
+            <p className="text-gray-500 text-xs leading-relaxed">
+              Настройки конфиденциальности на платформе для запросов согласия LoveBloom
+            </p>
+          </div>
+
           {/* Карточки */}
           <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3"
             style={{ scrollbarWidth: "none" }}>
             {DATA_SETTINGS.map(item => (
               <div key={item.key} className="rounded-2xl bg-white px-4 py-4 flex flex-col gap-2"
-                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-                <p className="text-gray-900 font-semibold text-sm leading-snug">{item.title}</p>
+                style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}>
+
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-gray-900 font-bold text-sm leading-snug flex-1">{item.title}</p>
+                  {item.hasLegitimate && (
+                    <button
+                      onClick={() => setInfoKey(infoKey === item.key ? null : item.key)}
+                      className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon name="HelpCircle" size={13} className="text-gray-400" />
+                    </button>
+                  )}
+                </div>
+
                 <p className="text-gray-500 text-xs leading-relaxed">
-                  {expanded === item.key ? item.desc : item.desc.slice(0, 80) + "..."}
+                  {expanded === item.key ? item.desc : item.desc.slice(0, 90) + "..."}
                 </p>
                 <button
                   onClick={() => setExpanded(expanded === item.key ? null : item.key)}
                   className="text-pink-500 text-xs font-medium text-left">
                   {expanded === item.key ? "Скрыть" : "Подробнее"}
                 </button>
-                {item.key !== "security" && (
-                  <div className="flex items-center justify-between pt-1"
-                    style={{ borderTop: "1px solid #f3f4f6" }}>
+
+                {infoKey === item.key && (
+                  <div className="rounded-xl px-3 py-2 text-xs text-gray-500 leading-relaxed"
+                    style={{ background: "#f7f7f9", border: "1px solid #e5e7eb" }}>
+                    Законный интерес означает, что обработка данных в этих целях осуществляется
+                    без отдельного согласия, на основании обоснованного интереса оператора
+                    в соответствии со ст. 6 ФЗ-152. Вы можете возразить против такой обработки
+                    через службу поддержки: info@lbloom.ru
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5 pt-1"
+                  style={{ borderTop: "1px solid #f3f4f6" }}>
+                  <div className="flex items-center justify-between">
                     <p className="text-gray-400 text-xs">Согласие</p>
                     <Toggle value={consents[item.key]} onChange={() => toggleConsent(item.key)} />
                   </div>
-                )}
+                  {item.hasLegitimate && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <p className="text-gray-400 text-xs">Законный интерес</p>
+                        <button
+                          onClick={() => setInfoKey(infoKey === item.key ? null : item.key)}
+                          className="text-gray-300">
+                          <Icon name="HelpCircle" size={12} />
+                        </button>
+                      </div>
+                      <Toggle
+                        value={item.legitimateOn ?? true}
+                        onChange={() => {}}
+                        disabled
+                        color="#FF2D78"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
-            <div className="rounded-2xl bg-white px-4 py-4"
-              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-              <p className="text-gray-500 text-xs leading-relaxed">
-                Ваши настройки конфиденциальности хранятся в защищённом виде и применяются
-                ко всем сессиям. Данные обрабатываются в соответствии с ФЗ-152 «О персональных данных».
-                Срок хранения настроек — до момента удаления аккаунта.
+
+            {/* Хранение настроек */}
+            <div className="rounded-2xl bg-white px-4 py-4 flex flex-col gap-2"
+              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }}>
+              <p className="text-gray-900 font-bold text-sm leading-snug">
+                Использование настроек и их хранение
               </p>
+              <p className="text-gray-500 text-xs leading-relaxed">
+                Настройки, касающиеся целей обработки данных, которые вы указываете здесь,
+                применяются ко всем вашим сессиям. Мы храним эти настройки, чтобы следовать им
+                при дальнейшем использовании сервиса.
+              </p>
+              <div className="text-xs text-gray-500 leading-relaxed flex flex-col gap-1 mt-1">
+                <p>• Настройки хранятся в защищённом хранилище устройства</p>
+                <p>• Срок хранения настроек — до момента удаления аккаунта или отзыва согласия</p>
+                <p>• Вы можете изменить настройки в любое время через раздел «Конфиденциальность» в настройках</p>
+              </div>
             </div>
+
+            {/* Настройки доступа */}
+            <button className="py-3 text-center"
+              style={{ color: "#FF2D78" }}
+              onClick={() => {}}>
+              <p className="font-semibold text-sm">Настройки доступа поставщиков</p>
+            </button>
           </div>
 
           {/* Кнопки */}
@@ -165,7 +261,6 @@ export function AuthConsentScreen({
       <div className="w-full max-h-[92dvh] flex flex-col rounded-t-3xl overflow-hidden"
         style={{ background: "#fff" }}>
 
-        {/* Шапка */}
         <div className="flex flex-col items-center pt-7 pb-5 px-6">
           <img src={LOGO} alt="LoveBloom"
             className="w-16 h-16 rounded-2xl mb-4 object-cover"
@@ -175,7 +270,6 @@ export function AuthConsentScreen({
           </h2>
         </div>
 
-        {/* Пункты */}
         <div className="px-5 flex flex-col gap-3 pb-4">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -205,7 +299,6 @@ export function AuthConsentScreen({
             </p>
           </div>
 
-          {/* Подробнее */}
           <button
             onClick={() => setShowDetails(v => !v)}
             className="flex items-center gap-2 mt-1 text-gray-500 text-sm font-medium">
@@ -240,7 +333,6 @@ export function AuthConsentScreen({
           </p>
         </div>
 
-        {/* Кнопки */}
         <div className="px-5 pb-8 pt-2 flex flex-col gap-3"
           style={{ borderTop: "1px solid #f0f0f0" }}>
           <button onClick={onAccept}
