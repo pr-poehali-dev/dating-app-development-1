@@ -9,6 +9,7 @@ interface Props {
   onSubscribeToggle: () => void;
   onVideoCall: () => void;
   onMenuOpen: () => void;
+  onCompatibility?: () => void;
 }
 
 export function ChatHeader({
@@ -20,6 +21,7 @@ export function ChatHeader({
   onSubscribeToggle,
   onVideoCall,
   onMenuOpen,
+  onCompatibility,
 }: Props) {
   return (
     <div className="flex items-center gap-2 px-3 py-3 relative z-10 flex-shrink-0"
@@ -53,6 +55,14 @@ export function ChatHeader({
           style={{ background: subscribed ? "rgba(255,200,0,0.15)" : "rgba(255,255,255,0.07)", border: subscribed ? "1px solid rgba(255,200,0,0.3)" : "1px solid rgba(255,255,255,0.1)" }}>
           <Icon name="Star" size={17} className={subscribed ? "text-yellow-400" : "text-white/50"} />
         </button>
+        {onCompatibility && (
+          <button onClick={onCompatibility}
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90 text-base"
+            style={{ background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.25)" }}
+            title="Испытание совместимости">
+            💘
+          </button>
+        )}
         <button onClick={onVideoCall}
           className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>

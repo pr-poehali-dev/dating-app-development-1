@@ -10,6 +10,7 @@ const URLS = {
   live: "https://functions.poehali.dev/f113fa74-fe31-48da-ae7d-362a933b5294",
   feedback: "https://functions.poehali.dev/2a5b54bc-ebf4-4dd3-b9e1-8cac88e504c3",
   streaks: "https://functions.poehali.dev/3ce9087c-7bc0-41d7-9ed9-81ef6b7272dd",
+  compatibility: "https://functions.poehali.dev/3c47a214-b397-4193-9c25-8db3eb79b2d9",
 };
 
 function getToken(): string {
@@ -1050,5 +1051,57 @@ export const streaksApi = {
       method: "POST",
       headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
     }).then(r => r.json()) as Promise<StreakData>;
+  },
+};
+
+export interface CompatQuestion {
+  idx: number;
+  text: string;
+  options: string[];
+  creator_answer: number | null;
+  partner_answer: number | null;
+}
+
+export interface CompatGame {
+  id: number;
+  match_id: number;
+  created_by: number;
+  partner_id: number;
+  status: "waiting" | "answering" | "finished";
+  score_creator: number | null;
+  score_partner: number | null;
+  finished_at: string | null;
+  is_creator: boolean;
+  my_answered: boolean;
+}
+
+export const compatibilityApi = {
+  create: (match_id: number, partner_id: number) => {
+    const token = getToken();
+    return fetch(`${URLS.compatibility}?action=create`, {
+      method: "POST",
+      headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
+      body: JSON.stringify({ match_id, partner_id }),
+    }).then(r => r.json()) as Promise<{ game_id: number; already_exists?: boolean }>;
+  },
+  get: (match_id: number) => {
+    const token = getToken();
+    return fetch(`${URLS.compatibility}?action=get&match_id=${match_id}`, {
+      headers: { "X-Auth-Token": token },
+    }).then(r => r.json()) as Promise<{ game: CompatGame | null; questions: CompatQuestion[] }>;
+  },
+  getById: (game_id: number) => {
+    const token = getToken();
+    return fetch(`${URLS.compatibility}?action=get&game_id=${game_id}`, {
+      headers: { "X-Auth-Token": token },
+    }).then(r => r.json()) as Promise<{ game: CompatGame | null; questions: CompatQuestion[] }>;
+  },
+  answer: (game_id: number, answers: Record<number, number>) => {
+    const token = getToken();
+    return fetch(`${URLS.compatibility}?action=answer`, {
+      method: "POST",
+      headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
+      body: JSON.stringify({ game_id, answers }),
+    }).then(r => r.json()) as Promise<{ ok: boolean; finished: boolean }>;
   },
 };

@@ -7,6 +7,7 @@ import { renderMsgContent, getTimezoneByCity } from "@/components/chat/ChatMessa
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInputBar } from "@/components/chat/ChatInputBar";
 import { ChatContextMenu, ChatVanishPicker, ChatMenu, ChatAwardPicker } from "@/components/chat/ChatModals";
+import { CompatibilityGame } from "@/components/screens/CompatibilityGame";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -30,6 +31,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [videoCall, setVideoCall] = useState<{ isInitiator: boolean; offerPayload?: string; earlyIce?: string[] } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showVideoCircle, setShowVideoCircle] = useState(false);
+  const [showCompatibility, setShowCompatibility] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -243,6 +245,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           }}
           onVideoCall={() => setVideoCall({ isInitiator: true })}
           onMenuOpen={() => setShowChatMenu(true)}
+          onCompatibility={() => setShowCompatibility(true)}
         />
 
         <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5"
@@ -385,6 +388,17 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
         <ChatAwardPicker
           onPick={(emoji) => { sendSystem(`__AWARD__${emoji}`); setShowAwardPicker(false); }}
           onClose={() => setShowAwardPicker(false)}
+        />
+      )}
+
+      {showCompatibility && partnerId && (
+        <CompatibilityGame
+          matchId={matchId}
+          partnerId={partnerId}
+          partnerName={partnerName}
+          partnerPhoto={partnerPhoto}
+          currentUserId={currentUserId}
+          onClose={() => setShowCompatibility(false)}
         />
       )}
     </>
