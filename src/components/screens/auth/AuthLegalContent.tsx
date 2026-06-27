@@ -203,8 +203,8 @@ export function AuthLegalContent({ tab }: { tab: "terms" | "privacy" }) {
         {TERMS_SECTIONS.map(section => (
           <div key={section.title} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.1)" }}>
-                <Icon name={section.icon as "BookOpen"|"UserCheck"|"Shield"|"Image"|"CreditCard"|"Scale"|"Trash2"|"FileText"} size={14} className="text-pink-400" />
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.25)" }}>
+                <Icon name={section.icon as "BookOpen"|"UserCheck"|"Shield"|"Image"|"CreditCard"|"Scale"|"Trash2"|"FileText"} size={14} className="text-pink-300" />
               </div>
               <p className="text-white font-bold text-sm">{section.title}</p>
             </div>
@@ -232,8 +232,8 @@ export function AuthLegalContent({ tab }: { tab: "terms" | "privacy" }) {
       {PRIVACY_SECTIONS.map(section => (
         <div key={section.title} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.12)" }}>
-              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"} size={14} className="text-purple-400" />
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.28)" }}>
+              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"} size={14} className="text-purple-300" />
             </div>
             <p className="text-white font-bold text-sm">{section.title}</p>
           </div>
