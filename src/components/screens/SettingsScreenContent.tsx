@@ -59,7 +59,7 @@ interface SettingsScreenContentProps {
   incognitoLoading: boolean;
   onIncognitoToggle: () => void;
 
-  onOpenBlocked: () => void;
+  onOpenLegal: () => void;
 }
 
 export function SettingsScreenContent({
@@ -98,7 +98,7 @@ export function SettingsScreenContent({
   incognito,
   incognitoLoading,
   onIncognitoToggle,
-  onOpenBlocked,
+  onOpenLegal,
 }: SettingsScreenContentProps) {
   return (
     <div className="flex-1 overflow-y-auto pb-8">
@@ -138,7 +138,7 @@ export function SettingsScreenContent({
         incognito={incognito}
         incognitoLoading={incognitoLoading}
         onIncognitoToggle={onIncognitoToggle}
-        onOpenBlocked={onOpenBlocked}
+        onOpenLegal={onOpenLegal}
       />
 
       <SettingsHelpPanel

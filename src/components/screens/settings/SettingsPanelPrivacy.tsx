@@ -28,7 +28,7 @@ interface Props {
   incognitoLoading: boolean;
   onIncognitoToggle: () => void;
 
-  onOpenBlocked: () => void;
+  onOpenLegal: () => void;
 }
 
 export function SettingsPanelPrivacy({
@@ -50,7 +50,7 @@ export function SettingsPanelPrivacy({
   incognito,
   incognitoLoading,
   onIncognitoToggle,
-  onOpenBlocked,
+  onOpenLegal,
 }: Props) {
   return (
     <>
@@ -123,16 +123,16 @@ export function SettingsPanelPrivacy({
             </Row>
           </div>
 
-          {/* Заблокированные */}
-          <button onClick={onOpenBlocked}
+          {/* Правовые документы */}
+          <button onClick={onOpenLegal}
             className="glass-card overflow-hidden w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70 transition-opacity text-left">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ background: "rgba(255,255,255,0.07)" }}>
-              <Icon name="Ban" size={15} className="text-white/50" />
+              <Icon name="Scale" size={15} className="text-white/50" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white/90 text-sm font-semibold leading-tight">Заблокированные</p>
-              <p className="text-white/30 text-[11px] leading-tight mt-0.5">Управление блокировками</p>
+              <p className="text-white/90 text-sm font-semibold leading-tight">Правовые документы</p>
+              <p className="text-white/30 text-[11px] leading-tight mt-0.5">Условия и конфиденциальность</p>
             </div>
             <Icon name="ChevronRight" size={14} className="text-white/20 flex-shrink-0" />
           </button>

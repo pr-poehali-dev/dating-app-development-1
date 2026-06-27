@@ -4,6 +4,7 @@ import { profilesApi, authApi, blocksApi, notifSettingsApi, type User, type Bloc
 import { SettingsScreenContent } from "@/components/screens/SettingsScreenContent";
 import { PasswordModal, DeleteAccountModal } from "@/components/screens/SettingsModals";
 import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
+import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
 export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium, onNavigate }: {
@@ -33,6 +34,8 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [pwLoading, setPwLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [menuMsg, setMenuMsg] = useState("");
+  const [showLegal, setShowLegal] = useState(false);
+  const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
 
   // ── Блокировки ──────────────────────────────────────────────────────────────
   const [blocks, setBlocks] = useState<BlockedUser[]>([]);
@@ -302,8 +305,17 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         incognito={incognito}
         incognitoLoading={incognitoLoading}
         onIncognitoToggle={handleIncognitoToggle}
-        onOpenBlocked={() => onNavigate?.("blocked")}
+        onOpenLegal={() => setShowLegal(true)}
       />}
+
+      {/* Правовые документы */}
+      {showLegal && (
+        <ProfileLegalSheet
+          legalTab={legalTab}
+          onTabChange={setLegalTab}
+          onClose={() => setShowLegal(false)}
+        />
+      )}
 
       {/* Модалы */}
       {pwModal && (
