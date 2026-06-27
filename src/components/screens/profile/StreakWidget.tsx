@@ -73,6 +73,8 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
         boxShadow: `0 4px 20px ${color}22`,
         borderRadius: "1rem",
         overflow: "clip",
+        transform: "translateZ(0)",
+        backfaceVisibility: "hidden",
       }}>
       {/* Шапка */}
       <div className="flex items-center gap-2 px-3 py-2.5">
@@ -99,9 +101,9 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
             <>
               <span className="text-white/25 text-xs">·</span>
               <div className="flex-1 max-w-[80px]">
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${color}99, ${color})`, boxShadow: `0 0 6px ${color}` }} />
+                <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.1)", overflow: "clip" }}>
+                  <div className="h-full rounded-full"
+                    style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${color}99, ${color})`, transition: "width 0.7s ease" }} />
                 </div>
               </div>
               <span className="text-white/50 text-[10px] font-semibold">{data.next_milestone}д</span>
