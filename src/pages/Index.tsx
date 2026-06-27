@@ -122,6 +122,44 @@ export default function Index() {
     setScreen("live");
   };
 
+  // Подтверждение выхода: "нажмите Назад ещё раз"
+  const lastBackPress = useRef(0);
+  const showExitHint = useCallback(() => {
+    let el = document.getElementById("__exit_hint__");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "__exit_hint__";
+      el.textContent = "Нажмите «Назад» ещё раз для выхода";
+      el.style.cssText = `
+        position: fixed;
+        left: 50%;
+        bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%) translateY(10px);
+        z-index: 99999;
+        padding: 10px 20px;
+        border-radius: 999px;
+        background: rgba(20,12,32,0.96);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: system-ui, sans-serif;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s, transform 0.2s;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      `;
+      document.body.appendChild(el);
+    }
+    requestAnimationFrame(() => {
+      if (el) { el.style.opacity = "1"; el.style.transform = "translateX(-50%) translateY(0)"; }
+    });
+    setTimeout(() => {
+      if (el) { el.style.opacity = "0"; el.style.transform = "translateX(-50%) translateY(10px)"; }
+    }, 1800);
+  }, []);
+
   // Системная кнопка "Назад" (Android) — навигация внутри приложения
   const handleBackButton = useCallback((): boolean => {
     if (screen === "chat") {
@@ -134,9 +172,16 @@ export default function Index() {
       setScreen("discover");
       return true;
     }
-    // Уже на главном экране — позволяем выйти из приложения
-    return false;
-  }, [screen, prevScreen]);
+    // На главном экране — требуем второе нажатие в течение 2 секунд
+    const now = Date.now();
+    if (now - lastBackPress.current < 2000) {
+      return false; // второе нажатие — выходим из приложения
+    }
+    lastBackPress.current = now;
+    showExitHint();
+    navigator.vibrate?.(20);
+    return true; // блокируем выход, ждём подтверждения
+  }, [screen, prevScreen, showExitHint]);
 
   useBackButton(currentUser ? screen : "auth", handleBackButton);
 
