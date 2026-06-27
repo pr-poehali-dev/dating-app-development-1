@@ -14,8 +14,8 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [error, setError] = useState("");
   const [showForgot, setShowForgot] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showRules, setShowRules] = useState(false);
-  const [rulesTab, setRulesTab] = useState<"terms" | "privacy">("terms");
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const [showConsent, setShowConsent] = useState(false);
@@ -60,12 +60,11 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         />
       )}
 
-      {showRules && (
-        <AuthLegalSheet
-          rulesTab={rulesTab}
-          onTabChange={setRulesTab}
-          onClose={() => setShowRules(false)}
-        />
+      {showTerms && (
+        <AuthLegalSheet tab="terms" onClose={() => setShowTerms(false)} />
+      )}
+      {showPrivacy && (
+        <AuthLegalSheet tab="privacy" onClose={() => setShowPrivacy(false)} />
       )}
 
       <AuthForm
@@ -84,8 +83,8 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         onShowPasswordToggle={() => setShowPassword(v => !v)}
         onSubmit={submit}
         onShowForgot={() => setShowForgot(true)}
-        onOpenTerms={() => { setRulesTab("terms"); setShowRules(true); }}
-        onOpenPrivacy={() => { setRulesTab("privacy"); setShowRules(true); }}
+        onOpenTerms={() => setShowTerms(true)}
+        onOpenPrivacy={() => setShowPrivacy(true)}
         onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
       />
     </>
