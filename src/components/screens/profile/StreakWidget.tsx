@@ -72,7 +72,11 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
 
   return (
     <div className="mx-5 mt-4 mb-4 rounded-3xl overflow-hidden"
-      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      style={{
+        background: `linear-gradient(135deg, ${color}22 0%, rgba(155,89,182,0.15) 50%, rgba(255,45,120,0.1) 100%)`,
+        border: `1px solid ${color}44`,
+        boxShadow: `0 4px 24px ${color}22`,
+      }}>
 
       {/* Заголовок */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
