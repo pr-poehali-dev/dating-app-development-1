@@ -117,21 +117,21 @@ export function ProfileHeader({
       </div>
 
       {/* Табы: Фото / Подарки */}
-      <div className="w-full mt-6 px-4">
+      <div className="w-full mt-4 px-4">
         <div className="flex rounded-2xl gap-1 p-1"
-          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)" }}>
           {tabs.map(({ key, icon, label }) => {
             const isActive = (activeTab as string) === key;
             return (
               <button
                 key={key}
                 onClick={() => onTabChange((isActive ? null : key) as ActiveTab)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-[0.97]"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-[0.97]"
                 style={isActive
                   ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
                   : { background: "transparent" }}>
-                <Icon name={icon} size={14} className={isActive ? "text-white" : "text-white/35"} />
-                <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/35"}`}>{label}</span>
+                <Icon name={icon} size={15} className={isActive ? "text-white" : "text-white/60"} />
+                <span className={`text-xs font-semibold ${isActive ? "text-white" : "text-white/60"}`}>{label}</span>
               </button>
             );
           })}
