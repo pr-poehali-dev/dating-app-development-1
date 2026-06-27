@@ -19,36 +19,7 @@ function getFlameColor(streak: number) {
   return [...FLAME_COLORS].reverse().find(c => streak >= c.min)?.color ?? "#9ca3af";
 }
 
-const ANIMATIONS = `
-  @keyframes streak-fire {
-    0%,100% { transform: scale(1) rotate(-3deg); }
-    25%     { transform: scale(1.18) rotate(3deg); }
-    50%     { transform: scale(1.08) rotate(-2deg); }
-    75%     { transform: scale(1.2)  rotate(4deg); }
-  }
-  @keyframes streak-bounce {
-    0%,100% { transform: translateY(0) scale(1); }
-    40%     { transform: translateY(-4px) scale(1.15); }
-    60%     { transform: translateY(-2px) scale(1.08); }
-  }
-  @keyframes streak-spin {
-    0%   { transform: rotate(0deg) scale(1); }
-    50%  { transform: rotate(180deg) scale(1.1); }
-    100% { transform: rotate(360deg) scale(1); }
-  }
-  @keyframes streak-pulse-badge {
-    0%,100% { transform: scale(1); opacity: 1; }
-    50%     { transform: scale(1.2); opacity: 0.85; }
-  }
-  @keyframes streak-glow-ring {
-    0%,100% { box-shadow: 0 0 0 0 rgba(255,45,120,0); }
-    50%     { box-shadow: 0 0 0 4px rgba(255,45,120,0.18); }
-  }
-  @keyframes streak-float {
-    0%,100% { transform: translateY(0px); }
-    50%     { transform: translateY(-3px); }
-  }
-`;
+
 
 function FlameIcon({ color, size = 20 }: { color: string; size?: number }) {
   return (
@@ -102,14 +73,11 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
         boxShadow: `0 4px 20px ${color}22`,
         isolation: "isolate",
       }}>
-      <style>{ANIMATIONS}</style>
-
       {/* Шапка */}
       <div className="flex items-center gap-2 px-3 py-2.5">
 
-        {/* Анимированный огонь */}
-        <div className="flex-shrink-0"
-          style={{ animation: `streak-fire 1.8s ease-in-out infinite`, transformOrigin: "bottom center" }}>
+        {/* Огонь */}
+        <div className="flex-shrink-0" style={{ animation: "streak-fire 1.8s ease-in-out infinite" }}>
           <FlameIcon color={color} size={22} />
         </div>
 
@@ -148,7 +116,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
               style={{
                 background: `linear-gradient(135deg, ${color}, ${color}cc)`,
                 boxShadow: `0 2px 10px ${color}55`,
-                animation: "streak-glow-ring 2s ease-in-out infinite",
+
               }}>
               🔥 Отметиться
             </button>
@@ -181,7 +149,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
                       border: isCurrent ? `2px solid ${color}` : reached ? "none" : "1px solid rgba(255,255,255,0.1)",
                       boxShadow: reached ? (reward?.glow ?? `0 0 8px ${color}66`) : "none",
                       fontSize: reached ? 13 : 9,
-                      animation: reached && idx === earned.length - 1 ? "streak-pulse-badge 2s ease-in-out infinite" : undefined,
+
                     }}>
                     {reached ? (reward?.badge ?? "✓") : m}
                   </div>
@@ -207,10 +175,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
                     style={{
                       background: r.ringColor,
                       boxShadow: r.glow,
-                      animation: i === earned.length - 1
-                        ? "streak-bounce 2s ease-in-out infinite"
-                        : "streak-float 3s ease-in-out infinite",
-                      animationDelay: `${i * 0.3}s`,
+
                     }}>
                     {r.badge}
                   </div>
