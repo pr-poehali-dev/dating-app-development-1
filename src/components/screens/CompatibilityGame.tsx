@@ -305,71 +305,125 @@ export function CompatibilityGame({ matchId, partnerId, partnerName, partnerPhot
 
           {/* Результаты */}
           {!loading && step === "results" && game && (
-            <div className="px-5 py-6 flex flex-col gap-4">
-              {/* Шапка результата */}
-              <div className="flex flex-col items-center gap-3 py-4">
-                <div className="text-5xl">{scoreInfo?.emoji ?? "💘"}</div>
+            <div className="flex flex-col gap-4 pb-2">
+              {/* Hero-блок результата */}
+              <div className="relative flex flex-col items-center pt-8 pb-6 px-5 overflow-hidden">
+                {/* Фоновое свечение */}
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: `radial-gradient(ellipse 80% 60% at 50% 0%, ${scoreInfo?.color ?? "#FF2D78"}22 0%, transparent 70%)` }} />
+
+                {/* Большое SVG-кольцо */}
+                <div className="relative mb-4">
+                  <svg width="160" height="160" viewBox="0 0 160 160">
+                    <defs>
+                      <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#FF2D78" />
+                        <stop offset="100%" stopColor="#9B59B6" />
+                      </linearGradient>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                      </filter>
+                    </defs>
+                    {/* Трек */}
+                    <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="12" />
+                    {/* Прогресс */}
+                    <circle cx="80" cy="80" r="66" fill="none"
+                      stroke="url(#ringGrad)" strokeWidth="12"
+                      strokeLinecap="round"
+                      filter="url(#glow)"
+                      strokeDasharray={`${2 * Math.PI * 66}`}
+                      strokeDashoffset={`${2 * Math.PI * 66 * (1 - percent / 100)}`}
+                      transform="rotate(-90 80 80)"
+                      style={{ transition: "stroke-dashoffset 1s ease" }} />
+                    {/* Центр */}
+                    <text x="80" y="72" textAnchor="middle" fill="white" fontSize="11" fontWeight="600" opacity="0.5">совместимость</text>
+                    <text x="80" y="96" textAnchor="middle" fill="white" fontSize="32" fontWeight="900">{percent}%</text>
+                  </svg>
+                  {/* Эмодзи поверх */}
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                    style={{ background: "linear-gradient(135deg,#1a0a2e,#2d1b4e)", border: "2px solid rgba(255,255,255,0.1)" }}>
+                    {scoreInfo?.emoji ?? "💘"}
+                  </div>
+                </div>
+
+                {/* Лейбл */}
                 <div className="text-center">
-                  <p className="text-white font-black text-2xl">{percent}% совместимости</p>
-                  <p className="text-sm mt-1" style={{ color: scoreInfo?.color ?? "#FF2D78" }}>
-                    {scoreInfo?.label}
+                  <p className="text-white font-black text-xl leading-tight">{scoreInfo?.label}</p>
+                  <p className="text-white/40 text-sm mt-1">
+                    {score} из {questions.length} ответов совпало
                   </p>
                 </div>
-                {/* Круговой прогресс */}
-                <svg width="90" height="90" viewBox="0 0 90 90">
-                  <circle cx="45" cy="45" r="38" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" />
-                  <circle cx="45" cy="45" r="38" fill="none"
-                    stroke="url(#grad)" strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 38}`}
-                    strokeDashoffset={`${2 * Math.PI * 38 * (1 - percent / 100)}`}
-                    transform="rotate(-90 45 45)" />
-                  <defs>
-                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#FF2D78" />
-                      <stop offset="100%" stopColor="#9B59B6" />
-                    </linearGradient>
-                  </defs>
-                  <text x="45" y="50" textAnchor="middle" fill="white" fontSize="16" fontWeight="900">{percent}%</text>
-                </svg>
+
+                {/* Мини-шкала уровней */}
+                <div className="flex items-center gap-1 mt-4 w-full max-w-xs">
+                  {[0,1,2,3,4,5].map(lvl => (
+                    <div key={lvl} className="flex-1 h-1.5 rounded-full transition-all"
+                      style={{
+                        background: lvl < score
+                          ? `linear-gradient(90deg,#FF2D78,#9B59B6)`
+                          : lvl === score
+                            ? (scoreInfo?.color ?? "#FF2D78") + "88"
+                            : "rgba(255,255,255,0.08)",
+                      }} />
+                  ))}
+                </div>
               </div>
 
               {/* Разбор по вопросам */}
-              <p className="text-white/50 text-xs font-semibold uppercase tracking-wide px-1">Разбор ответов</p>
-              <div className="flex flex-col gap-2">
+              <div className="px-4">
+                <p className="text-white/40 text-[11px] font-semibold uppercase tracking-widest mb-3 px-1">Разбор ответов</p>
+                <div className="flex flex-col gap-2.5">
                 {questions.map((q, i) => {
                   const match = q.creator_answer === q.partner_answer;
                   const myAns = game.is_creator ? q.creator_answer : q.partner_answer;
                   const theirAns = game.is_creator ? q.partner_answer : q.creator_answer;
                   return (
-                    <div key={i} className="rounded-2xl px-4 py-3"
+                    <div key={i} className="rounded-2xl overflow-hidden"
                       style={{
-                        background: match ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.04)",
-                        border: match ? "1px solid rgba(34,197,94,0.2)" : "1px solid rgba(255,255,255,0.07)",
+                        background: match
+                          ? "linear-gradient(135deg,rgba(34,197,94,0.08),rgba(16,185,129,0.04))"
+                          : "rgba(255,255,255,0.03)",
+                        border: match
+                          ? "1px solid rgba(34,197,94,0.2)"
+                          : "1px solid rgba(255,255,255,0.06)",
                       }}>
-                      <div className="flex items-start gap-2 mb-2">
-                        <span className="text-sm flex-shrink-0 mt-0.5">{match ? "✅" : "❌"}</span>
-                        <p className="text-white/70 text-xs font-semibold leading-snug">{q.text}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1 px-3 py-1.5 rounded-xl text-xs text-center"
-                          style={{ background: "rgba(255,45,120,0.15)", color: "#ff6b9d" }}>
-                          <p className="text-[10px] opacity-60 mb-0.5">Ты</p>
-                          <p className="font-semibold">{myAns !== null && myAns !== undefined ? q.options[myAns] : "—"}</p>
+                      {/* Вопрос */}
+                      <div className="flex items-center gap-2.5 px-3 py-2.5"
+                        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-[11px]"
+                          style={{
+                            background: match ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.15)",
+                            color: match ? "#4ade80" : "#f87171",
+                          }}>
+                          {match ? "✓" : "✗"}
                         </div>
-                        <div className="flex-1 px-3 py-1.5 rounded-xl text-xs text-center"
-                          style={{ background: "rgba(155,89,182,0.15)", color: "#c084fc" }}>
-                          <p className="text-[10px] opacity-60 mb-0.5">{partnerName}</p>
-                          <p className="font-semibold">{theirAns !== null && theirAns !== undefined ? q.options[theirAns] : "—"}</p>
+                        <p className="text-white/70 text-xs font-medium leading-snug flex-1">{q.text}</p>
+                      </div>
+                      {/* Ответы */}
+                      <div className="flex">
+                        <div className="flex-1 px-3 py-2 text-center"
+                          style={{ borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+                          <p className="text-[10px] text-white/30 mb-0.5">Ты</p>
+                          <p className="text-xs font-bold text-pink-300">
+                            {myAns !== null && myAns !== undefined ? q.options[myAns] : "—"}
+                          </p>
+                        </div>
+                        <div className="flex-1 px-3 py-2 text-center">
+                          <p className="text-[10px] text-white/30 mb-0.5">{partnerName}</p>
+                          <p className="text-xs font-bold text-purple-300">
+                            {theirAns !== null && theirAns !== undefined ? q.options[theirAns] : "—"}
+                          </p>
                         </div>
                       </div>
                     </div>
                   );
                 })}
+                </div>
               </div>
 
               {/* Кнопки */}
-              <div className="flex gap-3 pb-4">
+              <div className="flex gap-3 px-4 pb-6">
                 <button onClick={handleStart}
                   className="flex-1 py-3.5 rounded-2xl text-white font-bold text-sm active:scale-95 transition-all"
                   style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
