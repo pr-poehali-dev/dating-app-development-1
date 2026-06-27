@@ -347,7 +347,7 @@ export function AuthConsentScreen({
                 ))}
               </div>
               <div className="text-gray-600 text-[11px] leading-relaxed">
-                <AuthLegalContent tab={consentTab} />
+                <AuthLegalContent tab={consentTab} lightBg />
               </div>
             </div>
           )}

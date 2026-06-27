@@ -191,36 +191,39 @@ const PRIVACY_SECTIONS = [
   },
 ] as const;
 
-export function AuthLegalContent({ tab }: { tab: "terms" | "privacy" }) {
+export function AuthLegalContent({ tab, lightBg }: { tab: "terms" | "privacy"; lightBg?: boolean }) {
+  const titleCls = lightBg ? "text-gray-900 font-bold text-sm" : "text-white font-bold text-sm";
+  const bodyCls  = lightBg ? "text-gray-600 text-xs leading-relaxed" : "text-white/60 text-xs leading-relaxed";
+
   if (tab === "terms") {
     return (
       <>
-        <div className="rounded-2xl px-4 py-3" style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.15)" }}>
-          <p className="text-pink-300 text-xs leading-relaxed">
+        <div className="rounded-2xl px-4 py-3" style={{ background: lightBg ? "rgba(255,45,120,0.06)" : "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.15)" }}>
+          <p className={lightBg ? "text-pink-600 text-xs leading-relaxed" : "text-pink-300 text-xs leading-relaxed"}>
             Настоящие Условия использования регулируют отношения между сервисом LoveBloom и его пользователями. Используя приложение, вы принимаете данные Условия.
           </p>
         </div>
         {TERMS_SECTIONS.map(section => (
           <div key={section.title} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.25)" }}>
-                <Icon name={section.icon as "BookOpen"|"UserCheck"|"Shield"|"Image"|"CreditCard"|"Scale"|"Trash2"|"FileText"} size={14} className="text-pink-300" />
+              <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,120,0.15)" }}>
+                <Icon name={section.icon as "BookOpen"|"UserCheck"|"Shield"|"Image"|"CreditCard"|"Scale"|"Trash2"|"FileText"} size={14} className="text-pink-500" />
               </div>
-              <p className="text-white font-bold text-sm">{section.title}</p>
+              <p className={titleCls}>{section.title}</p>
             </div>
             <div className="flex flex-col gap-1.5 pl-9">
               {section.items.map((item, i) => (
                 <div key={i} className="flex gap-2">
                   <span className="text-pink-500 text-xs mt-0.5 flex-shrink-0">•</span>
-                  <p className="text-white/60 text-xs leading-relaxed">{item}</p>
+                  <p className={bodyCls}>{item}</p>
                 </div>
               ))}
             </div>
           </div>
         ))}
-        <div className="rounded-xl px-4 py-3 mt-1" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-          <p className="text-white/35 text-[11px] leading-relaxed text-center">
-            По вопросам: <span className="text-white/55">info@lbloom.ru</span>
+        <div className="rounded-xl px-4 py-3 mt-1" style={{ background: lightBg ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.04)", border: lightBg ? "1px solid rgba(0,0,0,0.08)" : "1px solid rgba(255,255,255,0.07)" }}>
+          <p className={lightBg ? "text-gray-400 text-[11px] leading-relaxed text-center" : "text-white/35 text-[11px] leading-relaxed text-center"}>
+            По вопросам: <span className={lightBg ? "text-gray-600" : "text-white/55"}>info@lbloom.ru</span>
           </p>
         </div>
       </>
@@ -232,22 +235,21 @@ export function AuthLegalContent({ tab }: { tab: "terms" | "privacy" }) {
       {PRIVACY_SECTIONS.map(section => (
         <div key={section.title} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.28)" }}>
-              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"} size={14} className="text-purple-300" />
+            <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.18)" }}>
+              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"} size={14} className="text-purple-500" />
             </div>
-            <p className="text-white font-bold text-sm">{section.title}</p>
+            <p className={titleCls}>{section.title}</p>
           </div>
           <div className="flex flex-col gap-1.5 pl-9">
             {section.items.map((item, i) => (
               <div key={i} className="flex gap-2">
                 <span className="text-purple-500 text-xs mt-0.5 flex-shrink-0">•</span>
-                <p className="text-white/60 text-xs leading-relaxed">{item}</p>
+                <p className={bodyCls}>{item}</p>
               </div>
             ))}
           </div>
         </div>
       ))}
-
     </>
   );
 }
