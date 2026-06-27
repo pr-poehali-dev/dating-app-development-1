@@ -43,7 +43,7 @@ export function ProfileHeader({
   const streakReward = getStreakReward(streakDays);
 
   return (
-    <div className="flex flex-col items-center mb-0">
+    <div className="flex flex-col items-center mb-0" style={{ position: "relative", zIndex: 1 }}>
 
       <ProfileCoverAvatar
         currentUser={currentUser}
@@ -60,7 +60,7 @@ export function ProfileHeader({
       {photoError && <p className="text-red-400 text-xs mb-1 text-center px-4">{photoError}</p>}
 
       {/* Имя и бейджи */}
-      <div className="flex flex-col items-center gap-1 px-5">
+      <div className="flex flex-col items-center gap-1 px-5" style={{ position: "relative", zIndex: 2 }}>
         <div className="flex items-center gap-2">
           <h3 className="text-white font-bold text-xl leading-tight">
             {currentUser.name}{currentUser.age ? `, ${currentUser.age}` : ""}

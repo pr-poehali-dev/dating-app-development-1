@@ -82,7 +82,7 @@ export function ProfileCoverAvatar({
       </div>
 
       {/* Аватар */}
-      <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -48 }}>
+      <div className="absolute left-1/2 -translate-x-1/2" style={{ bottom: -48, zIndex: 1 }}>
         <div className="relative" onClick={onAvatarClick} style={{ cursor: "pointer" }}>
           <div className="w-24 h-24 rounded-full"
             style={{

@@ -298,10 +298,10 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           streakDays={streakDays}
         />
 
-        <div className="flex flex-col items-center px-5">
+        <div className="flex flex-col items-center px-5" style={{ position: "relative", zIndex: 2 }}>
 
           {/* Табы: Фото / Подарки */}
-          <div className="w-full mt-3">
+          <div className="w-full mt-3" style={{ position: "relative", zIndex: 2 }}>
             <div className="flex rounded-2xl gap-1 p-1"
               style={{ background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)" }}>
               {([
