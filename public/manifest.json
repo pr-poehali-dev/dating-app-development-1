@@ -1,0 +1,35 @@
+{
+  "name": "LoveBloom",
+  "short_name": "LoveBloom",
+  "description": "LoveBloom — найди свою любовь!",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1025",
+  "theme_color": "#FF2D78",
+  "lang": "ru",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/dbe4d103-58ff-41ca-955e-a9484ebb7897.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/dbe4d103-58ff-41ca-955e-a9484ebb7897.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/51fe4ec6-6465-42e1-b1ed-df2cd706037f.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "narrow"
+    }
+  ]
+}
