@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Анимации переходов между экранами ── */
+@keyframes screen-enter-right {
+  from {
+    transform: translateX(48px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes screen-enter-left {
+  from {
+    transform: translateX(-48px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes screen-enter-up {
+  from {
+    transform: translateY(32px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.screen-enter-right {
+  animation: screen-enter-right 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.screen-enter-left {
+  animation: screen-enter-left 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+.screen-enter-up {
+  animation: screen-enter-up 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
 /* ── Защита от скриншотов и копирования ── */
 * {
   -webkit-touch-callout: none;

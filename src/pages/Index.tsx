@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
-import { useSwipeNav } from "@/hooks/useSwipeNav";
+
 import { useBackButton } from "@/hooks/useBackButton";
 import { ScreenshotProtection } from "@/components/ScreenshotProtection";
 
@@ -87,10 +87,9 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
-  const handleSwipeNav = useCallback((s: string) => setScreen(s as Screen), []);
-  useSwipeNav(mainScreens, screen, handleSwipeNav, isMain);
-
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
+  const [animDir, setAnimDir] = useState<"left" | "right" | "up">("right");
+  const [animKey, setAnimKey] = useState(0);
   const [joinStream, setJoinStream] = useState<LiveStream | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -114,8 +113,22 @@ export default function Index() {
       }
     }
   }, []);
-  const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); setScreen("chat"); };
-  const goToChats = () => { setPrevScreen(screen); setScreen("matches"); };
+  // Навигация с анимацией
+  const navigateTo = useCallback((next: Screen) => {
+    const fromIdx = mainScreens.indexOf(screen);
+    const toIdx   = mainScreens.indexOf(next);
+    if (fromIdx !== -1 && toIdx !== -1) {
+      setAnimDir(toIdx > fromIdx ? "right" : "left");
+    } else {
+      setAnimDir("up");
+    }
+    setAnimKey(k => k + 1);
+    setScreen(next);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
+
+  const openChat = (id: number) => { setPrevScreen(screen); setChatId(id); navigateTo("chat"); };
+  const goToChats = () => { setPrevScreen(screen); navigateTo("matches"); };
   const backToMatches = () => { setChatId(null); setScreen(prevScreen); };
 
   const handleJoinLive = (s: LiveStream) => {
@@ -169,8 +182,7 @@ export default function Index() {
       return true;
     }
     if (screen !== "discover") {
-      // Любой второстепенный экран — возвращаемся на главную
-      setScreen("discover");
+      navigateTo("discover");
       return true;
     }
     // На главном экране — требуем второе нажатие в течение 2 секунд
@@ -217,27 +229,30 @@ export default function Index() {
       {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>
-          {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => setScreen("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} />}
-          {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => setScreen("premium")} onOpenSelf={() => setScreen("profile")} isPremium={!!currentUser.premium} currentUserId={currentUser.id} />}
-          {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}
-          <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
-            <RealMatchesScreen onChat={openChat} />
+          <div key={animKey}
+            className={`h-full w-full ${animDir === "right" ? "screen-enter-right" : animDir === "left" ? "screen-enter-left" : "screen-enter-up"}`}>
+            {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => navigateTo("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} />}
+            {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} onOpenSelf={() => navigateTo("profile")} isPremium={!!currentUser.premium} currentUserId={currentUser.id} />}
+            {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}
+            <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
+              <RealMatchesScreen onChat={openChat} />
+            </div>
+            {screen === "likes" && <RealLikesScreen onPremium={() => navigateTo("premium")} />}
+            {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => navigateTo("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => navigateTo("verify")} />}
+            {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
+            {screen === "filter" && (
+              <FilterScreen
+                initial={{}}
+                onApply={() => navigateTo("discover")}
+                onClose={() => navigateTo("discover")}
+              />
+            )}
+            {screen === "premium" && <PremiumScreen onClose={() => navigateTo("discover")} currentUser={currentUser} />}
+            {screen === "verify" && <VerifyScreen onClose={() => navigateTo("profile")} />}
+            {screen === "admin_verify" && <AdminVerifyScreen onClose={() => navigateTo("profile")} />}
           </div>
-          {screen === "likes" && <RealLikesScreen onPremium={() => setScreen("premium")} />}
-          {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => setScreen("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => setScreen("verify")} />}
-          {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
-          {screen === "filter" && (
-            <FilterScreen
-              initial={{}}
-              onApply={() => setScreen("discover")}
-              onClose={() => setScreen("discover")}
-            />
-          )}
-          {screen === "premium" && <PremiumScreen onClose={() => setScreen("discover")} currentUser={currentUser} />}
-          {screen === "verify" && <VerifyScreen onClose={() => setScreen("profile")} />}
-          {screen === "admin_verify" && <AdminVerifyScreen onClose={() => setScreen("profile")} />}
         </div>
-        {isMain && <BottomNav active={screen} onChange={setScreen} unreadMessages={unreadMessages} />}
+        {isMain && <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} />}
       </div>
     </div>
   );
