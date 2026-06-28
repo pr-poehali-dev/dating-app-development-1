@@ -226,58 +226,181 @@ function ElementParticles({ element, color }: { element: string; color: string }
 }
 
 // ── Модальный выбор знака ────────────────────────────────────────────────────
+const PICKER_KEYFRAMES = `
+@keyframes picker-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes picker-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes star-twinkle {
+  0%,100% { opacity: 0.2; transform: scale(1); }
+  50%      { opacity: 0.8; transform: scale(1.4); }
+}
+`;
+
+const ELEMENT_GROUPS = [
+  { element: "fire",  label: "Огонь",  icon: "🔥", signs: ["aries","leo","sagittarius"],   bg: "rgba(239,68,68,0.08)",  border: "rgba(239,68,68,0.2)"  },
+  { element: "earth", label: "Земля",  icon: "🌿", signs: ["taurus","virgo","capricorn"],  bg: "rgba(22,163,74,0.08)",  border: "rgba(22,163,74,0.2)"  },
+  { element: "air",   label: "Воздух", icon: "💨", signs: ["gemini","libra","aquarius"],   bg: "rgba(234,179,8,0.08)",  border: "rgba(234,179,8,0.2)"  },
+  { element: "water", label: "Вода",   icon: "💧", signs: ["cancer","scorpio","pisces"],   bg: "rgba(14,165,233,0.08)", border: "rgba(14,165,233,0.2)" },
+];
+
 function ZodiacPicker({ current, onSelect, onClose }: {
   current: string;
   onSelect: (key: string) => void;
   onClose: () => void;
 }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const highlighted = hovered ?? current;
+  const highlightedZ = ZODIACS.find(z => z.key === highlighted);
+
   return (
     <div className="fixed inset-0 z-[90] flex flex-col justify-end"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(10px)" }}
+      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)", animation: "picker-fade-in 0.2s ease" }}
       onClick={onClose}>
-      <div className="rounded-t-3xl overflow-hidden"
-        style={{ background: "linear-gradient(180deg,#1a0e2e,#0d0618)", border: "1px solid rgba(255,255,255,0.08)" }}
+
+      <style>{PICKER_KEYFRAMES}</style>
+
+      <div className="relative overflow-hidden"
+        style={{
+          borderRadius: "28px 28px 0 0",
+          background: "linear-gradient(170deg,#1c0d30 0%,#0e0720 50%,#080410 100%)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "none",
+          animation: "picker-slide-up 0.35s cubic-bezier(0.32,0.72,0,1)",
+          boxShadow: highlightedZ ? `0 -8px 60px ${highlightedZ.colors.glow}` : "0 -4px 40px rgba(0,0,0,0.6)",
+          transition: "box-shadow 0.4s ease",
+        }}
         onClick={e => e.stopPropagation()}>
 
+        {/* Фоновые звёзды */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(18)].map((_, i) => (
+            <div key={i} className="absolute rounded-full bg-white"
+              style={{
+                width: i % 3 === 0 ? 2 : 1,
+                height: i % 3 === 0 ? 2 : 1,
+                left: `${(i * 17 + 5) % 95}%`,
+                top: `${(i * 23 + 8) % 80}%`,
+                animation: `star-twinkle ${1.5 + (i % 4) * 0.4}s ease-in-out infinite`,
+                animationDelay: `${i * 0.18}s`,
+              }} />
+          ))}
+        </div>
+
+        {/* Цветной gradient-орб под активным знаком */}
+        {highlightedZ && (
+          <div className="absolute pointer-events-none"
+            style={{
+              width: 200, height: 200,
+              top: -60, right: -40,
+              background: `radial-gradient(circle, ${highlightedZ.colors.from}30, transparent 70%)`,
+              transition: "background 0.4s ease",
+            }} />
+        )}
+
         {/* Шапка */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div className="relative flex items-center justify-between px-5 pt-5 pb-2">
           <div>
-            <p className="text-white font-bold text-base">Знак зодиака</p>
-            <p className="text-white/40 text-xs mt-0.5">Выбери свой знак</p>
+            <p className="text-white font-black text-lg tracking-tight">✨ Знак зодиака</p>
+            <p className="text-white/40 text-xs mt-0.5">
+              {highlightedZ
+                ? <span style={{ color: highlightedZ.colors.text }}>{highlightedZ.label} · {highlightedZ.dates}</span>
+                : "Выбери свой знак"}
+            </p>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.08)" }}>
-            <span className="text-white/60 text-lg leading-none">×</span>
+            className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all active:scale-90"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="rgba(255,255,255,0.6)" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
           </button>
         </div>
 
-        {/* Сетка знаков */}
-        <div className="grid grid-cols-4 gap-2 px-4 pb-6">
-          {ZODIACS.map(z => {
-            const isActive = current === z.key;
-            return (
-              <button key={z.key} onClick={() => { onSelect(z.key); onClose(); }}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all active:scale-95"
-                style={{
-                  background: isActive
-                    ? `linear-gradient(135deg, ${z.colors.from}33, ${z.colors.to}22)`
-                    : "rgba(255,255,255,0.04)",
-                  border: isActive
-                    ? `1.5px solid ${z.colors.from}66`
-                    : "1.5px solid rgba(255,255,255,0.06)",
-                  boxShadow: isActive ? `0 0 14px ${z.colors.glow}` : "none",
-                }}>
-                <div style={{ filter: isActive ? `drop-shadow(0 0 5px ${z.colors.from})` : "none" }}>
-                  <ZodiacIcon sign={z.key} color={isActive ? z.colors.text : "rgba(255,255,255,0.4)"} size={26} />
-                </div>
-                <span className="text-[10px] font-semibold text-center leading-tight"
-                  style={{ color: isActive ? z.colors.text : "rgba(255,255,255,0.5)" }}>
-                  {z.label}
-                </span>
-              </button>
-            );
-          })}
+        {/* Разделитель с градиентом */}
+        <div className="mx-5 mb-3 h-px"
+          style={{ background: highlightedZ
+            ? `linear-gradient(90deg, transparent, ${highlightedZ.colors.from}60, transparent)`
+            : "rgba(255,255,255,0.06)",
+            transition: "background 0.4s ease"
+          }} />
+
+        {/* Группы по стихиям */}
+        <div className="px-4 pb-8 flex flex-col gap-3">
+          {ELEMENT_GROUPS.map(group => (
+            <div key={group.element}>
+              {/* Лейбл стихии */}
+              <div className="flex items-center gap-1.5 mb-2 px-1">
+                <span className="text-sm">{group.icon}</span>
+                <span className="text-white/35 text-[11px] font-bold uppercase tracking-widest">{group.label}</span>
+                <div className="flex-1 h-px ml-1" style={{ background: "rgba(255,255,255,0.05)" }} />
+              </div>
+
+              {/* Карточки знаков */}
+              <div className="grid grid-cols-3 gap-2">
+                {group.signs.map(key => {
+                  const z = ZODIACS.find(x => x.key === key)!;
+                  const isActive = current === z.key;
+                  const isHighlighted = highlighted === z.key;
+                  return (
+                    <button key={z.key}
+                      onClick={() => { onSelect(z.key); onClose(); }}
+                      onMouseEnter={() => setHovered(z.key)}
+                      onMouseLeave={() => setHovered(null)}
+                      className="flex flex-col items-center gap-2 py-3.5 px-2 rounded-2xl transition-all active:scale-95"
+                      style={{
+                        background: isActive
+                          ? `linear-gradient(145deg, ${z.colors.from}35, ${z.colors.to}20)`
+                          : isHighlighted
+                            ? `${z.colors.from}18`
+                            : "rgba(255,255,255,0.03)",
+                        border: isActive
+                          ? `1.5px solid ${z.colors.from}70`
+                          : isHighlighted
+                            ? `1.5px solid ${z.colors.from}35`
+                            : "1.5px solid rgba(255,255,255,0.05)",
+                        boxShadow: isActive ? `0 4px 20px ${z.colors.glow}, inset 0 1px 0 ${z.colors.from}20` : "none",
+                      }}>
+
+                      {/* Иконка в круглом контейнере */}
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                        style={{
+                          background: isActive
+                            ? `linear-gradient(135deg, ${z.colors.from}40, ${z.colors.to}25)`
+                            : "rgba(255,255,255,0.05)",
+                          border: isActive ? `1px solid ${z.colors.from}50` : "1px solid rgba(255,255,255,0.07)",
+                          boxShadow: isActive ? `0 0 16px ${z.colors.glow}` : "none",
+                          filter: isActive ? `drop-shadow(0 0 6px ${z.colors.from}88)` : "none",
+                          transition: "all 0.25s ease",
+                        }}>
+                        <ZodiacIcon
+                          sign={z.key}
+                          color={isActive ? z.colors.text : "rgba(255,255,255,0.35)"}
+                          size={24}
+                        />
+                      </div>
+
+                      {/* Название */}
+                      <span className="text-[11px] font-bold text-center leading-tight"
+                        style={{ color: isActive ? z.colors.text : "rgba(255,255,255,0.5)" }}>
+                        {z.label}
+                      </span>
+
+                      {/* Активная точка */}
+                      {isActive && (
+                        <div className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: z.colors.from, boxShadow: `0 0 6px ${z.colors.from}` }} />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
