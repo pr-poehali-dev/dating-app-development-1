@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -82,6 +82,15 @@ export function ProfileTopBarMenu({
       action: () => { onSettingsScreen("security"); onMenuToggle(false); },
       iconBg: "rgba(255,45,120,0.12)",
       iconColor: "text-pink-400",
+      badge: undefined,
+    },
+    {
+      icon: "HardDrive" as const,
+      label: "Данные и память",
+      sub: "Кэш, трафик, автозагрузка",
+      action: () => { onSettingsScreen("data_storage"); onMenuToggle(false); },
+      iconBg: "rgba(251,146,60,0.12)",
+      iconColor: "text-orange-400",
       badge: undefined,
     },
     {

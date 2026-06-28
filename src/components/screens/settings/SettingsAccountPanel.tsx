@@ -3,6 +3,7 @@ import { SettingsPanelAccount } from "./SettingsPanelAccount";
 import { SettingsPanelPrivacy } from "./SettingsPanelPrivacy";
 import { SettingsPanelPrivatePhotos } from "./SettingsPanelPrivatePhotos";
 import { SettingsPanelBlocked } from "./SettingsPanelBlocked";
+import { SettingsDataStoragePanel } from "./SettingsDataStoragePanel";
 
 type PrivatePhoto = { id: number; photo_url: string; created_at: string };
 
@@ -133,6 +134,8 @@ export function SettingsAccountPanel(props: Props) {
           onUnblock={props.onUnblock}
         />
       )}
+
+      <SettingsDataStoragePanel screen={screen} />
     </>
   );
 }

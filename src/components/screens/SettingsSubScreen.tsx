@@ -7,14 +7,16 @@ import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
+type SettingsScreenType = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
+
 export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium, onNavigate }: {
-  screen: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
+  screen: SettingsScreenType;
   currentUser: User;
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
   onLogout?: () => void;
   onPremium?: () => void;
-  onNavigate?: (s: "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security") => void;
+  onNavigate?: (s: SettingsScreenType) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -207,6 +209,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     blocked: "Заблокированные",
     help: "Помощь и поддержка",
     security: "Безопасность",
+    data_storage: "Данные и память",
   };
 
   const saveAccount = async () => {
