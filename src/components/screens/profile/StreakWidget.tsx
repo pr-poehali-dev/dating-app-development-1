@@ -33,7 +33,6 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const [data, setData] = useState<StreakData | null>(null);
   const [loading, setLoading] = useState(true);
   const [celebrating, setCelebrating] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
 
   const FALLBACK: StreakData = { current_streak: 0, longest_streak: 0, total_days: 0, active_today: false, streak_frozen: false, next_milestone: 3, reached_milestone: false, milestones: [3,7,14,30,60,100,365] };
 
@@ -66,7 +65,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const nextReward = STREAK_REWARDS.find(r => r.days > data.current_streak);
 
   return (
-    <div className="w-full mt-3 mb-1 rounded-2xl"
+    <div className="w-full mt-2 mb-1 rounded-2xl"
       style={{
         background: `linear-gradient(135deg, ${color}28 0%, rgba(155,89,182,0.15) 60%, rgba(255,45,120,0.12) 100%)`,
         border: `1px solid ${color}55`,
@@ -77,36 +76,36 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
         backfaceVisibility: "hidden",
       }}>
       {/* Шапка */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 px-3 py-2">
 
         {/* Огонь */}
         <div className="flex-shrink-0" style={{ animation: "streak-fire 1.8s ease-in-out infinite" }}>
-          <FlameIcon color={color} size={22} />
+          <FlameIcon color={color} size={20} />
         </div>
 
         {/* Счётчики */}
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-2.5 flex-1">
           <div className="flex items-center gap-1">
-            <span className="font-black text-xl leading-none" style={{ color, textShadow: `0 0 12px ${color}88` }}>
+            <span className="font-black text-lg leading-none" style={{ color, textShadow: `0 0 12px ${color}88` }}>
               {data.current_streak}
             </span>
-            <span className="text-white/60 text-[11px] leading-none mt-0.5 font-semibold">дн.</span>
+            <span className="text-white/60 text-[10px] leading-none mt-0.5 font-semibold">дн.</span>
           </div>
           <span className="text-white/25 text-xs">·</span>
           <div className="flex items-center gap-1">
-            <span className="text-white/75 text-xs font-bold">{data.longest_streak}</span>
-            <span className="text-white/45 text-[10px] font-medium">рекорд</span>
+            <span className="text-white/75 text-[11px] font-bold">{data.longest_streak}</span>
+            <span className="text-white/45 text-[9px] font-medium">рекорд</span>
           </div>
           {data.next_milestone && (
             <>
               <span className="text-white/25 text-xs">·</span>
-              <div className="flex-1 max-w-[80px]">
-                <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.1)", overflow: "clip" }}>
+              <div className="flex-1 max-w-[70px]">
+                <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.1)", overflow: "clip" }}>
                   <div className="h-full rounded-full"
                     style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${color}99, ${color})`, transition: "width 0.7s ease" }} />
                 </div>
               </div>
-              <span className="text-white/50 text-[10px] font-semibold">{data.next_milestone}д</span>
+              <span className="text-white/50 text-[9px] font-semibold">{data.next_milestone}д</span>
             </>
           )}
         </div>
@@ -115,48 +114,42 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
         <div className="flex items-center gap-2 flex-shrink-0">
           {!data.active_today ? (
             <button onClick={handleCheckin}
-              className="px-2.5 py-1 rounded-lg text-white text-[11px] font-bold active:scale-95 transition-all"
+              className="px-2 py-0.5 rounded-lg text-white text-[10px] font-bold active:scale-95 transition-all"
               style={{
                 background: `linear-gradient(135deg, ${color}, ${color}cc)`,
                 boxShadow: `0 2px 10px ${color}55`,
-
               }}>
               🔥 Отметиться
             </button>
           ) : (
-            <span className="text-[11px] font-bold" style={{ color, textShadow: `0 0 8px ${color}66` }}>✓ Сегодня</span>
+            <span className="text-[10px] font-bold" style={{ color, textShadow: `0 0 8px ${color}66` }}>✓ Сегодня</span>
           )}
-          <button onClick={() => setShowDetails(v => !v)}
-            className="w-6 h-6 flex items-center justify-center text-white/50 hover:text-white/80 transition-colors">
-            <span className="text-[10px]">{showDetails ? "▲" : "▼"}</span>
-          </button>
         </div>
       </div>
 
-      {/* Раскрывающаяся детализация */}
-      {showDetails && (
-        <>
+      {/* Всегда раскрытая детализация */}
+      <>
+        
           {/* Milestones */}
-          <div className="flex items-center gap-1 px-3 pb-2"
+          <div className="flex items-center gap-0.5 px-2.5 pb-1.5"
             style={{ borderTop: `1px solid ${color}25` }}>
-            {data.milestones.map((m, idx) => {
+            {data.milestones.map((m) => {
               const reached = data.current_streak >= m;
               const isCurrent = data.next_milestone === m;
               const reward = STREAK_REWARDS.find(r => r.days === m);
               return (
-                <div key={m} className="flex-1 flex flex-col items-center gap-0.5 pt-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold"
+                <div key={m} className="flex-1 flex flex-col items-center gap-0.5 pt-1.5">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold"
                     style={{
                       background: reached ? (reward?.ringColor ?? color) : isCurrent ? `${color}30` : "rgba(255,255,255,0.07)",
                       color: reached ? "#fff" : isCurrent ? color : "rgba(255,255,255,0.35)",
                       border: isCurrent ? `2px solid ${color}` : reached ? "none" : "1px solid rgba(255,255,255,0.1)",
                       boxShadow: reached ? (reward?.glow ?? `0 0 8px ${color}66`) : "none",
-                      fontSize: reached ? 13 : 9,
-
+                      fontSize: reached ? 11 : 8,
                     }}>
                     {reached ? (reward?.badge ?? "✓") : m}
                   </div>
-                  <p className="text-[7px] text-center leading-tight font-semibold"
+                  <p className="text-[6px] text-center leading-tight font-semibold"
                     style={{ color: reached ? (reward?.color ?? color) : "rgba(255,255,255,0.3)" }}>
                     {MILESTONE_LABELS[m]}
                   </p>
@@ -166,24 +159,20 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
           </div>
 
           {/* Достижения */}
-          <div className="px-3 pb-3 flex flex-col gap-2 mt-8"
+          <div className="px-3 pb-2.5 flex flex-col gap-1.5"
             style={{ borderTop: `1px solid rgba(255,255,255,0.07)` }}>
-            <p className="text-white/55 text-[10px] font-bold uppercase tracking-widest pt-2">Достижения</p>
+            <p className="text-white/55 text-[9px] font-bold uppercase tracking-widest pt-1.5">Достижения</p>
             {earned.length === 0 ? (
-              <p className="text-white/35 text-[11px] font-medium">Первая награда через {3 - data.current_streak} дн.</p>
+              <p className="text-white/35 text-[10px] font-medium">Первая награда через {3 - data.current_streak} дн.</p>
             ) : (
-              earned.slice(-3).map((r, i) => (
-                <div key={r.days} className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                    style={{
-                      background: r.ringColor,
-                      boxShadow: r.glow,
-
-                    }}>
+              earned.slice(-3).map((r) => (
+                <div key={r.days} className="flex items-center gap-1.5">
+                  <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
+                    style={{ background: r.ringColor, boxShadow: r.glow }}>
                     {r.badge}
                   </div>
-                  <p className="text-white/80 text-xs font-bold flex-1">{r.label}</p>
-                  <p className="text-white/40 text-[10px] font-medium">{r.days}д+</p>
+                  <p className="text-white/80 text-[11px] font-bold flex-1">{r.label}</p>
+                  <p className="text-white/40 text-[9px] font-medium">{r.days}д+</p>
                 </div>
               ))
             )}
@@ -202,8 +191,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
               </div>
             )}
           </div>
-        </>
-      )}
+      </>
     </div>
   );
 }
