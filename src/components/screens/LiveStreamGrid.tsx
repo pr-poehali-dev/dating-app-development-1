@@ -69,7 +69,7 @@ export function LiveStreamGrid({ streams, loading, activeTab, tabSearch, onTabSe
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex items-center justify-center" style={{ width: 160, height: 160 }}>
           {/* Пульсирующие кольца */}
           {[1,2,3].map(i => (
             <div key={i} className="absolute rounded-full border border-pink-500/20"
