@@ -114,17 +114,27 @@ export function LiveStreamList({
           )}
 
           {/* Вкладки */}
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            {LIVE_TABS.map(tab => (
-              <button key={tab.id} onClick={() => onTabChange(tab.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-all ${activeTab === tab.id ? "text-white" : "bg-white/8 text-white/50"}`}
-                style={activeTab === tab.id
-                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 12px rgba(255,45,120,0.35)" }
-                  : { background: "rgba(255,255,255,0.07)" }}>
-                <Icon name={tab.icon as "Flame"|"Sparkles"|"MapPin"|"Heart"|"Trophy"} size={12} />
-                {tab.label}
-              </button>
-            ))}
+          <div className="rounded-2xl p-1 flex gap-0.5" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            {LIVE_TABS.map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button key={tab.id} onClick={() => onTabChange(tab.id)}
+                  className="flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all active:scale-95"
+                  style={isActive ? {
+                    background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+                    boxShadow: "0 2px 10px rgba(255,45,120,0.4)",
+                  } : {}}>
+                  <Icon
+                    name={tab.icon as "Flame"|"Sparkles"|"MapPin"|"Heart"|"Trophy"}
+                    size={16}
+                    className={isActive ? "text-white" : "text-white/40"}
+                  />
+                  <span className={`text-[10px] font-bold leading-none ${isActive ? "text-white" : "text-white/40"}`}>
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
