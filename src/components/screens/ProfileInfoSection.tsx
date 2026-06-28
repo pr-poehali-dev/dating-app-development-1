@@ -4,6 +4,7 @@ import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
+import { ZodiacBadge } from "@/components/screens/profile/ZodiacBanner";
 
 interface ProfileData {
   bio?: string;
@@ -258,6 +259,13 @@ export function ProfileInfoSection({
           )}
         </div>
       </div>
+
+      {/* Знак зодиака — только чтение */}
+      {currentProfile.zodiac && (
+        <div className="px-5 pb-3">
+          <ZodiacBadge zodiac={currentProfile.zodiac} />
+        </div>
+      )}
 
       {/* Статы: Рост / Вес / Пол / Статус / Город */}
       {(currentProfile.height || currentProfile.weight || currentProfile.gender || currentProfile.relationship_status || currentProfile.city) && (

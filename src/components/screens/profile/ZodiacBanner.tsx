@@ -523,4 +523,62 @@ export function ZodiacBanner({
   );
 }
 
+// ── Read-only баннер для чужого профиля ──────────────────────────────────────
+export function ZodiacBadge({ zodiac }: { zodiac: string }) {
+  const current = ZODIACS.find(z => z.key === zodiac);
+  if (!current) return null;
+
+  return (
+    <>
+      <style>{ELEMENT_KEYFRAMES}</style>
+      <div className="w-full relative overflow-hidden rounded-2xl"
+        style={{
+          background: `linear-gradient(135deg, ${current.colors.from}20, ${current.colors.to}15)`,
+          border: `1px solid ${current.colors.from}35`,
+          boxShadow: `0 2px 16px ${current.colors.glow}`,
+        }}>
+
+        <ElementParticles element={current.element} color={current.colors.from} />
+
+        {/* Shimmer */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 bottom-0 w-1/3 opacity-10"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${current.colors.text}, transparent)`,
+              animation: "shimmer-slide 3s ease-in-out infinite",
+            }} />
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3 px-4 py-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{
+              background: `linear-gradient(135deg, ${current.colors.from}30, ${current.colors.to}20)`,
+              border: `1px solid ${current.colors.from}40`,
+              animation: "zodiac-float 3s ease-in-out infinite",
+              boxShadow: `0 0 14px ${current.colors.glow}`,
+              filter: `drop-shadow(0 0 4px ${current.colors.from}88)`,
+            }}>
+            <ZodiacIcon sign={current.key} color={current.colors.text} size={22} />
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm" style={{ color: current.colors.text }}>
+                {current.label}
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wide"
+                style={{ background: `${current.colors.from}25`, color: current.colors.text, opacity: 0.8 }}>
+                {current.element === "fire" ? "🔥 Огонь" :
+                 current.element === "water" ? "💧 Вода" :
+                 current.element === "air" ? "💨 Воздух" : "🌿 Земля"}
+              </span>
+            </div>
+            <p className="text-white/35 text-[11px] mt-0.5">{current.dates}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default ZodiacBanner;

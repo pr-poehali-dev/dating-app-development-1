@@ -594,6 +594,7 @@ export interface Profile {
   show_age?: boolean;
   boosted?: boolean;
   username?: string;
+  zodiac?: string;
 }
 
 export interface LikedBy {
