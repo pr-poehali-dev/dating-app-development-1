@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Защита от скриншотов и копирования ── */
+* {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img,
+video {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+/* Переопределяем pointer-events для кликабельных картинок */
+button img,
+a img,
+[role="button"] img {
+  pointer-events: auto;
+}
+
 @keyframes goldShimmer {
   0% {
     background-position: 200% 0;
