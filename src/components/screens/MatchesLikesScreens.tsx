@@ -89,9 +89,26 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
 
   if (matches.length === 0) return (
     <div className="flex flex-col h-full items-center justify-center gap-5 px-8 text-center">
-      <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl"
-        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        💬
+      <div className="relative w-20 h-20 flex items-center justify-center">
+        {/* Glow rings */}
+        <div className="absolute inset-0 rounded-3xl" style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.14))", border: "1px solid rgba(255,45,120,0.25)", boxShadow: "0 0 32px rgba(255,45,120,0.2)" }} />
+        <div className="absolute inset-[-6px] rounded-[28px]" style={{ border: "1px solid rgba(255,45,120,0.08)" }} />
+        {/* Icon */}
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="msgGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FF2D78"/>
+              <stop offset="100%" stopColor="#9B59B6"/>
+            </linearGradient>
+          </defs>
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+            fill="url(#msgGrad)" opacity="0.15" stroke="url(#msgGrad)" strokeWidth="1.5" strokeLinejoin="round"/>
+          <circle cx="8.5" cy="11" r="1" fill="url(#msgGrad)"/>
+          <circle cx="12" cy="11" r="1" fill="url(#msgGrad)"/>
+          <circle cx="15.5" cy="11" r="1" fill="url(#msgGrad)"/>
+        </svg>
+        {/* Pulse dot */}
+        <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-pink-500 border-2 border-[#0d0518]" style={{ boxShadow: "0 0 8px #FF2D78" }} />
       </div>
       <div>
         <p className="text-white/70 font-semibold text-base mb-1">Нет сообщений</p>
