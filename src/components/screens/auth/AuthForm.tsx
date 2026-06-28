@@ -77,7 +77,7 @@ export function AuthForm({
                 filter: "blur(8px)",
               }} />
             <img
-              src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/877e412e-7952-45c5-a513-2c266868f89f.jpg"
+              src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg"
               alt="LoveBloom"
               style={{
                 width: 84, height: 84,

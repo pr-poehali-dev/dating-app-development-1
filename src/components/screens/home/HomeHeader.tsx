@@ -15,7 +15,7 @@ export function HomeHeader({ unreadCount, onCreateClick, onGiftsClick, onNotifsC
       <div className="flex items-center gap-2.5">
         <div className="relative">
           <img
-            src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/877e412e-7952-45c5-a513-2c266868f89f.jpg"
+            src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg"
             className="w-9 h-9 rounded-xl object-cover"
             style={{ boxShadow: "0 2px 12px rgba(255,45,120,0.4)" }}
           />

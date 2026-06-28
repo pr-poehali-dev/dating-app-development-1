@@ -3,7 +3,7 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { AuthLegalContent } from "./AuthLegalContent";
 
-const LOGO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/877e412e-7952-45c5-a513-2c266868f89f.jpg";
+const LOGO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg";
 
 const DATA_SETTINGS = [
   {
