@@ -69,8 +69,47 @@ export function LiveStreamGrid({ streams, loading, activeTab, tabSearch, onTabSe
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="text-5xl">📡</div>
-        <p className="text-white/50 text-sm text-center">Нет активных трансляций.<br />Выйди в эфир первым!</p>
+        <div className="relative flex items-center justify-center">
+          {/* Пульсирующие кольца */}
+          {[1,2,3].map(i => (
+            <div key={i} className="absolute rounded-full border border-pink-500/20"
+              style={{
+                width: 48 + i * 28, height: 48 + i * 28,
+                animation: `ping ${1 + i * 0.4}s cubic-bezier(0,0,0.2,1) infinite`,
+                animationDelay: `${i * 0.3}s`,
+              }} />
+          ))}
+          {/* Центральный круг с иконкой */}
+          <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
+            style={{
+              background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.14))",
+              border: "1px solid rgba(255,45,120,0.25)",
+              boxShadow: "0 0 24px rgba(255,45,120,0.15)",
+            }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+              stroke="url(#liveGrad)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <defs>
+                <linearGradient id="liveGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#FF2D78"/>
+                  <stop offset="100%" stopColor="#9B59B6"/>
+                </linearGradient>
+              </defs>
+              {/* Антенна-вышка */}
+              <line x1="12" y1="2" x2="12" y2="8" />
+              <circle cx="12" cy="11" r="2" fill="rgba(255,45,120,0.8)" stroke="none" style={{ animation: "pulse 1.5s ease-in-out infinite" }} />
+              {/* Дуги сигнала */}
+              <path d="M8.5 7.5 A5 5 0 0 0 15.5 7.5" />
+              <path d="M6 5 A8 8 0 0 0 18 5" />
+              {/* Подставка */}
+              <path d="M9 21 L12 14 L15 21" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+            </svg>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-white/70 text-sm font-semibold">Нет активных трансляций</p>
+          <p className="text-white/35 text-xs">Выйди в эфир первым!</p>
+        </div>
       </div>
     );
   }
