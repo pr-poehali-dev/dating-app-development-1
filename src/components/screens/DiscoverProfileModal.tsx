@@ -317,11 +317,10 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           streakDays={profileStreakDays}
         />
 
-        <PublicStreakBadge userId={currentProfile.id} />
-
         <ProfileInfoSection
           currentProfile={currentProfile}
           profileData={profileData}
+          userId={currentProfile.id}
           photoTab={photoTab}
           loadingPhotos={loadingPhotos}
           galleryPhotos={galleryPhotos}

@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 
 interface ProfileData {
   bio?: string;
@@ -15,6 +16,7 @@ interface ProfileData {
 interface ProfileInfoSectionProps {
   currentProfile: Profile;
   profileData: ProfileData;
+  userId?: number;
   photoTab: "public" | "private" | "gifts" | null;
   loadingPhotos: boolean;
   galleryPhotos: { id: number; photo_url: string }[];
@@ -44,6 +46,7 @@ const RS_LABEL: Record<string, string> = {
 export function ProfileInfoSection({
   currentProfile,
   profileData,
+  userId,
   photoTab,
   loadingPhotos,
   galleryPhotos,
@@ -134,6 +137,13 @@ export function ProfileInfoSection({
           🎁 Подарки
         </button>
       </div>
+
+      {/* Стрик активности */}
+      {userId && (
+        <div className="px-5 pb-3">
+          <PublicStreakBadge userId={userId} />
+        </div>
+      )}
 
       {/* Вложенный переключатель Публичные / Приватные */}
       {(photoTab === "public" || photoTab === "private") && (
