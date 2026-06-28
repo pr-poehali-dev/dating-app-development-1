@@ -5,19 +5,53 @@ import { type LiveStream, type LiveMessage } from "@/lib/api";
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
 const HEART_KEYFRAMES = `
-@keyframes heartFloat {
-  0%   { transform: translateY(0) scale(1); opacity: 1; }
-  60%  { transform: translateY(-120px) scale(1.2) rotate(-8deg); opacity: 0.8; }
-  100% { transform: translateY(-200px) scale(0.6) rotate(12deg); opacity: 0; }
+@keyframes hf0 {
+  0%   { transform: translateY(0)   translateX(0)    scale(0.4) rotate(0deg);   opacity:0; }
+  8%   { transform: translateY(-16px) translateX(4px)  scale(1.25) rotate(-6deg); opacity:1; }
+  40%  { transform: translateY(-100px) translateX(-14px) scale(1.05) rotate(8deg);  opacity:0.9; }
+  75%  { transform: translateY(-190px) translateX(10px)  scale(0.85) rotate(-12deg); opacity:0.5; }
+  100% { transform: translateY(-260px) translateX(-6px)  scale(0.4) rotate(5deg);  opacity:0; }
+}
+@keyframes hf1 {
+  0%   { transform: translateY(0)   translateX(0)    scale(0.3) rotate(0deg);   opacity:0; }
+  8%   { transform: translateY(-12px) translateX(-8px) scale(1.3) rotate(10deg);  opacity:1; }
+  45%  { transform: translateY(-110px) translateX(18px) scale(1.0) rotate(-8deg);  opacity:0.85; }
+  80%  { transform: translateY(-200px) translateX(-12px) scale(0.7) rotate(15deg); opacity:0.4; }
+  100% { transform: translateY(-270px) translateX(8px)   scale(0.3) rotate(-5deg); opacity:0; }
+}
+@keyframes hf2 {
+  0%   { transform: translateY(0)   translateX(0)    scale(0.5) rotate(0deg);   opacity:0; }
+  10%  { transform: translateY(-20px) translateX(12px) scale(1.2) rotate(-14deg); opacity:1; }
+  50%  { transform: translateY(-130px) translateX(-8px) scale(0.95) rotate(6deg);  opacity:0.8; }
+  85%  { transform: translateY(-210px) translateX(16px) scale(0.65) rotate(-10deg); opacity:0.35; }
+  100% { transform: translateY(-280px) translateX(-4px) scale(0.3) rotate(8deg);   opacity:0; }
+}
+@keyframes hf3 {
+  0%   { transform: translateY(0)   translateX(0)    scale(0.35) rotate(0deg);  opacity:0; }
+  9%   { transform: translateY(-14px) translateX(-6px) scale(1.35) rotate(8deg); opacity:1; }
+  42%  { transform: translateY(-105px) translateX(14px) scale(1.05) rotate(-9deg); opacity:0.9; }
+  78%  { transform: translateY(-195px) translateX(-10px) scale(0.75) rotate(13deg); opacity:0.45; }
+  100% { transform: translateY(-265px) translateX(6px)  scale(0.3) rotate(-6deg); opacity:0; }
+}
+@keyframes heartBurst {
+  0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,45,120,0.8); }
+  30%  { transform: scale(1.35); box-shadow: 0 0 0 12px rgba(255,45,120,0); }
+  60%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 @keyframes heartPop {
   0%   { transform: scale(0.5); opacity: 0; }
-  50%  { transform: scale(1.3); }
+  50%  { transform: scale(1.35); }
   100% { transform: scale(1); opacity: 1; }
 }
 @keyframes livePulse {
   0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
   50%     { box-shadow: 0 0 0 5px rgba(239,68,68,0); }
+}
+@keyframes sparkle {
+  0%   { transform: scale(0) rotate(0deg); opacity:1; }
+  50%  { transform: scale(1.2) rotate(180deg); opacity:0.8; }
+  100% { transform: scale(0) rotate(360deg); opacity:0; }
 }
 `;
 
@@ -240,13 +274,13 @@ export function LiveActiveStream({
 
           {/* Кнопка сердечка */}
           <button onClick={onHeart}
-            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+            className="relative w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
             style={{
-              background: "linear-gradient(135deg,#FF2D78,#c0255e)",
-              boxShadow: "0 4px 16px rgba(255,45,120,0.5)",
-              animation: "heartPop 0.3s ease",
+              background: "linear-gradient(145deg,#FF2D78,#9B59B6)",
+              boxShadow: "0 4px 20px rgba(255,45,120,0.6), 0 0 0 2px rgba(255,45,120,0.2)",
+              animation: heartsAnim.length > 0 ? "heartBurst 0.4s ease" : undefined,
             }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white" style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))" }}>
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
             </svg>
           </button>
@@ -254,20 +288,47 @@ export function LiveActiveStream({
       </div>
 
       {/* ── Летящие сердечки ── */}
-      {heartsAnim.map((id, i) => (
-        <div key={id} className="absolute pointer-events-none z-30"
-          style={{
-            bottom: 80,
-            right: 20 + (id % 4) * 18,
-            animation: "heartFloat 1.8s ease-out forwards",
-            animationDelay: `${(i % 3) * 0.12}s`,
-          }}>
-          <svg width={18 + (id % 3) * 6} height={18 + (id % 3) * 6} viewBox="0 0 24 24"
-            fill={["#FF2D78","#ff6b9d","#ff4d8a"][id % 3]}>
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-        </div>
-      ))}
+      {heartsAnim.map((id, i) => {
+        const colors   = ["#FF2D78","#ff6b9d","#ff4d8a","#ff1493","#c0255e","#ff85b3","#9B59B6","#ff2d78"];
+        const sizes    = [20, 26, 18, 30, 22, 16, 28, 24];
+        const col      = colors[id % colors.length];
+        const sz       = sizes[id % sizes.length];
+        const anim     = `hf${id % 4}`;
+        const dur      = 1.6 + (id % 5) * 0.18;
+        const delay    = (i % 6) * 0.08;
+        const rightPos = 14 + (id % 5) * 16;
+        // Блёстки вокруг сердечка
+        const sparkles = [
+          { dx: -14, dy: -10, rot: 15 },
+          { dx:  12, dy: -14, rot: -20 },
+          { dx:  16, dy:   8, rot: 45 },
+          { dx:  -8, dy:  12, rot: -35 },
+        ];
+        return (
+          <div key={id} className="absolute pointer-events-none z-30"
+            style={{ bottom: 90, right: rightPos, animation: `${anim} ${dur}s cubic-bezier(0.25,0.46,0.45,0.94) ${delay}s forwards` }}>
+            {/* Блёстки */}
+            {id % 3 === 0 && sparkles.map((sp, si) => (
+              <div key={si} className="absolute"
+                style={{
+                  width: 5, height: 5,
+                  left: `calc(50% + ${sp.dx}px)`,
+                  top: `calc(50% + ${sp.dy}px)`,
+                  background: col,
+                  borderRadius: "50%",
+                  animation: `sparkle ${0.5 + si * 0.08}s ease-out ${delay + 0.05}s forwards`,
+                  boxShadow: `0 0 4px ${col}`,
+                }} />
+            ))}
+            {/* Сердечко */}
+            <div style={{ filter: `drop-shadow(0 0 6px ${col}cc)` }}>
+              <svg width={sz} height={sz} viewBox="0 0 24 24" fill={col}>
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
