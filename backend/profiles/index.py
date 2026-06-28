@@ -266,7 +266,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'update_me':
             body = json.loads(event.get('body') or '{}')
-            scalar = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'gender', 'looking_for', 'height', 'weight', 'relationship_status']
+            scalar = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'gender', 'looking_for', 'height', 'weight', 'relationship_status', 'zodiac']
             fields, values = [], []
             for key in scalar:
                 if key in body:

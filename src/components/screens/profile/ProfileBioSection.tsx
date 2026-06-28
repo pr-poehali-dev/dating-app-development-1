@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileStatsBar } from "@/components/screens/profile/ProfileStatsBar";
 import { FollowersModal } from "@/components/screens/profile/FollowersModal";
+import { ZodiacBanner } from "@/components/screens/profile/ZodiacBanner";
 
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
 type FollowTab = "followers" | "following";
@@ -16,6 +17,7 @@ interface ProfileBioSectionProps {
   onCloseStat: () => void;
   onStatValueChange: (val: string) => void;
   onSaveStat: () => void;
+  onProfileUpdate: (data: Partial<User>) => void;
 }
 
 export function ProfileBioSection({
@@ -27,6 +29,7 @@ export function ProfileBioSection({
   onCloseStat,
   onStatValueChange,
   onSaveStat,
+  onProfileUpdate,
 }: ProfileBioSectionProps) {
   const [followModal, setFollowModal] = useState<FollowTab | null>(null);
 
@@ -66,6 +69,14 @@ export function ProfileBioSection({
             + Добавить интересы
           </button>
         )}
+      </div>
+
+      {/* Знак зодиака */}
+      <div className="w-full mt-2">
+        <ZodiacBanner
+          zodiac={currentUser.zodiac}
+          onUpdate={(z) => onProfileUpdate({ zodiac: z })}
+        />
       </div>
 
       {/* Рост / Вес / Пол / Статус / Город */}

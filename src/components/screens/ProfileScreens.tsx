@@ -394,6 +394,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onCloseStat={() => setStatEdit(null)}
             onStatValueChange={setStatValue}
             onSaveStat={saveStat}
+            onProfileUpdate={onProfileUpdate}
           />
 
           {/* 4. Вкладки: Статистика / Магазин / Подарки */}

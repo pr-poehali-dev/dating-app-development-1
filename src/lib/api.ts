@@ -571,6 +571,7 @@ export interface User {
   email_verified?: boolean;
   show_age?: boolean;
   incognito?: boolean;
+  zodiac?: string;
 }
 
 export interface Profile {

@@ -157,11 +157,11 @@ def handler(event: dict, context) -> dict:
             audit(cur, 'login_success', 'info', ip=ip, user_id=user_id, email=email)
             conn.commit()
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
                 "FROM users u WHERE u.id = %s", (user_id,)
             )
             urow = cur.fetchone()
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
             user = dict(zip(cols, urow))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
             cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
@@ -174,7 +174,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'me':
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
                 "FROM users u JOIN sessions s ON s.user_id = u.id "
                 "WHERE s.token = %s AND s.expires_at > NOW()",
                 (token,)
@@ -182,7 +182,7 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row:
                 return resp(401, {'error': 'Не авторизован'})
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
             user = dict(zip(cols, row))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
             # Подписчики и подписки из user_subscriptions
