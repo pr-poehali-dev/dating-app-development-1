@@ -325,6 +325,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             </div>
           </div>
 
+          {/* Стрик активности */}
+          <StreakWidget />
+
           {/* 1. Фото / Приватные фото */}
           <ProfilePhotoSection
             currentUser={currentUser}
@@ -380,9 +383,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               </div>
             </button>
           )}
-
-          {/* Стрик активности */}
-          <StreakWidget />
 
           {/* 3. О себе + статы + подписчики + дата */}
           <ProfileBioSection
