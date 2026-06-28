@@ -2,13 +2,12 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { getStreakReward } from "@/lib/streakRewards";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
-const DEFAULT_COVER = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg";
-
 function DefaultCover() {
   return (
-    <div className="absolute inset-0 overflow-hidden">
-      <img src={DEFAULT_COVER} className="w-full h-full object-cover" />
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+      style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.08),rgba(155,89,182,0.08))", border: "none" }}>
+      <Icon name="ImagePlus" size={28} className="text-white/15" />
+      <span className="text-white/20 text-xs font-medium">Добавить обложку</span>
     </div>
   );
 }
@@ -34,7 +33,6 @@ export function ProfileCoverAvatar({
   onCoverOpen?: () => void;
   streakDays?: number;
 }) {
-  const displayPhoto = localPhoto || FALLBACK_PHOTO;
   const streakReward = getStreakReward(streakDays);
 
   return (
@@ -96,9 +94,11 @@ export function ProfileCoverAvatar({
                 ? streakReward.glow
                 : "0 4px 20px rgba(255,45,120,0.45)",
             }}>
-            <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)]">
-              <img src={displayPhoto} className="w-full h-full object-cover"
-                style={{ opacity: photoUploading ? 0.5 : 1 }} />
+            <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)] flex items-center justify-center">
+              {localPhoto
+                ? <img src={localPhoto} className="w-full h-full object-cover" style={{ opacity: photoUploading ? 0.5 : 1 }} />
+                : <Icon name="User" size={36} className="text-white/20" />
+              }
             </div>
           </div>
           {/* Значок стрика на аватаре */}

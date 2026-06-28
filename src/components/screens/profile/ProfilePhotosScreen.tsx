@@ -2,8 +2,6 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
-
 export function ProfilePhotosScreen({
   currentUser,
   localPhoto,
@@ -44,7 +42,6 @@ export function ProfilePhotosScreen({
   onClose: () => void;
 }) {
   const [subTab, setSubTab] = useState<"public" | "private">("public");
-  const displayPhoto = localPhoto || FALLBACK_PHOTO;
   const maxGallery = currentUser.premium ? 5 : 1;
 
   return (
@@ -127,10 +124,10 @@ export function ProfilePhotosScreen({
                 <div className="relative overflow-hidden" style={{ height: 80 }}>
                   {localCover
                     ? <img src={localCover} className="w-full h-full object-cover object-top" />
-                    : <>
-                        <img src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/6edc6c8d-3e28-4f1a-b881-05852bc47b49.jpg"
-                          className="absolute inset-0 w-full h-full object-cover" />
-                      </>}
+                    : <div className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))" }}>
+                        <Icon name="ImagePlus" size={22} className="text-white/15" />
+                      </div>}
                   {coverUploading && (
                     <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)" }}>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -157,8 +154,14 @@ export function ProfilePhotosScreen({
 
               {/* Фото профиля */}
               <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="relative overflow-hidden" style={{ height: 80 }}>
-                  <img src={displayPhoto} className="w-full h-full object-cover object-top" />
+                <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 80 }}>
+                  {localPhoto
+                    ? <img src={localPhoto} className="w-full h-full object-cover object-top" />
+                    : <div className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))" }}>
+                        <Icon name="User" size={22} className="text-white/15" />
+                      </div>
+                  }
                   <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 30%, rgba(0,0,0,0.65) 100%)" }} />
                   {photoUploading && (
                     <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.55)" }}>
