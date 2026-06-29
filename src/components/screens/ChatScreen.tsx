@@ -279,6 +279,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerName={partnerName}
           partnerPhoto={partnerPhoto}
           subscribed={subscribed}
+          isBot={partnerName === 'LoveBloom'}
           onBack={onBack}
           onProfileClick={() => setShowPartnerProfile(true)}
           onSubscribeToggle={() => {
