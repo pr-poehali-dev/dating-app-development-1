@@ -186,7 +186,21 @@ function SwipeCard({
         {!compactCards && <p className="text-white/80 text-sm leading-relaxed mb-2 line-clamp-2">{profile.bio}</p>}
         {!compactCards && (
           <div className="flex flex-wrap gap-1.5">
-            {profile.tags.map((tag) => <span key={tag} className="tag-pill">{tag}</span>)}
+            {profile.tags.map((tag) =>
+              tag.startsWith("🎌") ? (
+                <span key={tag}
+                  className="text-white text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,107,53,0.25), rgba(192,97,255,0.2))",
+                    border: "1px solid rgba(255,107,53,0.45)",
+                    textShadow: "0 1px 4px rgba(255,107,53,0.4)",
+                  }}>
+                  {tag}
+                </span>
+              ) : (
+                <span key={tag} className="tag-pill">{tag}</span>
+              )
+            )}
           </div>
         )}
       </div>

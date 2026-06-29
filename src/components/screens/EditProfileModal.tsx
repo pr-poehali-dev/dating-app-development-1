@@ -3,6 +3,14 @@ import { profilesApi, type User } from "@/lib/api";
 
 const ALL_INTERESTS = ["Путешествия", "Спорт", "Кино", "Музыка", "Кулинария", "Фотография", "Йога", "Искусство", "Книги", "Танцы", "Природа", "IT", "Кофе", "Игры", "Животные", "Фитнес"];
 
+const ANIME_TAGS = [
+  "🎌 Naruto", "🎌 One Piece", "🎌 Attack on Titan", "🎌 Demon Slayer",
+  "🎌 Dragon Ball", "🎌 My Hero Academia", "🎌 Death Note", "🎌 Bleach",
+  "🎌 Jujutsu Kaisen", "🎌 Fullmetal Alchemist", "🎌 Hunter x Hunter",
+  "🎌 Sword Art Online", "🎌 Re:Zero", "🎌 Tokyo Ghoul", "🎌 Evangelion",
+  "🎌 Chainsaw Man", "🎌 Spy x Family", "🎌 Аниме-фанат",
+];
+
 // ─── EditProfileModal ─────────────────────────────────────────────────────────
 export function EditProfileModal({ user, onSave, onClose }: {
   user: User;
@@ -153,6 +161,37 @@ export function EditProfileModal({ user, onSave, onClose }: {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ─── Аниме-теги ─── */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-base">🎌</span>
+              <label className="text-white/50 text-xs uppercase tracking-widest">
+                Любимое аниме
+              </label>
+              {tags.some(t => t.startsWith("🎌")) && (
+                <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold text-white"
+                  style={{ background: "linear-gradient(135deg,#FF6B35,#9B59B6)" }}>
+                  {tags.filter(t => t.startsWith("🎌")).length} выбрано
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {ANIME_TAGS.map((t) => {
+                const active = tags.includes(t);
+                return (
+                  <button key={t} onClick={() => toggleTag(t)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 ${active ? "text-white" : "text-white/55"}`}
+                    style={active
+                      ? { background: "linear-gradient(135deg,#FF6B35,#C061FF)", boxShadow: "0 2px 10px rgba(255,107,53,0.35)" }
+                      : { background: "rgba(255,107,53,0.08)", border: "1px solid rgba(255,107,53,0.25)" }}>
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-white/25 text-[11px] mt-2">Отображается на твоей карточке — помогает найти единомышленников</p>
           </div>
         </div>
       </div>
