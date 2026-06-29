@@ -147,7 +147,6 @@ export function PeopleGrid({
                   <p className="text-white text-[13px] font-extrabold leading-tight truncate tracking-tight"
                     style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
                     {p.name}
-                    {p.age ? <span className="font-semibold text-white/75">, {p.age}</span> : ""}
                   </p>
                   {p.city && (
                     <div className="flex items-center gap-0.5 mt-1">
