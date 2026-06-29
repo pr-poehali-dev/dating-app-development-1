@@ -71,6 +71,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   const [geoError, setGeoError] = useState("");
   const [cityOpen, setCityOpen] = useState(false);
   const [zodiac, setZodiac] = useState(filters.zodiac ?? "");
+  const [zodiacOpen, setZodiacOpen] = useState(false);
 
   const apply = () => {
     const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
@@ -229,43 +230,65 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           <AgeRangeSlider min={ageMin} max={ageMax} onMin={setAgeMin} onMax={setAgeMax} />
 
           {/* Знак зодиака */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between px-1">
-              <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
+          <div className="rounded-2xl overflow-hidden"
+            style={{ border: zodiacOpen ? "1px solid rgba(255,45,120,0.3)" : "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.04)" }}>
+            <button onClick={() => setZodiacOpen(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-2.5 transition-all active:scale-[0.99]"
+              style={{ background: zodiacOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
+              <span className="text-white/40 text-[11px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
                 <Icon name="Sparkles" size={11} className="text-pink-500" />
                 Знак зодиака
-              </p>
-              {zodiac && (
-                <button onClick={() => setZodiac("")}
-                  className="text-pink-400 text-[11px] font-semibold active:scale-95">Сбросить</button>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {ZODIACS.map(z => {
-                const active = zodiac === z.id;
-                return (
-                  <button key={z.id} onClick={() => setZodiac(active ? "" : z.id)}
-                    className="relative flex flex-col items-center gap-1 py-2 rounded-2xl text-[10px] font-semibold transition-all active:scale-95 overflow-hidden"
-                    style={active
-                      ? { background: z.grad, color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)" }
-                      : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-base leading-none transition-all"
-                      style={active
-                        ? { background: "rgba(255,255,255,0.22)" }
-                        : { background: z.grad, opacity: 0.85 }}>
-                      {z.emoji}
+              </span>
+              <div className="flex items-center gap-2">
+                {zodiac ? (
+                  <span className="flex items-center gap-1.5 text-white text-xs font-semibold">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs leading-none"
+                      style={{ background: ZODIACS.find(z => z.id === zodiac)?.grad }}>
+                      {ZODIACS.find(z => z.id === zodiac)?.emoji}
                     </span>
-                    {z.label}
-                    {active && (
-                      <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
-                        style={{ background: "rgba(255,255,255,0.95)" }}>
-                        <Icon name="Check" size={9} style={{ color: "#1a0d2e" }} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    {ZODIACS.find(z => z.id === zodiac)?.label}
+                  </span>
+                ) : (
+                  <span className="text-white/40 text-xs">Любой</span>
+                )}
+                <Icon name={zodiacOpen ? "ChevronUp" : "ChevronDown"} size={15} className="text-white/40" />
+              </div>
+            </button>
+            {zodiacOpen && (
+              <div className="px-3 pb-3 pt-2 flex flex-col gap-2"
+                style={{ background: "rgba(0,0,0,0.15)" }}>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {ZODIACS.map(z => {
+                    const active = zodiac === z.id;
+                    return (
+                      <button key={z.id} onClick={() => setZodiac(active ? "" : z.id)}
+                        className="relative flex flex-col items-center gap-1 py-2 rounded-2xl text-[10px] font-semibold transition-all active:scale-95 overflow-hidden"
+                        style={active
+                          ? { background: z.grad, color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)" }
+                          : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                        <span className="w-7 h-7 rounded-full flex items-center justify-center text-base leading-none transition-all"
+                          style={active
+                            ? { background: "rgba(255,255,255,0.22)" }
+                            : { background: z.grad, opacity: 0.85 }}>
+                          {z.emoji}
+                        </span>
+                        {z.label}
+                        {active && (
+                          <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                            style={{ background: "rgba(255,255,255,0.95)" }}>
+                            <Icon name="Check" size={9} style={{ color: "#1a0d2e" }} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {zodiac && (
+                  <button onClick={() => setZodiac("")}
+                    className="self-center text-pink-400 text-[11px] font-semibold active:scale-95">Сбросить выбор</button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Только онлайн */}
