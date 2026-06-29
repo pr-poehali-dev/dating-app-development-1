@@ -3,7 +3,6 @@ import { authApi, type User } from "@/lib/api";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
 import { AuthLegalSheet } from "./AuthLegalSheet";
-import { AuthConsentScreen } from "./AuthConsentScreen";
 
 export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -17,9 +16,6 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
-  const [pendingUser, setPendingUser] = useState<User | null>(null);
-  const [showConsent, setShowConsent] = useState(false);
-  const [consentTab, setConsentTab] = useState<"terms" | "privacy">("terms");
 
   const submit = async () => {
     setError("");
@@ -33,8 +29,7 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
       } else {
         result = await authApi.login(email, password);
       }
-      setPendingUser(result.user);
-      setShowConsent(true);
+      onAuth(result.user);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Ошибка";
       if (mode === "register" && msg.toLowerCase().includes("уже занят")) {
@@ -50,15 +45,6 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   return (
     <>
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
-
-      {showConsent && pendingUser && (
-        <AuthConsentScreen
-          pendingUser={pendingUser}
-          consentTab={consentTab}
-          onTabChange={setConsentTab}
-          onAccept={() => { setShowConsent(false); if (pendingUser) onAuth(pendingUser); }}
-        />
-      )}
 
       {showTerms && (
         <AuthLegalSheet tab="terms" onClose={() => setShowTerms(false)} />
