@@ -7,18 +7,18 @@ const AGE_MIN = 18;
 const AGE_MAX = 80;
 
 const ZODIACS = [
-  { id: "aries",       label: "Овен",      emoji: "♈" },
-  { id: "taurus",      label: "Телец",     emoji: "♉" },
-  { id: "gemini",      label: "Близнецы",  emoji: "♊" },
-  { id: "cancer",      label: "Рак",       emoji: "♋" },
-  { id: "leo",         label: "Лев",       emoji: "♌" },
-  { id: "virgo",       label: "Дева",      emoji: "♍" },
-  { id: "libra",       label: "Весы",      emoji: "♎" },
-  { id: "scorpio",     label: "Скорпион",  emoji: "♏" },
-  { id: "sagittarius", label: "Стрелец",   emoji: "♐" },
-  { id: "capricorn",   label: "Козерог",   emoji: "♑" },
-  { id: "aquarius",    label: "Водолей",   emoji: "♒" },
-  { id: "pisces",      label: "Рыбы",      emoji: "♓" },
+  { id: "aries",       label: "Овен",      emoji: "♈", grad: "linear-gradient(135deg,#FF6B6B,#FF2D55)" },
+  { id: "taurus",      label: "Телец",     emoji: "♉", grad: "linear-gradient(135deg,#56C271,#2E9E5B)" },
+  { id: "gemini",      label: "Близнецы",  emoji: "♊", grad: "linear-gradient(135deg,#FFD66B,#F5A623)" },
+  { id: "cancer",      label: "Рак",       emoji: "♋", grad: "linear-gradient(135deg,#7FB3FF,#4F8EF7)" },
+  { id: "leo",         label: "Лев",       emoji: "♌", grad: "linear-gradient(135deg,#FFA94D,#FF6B2D)" },
+  { id: "virgo",       label: "Дева",      emoji: "♍", grad: "linear-gradient(135deg,#A0D468,#7CB342)" },
+  { id: "libra",       label: "Весы",      emoji: "♎", grad: "linear-gradient(135deg,#FF9FC7,#FF5C9D)" },
+  { id: "scorpio",     label: "Скорпион",  emoji: "♏", grad: "linear-gradient(135deg,#C56BFF,#8E2DE2)" },
+  { id: "sagittarius", label: "Стрелец",   emoji: "♐", grad: "linear-gradient(135deg,#FF8A8A,#E0245E)" },
+  { id: "capricorn",   label: "Козерог",   emoji: "♑", grad: "linear-gradient(135deg,#8D99AE,#5C677D)" },
+  { id: "aquarius",    label: "Водолей",   emoji: "♒", grad: "linear-gradient(135deg,#6BE5FF,#2D9CDB)" },
+  { id: "pisces",      label: "Рыбы",      emoji: "♓", grad: "linear-gradient(135deg,#9B8CFF,#6C5CE7)" },
 ];
 
 function AgeRangeSlider({ min, max, onChange }: { min: number; max: number; onChange: (a: number, b: number) => void }) {
@@ -335,37 +335,55 @@ export function PeopleSuperPicker({
                 style={{ background: superZodiacOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
                 <span className="text-white font-medium text-sm">Знак зодиака</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-white/50 text-sm">
-                    {superZodiac
-                      ? `${ZODIACS.find(z => z.id === superZodiac)?.emoji} ${ZODIACS.find(z => z.id === superZodiac)?.label}`
-                      : "Любой"}
-                  </span>
+                  {superZodiac ? (
+                    <span className="flex items-center gap-1.5 text-white text-sm font-semibold">
+                      <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm leading-none"
+                        style={{ background: ZODIACS.find(z => z.id === superZodiac)?.grad }}>
+                        {ZODIACS.find(z => z.id === superZodiac)?.emoji}
+                      </span>
+                      {ZODIACS.find(z => z.id === superZodiac)?.label}
+                    </span>
+                  ) : (
+                    <span className="text-white/50 text-sm">Любой</span>
+                  )}
                   <Icon name={superZodiacOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
                 </div>
               </button>
               {superZodiacOpen && (
-                <div className="px-3 pb-3 pt-2 grid grid-cols-3 gap-1.5"
+                <div className="px-3 pb-3 pt-2.5 flex flex-col gap-2"
                   style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <button onClick={() => setSuperZodiac("")}
-                    className="col-span-3 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
-                    style={superZodiac === ""
-                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    Любой знак
-                  </button>
-                  {ZODIACS.map(z => {
-                    const active = superZodiac === z.id;
-                    return (
-                      <button key={z.id} onClick={() => setSuperZodiac(active ? "" : z.id)}
-                        className="flex flex-col items-center gap-0.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-95"
-                        style={active
-                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                          : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                        <span className="text-base leading-none">{z.emoji}</span>
-                        {z.label}
-                      </button>
-                    );
-                  })}
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {ZODIACS.map(z => {
+                      const active = superZodiac === z.id;
+                      return (
+                        <button key={z.id} onClick={() => setSuperZodiac(active ? "" : z.id)}
+                          className="relative flex flex-col items-center gap-1 py-2 rounded-2xl text-[10px] font-semibold transition-all active:scale-95 overflow-hidden"
+                          style={active
+                            ? { background: z.grad, color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)" }
+                            : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                          <span className="w-7 h-7 rounded-full flex items-center justify-center text-base leading-none transition-all"
+                            style={active
+                              ? { background: "rgba(255,255,255,0.22)" }
+                              : { background: z.grad, opacity: 0.85 }}>
+                            {z.emoji}
+                          </span>
+                          {z.label}
+                          {active && (
+                            <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                              style={{ background: "rgba(255,255,255,0.95)" }}>
+                              <Icon name="Check" size={9} style={{ color: "#1a0d2e" }} />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {superZodiac && (
+                    <button onClick={() => setSuperZodiac("")}
+                      className="self-center text-pink-400 text-[11px] font-semibold active:scale-95 pt-0.5">
+                      Сбросить выбор
+                    </button>
+                  )}
                 </div>
               )}
             </div>
