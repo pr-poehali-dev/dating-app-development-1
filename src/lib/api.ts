@@ -638,6 +638,7 @@ export interface Post {
   created_at: string;
   author_name: string;
   author_photo?: string;
+  author_zodiac?: string;
   likes_count: number;
   liked_by_me: boolean;
   comments_count: number;

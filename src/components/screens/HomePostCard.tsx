@@ -3,6 +3,30 @@ import Icon from "@/components/ui/icon";
 import { postsApi, type Post, type Profile } from "@/lib/api";
 import { FALLBACK_PHOTO, DeleteConfirm, timeAgo } from "@/components/screens/HomeFeedWidgets";
 
+// Цвет подсветки кольца аватара по знаку зодиака
+const ZODIAC_COLOR: Record<string, string> = {
+  aries: "#FF3B30",       // Овен — красный (огонь)
+  leo: "#FF6B2D",         // Лев — оранжевый (огонь)
+  sagittarius: "#E0245E", // Стрелец — пурпурно-красный (огонь)
+  taurus: "#2E9E5B",      // Телец — зелёный (земля)
+  virgo: "#7CB342",       // Дева — оливковый (земля)
+  capricorn: "#5C677D",   // Козерог — серо-синий (земля)
+  gemini: "#F5A623",      // Близнецы — жёлтый (воздух)
+  libra: "#FF5C9D",       // Весы — розовый (воздух)
+  aquarius: "#2D9CDB",    // Водолей — синий (воздух)
+  cancer: "#4F8EF7",      // Рак — голубой (вода)
+  scorpio: "#8E2DE2",     // Скорпион — фиолетовый (вода)
+  pisces: "#6C5CE7",      // Рыбы — индиго (вода)
+};
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 // ─── PostCard ─────────────────────────────────────────────────────────────────
 export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onProfileClick }: {
   post: Post;
@@ -279,7 +303,12 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
             <img
               src={post.author_photo || FALLBACK_PHOTO}
               className="w-10 h-10 rounded-full object-cover"
-              style={{ border: "2px solid rgba(255,45,120,0.6)", boxShadow: "0 0 0 1px rgba(255,45,120,0.2)" }}
+              style={(() => {
+                const c = post.author_zodiac ? ZODIAC_COLOR[post.author_zodiac] : null;
+                return c
+                  ? { border: `2px solid ${c}`, boxShadow: `0 0 0 1px ${hexToRgba(c, 0.25)}, 0 0 10px ${hexToRgba(c, 0.6)}` }
+                  : { border: "2px solid rgba(255,45,120,0.6)", boxShadow: "0 0 0 1px rgba(255,45,120,0.2)" };
+              })()}
             />
             {/* Онлайн-точка (условно) */}
           </button>

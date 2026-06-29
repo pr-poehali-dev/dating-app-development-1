@@ -767,7 +767,7 @@ def handler(event: dict, context) -> dict:
         if action == 'posts_feed':
             cur.execute("""
                 SELECT p.id, p.user_id, p.photo_url, p.caption, p.created_at,
-                       u.name, u.photo_url as author_photo,
+                       u.name, u.photo_url as author_photo, u.zodiac as author_zodiac,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = %s) as liked_by_me,
                        (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count
@@ -777,7 +777,7 @@ def handler(event: dict, context) -> dict:
                 LIMIT 30
             """, (me['id'],))
             rows = cur.fetchall()
-            cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'likes_count', 'liked_by_me', 'comments_count']
+            cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'author_zodiac', 'likes_count', 'liked_by_me', 'comments_count']
             posts = []
             for r in rows:
                 item = dict(zip(cols, r))
