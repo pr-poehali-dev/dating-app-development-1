@@ -73,16 +73,8 @@ export function PeopleGrid({
 
   return (
     <>
-      {/* Счётчик */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-        <p className="text-white/40 text-xs font-medium">{profiles.length} {profiles.length === 1 ? "человек" : "человек"}</p>
-        {!isPremium && profiles.length > FREE_LIMIT && (
-          <span className="text-pink-400/70 text-xs">+{profiles.length - FREE_LIMIT} скрыто</span>
-        )}
-      </div>
-
       {/* Сетка */}
-      <div className="grid grid-cols-3 gap-1 px-1 pb-4">
+      <div className="grid grid-cols-3 gap-1 px-1 pt-3 pb-4">
         {profiles.map((p, idx) => {
           const photo = p.photo_url || FALLBACK_PHOTO;
           const isLiked = likedIds.has(p.id);
