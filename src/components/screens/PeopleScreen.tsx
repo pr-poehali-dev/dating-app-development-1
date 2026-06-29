@@ -152,6 +152,7 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
     filters.age_max && filters.age_max < 80,
     filters.city,
     filters.online_only,
+    filters.zodiac,
   ].filter(Boolean).length;
 
   const BOT_IDS = new Set([22]);

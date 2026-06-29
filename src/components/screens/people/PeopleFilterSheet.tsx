@@ -2,6 +2,21 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type DiscoverParams } from "@/lib/api";
 
+const ZODIACS = [
+  { id: "aries",       label: "Овен",      emoji: "♈" },
+  { id: "taurus",      label: "Телец",     emoji: "♉" },
+  { id: "gemini",      label: "Близнецы",  emoji: "♊" },
+  { id: "cancer",      label: "Рак",       emoji: "♋" },
+  { id: "leo",         label: "Лев",       emoji: "♌" },
+  { id: "virgo",       label: "Дева",      emoji: "♍" },
+  { id: "libra",       label: "Весы",      emoji: "♎" },
+  { id: "scorpio",     label: "Скорпион",  emoji: "♏" },
+  { id: "sagittarius", label: "Стрелец",   emoji: "♐" },
+  { id: "capricorn",   label: "Козерог",   emoji: "♑" },
+  { id: "aquarius",    label: "Водолей",   emoji: "♒" },
+  { id: "pisces",      label: "Рыбы",      emoji: "♓" },
+];
+
 interface Props {
   filters: DiscoverParams;
   onApply: (p: DiscoverParams) => void;
@@ -22,17 +37,19 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState("");
   const [cityOpen, setCityOpen] = useState(false);
+  const [zodiac, setZodiac] = useState(filters.zodiac ?? "");
 
   const apply = () => {
     const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
     if (onlineOnly) p.online_only = true;
     if (city.trim()) p.city = city.trim();
+    if (zodiac) p.zodiac = zodiac;
     onApply(p);
   };
 
   const reset = () => {
     setAgeMin(18); setAgeMax(60); setLookingFor("all");
-    setOnlineOnly(false); setCity("");
+    setOnlineOnly(false); setCity(""); setZodiac("");
   };
 
   const genders = [
@@ -169,6 +186,36 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                       <Icon name={g.icon} size={13} className="text-white" />
                     </div>
                     <span className={`text-xs font-semibold ${active ? "text-white" : "text-white/40"}`}>{g.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Знак зодиака */}
+          <div className="flex flex-col gap-2">
+            <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold px-1 flex items-center gap-1.5">
+              <Icon name="Sparkles" size={11} className="text-pink-500" />
+              Знак зодиака
+            </p>
+            <div className="grid grid-cols-4 gap-1.5">
+              <button onClick={() => setZodiac("")}
+                className="col-span-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                style={zodiac === ""
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                Любой
+              </button>
+              {ZODIACS.map(z => {
+                const active = zodiac === z.id;
+                return (
+                  <button key={z.id} onClick={() => setZodiac(active ? "" : z.id)}
+                    className="flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all active:scale-95"
+                    style={active
+                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                      : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <span className="text-base leading-none">{z.emoji}</span>
+                    {z.label}
                   </button>
                 );
               })}

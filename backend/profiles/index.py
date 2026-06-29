@@ -154,6 +154,7 @@ def handler(event: dict, context) -> dict:
             radius_km = int(params.get('radius_km', 0))
             online_only = params.get('online_only', '') == '1'
             new_only = params.get('new_only', '') == '1'
+            zodiac_filter_val = params.get('zodiac', '').strip()
 
             conditions = [
                 "(u.age IS NULL OR u.age BETWEEN %s AND %s)",
@@ -183,6 +184,10 @@ def handler(event: dict, context) -> dict:
             if country_filter_val:
                 conditions.append("u.country ILIKE %s")
                 q_params.append(f'%{country_filter_val}%')
+
+            if zodiac_filter_val:
+                conditions.append("u.zodiac = %s")
+                q_params.append(zodiac_filter_val)
 
             if online_only:
                 conditions.append("u.last_seen > NOW() - INTERVAL '5 minutes'")

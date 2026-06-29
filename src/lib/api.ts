@@ -180,6 +180,7 @@ export interface DiscoverParams {
   radius_km?: number;
   online_only?: boolean;
   new_only?: boolean;
+  zodiac?: string;
 }
 
 export const profilesApi = {
