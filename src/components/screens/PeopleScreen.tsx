@@ -210,13 +210,21 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       {showAdvancedFilter && (
         <PeopleAdvancedFilter
           verifiedOnly={verifiedOnly}
+          onlineOnly={filters.online_only ?? false}
+          zodiac={filters.zodiac ?? ""}
+          isPremium={isPremium}
+          onPremium={onPremium}
           onClose={() => setShowAdvancedFilter(false)}
-          onApply={(v) => {
+          onApply={(v, online, zodiac) => {
             setVerifiedOnly(v);
             setShowAdvancedFilter(false);
             const p: DiscoverParams = { ...filters };
             if (v) p.verified_only = true as never;
             else delete (p as Record<string, unknown>).verified_only;
+            if (online) p.online_only = true;
+            else delete p.online_only;
+            if (zodiac) p.zodiac = zodiac;
+            else delete p.zodiac;
             setFilters(p); load(p, search);
           }}
         />
