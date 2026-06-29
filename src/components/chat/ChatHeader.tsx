@@ -46,7 +46,10 @@ export function ChatHeader({
             </div>
           </div>
           <div className="min-w-0">
-            <p className="text-white font-bold text-sm leading-tight truncate">{partnerName}</p>
+            <p className="text-white font-bold text-sm leading-tight truncate flex items-center gap-1">
+              {partnerName}
+              <Icon name="BadgeCheck" size={15} style={{ color: "#38BDF8", flexShrink: 0 }} />
+            </p>
             <p className="text-white/35 text-[11px] mt-0.5">Официальный бот</p>
           </div>
         </div>
