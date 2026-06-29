@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { type DiscoverParams } from "@/lib/api";
 
@@ -72,12 +72,29 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   const [cityOpen, setCityOpen] = useState(false);
   const [zodiac, setZodiac] = useState(filters.zodiac ?? "");
   const [zodiacOpen, setZodiacOpen] = useState(false);
+  const zodiacRef = useRef<HTMLDivElement>(null);
+
+  const toggleZodiac = () => {
+    if (!isPremium) { onClose(); setTimeout(() => onPremium?.(), 50); return; }
+    setZodiacOpen(v => {
+      const next = !v;
+      if (next) {
+        setTimeout(() => zodiacRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), 60);
+      }
+      return next;
+    });
+  };
+
+  const selectZodiac = (id: string) => {
+    setZodiac(zodiac === id ? "" : id);
+    setZodiacOpen(false);
+  };
 
   const apply = () => {
     const p: DiscoverParams = { age_min: ageMin, age_max: ageMax, looking_for: lookingFor };
     if (onlineOnly) p.online_only = true;
     if (city.trim()) p.city = city.trim();
-    if (zodiac) p.zodiac = zodiac;
+    if (zodiac && isPremium) p.zodiac = zodiac;
     onApply(p);
   };
 
@@ -230,38 +247,50 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           <AgeRangeSlider min={ageMin} max={ageMax} onMin={setAgeMin} onMax={setAgeMax} />
 
           {/* Знак зодиака */}
-          <div className="rounded-2xl overflow-hidden"
+          <div ref={zodiacRef} className="rounded-2xl overflow-hidden"
             style={{ border: zodiacOpen ? "1px solid rgba(255,45,120,0.3)" : "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.04)" }}>
-            <button onClick={() => setZodiacOpen(v => !v)}
+            <button onClick={toggleZodiac}
               className="w-full flex items-center justify-between px-4 py-2.5 transition-all active:scale-[0.99]"
               style={{ background: zodiacOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
               <span className="text-white/40 text-[11px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
                 <Icon name="Sparkles" size={11} className="text-pink-500" />
                 Знак зодиака
+                {!isPremium && (
+                  <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold leading-none tracking-normal"
+                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white" }}>
+                    PREMIUM
+                  </span>
+                )}
               </span>
               <div className="flex items-center gap-2">
-                {zodiac ? (
-                  <span className="flex items-center gap-1.5 text-white text-xs font-semibold">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs leading-none"
-                      style={{ background: ZODIACS.find(z => z.id === zodiac)?.grad }}>
-                      {ZODIACS.find(z => z.id === zodiac)?.emoji}
-                    </span>
-                    {ZODIACS.find(z => z.id === zodiac)?.label}
-                  </span>
+                {!isPremium ? (
+                  <Icon name="Lock" size={14} className="text-pink-400" />
                 ) : (
-                  <span className="text-white/40 text-xs">Любой</span>
+                  <>
+                    {zodiac ? (
+                      <span className="flex items-center gap-1.5 text-white text-xs font-semibold">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-xs leading-none"
+                          style={{ background: ZODIACS.find(z => z.id === zodiac)?.grad }}>
+                          {ZODIACS.find(z => z.id === zodiac)?.emoji}
+                        </span>
+                        {ZODIACS.find(z => z.id === zodiac)?.label}
+                      </span>
+                    ) : (
+                      <span className="text-white/40 text-xs">Любой</span>
+                    )}
+                    <Icon name={zodiacOpen ? "ChevronUp" : "ChevronDown"} size={15} className="text-white/40" />
+                  </>
                 )}
-                <Icon name={zodiacOpen ? "ChevronUp" : "ChevronDown"} size={15} className="text-white/40" />
               </div>
             </button>
-            {zodiacOpen && (
+            {zodiacOpen && isPremium && (
               <div className="px-3 pb-3 pt-2 flex flex-col gap-2"
                 style={{ background: "rgba(0,0,0,0.15)" }}>
                 <div className="grid grid-cols-4 gap-1.5">
                   {ZODIACS.map(z => {
                     const active = zodiac === z.id;
                     return (
-                      <button key={z.id} onClick={() => setZodiac(active ? "" : z.id)}
+                      <button key={z.id} onClick={() => selectZodiac(z.id)}
                         className="relative flex flex-col items-center gap-1 py-2 rounded-2xl text-[10px] font-semibold transition-all active:scale-95 overflow-hidden"
                         style={active
                           ? { background: z.grad, color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)" }
@@ -284,7 +313,7 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                   })}
                 </div>
                 {zodiac && (
-                  <button onClick={() => setZodiac("")}
+                  <button onClick={() => { setZodiac(""); setZodiacOpen(false); }}
                     className="self-center text-pink-400 text-[11px] font-semibold active:scale-95">Сбросить выбор</button>
                 )}
               </div>
