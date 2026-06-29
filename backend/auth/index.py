@@ -108,7 +108,7 @@ def handler(event: dict, context) -> dict:
                 (email, hash_password(password), name)
             )
             user_id = cur.fetchone()[0]
-            username = f"LoveBloom_{user_id}"
+            username = f"user_{user_id}"
             cur.execute("UPDATE users SET username = %s WHERE id = %s", (username, user_id))
             new_token = secrets.token_hex(32)
             cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))

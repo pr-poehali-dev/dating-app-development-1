@@ -74,8 +74,8 @@ def handler(event: dict, context) -> dict:
             """, (uid, uid, uid, uid, uid, uid, uid))
             rows = cur.fetchall()
             cols = ['match_id', 'partner_id', 'name', 'age', 'photo_url', 'online', 'last_seen', 'last_msg', 'last_msg_time', 'unread_count', 'created_at']
-            # ID всех LoveBloom-ботов
-            cur.execute("SELECT id FROM users WHERE lower(username) LIKE 'lovebloom%'")
+            # ID системного аккаунта LoveBloom (только по системному email)
+            cur.execute("SELECT id FROM users WHERE email = 'system@lbloom.ru'")
             bot_ids = {r[0] for r in cur.fetchall()}
             LOVEBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg"
             matches = []
