@@ -47,8 +47,6 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [showExplore, setShowExplore] = useState(false);
   const [showTravel, setShowTravel] = useState(false);
-  const [advancedAgeMin, setAdvancedAgeMin] = useState(18);
-  const [advancedAgeMax, setAdvancedAgeMax] = useState(60);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const { pay: payBoost, loading: boostPaying } = useYookassa(PAY_CREATE_URL);
@@ -211,15 +209,14 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       )}
       {showAdvancedFilter && (
         <PeopleAdvancedFilter
-          ageMin={advancedAgeMin}
-          ageMax={advancedAgeMax}
           verifiedOnly={verifiedOnly}
           onClose={() => setShowAdvancedFilter(false)}
-          onApply={(mn, mx, v) => {
-            setAdvancedAgeMin(mn); setAdvancedAgeMax(mx); setVerifiedOnly(v);
+          onApply={(v) => {
+            setVerifiedOnly(v);
             setShowAdvancedFilter(false);
-            const p: DiscoverParams = { ...filters, age_min: mn, age_max: mx };
+            const p: DiscoverParams = { ...filters };
             if (v) p.verified_only = true as never;
+            else delete (p as Record<string, unknown>).verified_only;
             setFilters(p); load(p, search);
           }}
         />

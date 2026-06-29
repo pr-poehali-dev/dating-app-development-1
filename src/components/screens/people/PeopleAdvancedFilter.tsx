@@ -1,95 +1,13 @@
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 
 interface Props {
-  ageMin: number;
-  ageMax: number;
   verifiedOnly: boolean;
-  onApply: (ageMin: number, ageMax: number, verifiedOnly: boolean) => void;
+  onApply: (verifiedOnly: boolean) => void;
   onClose: () => void;
 }
 
-const AGE_PRESETS = [[18,25],[25,35],[35,45],[45,60]] as const;
-
-const ITEM_H = 44;
-const VISIBLE = 5;
-const AGES = Array.from({ length: 63 }, (_, i) => i + 18); // 18..80
-
-function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const scrollToIdx = useCallback((idx: number, smooth = true) => {
-    if (!listRef.current) return;
-    listRef.current.scrollTo({ top: idx * ITEM_H, behavior: smooth ? "smooth" : "auto" });
-  }, []);
-
-  const onScroll = () => {
-    if (!listRef.current) return;
-    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
-    const clamped = Math.max(0, Math.min(AGES.length - 1, idx));
-    if (AGES[clamped] !== value) onChange(AGES[clamped]);
-  };
-
-  const onScrollEnd = () => {
-    if (!listRef.current) return;
-    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
-    scrollToIdx(Math.max(0, Math.min(AGES.length - 1, idx)));
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-2 flex-1">
-      <span className="text-white/40 text-sm font-medium">{label}</span>
-      <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
-        {/* Маска сверху и снизу */}
-        <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
-        {/* Выделение активного элемента */}
-        <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
-          style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
-        <div
-          ref={(el) => {
-            (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-            if (el) {
-              const idx = AGES.indexOf(value);
-              el.scrollTop = (idx >= 0 ? idx : 0) * ITEM_H;
-            }
-          }}
-          onScroll={onScroll}
-          onScrollEnd={onScrollEnd}
-          className="h-full overflow-y-scroll"
-          style={{
-            scrollSnapType: "y mandatory",
-            scrollSnapStop: "always",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            overscrollBehavior: "contain",
-            WebkitOverflowScrolling: "touch",
-            paddingTop: ITEM_H * 2,
-            paddingBottom: ITEM_H * 2,
-          }}
-        >
-          {AGES.map((age) => (
-            <div
-              key={age}
-              onClick={() => { onChange(age); scrollToIdx(AGES.indexOf(age)); }}
-              style={{ height: ITEM_H, scrollSnapAlign: "center" }}
-              className="flex items-center justify-center cursor-pointer select-none"
-            >
-              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-2xl" : "text-white/25 text-lg"}`}>
-                {age}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifiedOnly: initVerified, onApply, onClose }: Props) {
-  const [ageMin, setAgeMin] = useState(initMin);
-  const [ageMax, setAgeMax] = useState(initMax);
+export function PeopleAdvancedFilter({ verifiedOnly: initVerified, onApply, onClose }: Props) {
   const [verifiedOnly, setVerifiedOnly] = useState(initVerified);
 
   return (
@@ -105,7 +23,7 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
           <Icon name="ChevronLeft" size={18} className="text-white/70" />
         </button>
         <h2 className="text-white font-bold text-lg flex-1">Расширенные фильтры</h2>
-        <button onClick={() => { setAgeMin(18); setAgeMax(60); setVerifiedOnly(false); }}
+        <button onClick={() => setVerifiedOnly(false)}
           className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-all active:scale-95"
           style={{ color: "rgba(255,45,120,0.8)", background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.15)" }}>
           Сбросить
@@ -113,44 +31,6 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
-
-        {/* Возраст */}
-        <div className="flex flex-col gap-1.5">
-          <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold px-1 flex items-center gap-1.5">
-            <Icon name="Cake" size={11} className="text-pink-500" />
-            Возраст
-          </p>
-
-          <div className="rounded-2xl overflow-hidden"
-            style={{ border: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.35)" }}>
-
-            {/* Drum picker */}
-            <div className="px-4 py-3 flex flex-col gap-0">
-              <div className="flex items-stretch gap-4">
-                <DrumPicker value={ageMin} onChange={v => setAgeMin(Math.min(v, ageMax - 1))} label="От" />
-                <div className="w-px self-stretch" style={{ background: "rgba(255,255,255,0.07)" }} />
-                <DrumPicker value={ageMax} onChange={v => setAgeMax(Math.max(v, ageMin + 1))} label="Кому" />
-              </div>
-
-              {/* Пресеты */}
-              <div className="flex gap-1.5 flex-wrap pt-4 pb-1">
-                {AGE_PRESETS.map(([a, b]) => {
-                  const active = ageMin === a && ageMax === b;
-                  return (
-                    <button key={`${a}-${b}`}
-                      onClick={() => { setAgeMin(a); setAgeMax(b); }}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 ${active ? "text-white" : "text-white/45"}`}
-                      style={active
-                        ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                        : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      {a}–{b}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Только верифицированные */}
         <div className="flex flex-col gap-1.5">
@@ -197,7 +77,7 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
 
       {/* Кнопка применить */}
       <div className="px-5 pb-10 pt-3">
-        <button onClick={() => onApply(ageMin, ageMax, verifiedOnly)}
+        <button onClick={() => onApply(verifiedOnly)}
           className="btn-grad w-full py-4 text-base font-bold rounded-2xl">
           Применить
         </button>
@@ -205,3 +85,5 @@ export function PeopleAdvancedFilter({ ageMin: initMin, ageMax: initMax, verifie
     </div>
   );
 }
+
+export default PeopleAdvancedFilter;
