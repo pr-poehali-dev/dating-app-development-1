@@ -126,7 +126,7 @@ export function AdminPromos({ token }: { token: string }) {
           style={{ background: "rgba(255,45,120,0.07)", border: "1px solid rgba(255,45,120,0.2)" }}>
           <p className="text-white/60 text-xs uppercase tracking-widest font-semibold">Новый промокод</p>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
               <label className="text-white/40 text-[11px]">Код</label>
               <input className={inputCls} placeholder="SUMMER50"

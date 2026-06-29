@@ -148,7 +148,7 @@ export function MarketingTab({ token }: { token: string }) {
           {/* Сегмент */}
           <div className="flex flex-col gap-2">
             <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest px-1">Аудитория</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {segments.map(s => (
                 <button key={s.id} onClick={() => setPushSegment(s.id)}
                   className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-xs font-semibold transition-all"

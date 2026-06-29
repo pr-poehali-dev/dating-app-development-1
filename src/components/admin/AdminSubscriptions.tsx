@@ -137,7 +137,7 @@ function PlanEditor({
               className="w-full rounded-xl px-3 py-2.5 text-white text-sm outline-none"
               style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }} />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {[
               { label: "Цена/мес (₽)", val: pricePerMonth, set: setPricePerMonth },
               { label: "Итого (₽)",    val: totalAmount,   set: setTotalAmount   },
