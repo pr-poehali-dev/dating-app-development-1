@@ -5,54 +5,52 @@ import { isUserOnline } from "@/lib/online";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
-// ─── SwipeToDelete — обёртка для свайпа влево ────────────────────────────────
-function SwipeToDelete({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {
+// ─── LongPressToDelete — удаление по долгому нажатию ─────────────────────────
+function LongPressToDelete({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [deleting, setDeleting] = useState(false);
-  const threshold = 100;
+  const fired = useRef(false);
+  const [pressing, setPressing] = useState(false);
+  const delay = 550;
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (startX.current === null || startY.current === null) return;
-    const dx = e.touches[0].clientX - startX.current;
-    const dy = Math.abs(e.touches[0].clientY - startY.current);
-    if (dy > 12) { startX.current = null; return; }
-    if (dx < 0) setOffset(Math.max(dx, -180));
-  };
-
-  const onTouchEnd = () => {
-    if (offset < -threshold) {
-      setDeleting(true);
-      onDelete();
-    } else {
-      setOffset(0);
-    }
+  const clear = () => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+    setPressing(false);
     startX.current = null;
+    startY.current = null;
   };
 
-  if (deleting) return null;
+  const start = (x: number, y: number) => {
+    startX.current = x;
+    startY.current = y;
+    fired.current = false;
+    setPressing(true);
+    timer.current = setTimeout(() => {
+      fired.current = true;
+      setPressing(false);
+      if (navigator.vibrate) navigator.vibrate(30);
+      onDelete();
+    }, delay);
+  };
+
+  const move = (x: number, y: number) => {
+    if (startX.current === null || startY.current === null) return;
+    if (Math.abs(x - startX.current) > 10 || Math.abs(y - startY.current) > 10) clear();
+  };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl">
-      {/* Красный фон справа */}
-      <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-5 rounded-3xl"
-        style={{ background: "rgba(220,38,38,0.9)", width: Math.abs(offset) || 0, transition: offset === 0 ? "width 0.2s" : "none" }}>
-        <Icon name="Trash2" size={22} className="text-white" />
-      </div>
-      {/* Карточка */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        style={{ transform: `translateX(${offset}px)`, transition: offset === 0 ? "transform 0.2s ease" : "none" }}>
-        {children}
-      </div>
+    <div
+      className="rounded-3xl"
+      style={{ transform: pressing ? "scale(0.97)" : "scale(1)", transition: "transform 0.15s ease" }}
+      onTouchStart={(e) => start(e.touches[0].clientX, e.touches[0].clientY)}
+      onTouchMove={(e) => move(e.touches[0].clientX, e.touches[0].clientY)}
+      onTouchEnd={clear}
+      onTouchCancel={clear}
+      onContextMenu={(e) => e.preventDefault()}
+      onClickCapture={(e) => { if (fired.current) { e.preventDefault(); e.stopPropagation(); fired.current = false; } }}
+    >
+      {children}
     </div>
   );
 }
@@ -156,7 +154,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
               : "";
 
             return (
-              <SwipeToDelete key={m.match_id} onDelete={() => setConfirmDelete(m)}>
+              <LongPressToDelete key={m.match_id} onDelete={() => setConfirmDelete(m)}>
                 <button onClick={() => onChat(m.match_id)}
                   className="w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
                   style={m.unread_count > 0 ? { background: "rgba(255,45,120,0.07)" } : {}}>
@@ -196,7 +194,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
                     </div>
                   )}
                 </button>
-              </SwipeToDelete>
+              </LongPressToDelete>
             );
           })}
         </div>
