@@ -3,19 +3,52 @@ import Icon from "@/components/ui/icon";
 import { type DiscoverParams } from "@/lib/api";
 
 const ZODIACS = [
-  { id: "aries",       label: "Овен",      emoji: "♈" },
-  { id: "taurus",      label: "Телец",     emoji: "♉" },
-  { id: "gemini",      label: "Близнецы",  emoji: "♊" },
-  { id: "cancer",      label: "Рак",       emoji: "♋" },
-  { id: "leo",         label: "Лев",       emoji: "♌" },
-  { id: "virgo",       label: "Дева",      emoji: "♍" },
-  { id: "libra",       label: "Весы",      emoji: "♎" },
-  { id: "scorpio",     label: "Скорпион",  emoji: "♏" },
-  { id: "sagittarius", label: "Стрелец",   emoji: "♐" },
-  { id: "capricorn",   label: "Козерог",   emoji: "♑" },
-  { id: "aquarius",    label: "Водолей",   emoji: "♒" },
-  { id: "pisces",      label: "Рыбы",      emoji: "♓" },
+  { id: "aries",       label: "Овен",      emoji: "♈", grad: "linear-gradient(135deg,#FF6B6B,#FF2D55)" },
+  { id: "taurus",      label: "Телец",     emoji: "♉", grad: "linear-gradient(135deg,#56C271,#2E9E5B)" },
+  { id: "gemini",      label: "Близнецы",  emoji: "♊", grad: "linear-gradient(135deg,#FFD66B,#F5A623)" },
+  { id: "cancer",      label: "Рак",       emoji: "♋", grad: "linear-gradient(135deg,#7FB3FF,#4F8EF7)" },
+  { id: "leo",         label: "Лев",       emoji: "♌", grad: "linear-gradient(135deg,#FFA94D,#FF6B2D)" },
+  { id: "virgo",       label: "Дева",      emoji: "♍", grad: "linear-gradient(135deg,#A0D468,#7CB342)" },
+  { id: "libra",       label: "Весы",      emoji: "♎", grad: "linear-gradient(135deg,#FF9FC7,#FF5C9D)" },
+  { id: "scorpio",     label: "Скорпион",  emoji: "♏", grad: "linear-gradient(135deg,#C56BFF,#8E2DE2)" },
+  { id: "sagittarius", label: "Стрелец",   emoji: "♐", grad: "linear-gradient(135deg,#FF8A8A,#E0245E)" },
+  { id: "capricorn",   label: "Козерог",   emoji: "♑", grad: "linear-gradient(135deg,#8D99AE,#5C677D)" },
+  { id: "aquarius",    label: "Водолей",   emoji: "♒", grad: "linear-gradient(135deg,#6BE5FF,#2D9CDB)" },
+  { id: "pisces",      label: "Рыбы",      emoji: "♓", grad: "linear-gradient(135deg,#9B8CFF,#6C5CE7)" },
 ];
+
+const AGE_FLOOR = 18;
+const AGE_CEIL = 80;
+
+function AgeRangeSlider({ min, max, onMin, onMax }: { min: number; max: number; onMin: (v: number) => void; onMax: (v: number) => void }) {
+  const span = AGE_CEIL - AGE_FLOOR;
+  const minPct = ((min - AGE_FLOOR) / span) * 100;
+  const maxPct = ((max - AGE_FLOOR) / span) * 100;
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
+          <Icon name="CalendarRange" size={11} className="text-pink-500" />
+          Возраст
+        </p>
+        <span className="text-white font-bold text-sm">{min}–{max} лет</span>
+      </div>
+      <div className="relative h-6 flex items-center">
+        <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
+        <div className="absolute h-1.5 rounded-full"
+          style={{ left: `${minPct}%`, right: `${100 - maxPct}%`, background: "linear-gradient(90deg,#FF2D78,#9B59B6)" }} />
+        <input type="range" min={AGE_FLOOR} max={AGE_CEIL} value={min}
+          onChange={e => onMin(Math.min(+e.target.value, max - 1))}
+          className="age-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none"
+          style={{ zIndex: min > AGE_CEIL - 10 ? 5 : 3 }} />
+        <input type="range" min={AGE_FLOOR} max={AGE_CEIL} value={max}
+          onChange={e => onMax(Math.max(+e.target.value, min + 1))}
+          className="age-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none"
+          style={{ zIndex: 4 }} />
+      </div>
+    </div>
+  );
+}
 
 interface Props {
   filters: DiscoverParams;
@@ -67,30 +100,30 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
         onClick={e => e.stopPropagation()}>
 
         {/* Handle */}
-        <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-2" style={{ background: "rgba(255,255,255,0.15)" }} />
+        <div className="w-10 h-1 rounded-full mx-auto mt-2 mb-1.5" style={{ background: "rgba(255,255,255,0.15)" }} />
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-1 pb-4"
+        <div className="flex items-center justify-between px-5 pt-1 pb-2.5"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
-            <h3 className="text-white font-bold text-lg leading-tight">Основные фильтры</h3>
-            <p className="text-white/30 text-xs mt-0.5">Настрой поиск под себя</p>
+            <h3 className="text-white font-bold text-base leading-tight">Основные фильтры</h3>
+            <p className="text-white/30 text-[11px] mt-0.5">Настрой поиск под себя</p>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={reset}
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 text-white/45"
+              className="px-2.5 py-1 rounded-xl text-xs font-semibold transition-all active:scale-95 text-white/45"
               style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
               Сбросить
             </button>
             <button onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center"
+              className="w-7 h-7 rounded-full flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.08)" }}>
               <Icon name="X" size={16} className="text-white/60" />
             </button>
           </div>
         </div>
 
-        <div className="overflow-y-auto px-5 py-5 flex flex-col gap-5">
+        <div className="overflow-y-auto px-5 py-3.5 flex flex-col gap-3.5">
 
           {/* Город */}
           <div className="rounded-2xl overflow-hidden"
@@ -164,26 +197,26 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
           </div>
 
           {/* Кого ищешь */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold px-1 flex items-center gap-1.5">
               <Icon name="Users" size={11} className="text-pink-500" />
               Кого ищешь
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-1.5">
               {genders.map(g => {
                 const active = lookingFor === g.val;
                 return (
                   <button key={g.val} onClick={() => setLookingFor(g.val)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all active:scale-95"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl transition-all active:scale-95"
                     style={active
                       ? { background: "rgba(255,255,255,0.07)", border: `1.5px solid ${g.glow.replace("0.5","0.5")}`, boxShadow: `0 4px 14px ${g.glow}` }
                       : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+                    <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all"
                       style={{
                         background: active ? g.grad : "rgba(255,255,255,0.08)",
                         boxShadow: active ? `0 2px 8px ${g.glow}` : "none",
                       }}>
-                      <Icon name={g.icon} size={13} className="text-white" />
+                      <Icon name={g.icon} size={12} className="text-white" />
                     </div>
                     <span className={`text-xs font-semibold ${active ? "text-white" : "text-white/40"}`}>{g.label}</span>
                   </button>
@@ -192,30 +225,43 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
             </div>
           </div>
 
+          {/* Возраст */}
+          <AgeRangeSlider min={ageMin} max={ageMax} onMin={setAgeMin} onMax={setAgeMax} />
+
           {/* Знак зодиака */}
-          <div className="flex flex-col gap-2">
-            <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold px-1 flex items-center gap-1.5">
-              <Icon name="Sparkles" size={11} className="text-pink-500" />
-              Знак зодиака
-            </p>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-white/40 text-[11px] uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                <Icon name="Sparkles" size={11} className="text-pink-500" />
+                Знак зодиака
+              </p>
+              {zodiac && (
+                <button onClick={() => setZodiac("")}
+                  className="text-pink-400 text-[11px] font-semibold active:scale-95">Сбросить</button>
+              )}
+            </div>
             <div className="grid grid-cols-4 gap-1.5">
-              <button onClick={() => setZodiac("")}
-                className="col-span-4 py-2 rounded-xl text-xs font-semibold transition-all active:scale-95"
-                style={zodiac === ""
-                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                  : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                Любой
-              </button>
               {ZODIACS.map(z => {
                 const active = zodiac === z.id;
                 return (
                   <button key={z.id} onClick={() => setZodiac(active ? "" : z.id)}
-                    className="flex flex-col items-center gap-0.5 py-2 rounded-xl text-[10px] font-semibold transition-all active:scale-95"
+                    className="relative flex flex-col items-center gap-1 py-2 rounded-2xl text-[10px] font-semibold transition-all active:scale-95 overflow-hidden"
                     style={active
-                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
-                      : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                    <span className="text-base leading-none">{z.emoji}</span>
+                      ? { background: z.grad, color: "white", boxShadow: "0 4px 14px rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.25)" }
+                      : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                    <span className="w-7 h-7 rounded-full flex items-center justify-center text-base leading-none transition-all"
+                      style={active
+                        ? { background: "rgba(255,255,255,0.22)" }
+                        : { background: z.grad, opacity: 0.85 }}>
+                      {z.emoji}
+                    </span>
                     {z.label}
+                    {active && (
+                      <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center"
+                        style={{ background: "rgba(255,255,255,0.95)" }}>
+                        <Icon name="Check" size={9} style={{ color: "#1a0d2e" }} />
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -322,11 +368,11 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
         </div>
 
         {/* Кнопка применить */}
-        <div className="px-5 pb-10 pt-3"
+        <div className="px-5 pb-7 pt-2.5"
           style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <button onClick={apply}
-            className="btn-grad w-full py-4 text-base font-bold rounded-2xl flex items-center justify-center gap-2">
-            <Icon name="Check" size={18} className="text-white" />
+            className="btn-grad w-full py-3 text-sm font-bold rounded-2xl flex items-center justify-center gap-2">
+            <Icon name="Check" size={16} className="text-white" />
             Применить фильтры
           </button>
         </div>
