@@ -12,6 +12,13 @@
       "path": "/",
       "body": {"description": "test", "return_url": "https://example.com"},
       "expectedStatus": 400
+    },
+    {
+      "name": "Amount below minimum returns 400",
+      "method": "POST",
+      "path": "/",
+      "body": {"amount": 0.06, "description": "test", "return_url": "https://example.com"},
+      "expectedStatus": 400
     }
   ]
 }

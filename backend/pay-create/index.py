@@ -54,6 +54,24 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
 
+    try:
+        amount = float(amount)
+    except (TypeError, ValueError):
+        return {
+            'statusCode': 400,
+            'headers': HEADERS_CORS,
+            'body': json.dumps({'error': 'Некорректная сумма платежа'}),
+            'isBase64Encoded': False
+        }
+
+    if amount < 10:
+        return {
+            'statusCode': 400,
+            'headers': HEADERS_CORS,
+            'body': json.dumps({'error': 'Минимальная сумма платежа — 10 ₽'}),
+            'isBase64Encoded': False
+        }
+
     # Проверяем промокод и пересчитываем сумму на сервере
     schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
     if promo_code:
@@ -99,6 +117,8 @@ def handler(event: dict, context) -> dict:
             amount = round(float(amount) * (1 - promo_discount / 100), 2)
             metadata['promo_id'] = promo_id_val
             metadata['promo_discount'] = promo_discount
+            if amount < 10:
+                amount = 10.0
 
     idempotence_key = str(uuid.uuid4())
 
