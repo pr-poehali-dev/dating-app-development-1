@@ -4,7 +4,6 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 
 import { useBackButton } from "@/hooks/useBackButton";
-import { ScreenshotProtection } from "@/components/ScreenshotProtection";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -223,9 +222,8 @@ export default function Index() {
   }
 
   return (
-    <div className="app-bg flex justify-center" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
+    <div className="app-bg flex justify-center">
       <div className="app-hearts-layer" />
-      <ScreenshotProtection />
       {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>
