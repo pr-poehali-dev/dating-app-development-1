@@ -191,7 +191,7 @@ const PRIVACY_SECTIONS = [
   },
 ] as const;
 
-const PRIVACY_SECTIONS = [
+const PRIVACY_DOC_SECTIONS = [
   {
     icon: "FileText",
     title: "1. Общие положения",
@@ -294,7 +294,7 @@ export function AuthLegalContent({ tab, lightBg }: { tab: "terms" | "privacy"; l
 
   return (
     <>
-      {PRIVACY_SECTIONS.map(section => (
+      {PRIVACY_DOC_SECTIONS.map(section => (
         <div key={section.title} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.18)" }}>
