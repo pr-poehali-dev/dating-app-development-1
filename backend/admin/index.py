@@ -1065,17 +1065,18 @@ def handler(event: dict, context) -> dict:
             warning_text = body.get('text', '').strip()
             if not user_id or not warning_text:
                 return resp(400, {'error': 'user_id и text обязательны'})
-            # Ищем/создаём системного пользователя LoveBloom (id=1 или специальный)
-            cur.execute("SELECT id FROM users WHERE username = 'lovebloom' LIMIT 1")
-            sys_row = cur.fetchone()
-            if sys_row:
-                system_id = sys_row[0]
-            else:
-                # Fallback: используем первый аккаунт или создаём матч-запись с system_id=0
-                system_id = None
 
-            if system_id and system_id != user_id:
-                # Ищем или создаём матч между LoveBloom и пользователем
+            # Ищем системного пользователя LoveBloom по имени (любой вариант)
+            cur.execute(
+                "SELECT id FROM users WHERE lower(username) LIKE 'lovebloom%' AND id != %s ORDER BY id LIMIT 1",
+                (user_id,)
+            )
+            sys_row = cur.fetchone()
+            system_id = sys_row[0] if sys_row else None
+
+            msg_id = None
+            if system_id:
+                # Ищем или создаём матч между LoveBloom-ботом и пользователем
                 u1, u2 = min(system_id, user_id), max(system_id, user_id)
                 cur.execute("SELECT id FROM matches WHERE user1_id = %s AND user2_id = %s", (u1, u2))
                 match_row = cur.fetchone()
@@ -1089,14 +1090,14 @@ def handler(event: dict, context) -> dict:
                     (match_id, system_id, warning_text)
                 )
                 msg_id = cur.fetchone()[0]
-            else:
-                # Если нет системного юзера — шлём через support ticket
-                cur.execute(
-                    "INSERT INTO support_tickets (user_id, message, reply, status, replied_at) "
-                    "VALUES (%s, %s, %s, 'closed', NOW()) RETURNING id",
-                    (user_id, '⚠️ Уведомление от модератора', warning_text)
-                )
-                msg_id = cur.fetchone()[0]
+
+            # Уведомление в колокольчик (notifications)
+            cur.execute(
+                "INSERT INTO notifications (user_id, type, from_user_id, read, text) "
+                "VALUES (%s, 'admin_warning', NULL, FALSE, %s) RETURNING id",
+                (user_id, warning_text[:300])
+            )
+            notif_id = cur.fetchone()[0]
 
             audit(cur, 'admin_warning_sent', 'info', ip=ip, user_id=user_id, details={'text': warning_text[:200]})
             conn.commit()
@@ -1104,7 +1105,7 @@ def handler(event: dict, context) -> dict:
             # Push-уведомление пользователю
             _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от LoveBloom', warning_text[:100], '/')
 
-            return resp(200, {'ok': True, 'msg_id': msg_id})
+            return resp(200, {'ok': True, 'msg_id': msg_id, 'notif_id': notif_id})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 

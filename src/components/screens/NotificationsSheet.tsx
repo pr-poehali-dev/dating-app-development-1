@@ -28,6 +28,7 @@ function NotifIcon({ type }: { type: Notification["type"] }) {
   if (type === "admin_post_kept") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(34,197,94,0.15)" }}><Icon name="CheckCircle" size={13} style={{ color: "#4ADE80" }} /></div>;
   if (type === "premium_activated") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#FF2D78,#FCD34D)" }}><span style={{ fontSize: 12 }}>✨</span></div>;
   if (type === "admin_broadcast") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(155,89,182,0.2)" }}><Icon name="Megaphone" size={13} style={{ color: "#C084FC" }} /></div>;
+  if (type === "admin_warning") return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(239,68,68,0.2)" }}><Icon name="AlertTriangle" size={13} style={{ color: "#F87171" }} /></div>;
   return <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.08)" }}><Icon name="Eye" size={13} className="text-white/50" /></div>;
 }
 
@@ -53,6 +54,7 @@ function notifText(n: Notification) {
   if (n.type === "admin_report_dismissed") return "⚪ Твоя жалоба рассмотрена — нарушений не выявлено";
   if (n.type === "admin_post_removed") return "🚫 Администрация удалила твой пост из ленты за нарушение правил";
   if (n.type === "admin_post_kept") return "ℹ️ Жалоба на твой пост рассмотрена — пост оставлен в ленте";
+  if (n.type === "admin_warning") return n.text || "⚠️ Предупреждение от LoveBloom";
   if (n.type === "admin_broadcast") return n.text || "Сообщение от администрации";
   if (n.type === "premium_activated") {
     if (n.text) {
