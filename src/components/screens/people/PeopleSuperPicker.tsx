@@ -3,8 +3,8 @@ import Icon from "@/components/ui/icon";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const ITEM_H = 44;
-const VISIBLE = 5;
+const ITEM_H = 38;
+const VISIBLE = 3;
 const AGES = Array.from({ length: 63 }, (_, i) => i + 18);
 
 function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
@@ -28,15 +28,15 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 flex-1">
-      <span className="text-white/40 text-sm font-medium">{label}</span>
+    <div className="flex flex-col items-center gap-1 flex-1">
+      <span className="text-white/40 text-xs font-medium">{label}</span>
       <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
         <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to bottom, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H, background: "linear-gradient(to bottom, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
         <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H * 2, background: "linear-gradient(to top, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
+          style={{ height: ITEM_H, background: "linear-gradient(to top, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
         <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
-          style={{ top: ITEM_H * 2, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
+          style={{ top: ITEM_H, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
         <div
           ref={(el) => {
             (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
@@ -55,8 +55,8 @@ function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: n
             msOverflowStyle: "none",
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
-            paddingTop: ITEM_H * 2,
-            paddingBottom: ITEM_H * 2,
+            paddingTop: ITEM_H,
+            paddingBottom: ITEM_H,
           }}
         >
           {AGES.map((age) => (
@@ -182,7 +182,7 @@ function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number)
 
       {/* Карта */}
       {!globalMode && (
-        <div ref={mapRef} className="w-full rounded-xl overflow-hidden" style={{ height: 180 }} />
+        <div ref={mapRef} className="w-full rounded-xl overflow-hidden" style={{ height: 130 }} />
       )}
 
       {/* Глобальный режим */}
@@ -263,46 +263,46 @@ export function PeopleSuperPicker({
     <div className="fixed inset-0 z-[60] flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(10px)" }}
       onClick={onClose}>
-      <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-8 overflow-hidden"
+      <div className="w-full max-w-sm rounded-t-3xl flex flex-col pb-5 overflow-hidden"
         style={{ background: "linear-gradient(180deg,#1a0a1e 0%,#120818 100%)", boxShadow: "0 -4px 40px rgba(155,89,182,0.2)" }}
         onClick={e => e.stopPropagation()}>
 
-        <div className="flex justify-center pt-3 pb-0">
+        <div className="flex justify-center pt-2 pb-0">
           <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
         </div>
 
-        <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+        <div className="flex items-center justify-between px-5 pt-2.5 pb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)", boxShadow: "0 4px 14px rgba(155,89,182,0.5)" }}>
-              <Icon name="Star" size={17} className="text-white" />
+              <Icon name="Star" size={15} className="text-white" />
             </div>
             <div>
-              <p className="text-white font-bold text-base leading-tight">Супер подъём</p>
-              <p className="text-white/35 text-xs">Настрой под свою аудиторию</p>
+              <p className="text-white font-bold text-sm leading-tight">Супер подъём</p>
+              <p className="text-white/35 text-[11px]">Настрой под свою аудиторию</p>
             </div>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center"
+            className="w-7 h-7 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            <Icon name="X" size={15} className="text-white/60" />
+            <Icon name="X" size={14} className="text-white/60" />
           </button>
         </div>
 
-        <div className="mx-5 mb-4" style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(155,89,182,0.4),transparent)" }} />
+        <div className="mx-5 mb-2.5" style={{ height: 1, background: "linear-gradient(90deg,transparent,rgba(155,89,182,0.4),transparent)" }} />
 
         <div className="px-4 pb-1">
-          <p className="text-white/50 text-xs uppercase tracking-widest font-semibold mb-3 px-1">Выбери фильтры</p>
-          <div className="flex flex-col gap-3">
+          <p className="text-white/50 text-[11px] uppercase tracking-widest font-semibold mb-2 px-1">Выбери фильтры</p>
+          <div className="flex flex-col gap-2">
 
             {/* Возраст */}
             <div className="rounded-2xl overflow-hidden"
               style={{ border: superAgeOpen ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
               <button
                 onClick={() => setSuperAgeOpen(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-4 transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[0.98]"
                 style={{ background: superAgeOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
-                <span className="text-white font-medium text-base">Возраст</span>
+                <span className="text-white font-medium text-sm">Возраст</span>
                 <div className="flex items-center gap-2">
                   <span className="text-white/50 text-sm">{superAgeMin}–{superAgeMax} лет</span>
                   <Icon name={superAgeOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
@@ -337,11 +337,11 @@ export function PeopleSuperPicker({
             {/* Карта + радиус */}
             <div className="rounded-2xl overflow-hidden"
               style={{ border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
-              <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <Icon name="MapPin" size={14} className="text-pink-400" />
                 <span className="text-white font-medium text-sm">Местоположение и радиус</span>
               </div>
-              <div className="px-4 py-3">
+              <div className="px-4 py-2.5">
                 <RadiusMap radius={superRadius} onChange={setSuperRadius} />
               </div>
             </div>
@@ -349,21 +349,21 @@ export function PeopleSuperPicker({
             {/* Только фото */}
             <button
               onClick={() => setSuperPhotoOnly(v => !v)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all active:scale-[0.98]"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all active:scale-[0.98]"
               style={{ border: `1.5px solid ${superPhotoOnly ? "rgba(255,45,120,0.5)" : "rgba(255,255,255,0.18)"}`, background: superPhotoOnly ? "rgba(255,45,120,0.08)" : "transparent" }}>
-              <span className="text-white font-medium text-base">Только фото</span>
-              <div className="relative w-12 h-7 rounded-full transition-all flex-shrink-0"
+              <span className="text-white font-medium text-sm">Только фото</span>
+              <div className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
                 style={{ background: superPhotoOnly ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.2)" }}>
-                <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-200"
-                  style={{ left: superPhotoOnly ? "calc(100% - 26px)" : "2px" }} />
+                <div className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-200"
+                  style={{ left: superPhotoOnly ? "calc(100% - 22px)" : "2px" }} />
               </div>
             </button>
           </div>
         </div>
 
-        <div className="px-4 pt-4">
+        <div className="px-4 pt-3">
           {promoCode ? (
-            <div className="flex items-center justify-between gap-2 px-4 py-3 rounded-2xl"
+            <div className="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl"
               style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)" }}>
               <div className="flex items-center gap-2 min-w-0">
                 <Icon name="BadgeCheck" size={18} className="text-green-400 flex-shrink-0" />
@@ -395,11 +395,11 @@ export function PeopleSuperPicker({
           )}
         </div>
 
-        <div className="px-4 pt-4">
+        <div className="px-4 pt-3">
           <button
             disabled={boostPaying}
             onClick={() => onBuy(superAgeMin, superAgeMax, superRadius, superPhotoOnly)}
-            className="w-full py-4 rounded-2xl font-bold text-base text-white flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
+            className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)", boxShadow: "0 4px 20px rgba(155,89,182,0.4)" }}>
             {boostPaying
               ? <Icon name="Loader2" size={20} className="animate-spin text-white" />
