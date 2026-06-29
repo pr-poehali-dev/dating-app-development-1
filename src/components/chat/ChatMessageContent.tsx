@@ -111,8 +111,34 @@ function HeartMessage() {
   );
 }
 
+// ─── StickerMessage ───────────────────────────────────────────────────────────
+function StickerMessage({ url }: { url: string }) {
+  const [popped, setPopped] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setPopped(true), 60); return () => clearTimeout(t); }, []);
+  return (
+    <div className="p-1 select-none">
+      <img
+        src={url}
+        alt="sticker"
+        className="rounded-2xl transition-all duration-300"
+        style={{
+          width: 120, height: 120, objectFit: "contain",
+          transform: popped ? "scale(1)" : "scale(0.5)",
+          opacity: popped ? 1 : 0,
+          filter: "drop-shadow(0 4px 16px rgba(255,45,120,0.35))",
+          transition: "transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease",
+        }}
+      />
+    </div>
+  );
+}
+
 // ─── renderMsgContent ─────────────────────────────────────────────────────────
 export function renderMsgContent(text: string, out: boolean, partnerId?: number, onGrant?: () => void) {
+  if (text.startsWith("__STICKER__")) {
+    const url = text.slice(11);
+    return <StickerMessage url={url} />;
+  }
   if (text.startsWith("__VIDEOCIRCLE__")) {
     const url = text.slice(15);
     return <VideoCircleMessage url={url} />;

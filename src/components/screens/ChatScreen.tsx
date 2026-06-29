@@ -25,6 +25,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   const [deleting, setDeleting] = useState<number | null>(null);
   const [showPlus, setShowPlus] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
   const [showVanishPicker, setShowVanishPicker] = useState(false);
   const [vanishPhotos, setVanishPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [showAwardPicker, setShowAwardPicker] = useState(false);
@@ -312,7 +313,8 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             const isSpecial = msg.text.startsWith("__GIFT__")
               || msg.text.startsWith("__AWARD__")
               || msg.text.startsWith("__VIDEOCIRCLE__")
-              || msg.text.startsWith("__PREMIUM__");
+              || msg.text.startsWith("__PREMIUM__")
+              || msg.text.startsWith("__STICKER__");
 
             const isSwiping = swipeId === msg.id && swipeDx < 0;
             const willDelete = swipeDx <= -90;
@@ -375,6 +377,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           recordSecs={recordSecs}
           showPlus={showPlus}
           showEmoji={showEmoji}
+          showStickers={showStickers}
           geoLoading={geoLoading}
           inputRef={inputRef}
           fileRef={fileRef}
@@ -383,9 +386,11 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onSend={send}
           onStartRecording={startRecording}
           onStopRecording={stopRecording}
-          onTogglePlus={() => { setShowPlus(v => !v); setShowEmoji(false); }}
-          onToggleEmoji={() => { setShowEmoji(v => !v); setShowPlus(false); }}
+          onTogglePlus={() => { setShowPlus(v => !v); setShowEmoji(false); setShowStickers(false); }}
+          onToggleEmoji={() => { setShowEmoji(v => !v); setShowPlus(false); setShowStickers(false); }}
+          onToggleStickers={() => { setShowStickers(v => !v); setShowPlus(false); setShowEmoji(false); }}
           onEmojiPick={(em) => { setInput(v => v + em); inputRef.current?.focus(); }}
+          onSendSticker={(url) => { sendSystem(`__STICKER__${url}`); setShowStickers(false); }}
           onFileSelect={handleFileSelect}
           onOpenVanishPicker={openVanishPicker}
           onSendLocation={sendLocation}
