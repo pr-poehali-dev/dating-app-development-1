@@ -1066,9 +1066,9 @@ def handler(event: dict, context) -> dict:
             if not user_id or not warning_text:
                 return resp(400, {'error': 'user_id и text обязательны'})
 
-            # Ищем системного пользователя LoveBloom по имени (любой вариант)
+            # Ищем бот-аккаунт LoveBloom (любой с username LoveBloom_*)
             cur.execute(
-                "SELECT id FROM users WHERE lower(username) LIKE 'lovebloom%' AND id != %s ORDER BY id LIMIT 1",
+                "SELECT id FROM users WHERE lower(username) LIKE 'lovebloom%%' AND id != %s ORDER BY id LIMIT 1",
                 (user_id,)
             )
             sys_row = cur.fetchone()
@@ -1076,7 +1076,6 @@ def handler(event: dict, context) -> dict:
 
             msg_id = None
             if system_id:
-                # Ищем или создаём матч между LoveBloom-ботом и пользователем
                 u1, u2 = min(system_id, user_id), max(system_id, user_id)
                 cur.execute("SELECT id FROM matches WHERE user1_id = %s AND user2_id = %s", (u1, u2))
                 match_row = cur.fetchone()
@@ -1089,21 +1088,25 @@ def handler(event: dict, context) -> dict:
                     "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id",
                     (match_id, system_id, warning_text)
                 )
-                msg_id = cur.fetchone()[0]
+                row = cur.fetchone()
+                msg_id = row[0] if row else None
 
-            # Уведомление в колокольчик (notifications)
+            # Уведомление в колокольчик
             cur.execute(
                 "INSERT INTO notifications (user_id, type, from_user_id, read, text) "
                 "VALUES (%s, 'admin_warning', NULL, FALSE, %s) RETURNING id",
                 (user_id, warning_text[:300])
             )
-            notif_id = cur.fetchone()[0]
+            notif_row = cur.fetchone()
+            notif_id = notif_row[0] if notif_row else None
 
             audit(cur, 'admin_warning_sent', 'info', ip=ip, user_id=user_id, details={'text': warning_text[:200]})
             conn.commit()
 
-            # Push-уведомление пользователю
-            _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от LoveBloom', warning_text[:100], '/')
+            try:
+                _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от LoveBloom', warning_text[:100], '/')
+            except Exception:
+                pass
 
             return resp(200, {'ok': True, 'msg_id': msg_id, 'notif_id': notif_id})
 
