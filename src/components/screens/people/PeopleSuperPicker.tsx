@@ -6,6 +6,21 @@ import "leaflet/dist/leaflet.css";
 const AGE_MIN = 18;
 const AGE_MAX = 80;
 
+const ZODIACS = [
+  { id: "aries",       label: "Овен",      emoji: "♈" },
+  { id: "taurus",      label: "Телец",     emoji: "♉" },
+  { id: "gemini",      label: "Близнецы",  emoji: "♊" },
+  { id: "cancer",      label: "Рак",       emoji: "♋" },
+  { id: "leo",         label: "Лев",       emoji: "♌" },
+  { id: "virgo",       label: "Дева",      emoji: "♍" },
+  { id: "libra",       label: "Весы",      emoji: "♎" },
+  { id: "scorpio",     label: "Скорпион",  emoji: "♏" },
+  { id: "sagittarius", label: "Стрелец",   emoji: "♐" },
+  { id: "capricorn",   label: "Козерог",   emoji: "♑" },
+  { id: "aquarius",    label: "Водолей",   emoji: "♒" },
+  { id: "pisces",      label: "Рыбы",      emoji: "♓" },
+];
+
 function AgeRangeSlider({ min, max, onChange }: { min: number; max: number; onChange: (a: number, b: number) => void }) {
   const span = AGE_MAX - AGE_MIN;
   const minPct = ((min - AGE_MIN) / span) * 100;
@@ -205,7 +220,7 @@ interface Props {
   promoChecking: boolean;
   promoError: string | null;
   onClose: () => void;
-  onBuy: (ageMin: number, ageMax: number, radius: number, photoOnly: boolean) => void;
+  onBuy: (ageMin: number, ageMax: number, radius: number, photoOnly: boolean, zodiac: string) => void;
   onPromoInputChange: (val: string) => void;
   onApplyPromo: () => void;
   onResetPromo: () => void;
@@ -222,6 +237,8 @@ export function PeopleSuperPicker({
   const [superRadius, setSuperRadius] = useState(50);
   const [superPhotoOnly, setSuperPhotoOnly] = useState(false);
   const [superAgeOpen, setSuperAgeOpen] = useState(false);
+  const [superZodiac, setSuperZodiac] = useState("");
+  const [superZodiacOpen, setSuperZodiacOpen] = useState(false);
 
   const discountedPrice = (amount: number) =>
     promoDiscount > 0 ? Math.round(amount * (1 - promoDiscount / 100) * 100) / 100 : amount;
@@ -309,6 +326,50 @@ export function PeopleSuperPicker({
               </div>
             </div>
 
+            {/* Знак зодиака */}
+            <div className="rounded-2xl overflow-hidden"
+              style={{ border: superZodiacOpen ? "1px solid rgba(255,45,120,0.35)" : "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)" }}>
+              <button
+                onClick={() => setSuperZodiacOpen(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 transition-all active:scale-[0.98]"
+                style={{ background: superZodiacOpen ? "rgba(255,45,120,0.06)" : "transparent" }}>
+                <span className="text-white font-medium text-sm">Знак зодиака</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/50 text-sm">
+                    {superZodiac
+                      ? `${ZODIACS.find(z => z.id === superZodiac)?.emoji} ${ZODIACS.find(z => z.id === superZodiac)?.label}`
+                      : "Любой"}
+                  </span>
+                  <Icon name={superZodiacOpen ? "ChevronUp" : "ChevronRight"} size={18} className="text-white/60" />
+                </div>
+              </button>
+              {superZodiacOpen && (
+                <div className="px-3 pb-3 pt-2 grid grid-cols-3 gap-1.5"
+                  style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                  <button onClick={() => setSuperZodiac("")}
+                    className="col-span-3 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                    style={superZodiac === ""
+                      ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.45)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    Любой знак
+                  </button>
+                  {ZODIACS.map(z => {
+                    const active = superZodiac === z.id;
+                    return (
+                      <button key={z.id} onClick={() => setSuperZodiac(active ? "" : z.id)}
+                        className="flex flex-col items-center gap-0.5 py-2 rounded-xl text-[11px] font-semibold transition-all active:scale-95"
+                        style={active
+                          ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "white", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }
+                          : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <span className="text-base leading-none">{z.emoji}</span>
+                        {z.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Только фото */}
             <button
               onClick={() => setSuperPhotoOnly(v => !v)}
@@ -361,7 +422,7 @@ export function PeopleSuperPicker({
         <div className="px-4 pt-3">
           <button
             disabled={boostPaying}
-            onClick={() => onBuy(superAgeMin, superAgeMax, superRadius, superPhotoOnly)}
+            onClick={() => onBuy(superAgeMin, superAgeMax, superRadius, superPhotoOnly, superZodiac)}
             className="w-full py-3 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-[0.97] disabled:opacity-50"
             style={{ background: "linear-gradient(135deg,#9B59B6,#FF2D78)", boxShadow: "0 4px 20px rgba(155,89,182,0.4)" }}>
             {boostPaying

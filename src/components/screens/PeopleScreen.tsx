@@ -318,9 +318,10 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
           boostPaying={boostPaying}
           {...promoProps}
           onClose={() => { setShowSuperPicker(false); resetPromo(); }}
-          onBuy={(ageMin, ageMax, radius, photoOnly) => handleBuyBoost("super", 550, "Супер подъём профиля", {
+          onBuy={(ageMin, ageMax, radius, photoOnly, zodiac) => handleBuyBoost("super", 550, "Супер подъём профиля", {
             age_min: String(ageMin), age_max: String(ageMax),
             radius_km: String(radius), photo_only: String(photoOnly),
+            zodiac: zodiac || "",
           })}
         />
       )}
