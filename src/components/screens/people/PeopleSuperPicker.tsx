@@ -3,73 +3,40 @@ import Icon from "@/components/ui/icon";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const ITEM_H = 38;
-const VISIBLE = 3;
-const AGES = Array.from({ length: 63 }, (_, i) => i + 18);
+const AGE_MIN = 18;
+const AGE_MAX = 80;
 
-function DrumPicker({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const scrollToIdx = useCallback((idx: number, smooth = true) => {
-    if (!listRef.current) return;
-    listRef.current.scrollTo({ top: idx * ITEM_H, behavior: smooth ? "smooth" : "auto" });
-  }, []);
-
-  const onScroll = () => {
-    if (!listRef.current) return;
-    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
-    const clamped = Math.max(0, Math.min(AGES.length - 1, idx));
-    if (AGES[clamped] !== value) onChange(AGES[clamped]);
-  };
-
-  const onScrollEnd = () => {
-    if (!listRef.current) return;
-    const idx = Math.round(listRef.current.scrollTop / ITEM_H);
-    scrollToIdx(Math.max(0, Math.min(AGES.length - 1, idx)));
-  };
+function AgeRangeSlider({ min, max, onChange }: { min: number; max: number; onChange: (a: number, b: number) => void }) {
+  const span = AGE_MAX - AGE_MIN;
+  const minPct = ((min - AGE_MIN) / span) * 100;
+  const maxPct = ((max - AGE_MIN) / span) * 100;
 
   return (
-    <div className="flex flex-col items-center gap-1 flex-1">
-      <span className="text-white/40 text-xs font-medium">{label}</span>
-      <div className="relative overflow-hidden" style={{ height: ITEM_H * VISIBLE }}>
-        <div className="absolute inset-x-0 top-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H, background: "linear-gradient(to bottom, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
-        <div className="absolute inset-x-0 bottom-0 z-10 pointer-events-none"
-          style={{ height: ITEM_H, background: "linear-gradient(to top, rgba(6,3,12,0.98) 0%, transparent 100%)" }} />
-        <div className="absolute inset-x-3 z-0 rounded-xl pointer-events-none"
-          style={{ top: ITEM_H, height: ITEM_H, background: "rgba(255,255,255,0.06)" }} />
-        <div
-          ref={(el) => {
-            (listRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-            if (el) {
-              const idx = AGES.indexOf(value);
-              el.scrollTop = (idx >= 0 ? idx : 0) * ITEM_H;
-            }
-          }}
-          onScroll={onScroll}
-          onScrollEnd={onScrollEnd}
-          className="h-full overflow-y-scroll"
-          style={{
-            scrollSnapType: "y mandatory",
-            scrollSnapStop: "always",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
-            overscrollBehavior: "contain",
-            WebkitOverflowScrolling: "touch",
-            paddingTop: ITEM_H,
-            paddingBottom: ITEM_H,
-          }}
-        >
-          {AGES.map((age) => (
-            <div key={age}
-              onClick={() => { onChange(age); scrollToIdx(AGES.indexOf(age)); }}
-              style={{ height: ITEM_H, scrollSnapAlign: "center" }}
-              className="flex items-center justify-center cursor-pointer select-none">
-              <span className={`font-semibold transition-all duration-150 ${age === value ? "text-white text-2xl" : "text-white/25 text-lg"}`}>
-                {age}
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-white/40 text-xs font-medium">Возраст</span>
+        <span className="text-white font-semibold text-sm">{min}–{max} лет</span>
+      </div>
+      <div className="relative h-7 flex items-center">
+        {/* Трек */}
+        <div className="absolute inset-x-0 h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.12)" }} />
+        {/* Активный диапазон */}
+        <div className="absolute h-1.5 rounded-full"
+          style={{ left: `${minPct}%`, right: `${100 - maxPct}%`, background: "linear-gradient(90deg,#FF2D78,#9B59B6)" }} />
+        {/* Ползунок «От» */}
+        <input
+          type="range" min={AGE_MIN} max={AGE_MAX} value={min}
+          onChange={e => onChange(Math.min(+e.target.value, max - 1), max)}
+          className="age-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none"
+          style={{ zIndex: min > AGE_MAX - 10 ? 5 : 3 }}
+        />
+        {/* Ползунок «До» */}
+        <input
+          type="range" min={AGE_MIN} max={AGE_MAX} value={max}
+          onChange={e => onChange(min, Math.max(+e.target.value, min + 1))}
+          className="age-thumb absolute inset-x-0 w-full appearance-none bg-transparent pointer-events-none"
+          style={{ zIndex: 4 }}
+        />
       </div>
     </div>
   );
@@ -309,13 +276,9 @@ export function PeopleSuperPicker({
                 </div>
               </button>
               {superAgeOpen && (
-                <div className="px-4 pb-3 pt-2 flex flex-col gap-0"
+                <div className="px-4 pb-3 pt-3 flex flex-col gap-0"
                   style={{ background: "rgba(0,0,0,0.35)", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <div className="flex items-stretch gap-4">
-                    <DrumPicker value={superAgeMin} onChange={v => setSuperAgeMin(Math.min(v, superAgeMax - 1))} label="От" />
-                    <div className="w-px self-stretch" style={{ background: "rgba(255,255,255,0.07)" }} />
-                    <DrumPicker value={superAgeMax} onChange={v => setSuperAgeMax(Math.max(v, superAgeMin + 1))} label="Кому" />
-                  </div>
+                  <AgeRangeSlider min={superAgeMin} max={superAgeMax} onChange={(a, b) => { setSuperAgeMin(a); setSuperAgeMax(b); }} />
                   <div className="flex gap-1.5 flex-wrap pt-3 pb-1">
                     {([[18,25],[25,35],[35,45],[45,60]] as const).map(([a,b]) => {
                       const active = superAgeMin === a && superAgeMax === b;
