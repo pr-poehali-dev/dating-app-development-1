@@ -5,21 +5,6 @@ import { isUserOnline } from "@/lib/online";
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 9;
 
-const ZODIAC_MAP: Record<string, { emoji: string; grad: string }> = {
-  aries:       { emoji: "♈", grad: "linear-gradient(135deg,#FF6B6B,#FF2D55)" },
-  taurus:      { emoji: "♉", grad: "linear-gradient(135deg,#56C271,#2E9E5B)" },
-  gemini:      { emoji: "♊", grad: "linear-gradient(135deg,#FFD66B,#F5A623)" },
-  cancer:      { emoji: "♋", grad: "linear-gradient(135deg,#7FB3FF,#4F8EF7)" },
-  leo:         { emoji: "♌", grad: "linear-gradient(135deg,#FFA94D,#FF6B2D)" },
-  virgo:       { emoji: "♍", grad: "linear-gradient(135deg,#A0D468,#7CB342)" },
-  libra:       { emoji: "♎", grad: "linear-gradient(135deg,#FF9FC7,#FF5C9D)" },
-  scorpio:     { emoji: "♏", grad: "linear-gradient(135deg,#C56BFF,#8E2DE2)" },
-  sagittarius: { emoji: "♐", grad: "linear-gradient(135deg,#FF8A8A,#E0245E)" },
-  capricorn:   { emoji: "♑", grad: "linear-gradient(135deg,#8D99AE,#5C677D)" },
-  aquarius:    { emoji: "♒", grad: "linear-gradient(135deg,#6BE5FF,#2D9CDB)" },
-  pisces:      { emoji: "♓", grad: "linear-gradient(135deg,#9B8CFF,#6C5CE7)" },
-};
-
 interface Props {
   profiles: Profile[];
   loading: boolean;
@@ -175,17 +160,9 @@ export function PeopleGrid({
                       <span className="text-[8px] flex-shrink-0">✨</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    {p.zodiac && ZODIAC_MAP[p.zodiac] && (
-                      <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] leading-none flex-shrink-0"
-                        style={{ background: ZODIAC_MAP[p.zodiac].grad, boxShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
-                        {ZODIAC_MAP[p.zodiac].emoji}
-                      </span>
-                    )}
-                    {p.city && (
-                      <p className="text-white/55 text-[9px] truncate leading-tight">{p.city}</p>
-                    )}
-                  </div>
+                  {p.city && (
+                    <p className="text-white/55 text-[9px] truncate mt-0.5 leading-tight">{p.city}</p>
+                  )}
                 </div>
               )}
             </button>
