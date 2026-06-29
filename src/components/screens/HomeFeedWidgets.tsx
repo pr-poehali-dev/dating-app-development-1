@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type Post, type LiveStream } from "@/lib/api";
 
@@ -78,59 +79,101 @@ export function LiveBadge({ streams, onJoin }: { streams: LiveStream[]; onJoin: 
 }
 
 // ─── TrendingBadge ────────────────────────────────────────────────────────────
+const CARD_W = 90; // ширина карточки + gap
+
 export function TrendingBadge({ posts, streams = [], onJoinLive }: {
   posts: Post[];
   streams?: LiveStream[];
   onJoinLive?: (s: LiveStream) => void;
 }) {
-  const topPosts = posts.slice().sort((a, b) => b.likes_count - a.likes_count).slice(0, 3);
-  if (topPosts.length === 0 && streams.length === 0) return null;
+  const topPosts = posts.slice().sort((a, b) => b.likes_count - a.likes_count).slice(0, 15);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(true);
+  const totalItems = streams.length + topPosts.length;
+
+  if (totalItems === 0) return null;
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 8);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  };
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "right" ? CARD_W * 3 : -CARD_W * 3, behavior: "smooth" });
+  };
 
   return (
-    <div className="px-4 pt-3 pb-3">
-      {/* Заголовок секции */}
-      <div className="flex items-center justify-between mb-3">
+    <div className="pt-3 pb-3">
+      {/* Заголовок */}
+      <div className="flex items-center justify-between mb-3 px-4">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full flex items-center justify-center"
             style={{ background: "linear-gradient(135deg,#FF6B35,#FF2D78)" }}>
             <Icon name="TrendingUp" size={12} className="text-white" />
           </div>
           <span className="text-white font-bold text-sm">В тренде</span>
+          <span className="text-white/30 text-xs font-medium">{totalItems}</span>
+        </div>
+        {/* Кнопки листания (на планшетах/десктопе) */}
+        <div className="flex items-center gap-1">
+          <button onClick={() => scroll("left")} disabled={!canLeft}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-20"
+            style={{ background: "rgba(255,255,255,0.08)" }}>
+            <Icon name="ChevronLeft" size={15} className="text-white" />
+          </button>
+          <button onClick={() => scroll("right")} disabled={!canRight}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-20"
+            style={{ background: "rgba(255,255,255,0.08)" }}>
+            <Icon name="ChevronRight" size={15} className="text-white" />
+          </button>
         </div>
       </div>
 
-      <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-        {/* Live-стримеры идут первыми */}
+      {/* Лента с сенсорным свайпом */}
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex gap-2.5 overflow-x-auto pb-1 px-4"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
+
+        {/* Live-стримеры */}
         {streams.map((s) => (
           <button key={`live-${s.id}`} onClick={() => onJoinLive?.(s)}
             className="relative rounded-2xl overflow-hidden flex-shrink-0 active:scale-95 transition-transform"
-            style={{ width: 86, height: 108, boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
+            style={{ width: 82, height: 110, boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
             <img src={s.author_photo || FALLBACK_PHOTO} className="w-full h-full object-cover" />
-            {/* Рамка */}
             <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 2px #EF4444" }} />
-            {/* Градиент */}
             <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
-            {/* LIVE бейдж */}
             <div className="absolute top-2 left-2">
               <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse tracking-wide flex items-center gap-0.5">
                 <span className="w-1 h-1 rounded-full bg-white inline-block" />LIVE
               </span>
             </div>
-            {/* Имя */}
             <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
               <p className="text-white text-[10px] font-semibold truncate">{s.author_name}</p>
             </div>
           </button>
         ))}
 
-        {/* Топ посты по лайкам */}
+        {/* Топ-15 постов */}
         {topPosts.map((p) => (
-          <div key={p.id} className="relative rounded-2xl overflow-hidden flex-shrink-0" style={{ width: 86, height: 108 }}>
+          <div key={p.id} className="relative rounded-2xl overflow-hidden flex-shrink-0"
+            style={{ width: 82, height: 110 }}>
             <img src={p.photo_url} className="w-full h-full object-cover" />
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 50%)" }} />
-            <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex items-center gap-1">
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)" }} />
+            {/* Лайки */}
+            <div className="absolute bottom-2 left-2 flex items-center gap-1">
               <Icon name="Heart" size={10} style={{ color: "#FF2D78" }} />
               <span className="text-white text-[10px] font-bold">{p.likes_count}</span>
+            </div>
+            {/* Имя автора */}
+            <div className="absolute top-2 left-2 right-2">
+              <p className="text-white/80 text-[9px] font-semibold truncate">{p.author_name}</p>
             </div>
           </div>
         ))}
