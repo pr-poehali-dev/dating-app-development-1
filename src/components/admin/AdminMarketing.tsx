@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { adminApi } from "@/lib/api";
+import { adminApi, profilesApi } from "@/lib/api";
 import { Spinner } from "./AdminLogin";
 
 type Banner = { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string };
@@ -91,6 +91,32 @@ export function MarketingTab({ token }: { token: string }) {
   const [postCaption, setPostCaption] = useState("");
   const [postSaving, setPostSaving] = useState(false);
   const [postResult, setPostResult] = useState<string | null>(null);
+  const [postUploading, setPostUploading] = useState(false);
+  const [postUploadError, setPostUploadError] = useState("");
+  const postFileRef = useRef<HTMLInputElement>(null);
+
+  const handlePostPhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPostUploadError("");
+    if (!file.type.startsWith("image/")) { setPostUploadError("Выбери изображение"); return; }
+    if (file.size > 10 * 1024 * 1024) { setPostUploadError("Файл слишком большой (макс. 10 МБ)"); return; }
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      setPostUploading(true);
+      try {
+        const res = await profilesApi.uploadPhoto(base64, file.type);
+        setPostPhotoUrl(res.photo_url);
+      } catch (err) {
+        setPostUploadError(err instanceof Error ? err.message : "Ошибка загрузки");
+      } finally {
+        setPostUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const loadPosts = () => {
     setPostsLoading(true);
@@ -370,20 +396,47 @@ export function MarketingTab({ token }: { token: string }) {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">URL изображения</label>
-              <input value={postPhotoUrl} onChange={e => setPostPhotoUrl(e.target.value)}
-                placeholder="https://cdn.poehali.dev/..."
-                className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
-            </div>
+              <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Изображение</label>
 
-            {/* Превью фото */}
-            {postPhotoUrl.trim() && (
-              <div className="rounded-xl overflow-hidden" style={{ maxHeight: 240 }}>
-                <img src={postPhotoUrl.trim()} alt="preview" className="w-full object-cover"
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              </div>
-            )}
+              {!postPhotoUrl.trim() ? (
+                <button onClick={() => postFileRef.current?.click()} disabled={postUploading}
+                  className="w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-7 transition-colors disabled:opacity-60"
+                  style={{ borderColor: "rgba(255,45,120,0.3)", background: "rgba(255,255,255,0.03)" }}>
+                  {postUploading ? (
+                    <>
+                      <Spinner />
+                      <p className="text-white/40 text-xs">Загрузка...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+                        <Icon name="ImagePlus" size={22} className="text-white" />
+                      </div>
+                      <p className="text-white font-semibold text-sm">Загрузить фото</p>
+                      <p className="text-white/35 text-xs">JPG, PNG · макс. 10 МБ</p>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden" style={{ maxHeight: 240 }}>
+                  <img src={postPhotoUrl.trim()} alt="preview" className="w-full object-cover" style={{ maxHeight: 240 }} />
+                  <button onClick={() => setPostPhotoUrl("")}
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.6)" }}>
+                    <Icon name="X" size={16} className="text-white" />
+                  </button>
+                  <button onClick={() => postFileRef.current?.click()} disabled={postUploading}
+                    className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5"
+                    style={{ background: "rgba(0,0,0,0.6)" }}>
+                    <Icon name="RefreshCw" size={13} />Заменить
+                  </button>
+                </div>
+              )}
+
+              {postUploadError && <p className="text-red-400 text-xs mt-1">{postUploadError}</p>}
+              <input ref={postFileRef} type="file" accept="image/*" className="hidden" onChange={handlePostPhotoSelect} />
+            </div>
 
             <div className="flex flex-col gap-1">
               <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Подпись (необязательно)</label>
