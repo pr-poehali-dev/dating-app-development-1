@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
-import { adminApi, profilesApi } from "@/lib/api";
+import { adminApi } from "@/lib/api";
 import { Spinner } from "./AdminLogin";
 
 type Banner = { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string };
@@ -107,8 +107,12 @@ export function MarketingTab({ token }: { token: string }) {
       const base64 = ev.target?.result as string;
       setPostUploading(true);
       try {
-        const res = await profilesApi.uploadPhoto(base64, file.type);
-        setPostPhotoUrl(res.photo_url);
+        const res = await adminReq(token, "admin_upload_image", { image: base64, content_type: file.type });
+        if (res.ok && res.photo_url) {
+          setPostPhotoUrl(res.photo_url);
+        } else {
+          setPostUploadError(res.error || "Ошибка загрузки");
+        }
       } catch (err) {
         setPostUploadError(err instanceof Error ? err.message : "Ошибка загрузки");
       } finally {

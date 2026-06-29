@@ -6,7 +6,10 @@
 import json
 import os
 import time
+import uuid
+import base64
 import psycopg2
+import boto3
 
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
@@ -809,6 +812,27 @@ def handler(event: dict, context) -> dict:
             cur.execute("DELETE FROM promo_codes WHERE id = %s", (promo_id,))
             conn.commit()
             return resp(200, {'ok': True})
+
+        # ── Загрузка изображения в S3 (для постов/баннеров) ──────────────────
+        if action == 'admin_upload_image':
+            image_data = body.get('image', '')
+            content_type = body.get('content_type', 'image/jpeg')
+            if not image_data:
+                return resp(400, {'error': 'Нет изображения'})
+            if ',' in image_data:
+                image_data = image_data.split(',', 1)[1]
+            image_bytes = base64.b64decode(image_data)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
+            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            key = f"admin/{uuid.uuid4()}.{ext}"
+            s3 = boto3.client('s3',
+                endpoint_url='https://bucket.poehali.dev',
+                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+            s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
+            cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+            return resp(200, {'ok': True, 'photo_url': cdn_url})
 
         # ── Публикация поста от LoveBloom ────────────────────────────────────
         if action == 'admin_post_create':
