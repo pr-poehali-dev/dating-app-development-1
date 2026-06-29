@@ -151,17 +151,19 @@ export function PeopleGrid({
 
               {/* Имя и город */}
               {!isLocked && (
-                <div className="absolute bottom-0 left-0 right-0 px-2 pb-2.5">
-                  <div className="flex items-center gap-1">
-                    <p className="text-white text-[11px] font-bold leading-tight truncate drop-shadow">
-                      {p.name}{p.age ? `, ${p.age}` : ""}
-                    </p>
-                    {p.premium && (
-                      <span className="text-[8px] flex-shrink-0">✨</span>
-                    )}
-                  </div>
+                <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
+                  <p className="text-white text-[13px] font-extrabold leading-tight truncate tracking-tight"
+                    style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
+                    {p.name}
+                    {p.age ? <span className="font-semibold text-white/75">, {p.age}</span> : ""}
+                  </p>
                   {p.city && (
-                    <p className="text-white/55 text-[9px] truncate mt-0.5 leading-tight">{p.city}</p>
+                    <div className="flex items-center gap-0.5 mt-1">
+                      <Icon name="MapPin" size={9} className="text-pink-400 flex-shrink-0"
+                        style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} />
+                      <p className="text-white/65 text-[9px] font-medium truncate leading-tight"
+                        style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>{p.city}</p>
+                    </div>
                   )}
                 </div>
               )}
