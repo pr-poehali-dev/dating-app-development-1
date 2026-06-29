@@ -1090,23 +1090,31 @@ def handler(event: dict, context) -> dict:
             if not user_id or not warning_text:
                 return resp(400, {'error': 'user_id и text обязательны'})
 
-            # Ищем бот-аккаунт LoveBloom (любой с username LoveBloom_*)
-            cur.execute(
-                "SELECT id FROM users WHERE lower(username) LIKE 'lovebloom%%' AND id != %s ORDER BY id LIMIT 1",
-                (user_id,)
-            )
+            # Ищем системный аккаунт LoveBloom по email, при отсутствии — создаём
+            LBLOOM_EMAIL = 'system@lbloom.ru'
+            LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg'
+            cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
             sys_row = cur.fetchone()
+            if not sys_row:
+                cur.execute(
+                    "INSERT INTO users (name, email, password_hash, photo_url, verified) "
+                    "VALUES ('LoveBloom', %s, 'system_no_login', %s, TRUE) RETURNING id",
+                    (LBLOOM_EMAIL, LBLOOM_PHOTO)
+                )
+                sys_row = cur.fetchone()
             system_id = sys_row[0] if sys_row else None
 
             msg_id = None
-            if system_id:
-                u1, u2 = min(system_id, user_id), max(system_id, user_id)
-                cur.execute("SELECT id FROM matches WHERE user1_id = %s AND user2_id = %s", (u1, u2))
+            if system_id and system_id != user_id:
+                cur.execute(
+                    "SELECT id FROM matches WHERE (user1_id = %s AND user2_id = %s) OR (user1_id = %s AND user2_id = %s) LIMIT 1",
+                    (system_id, user_id, user_id, system_id)
+                )
                 match_row = cur.fetchone()
                 if match_row:
                     match_id = match_row[0]
                 else:
-                    cur.execute("INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id", (u1, u2))
+                    cur.execute("INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id", (system_id, user_id))
                     match_id = cur.fetchone()[0]
                 cur.execute(
                     "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id",
