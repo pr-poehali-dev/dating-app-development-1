@@ -355,6 +355,18 @@ html.light {
   }
 }
 
+/*
+ * Переопределяем max-w-sm для мобильных устройств.
+ * На телефоне (< 640px) max-w-sm = 100% ширины, не 384px.
+ * Это убирает боковые отступы в Android WebView / APK.
+ * На десктопе (≥ 640px) оставляем стандартное поведение Tailwind.
+ */
+@media (max-width: 639px) {
+  .max-w-sm {
+    max-width: 100% !important;
+  }
+}
+
 /* Узор из сердечек — фиксированный слой, одинаковый на всех экранах */
 .app-bg .app-hearts-layer {
   position: fixed;
