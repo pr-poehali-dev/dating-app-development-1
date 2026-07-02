@@ -9,10 +9,15 @@
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json"/>
-    <meta name="theme-color" content="#FF2D78"/>
-    <meta name="mobile-web-app-capable" content="yes"/>
 
-    <!-- iOS PWA -->
+    <!-- theme-color совпадает с фоном приложения — строка статуса Android сливается с UI -->
+    <meta name="theme-color" content="#1a1025"/>
+
+    <!-- Android fullscreen / edge-to-edge -->
+    <meta name="mobile-web-app-capable" content="yes"/>
+    <meta name="color-scheme" content="dark"/>
+
+    <!-- iOS PWA — полноэкранный режим, статус-бар прозрачный -->
     <meta name="apple-mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
     <meta name="apple-mobile-web-app-title" content="LoveBloom"/>

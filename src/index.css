@@ -295,18 +295,24 @@
   }
   html {
     background-color: var(--spark-dark);
-    /* Убираем отступы Android WebView */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Поддержка safe-area для fullscreen на Android/iOS */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
   body {
     @apply bg-background text-foreground;
     font-family: "Golos Text", sans-serif;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
-    /* Полная ширина без боковых отступов в Android WebView */
     min-width: 100vw;
     overflow-x: hidden;
+    /* Сбрасываем safe-area на body — управляем на уровне компонентов */
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
 
