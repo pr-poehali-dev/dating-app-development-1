@@ -173,7 +173,8 @@ export function ProfilePhotoSection({
         )}
 
         {/* Кнопки шапки */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-4 z-30">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-30"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
           <button onClick={onClose}
             className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>

@@ -134,7 +134,8 @@ export function ProfileTopBar({
   onToggleTheme?: () => void;
 }) {
   return (
-    <div className="px-4 pt-5 pb-2 flex items-center justify-between flex-shrink-0">
+    <div className="px-4 pb-2 flex items-center justify-between flex-shrink-0"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}>
       <h2 className="text-white font-bold text-2xl">Профиль</h2>
       <div className="flex items-center gap-2">
         {/* Изменить */}

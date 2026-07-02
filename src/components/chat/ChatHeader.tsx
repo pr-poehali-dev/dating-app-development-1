@@ -27,8 +27,8 @@ export function ChatHeader({
   onCompatibility,
 }: Props) {
   return (
-    <div className="flex items-center gap-2 px-3 py-3 relative z-10 flex-shrink-0"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+    <div className="flex items-center gap-2 px-3 pb-3 relative z-10 flex-shrink-0"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
 
       {/* Назад */}
       <button onClick={onBack}

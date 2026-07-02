@@ -266,7 +266,7 @@ export default function Index() {
       <OfflineBanner offlineState={offlineState} />
       {showConfetti && <PremiumConfetti />}
       <div className="app-screen-container flex flex-col" style={{ height: "100dvh" }}>
-        <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>
+        <div className="flex-1 overflow-hidden relative">
           <div key={animKey}
             className={`h-full w-full ${animDir === "right" ? "screen-enter-right" : animDir === "left" ? "screen-enter-left" : "screen-enter-up"}`}>
             {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => navigateTo("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} />}

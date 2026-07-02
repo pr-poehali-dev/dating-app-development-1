@@ -23,8 +23,8 @@ export function PeopleHeader({
   onSearchChange, onTabChange, onOpenFilters, onOpenViewers, onOpenBoosts,
 }: Props) {
   return (
-    <div className="px-4 pt-5 pb-3 flex-shrink-0 screen-header"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+    <div className="px-4 pb-3 flex-shrink-0 screen-header"
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
       {/* Заголовок + кнопки */}
       <div className="flex items-center justify-between mb-3">
