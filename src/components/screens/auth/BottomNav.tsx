@@ -27,7 +27,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
       <div
         className="relative z-10 px-4 pt-3"
         style={{
-          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
+          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 20px)",
           background: "rgba(18,12,28,0.97)",
           backdropFilter: "blur(24px)",
           borderTop: "1px solid rgba(255,255,255,0.05)",
