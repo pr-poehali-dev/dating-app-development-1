@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
+import SplashScreen from "@/components/screens/SplashScreen";
 
 import { useBackButton } from "@/hooks/useBackButton";
 
@@ -20,6 +21,7 @@ export default function Index() {
   const [chatId, setChatId] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (authApi.isLoggedIn()) {
@@ -197,6 +199,10 @@ export default function Index() {
 
   useBackButton(currentUser ? screen : "auth", handleBackButton);
 
+
+  if (showSplash) {
+    return <SplashScreen onDone={() => setShowSplash(false)} />;
+  }
 
   if (authLoading) {
     return (
