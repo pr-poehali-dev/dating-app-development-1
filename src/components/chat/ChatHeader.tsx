@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import { haptic, nativeShare } from "@/hooks/useNative";
 
 interface Props {
   partnerName: string;
@@ -105,7 +106,15 @@ export function ChatHeader({
             `}</style>
           </button>
         )}
-        {!isBot && <button onClick={onVideoCall}
+        {!isBot && <button onClick={async () => {
+            haptic("light");
+            await nativeShare({ title: `${partnerName} — LoveBloom`, text: `Познакомься с ${partnerName} в LoveBloom!`, url: "https://love-bloom.ru" });
+          }}
+          className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
+          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <Icon name="Share2" size={15} className="text-white/60" />
+        </button>}
+        {!isBot && <button onClick={() => { haptic("medium"); onVideoCall(); }}
           className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
           <Icon name="Video" size={17} className="text-white/60" />

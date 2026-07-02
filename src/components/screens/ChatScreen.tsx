@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { matchesApi, messagesApi, postsApi, profilesApi, type Message, type Profile } from "@/lib/api";
+import { haptic, nativeShare } from "@/hooks/useNative";
+import { queueAction } from "@/hooks/useOffline";
 import { VideoCircleRecorder } from "@/components/chat/VideoCircleRecorder";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
@@ -139,6 +141,15 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
     if (!input.trim()) return;
     const text = input.trim();
     setInput("");
+    haptic("light");
+    if (!navigator.onLine) {
+      // Офлайн — кладём в очередь, показываем локально
+      const tempMsg: Message = { id: Date.now(), sender_id: 0, text, created_at: new Date().toISOString(), out: true };
+      setMsgs((m) => [...m, tempMsg]);
+      await queueAction({ type: "send-message", payload: { match_id: matchId, text } });
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      return;
+    }
     try {
       const msg = await messagesApi.send(matchId, text);
       setMsgs((m) => [...m, msg]);

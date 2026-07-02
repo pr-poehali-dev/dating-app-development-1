@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { authApi, notificationsApi, type User, type LiveStream } from "@/lib/api";
+import { authApi, notificationsApi, matchesApi, messagesApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import SplashScreen from "@/components/screens/SplashScreen";
+import OfflineBanner from "@/components/OfflineBanner";
+import { useOffline, cacheMatches, cacheMessages, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
+import { setAppBadge } from "@/hooks/useNative";
 
 import { useBackButton } from "@/hooks/useBackButton";
 
@@ -53,12 +56,42 @@ export default function Index() {
   // Подключаем push-уведомления сразу после авторизации
   usePushNotifications(!!currentUser);
 
-  // Счётчик непрочитанных сообщений
+  // Офлайн-режим
+  const offlineState = useOffline();
+
+  // Регистрируем обработчик синхронизации отложенных действий
+  useEffect(() => {
+    registerSyncHandler(async (actions) => {
+      for (const action of actions) {
+        try {
+          if (action.type === "send-message") {
+            const { match_id, text } = action.payload as { match_id: number; text: string };
+            await messagesApi.send(match_id, text);
+            await removePendingAction(action.id);
+          }
+        } catch { /* оставляем в очереди */ }
+      }
+    });
+  }, []);
+
+  // Кэшируем матчи и сообщения при загрузке (офлайн-доступ)
+  useEffect(() => {
+    if (!currentUser || !navigator.onLine) return;
+    matchesApi.getAll()
+      .then((d) => cacheMatches(d.matches))
+      .catch(() => {});
+  }, [!!currentUser, offlineState.isOnline]);
+
+  // Счётчик непрочитанных сообщений + нативный бейдж на иконке
   const [unreadMessages, setUnreadMessages] = useState(0);
   useEffect(() => {
     if (!currentUser) return;
     const fetchUnread = () => {
-      notificationsApi.unreadCount().then(d => setUnreadMessages(d.messages || 0)).catch(() => {});
+      notificationsApi.unreadCount().then(d => {
+        const count = d.messages || 0;
+        setUnreadMessages(count);
+        setAppBadge(count); // нативный бейдж на иконке приложения
+      }).catch(() => {});
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 15_000);
@@ -67,7 +100,7 @@ export default function Index() {
 
   // Сбрасываем счётчик при открытии чатов
   useEffect(() => {
-    if (screen === "matches") setUnreadMessages(0);
+    if (screen === "matches") { setUnreadMessages(0); setAppBadge(0); }
   }, [screen]);
 
   // Heartbeat — обновляем online/last_seen каждые 60 сек
@@ -230,6 +263,7 @@ export default function Index() {
   return (
     <div className="app-bg flex justify-center">
       <div className="app-hearts-layer" />
+      <OfflineBanner offlineState={offlineState} />
       {showConfetti && <PremiumConfetti />}
       <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>

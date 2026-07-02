@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile, type DiscoverParams } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
+import { haptic } from "@/hooks/useNative";
 
 // Re-exports
 export { ReportModal } from "@/components/screens/ReportModal";
@@ -100,13 +101,13 @@ function SwipeCard({
   };
   const handleEnd = () => {
     if (!drag.dragging) return;
-    if (drag.x > 90) { setExiting("right"); setTimeout(onLike, 350); }
-    else if (drag.x < -90) { setExiting("left"); setTimeout(onDislike, 350); }
+    if (drag.x > 90) { haptic("success"); setExiting("right"); setTimeout(onLike, 350); }
+    else if (drag.x < -90) { haptic("light"); setExiting("left"); setTimeout(onDislike, 350); }
     else setDrag({ x: 0, y: 0, dragging: false });
   };
 
-  const handleLikeBtn = () => { setExiting("right"); setTimeout(onLike, 350); };
-  const handleDislikeBtn = () => { setExiting("left"); setTimeout(onDislike, 350); };
+  const handleLikeBtn = () => { haptic("success"); setExiting("right"); setTimeout(onLike, 350); };
+  const handleDislikeBtn = () => { haptic("light"); setExiting("left"); setTimeout(onDislike, 350); };
 
   const scale = isTop ? 1 : 1 - offset * 0.04;
   const translateY = isTop ? drag.y : offset * 12;
