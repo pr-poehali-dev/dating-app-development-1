@@ -253,7 +253,7 @@ export default function Index() {
     return (
       <div className="app-bg flex justify-center" style={{ height: "100dvh", minHeight: "100vh" }}>
         <div className="app-hearts-layer" />
-        <div className="w-full max-w-sm relative z-10 h-full">
+        <div className="app-screen-container h-full">
           <AuthScreen onAuth={handleAuth} />
         </div>
       </div>
@@ -265,7 +265,7 @@ export default function Index() {
       <div className="app-hearts-layer" />
       <OfflineBanner offlineState={offlineState} />
       {showConfetti && <PremiumConfetti />}
-      <div className="w-full max-w-sm relative z-10 flex flex-col" style={{ height: "100dvh" }}>
+      <div className="app-screen-container flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative" style={{ paddingTop: "env(safe-area-inset-top, 12px)" }}>
           <div key={animKey}
             className={`h-full w-full ${animDir === "right" ? "screen-enter-right" : animDir === "left" ? "screen-enter-left" : "screen-enter-up"}`}>

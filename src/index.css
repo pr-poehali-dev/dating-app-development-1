@@ -281,23 +281,32 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   html,
   body,
   #root {
     height: 100%;
     width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
   }
   html {
     background-color: var(--spark-dark);
+    /* Убираем отступы Android WebView */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   body {
     @apply bg-background text-foreground;
     font-family: "Golos Text", sans-serif;
     -webkit-font-smoothing: antialiased;
     overscroll-behavior-y: none;
+    /* Полная ширина без боковых отступов в Android WebView */
+    min-width: 100vw;
+    overflow-x: hidden;
   }
 }
 
@@ -331,6 +340,19 @@ html.light {
   position: relative;
   overflow: hidden;
   transition: background-color 0.3s ease;
+}
+
+/* Контейнер экрана: на мобильном — 100% ширины, на десктопе — ограничен */
+.app-screen-container {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+@media (min-width: 640px) {
+  .app-screen-container {
+    max-width: 390px;
+  }
 }
 
 /* Узор из сердечек — фиксированный слой, одинаковый на всех экранах */
