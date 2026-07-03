@@ -150,7 +150,7 @@ def handler(event: dict, context) -> dict:
             )
             cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             for r in cur.fetchall():
-                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'created_at': str(r[1])})
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'Полутон', 'photo_url': None, 'created_at': str(r[1])})
 
             # Уведомления о покупке Premium (всегда показываем)
             q = (
@@ -159,7 +159,7 @@ def handler(event: dict, context) -> dict:
             )
             cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             for r in cur.fetchall():
-                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'text': r[1], 'created_at': str(r[2])})
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'Полутон', 'photo_url': None, 'text': r[1], 'created_at': str(r[2])})
 
             # Жалобы и системные (всегда показываем)
             q = (
@@ -168,7 +168,7 @@ def handler(event: dict, context) -> dict:
             )
             cur.execute(q, (me['id'], clr) if clr else (me['id'],))
             for r in cur.fetchall():
-                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'LoveBloom', 'photo_url': None, 'created_at': str(r[1])})
+                all_notifs.append({'type': r[0], 'from_user_id': 0, 'name': 'Полутон', 'photo_url': None, 'created_at': str(r[1])})
 
             all_notifs = sorted(all_notifs, key=lambda x: x['created_at'], reverse=True)
 

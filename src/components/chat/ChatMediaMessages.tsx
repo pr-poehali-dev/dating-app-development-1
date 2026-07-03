@@ -80,7 +80,7 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
             <Icon name="X" size={20} className="text-white" />
           </button>
           <ProtectedImage src={url} className="rounded-2xl"
-            watermark="LoveBloom · скриншот запрещён"
+            watermark="Полутон · скриншот запрещён"
             style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
             onClick={e => e.stopPropagation()} />
         </div>

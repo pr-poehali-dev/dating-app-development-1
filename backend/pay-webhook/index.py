@@ -149,14 +149,14 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
 
 
 def _send_bot_message(cur, user_id: int, sys_text: str) -> None:
-    """Отправляет системное сообщение от бота LoveBloom пользователю."""
+    """Отправляет системное сообщение от бота Полутон пользователю."""
     LBLOOM_EMAIL = 'system@lbloom.ru'
-    LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg'
+    LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg'
     cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
     bot_row = cur.fetchone()
     if not bot_row:
         cur.execute(
-            "INSERT INTO users (name, email, password_hash, photo_url, verified) VALUES ('LoveBloom', %s, 'system_no_login', %s, TRUE) RETURNING id",
+            "INSERT INTO users (name, email, password_hash, photo_url, verified) VALUES ('Полутон', %s, 'system_no_login', %s, TRUE) RETURNING id",
             (LBLOOM_EMAIL, LBLOOM_PHOTO)
         )
         bot_row = cur.fetchone()

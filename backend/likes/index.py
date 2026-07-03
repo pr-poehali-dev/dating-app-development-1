@@ -125,10 +125,10 @@ def handler(event: dict, context) -> dict:
             sender_row = cur.fetchone()
             sender_name = sender_row[0] if sender_row else 'Кто-то'
             if mutual:
-                _push_to_user(cur, conn, to_id, 'LoveBloom 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
+                _push_to_user(cur, conn, to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
             else:
                 label = '⭐ Суперлайк' if is_super else '❤️ Лайк'
-                _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в LoveBloom!', '/')
+                _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/')
             return resp(200, {'ok': True, 'match': bool(mutual), 'match_id': match_id})
 
         if action == 'liked_me':

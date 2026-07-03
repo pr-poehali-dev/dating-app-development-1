@@ -125,7 +125,7 @@ def handler(event: dict, context) -> dict:
 
         # Тестовый push
         if action == 'test':
-            send_push_to_user(cur, conn, me['id'], 'LoveBloom 💕', 'Push-уведомления работают! 🎉', '/')
+            send_push_to_user(cur, conn, me['id'], 'Полутон 💕', 'Push-уведомления работают! 🎉', '/')
             return resp(200, {'ok': True})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})

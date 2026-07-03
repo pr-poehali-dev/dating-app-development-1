@@ -49,7 +49,7 @@ export function PrivateGallery({ partnerId, onClose }: { partnerId: number; onCl
             {/* Фото */}
             <div className="relative w-full" style={{ aspectRatio: "1" }}>
               <ProtectedImage src={photos[idx].photo_url}
-                watermark="LoveBloom · скриншот запрещён"
+                watermark="Полутон · скриншот запрещён"
                 className="w-full h-full rounded-2xl"
                 style={{ objectFit: "cover", border: "1.5px solid rgba(255,255,255,0.1)" }} />
               {idx > 0 && (

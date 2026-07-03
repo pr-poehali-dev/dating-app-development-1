@@ -159,7 +159,7 @@ function MemoryScreen({ onBack, cacheMB }: { onBack: () => void; cacheMB: number
         {/* Заголовок */}
         <div className="px-5 pt-5 pb-2">
           <p className="text-white font-bold text-base">Использование памяти</p>
-          <p className="text-white/35 text-xs mt-0.5">LoveBloom занимает &lt;1% места на устройстве</p>
+          <p className="text-white/35 text-xs mt-0.5">Полутон занимает &lt;1% места на устройстве</p>
         </div>
 
         {/* График + число по центру */}

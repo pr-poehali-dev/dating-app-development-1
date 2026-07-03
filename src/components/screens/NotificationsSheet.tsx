@@ -54,7 +54,7 @@ function notifText(n: Notification) {
   if (n.type === "admin_report_dismissed") return "⚪ Твоя жалоба рассмотрена — нарушений не выявлено";
   if (n.type === "admin_post_removed") return "🚫 Администрация удалила твой пост из ленты за нарушение правил";
   if (n.type === "admin_post_kept") return "ℹ️ Жалоба на твой пост рассмотрена — пост оставлен в ленте";
-  if (n.type === "admin_warning") return n.text || "⚠️ Предупреждение от LoveBloom";
+  if (n.type === "admin_warning") return n.text || "⚠️ Предупреждение от Полутон";
   if (n.type === "admin_broadcast") return n.text || "Сообщение от администрации";
   if (n.type === "premium_activated") {
     if (n.text) {

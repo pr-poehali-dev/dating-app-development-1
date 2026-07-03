@@ -108,7 +108,7 @@ export function ChatHeader({
         )}
         {!isBot && <button onClick={async () => {
             haptic("light");
-            await nativeShare({ title: `${partnerName} — LoveBloom`, text: `Познакомься с ${partnerName} в LoveBloom!`, url: "https://love-bloom.ru" });
+            await nativeShare({ title: `${partnerName} — Полутон`, text: `Познакомься с ${partnerName} в Полутон!`, url: "https://love-bloom.ru" });
           }}
           className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
