@@ -285,12 +285,12 @@ def handler(event: dict, context) -> dict:
 </html>"""
 
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = 'Восстановление пароля — LoveBloom'
+            msg['Subject'] = 'Восстановление пароля — Полутон'
             msg['From'] = smtp_user
             msg['To'] = email
             msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-            with smtplib.SMTP_SSL('smtp.yandex.ru', 465) as server:
+            with smtplib.SMTP_SSL('smtp.mail.ru', 465) as server:
                 server.login(smtp_user, smtp_password)
                 server.sendmail(smtp_user, [email], msg.as_string())
             return resp(200, {'ok': True})

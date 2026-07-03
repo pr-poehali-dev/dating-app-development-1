@@ -33,7 +33,7 @@ def get_me(conn, token: str):
     return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
 
 def send_verify_email(to_email: str, code: str, name: str):
-    host = os.environ.get('SMTP_HOST', 'smtp.yandex.ru')
+    host = os.environ.get('SMTP_HOST', 'smtp.mail.ru')
     port = int(os.environ.get('SMTP_PORT', 465))
     user = os.environ.get('SMTP_USER', '')
     password = os.environ.get('SMTP_PASSWORD', '')
