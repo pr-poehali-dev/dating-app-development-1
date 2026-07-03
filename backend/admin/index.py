@@ -17,7 +17,7 @@ def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str 
     try:
         from pywebpush import webpush, WebPushException
         vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
-        vapid_email = os.environ.get('VAPID_EMAIL', 'mailto:push@lovebloom.app')
+        vapid_email = os.environ.get('VAPID_EMAIL', 'mailto:push@polyuton.app')
         if not vapid_private:
             return
         cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = %s", (user_id,))

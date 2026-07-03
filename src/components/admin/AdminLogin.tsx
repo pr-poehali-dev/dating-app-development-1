@@ -37,7 +37,7 @@ export function AdminLogin({ onLogin }: { onLogin: (token: string) => void }) {
             <Icon name="ShieldCheck" size={32} className="text-white" />
           </div>
           <h1 className="text-white font-bold text-2xl">Админ-панель</h1>
-          <p className="text-white/40 text-sm mt-1">LoveBloom</p>
+          <p className="text-white/40 text-sm mt-1">Полутон</p>
         </div>
         <div className="flex flex-col gap-4" style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: 24 }}>
           <input value={token} onChange={(e) => setToken(e.target.value)} type="password"

@@ -77,8 +77,8 @@ export function AuthForm({
                 filter: "blur(8px)",
               }} />
             <img
-              src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg"
-              alt="LoveBloom"
+              src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg"
+              alt="Полутон"
               style={{
                 width: 84, height: 84,
                 borderRadius: 24,
@@ -90,7 +90,7 @@ export function AuthForm({
             />
           </div>
           <h1 className="font-unbounded text-white text-4xl font-black mb-2" style={{ textShadow: "0 2px 20px rgba(255,45,120,0.4)" }}>
-            LoveBloom
+            Полутон
           </h1>
           <p className="text-white/50 text-sm font-medium tracking-wide">Знакомься. Общайся. Влюбляйся.</p>
         </div>

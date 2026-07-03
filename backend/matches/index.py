@@ -74,10 +74,10 @@ def handler(event: dict, context) -> dict:
             """, (uid, uid, uid, uid, uid, uid, uid))
             rows = cur.fetchall()
             cols = ['match_id', 'partner_id', 'name', 'age', 'photo_url', 'online', 'last_seen', 'last_msg', 'last_msg_time', 'unread_count', 'created_at']
-            # ID системного аккаунта LoveBloom (только по системному email)
+            # ID системного аккаунта Полутон (только по системному email)
             cur.execute("SELECT id FROM users WHERE email = 'system@lbloom.ru'")
             bot_ids = {r[0] for r in cur.fetchall()}
-            LOVEBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg"
+            LOVEBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg"
             matches = []
             for r in rows:
                 item = dict(zip(cols, r))
@@ -85,7 +85,7 @@ def handler(event: dict, context) -> dict:
                 if item.get('last_seen'):
                     item['last_seen'] = str(item['last_seen'])
                 if item.get('partner_id') in bot_ids:
-                    item['name'] = 'LoveBloom'
+                    item['name'] = 'Полутон'
                     item['age'] = None
                     item['photo_url'] = LOVEBLOOM_ICON
                 matches.append(item)

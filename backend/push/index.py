@@ -40,7 +40,7 @@ def resp(code: int, body: dict) -> dict:
 def send_push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет push всем подпискам пользователя. Удаляет невалидные (410/404)."""
     vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
-    vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@lovebloom.app')
+    vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@polyuton.app')
     if not vapid_private:
         return
     cur.execute(

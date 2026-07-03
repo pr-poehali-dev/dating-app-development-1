@@ -59,7 +59,7 @@ export const STREAK_REWARDS: StreakReward[] = [
   {
     days: 365,
     badge: "🏆",
-    label: "Год с LoveBloom",
+    label: "Год с Полутон",
     color: "#fbbf24",
     ringColor: "linear-gradient(135deg, #fbbf24, #f59e0b, #eab308, #fbbf24)",
     glow: "0 0 28px rgba(251,191,36,0.9)",

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const LOGO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg";
+const LOGO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg";
 const BG   = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/4d4aa1bd-fe2c-46ae-b734-3f14fcfaced6.jpg";
 
 const HEARTS = ["❤️","💕","✨","💖","🌸","💗","⭐","💝"];
@@ -102,7 +102,7 @@ export default function SplashScreen({ onDone }: Props) {
         />
         <img
           src={LOGO}
-          alt="LoveBloom"
+          alt="Полутон"
           style={{
             width: 100, height: 100,
             borderRadius: 26,
@@ -134,7 +134,7 @@ export default function SplashScreen({ onDone }: Props) {
             marginBottom: 8,
           }}
         >
-          LoveBloom
+          Полутон
         </h1>
         <p
           className="text-white/45 font-golos"

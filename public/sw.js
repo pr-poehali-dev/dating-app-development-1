@@ -1,6 +1,6 @@
-/* LoveBloom Service Worker v2 — офлайн, кеш, push, фоновая синхронизация */
+/* Полутон Service Worker v2 — офлайн, кеш, push, фоновая синхронизация */
 
-const APP_VERSION = "lovebloom-v2";
+const APP_VERSION = "polyuton-v2";
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const DYNAMIC_CACHE = `${APP_VERSION}-dynamic`;
 const IMAGE_CACHE = `${APP_VERSION}-images`;
@@ -24,7 +24,7 @@ const OFFLINE_HTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>LoveBloom — нет соединения</title>
+<title>Полутон — нет соединения</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#1a1025;color:#fff;font-family:system-ui,sans-serif;

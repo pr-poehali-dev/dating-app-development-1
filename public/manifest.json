@@ -1,8 +1,8 @@
 {
-  "id": "lovebloom-app-v1",
-  "name": "LoveBloom",
-  "short_name": "LoveBloom",
-  "description": "LoveBloom — социальная сеть для знакомств и общения. Найди свою любовь!",
+  "id": "polyuton-app-v1",
+  "name": "Полутон",
+  "short_name": "Полутон",
+  "description": "Полутон — социальная сеть для знакомств и общения. Найди свою любовь!",
   "start_url": "/",
   "scope": "/",
   "display": "fullscreen",
@@ -16,19 +16,19 @@
   "categories": ["social", "lifestyle", "dating"],
   "icons": [
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "maskable"
@@ -36,25 +36,25 @@
   ],
   "screenshots": [
     {
-      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+      "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "form_factor": "narrow",
-      "label": "LoveBloom — знакомства на мобильном"
+      "label": "Полутон — знакомства на мобильном"
     },
     {
       "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/661b079a-1e2a-4f6b-9da1-8a749a9355ff.jpg",
       "sizes": "1024x1024",
       "type": "image/jpeg",
       "form_factor": "wide",
-      "label": "LoveBloom — знакомства на десктопе"
+      "label": "Полутон — знакомства на десктопе"
     }
   ],
   "related_applications": [
     {
       "platform": "webapp",
       "url": "https://love-bloom.ru/manifest.json",
-      "id": "lovebloom-app-v1"
+      "id": "polyuton-app-v1"
     }
   ],
   "prefer_related_applications": false,
@@ -73,7 +73,7 @@
       "url": "/?tab=discover",
       "icons": [
         {
-          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
           "sizes": "192x192"
         }
       ]
@@ -85,7 +85,7 @@
       "url": "/?tab=matches",
       "icons": [
         {
-          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg",
+          "src": "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg",
           "sizes": "192x192"
         }
       ]

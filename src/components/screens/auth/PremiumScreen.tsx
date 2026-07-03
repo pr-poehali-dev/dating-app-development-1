@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { postsApi2, profilesApi } from "@/lib/api";
 
-const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/398ecae4-f58c-475c-8ab9-eeab1838b651.jpg";
+const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg";
 
 const DEFAULT_PLANS = [
   { plan: "1month",  label: "1 месяц",    price_per_month: 699,  total_amount: 699,  duration_months: 1,  popular: false },
@@ -214,7 +214,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
             <div className="prem-logo-inner">
               <img
                 src={LOGO_URL}
-                alt="LoveBloom"
+                alt="Полутон"
                 className="prem-logo-img w-full h-full object-cover"
               />
             </div>
@@ -222,7 +222,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
         </div>
 
         <div className="flex items-center gap-2 mb-2">
-          <h2 className="font-unbounded text-white font-black text-2xl text-center tracking-wide">LoveBloom</h2>
+          <h2 className="font-unbounded text-white font-black text-2xl text-center tracking-wide">Полутон</h2>
           <span className="prem-badge">PREMIUM</span>
         </div>
         <p className="text-white/45 text-sm text-center leading-relaxed">

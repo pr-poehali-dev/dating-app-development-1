@@ -84,7 +84,7 @@ export function MarketingPosts({ token }: { token: string }) {
           <img src={LBLOOM_ICON} className="w-10 h-10 rounded-full object-cover"
             style={{ border: "2px solid rgba(255,45,120,0.5)" }} />
           <div>
-            <p className="text-white font-bold text-sm">LoveBloom</p>
+            <p className="text-white font-bold text-sm">Полутон</p>
             <p className="text-white/35 text-xs">Официальный аккаунт · публикация в ленте</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export function MarketingPosts({ token }: { token: string }) {
         <div className="flex flex-col gap-1">
           <label className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Подпись (необязательно)</label>
           <textarea value={postCaption} onChange={e => setPostCaption(e.target.value)}
-            placeholder="Текст поста от LoveBloom..." rows={3} maxLength={500}
+            placeholder="Текст поста от Полутон..." rows={3} maxLength={500}
             className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none"
             style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
           <div className="flex justify-end">

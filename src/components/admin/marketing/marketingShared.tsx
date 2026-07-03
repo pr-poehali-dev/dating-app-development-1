@@ -5,7 +5,7 @@ export type Banner = { id: number; title: string; subtitle: string; color_from: 
 export type LBPost = { id: number; photo_url: string; caption: string | null; created_at: string; likes: number };
 
 export const ADMIN_URL = "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18";
-export const LBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg";
+export const LBLOOM_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg";
 
 export async function adminReq(token: string, action: string, body?: object) {
   const res = await fetch(`${ADMIN_URL}?action=${action}`, {

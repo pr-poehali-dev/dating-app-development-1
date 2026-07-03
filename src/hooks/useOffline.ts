@@ -7,7 +7,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 
-const DB_NAME = "lovebloom-offline";
+const DB_NAME = "polyuton-offline";
 const DB_VERSION = 2;
 
 /* ─── IndexedDB helper ────────────────────────────────────────────────────── */
