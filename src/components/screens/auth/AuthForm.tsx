@@ -204,7 +204,7 @@ export function AuthForm({
             <button onClick={onOpenPrivacy} className="text-white font-bold hover:text-pink-300 transition-colors">
               Политику конфиденциальности
             </button>
-            {" "}LoveBloom
+            {" "}Полутон
           </p>
         </div>
       </div>
