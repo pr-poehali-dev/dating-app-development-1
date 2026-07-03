@@ -297,9 +297,8 @@
     background-color: var(--spark-dark);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /* Поддержка safe-area для fullscreen на Android/iOS */
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* safe-area управляется на уровне компонентов (шапки экранов, BottomNav), а не здесь —
+       иначе отступы удваиваются и высота экрана "плавает" */
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
@@ -342,8 +341,9 @@ html.light {
 /* App shell */
 .app-bg {
   background-color: var(--spark-dark);
-  min-height: 100dvh;
-  position: relative;
+  height: 100dvh;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
   transition: background-color 0.3s ease;
 }
