@@ -44,6 +44,71 @@ def get_ua(event: dict) -> str:
 def resp(code: int, body: dict) -> dict:
     return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False, default=str)}
 
+LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg'
+
+def build_email_html(preheader: str, heading: str, intro: str, highlight_label: str, highlight_value: str, note: str, footer: str) -> str:
+    """Единый брендированный HTML-шаблон писем Полутон (тёмная тема, розово-фиолетовый градиент)."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Полутон</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0e0a18;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{preheader}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e0a18;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#181225;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#FF2D78,#9B59B6);padding:32px 32px 28px;text-align:center;">
+              <img src="{LOGO_URL}" width="64" height="64" alt="Полутон" style="border-radius:18px;display:block;margin:0 auto 14px;box-shadow:0 6px 20px rgba(0,0,0,0.25);">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:0.5px;">Полутон</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <h2 style="margin:0 0 8px;color:#ffffff;font-size:19px;font-weight:700;">{heading}</h2>
+              <p style="margin:0;color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;">
+                {intro}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px;">
+              <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.3);border-radius:16px;padding:20px;text-align:center;">
+                <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">{highlight_label}</div>
+                <div style="color:#ffffff;font-size:28px;font-weight:800;font-family:'Courier New',monospace;letter-spacing:3px;word-break:break-all;">{highlight_value}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 30px;">
+              <p style="margin:0;color:rgba(255,255,255,0.55);font-size:14px;line-height:1.6;">
+                {note}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+              <p style="margin:0;color:rgba(255,255,255,0.3);font-size:12px;line-height:1.5;">
+                {footer}<br>
+                С любовью, команда Полутон 💕
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:20px 0 0;color:rgba(255,255,255,0.2);font-size:11px;">
+          Это автоматическое письмо, отвечать на него не нужно.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
 def check_rate_limit(cur, ip: str, action: str, max_attempts: int, window_minutes: int) -> bool:
     """Возвращает True если лимит превышен"""
     cur.execute(
@@ -223,70 +288,24 @@ def handler(event: dict, context) -> dict:
 
             text_body = (
                 f"Привет, {name}!\n\n"
-                f"Твой новый пароль для LoveBloom:\n\n{new_password}\n\n"
+                f"Твой новый пароль для Полутон:\n\n{new_password}\n\n"
                 f"Войди и сразу смени его в настройках профиля.\n\n"
-                f"С уважением,\nКоманда LoveBloom"
+                f"С уважением,\nКоманда Полутон"
             )
 
-            html_body = f"""\
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background-color:#0e0a18;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e0a18;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#181225;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#FF2D78,#9B59B6);padding:36px 32px;text-align:center;">
-              <div style="font-size:40px;line-height:1;">💖</div>
-              <h1 style="margin:12px 0 0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:0.5px;">LoveBloom</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:36px 32px 8px;">
-              <h2 style="margin:0 0 8px;color:#ffffff;font-size:20px;font-weight:700;">Привет, {name}!</h2>
-              <p style="margin:0;color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;">
-                Ты запросил восстановление пароля. Вот твой новый пароль для входа:
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 32px;">
-              <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.3);border-radius:16px;padding:20px;text-align:center;">
-                <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Новый пароль</div>
-                <div style="color:#ffffff;font-size:26px;font-weight:800;font-family:'Courier New',monospace;letter-spacing:2px;word-break:break-all;">{new_password}</div>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 32px 32px;">
-              <p style="margin:0;color:rgba(255,255,255,0.55);font-size:14px;line-height:1.6;">
-                🔒 Войди в приложение и сразу смени его в настройках профиля для безопасности.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
-              <p style="margin:0;color:rgba(255,255,255,0.3);font-size:12px;line-height:1.5;">
-                Если ты не запрашивал восстановление — просто проигнорируй это письмо.<br>
-                С любовью, команда LoveBloom 💕
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
+            html_body = build_email_html(
+                preheader=f"Твой новый пароль для входа в Полутон",
+                heading=f"Привет, {name}!",
+                intro="Ты запросил восстановление пароля. Вот твой новый пароль для входа:",
+                highlight_label="Новый пароль",
+                highlight_value=new_password,
+                note="🔒 Войди в приложение и сразу смени его в настройках профиля для безопасности.",
+                footer="Если ты не запрашивал восстановление — просто проигнорируй это письмо.",
+            )
 
             msg = MIMEMultipart('alternative')
             msg['Subject'] = 'Восстановление пароля — Полутон'
-            msg['From'] = smtp_user
+            msg['From'] = f'Полутон <{smtp_user}>'
             msg['To'] = email
             msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_body, 'html', 'utf-8'))

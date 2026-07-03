@@ -32,25 +32,98 @@ def get_me(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
 
+LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg'
+
+def build_email_html(preheader: str, heading: str, intro: str, highlight_label: str, highlight_value: str, note: str, footer: str) -> str:
+    """Единый брендированный HTML-шаблон писем Полутон (тёмная тема, розово-фиолетовый градиент)."""
+    return f"""\
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Полутон</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0e0a18;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">{preheader}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e0a18;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#181225;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#FF2D78,#9B59B6);padding:32px 32px 28px;text-align:center;">
+              <img src="{LOGO_URL}" width="64" height="64" alt="Полутон" style="border-radius:18px;display:block;margin:0 auto 14px;box-shadow:0 6px 20px rgba(0,0,0,0.25);">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:0.5px;">Полутон</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <h2 style="margin:0 0 8px;color:#ffffff;font-size:19px;font-weight:700;">{heading}</h2>
+              <p style="margin:0;color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;">
+                {intro}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px;">
+              <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.3);border-radius:16px;padding:20px;text-align:center;">
+                <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">{highlight_label}</div>
+                <div style="color:#ffffff;font-size:28px;font-weight:800;font-family:'Courier New',monospace;letter-spacing:3px;word-break:break-all;">{highlight_value}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 32px 30px;">
+              <p style="margin:0;color:rgba(255,255,255,0.55);font-size:14px;line-height:1.6;">
+                {note}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+              <p style="margin:0;color:rgba(255,255,255,0.3);font-size:12px;line-height:1.5;">
+                {footer}<br>
+                С любовью, команда Полутон 💕
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:20px 0 0;color:rgba(255,255,255,0.2);font-size:11px;">
+          Это автоматическое письмо, отвечать на него не нужно.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
 def send_verify_email(to_email: str, code: str, name: str):
     host = os.environ.get('SMTP_HOST', 'smtp.mail.ru')
     port = int(os.environ.get('SMTP_PORT', 465))
     user = os.environ.get('SMTP_USER', '')
     password = os.environ.get('SMTP_PASSWORD', '')
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Код подтверждения Полутон'
+    msg['Subject'] = 'Код подтверждения — Полутон'
     msg['From'] = f'Полутон <{user}>'
     msg['To'] = to_email
-    html = f"""<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#1a1625;border-radius:16px;padding:32px;">
-      <h1 style="color:#FF2D78;font-size:28px;margin:0 0 8px">Полутон 🌸</h1>
-      <p style="color:#ccc;margin:0 0 24px">Привет, {name}!</p>
-      <p style="color:#ccc;margin:0 0 16px">Твой код подтверждения:</p>
-      <div style="background:#2d2540;border-radius:12px;padding:20px;text-align:center;margin:0 0 24px">
-        <span style="font-size:42px;font-weight:bold;letter-spacing:12px;color:#FF2D78">{code}</span>
-      </div>
-      <p style="color:#888;font-size:13px">Код действителен 10 минут.</p>
-    </div>"""
-    msg.attach(MIMEText(html, 'html'))
+
+    text_body = (
+        f"Привет, {name}!\n\n"
+        f"Твой код подтверждения email в Полутон:\n\n{code}\n\n"
+        f"Код действителен 10 минут.\n\n"
+        f"С уважением,\nКоманда Полутон"
+    )
+    html = build_email_html(
+        preheader=f"Твой код подтверждения: {code}",
+        heading=f"Привет, {name}!",
+        intro="Ты запросил подтверждение почты. Вот твой код:",
+        highlight_label="Код подтверждения",
+        highlight_value=code,
+        note="⏱ Код действителен 10 минут. Введи его в приложении, чтобы подтвердить email.",
+        footer="Если ты не запрашивал подтверждение — просто проигнорируй это письмо.",
+    )
+    msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+    msg.attach(MIMEText(html, 'html', 'utf-8'))
     ctx = ssl.create_default_context()
     with smtplib.SMTP_SSL(host, port, context=ctx) as server:
         server.login(user, password)
