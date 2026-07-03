@@ -9,6 +9,8 @@ import secrets
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 import psycopg2
 
 CORS = {
@@ -304,8 +306,8 @@ def handler(event: dict, context) -> dict:
             )
 
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = 'Восстановление пароля — Полутон'
-            msg['From'] = f'Полутон <{smtp_user}>'
+            msg['Subject'] = Header('Восстановление пароля — Полутон', 'utf-8')
+            msg['From'] = formataddr((str(Header('Полутон', 'utf-8')), smtp_user))
             msg['To'] = email
             msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_body, 'html', 'utf-8'))

@@ -13,6 +13,8 @@ import boto3
 import psycopg2
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 
 CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -103,8 +105,8 @@ def send_verify_email(to_email: str, code: str, name: str):
     user = os.environ.get('SMTP_USER', '')
     password = os.environ.get('SMTP_PASSWORD', '')
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Код подтверждения — Полутон'
-    msg['From'] = f'Полутон <{user}>'
+    msg['Subject'] = Header('Код подтверждения — Полутон', 'utf-8')
+    msg['From'] = formataddr((str(Header('Полутон', 'utf-8')), user))
     msg['To'] = to_email
 
     text_body = (
