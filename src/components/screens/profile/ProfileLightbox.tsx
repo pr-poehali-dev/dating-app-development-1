@@ -10,14 +10,14 @@ interface ProfileLightboxProps {
 }
 
 export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLightboxProps) {
-  const [animDir, setAnimDir] = useState<"left" | "right" | null>(null);
+  const [animDir, setAnimDir] = useState<"up" | "down" | null>(null);
   const [sliding, setSliding] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
   if (photos.length === 0) return null;
 
-  const goTo = (next: number, dir: "left" | "right") => {
+  const goTo = (next: number, dir: "up" | "down") => {
     if (sliding || next < 0 || next >= photos.length) return;
     setAnimDir(dir);
     setSliding(true);
@@ -25,11 +25,11 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
       onSetIdx(() => next);
       setAnimDir(null);
       setSliding(false);
-    }, 260);
+    }, 280);
   };
 
-  const prev = () => goTo(idx - 1, "right");
-  const next = () => goTo(idx + 1, "left");
+  const prev = () => goTo(idx - 1, "down");
+  const next = () => goTo(idx + 1, "up");
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -42,31 +42,31 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
     const dy = e.changedTouches[0].clientY - touchStartY.current;
     touchStartX.current = null;
     touchStartY.current = null;
-    if (Math.abs(dx) < Math.abs(dy) * 1.2 || Math.abs(dx) < 40) return;
-    if (dx < 0) next();
+    if (Math.abs(dy) < Math.abs(dx) * 1.2 || Math.abs(dy) < 40) return;
+    if (dy < 0) next();
     else prev();
   };
 
-  const slideStyle: React.CSSProperties = animDir === "left"
-    ? { animation: "lbSlideLeft 0.26s ease forwards" }
-    : animDir === "right"
-    ? { animation: "lbSlideRight 0.26s ease forwards" }
-    : { animation: "lbFadeIn 0.22s ease" };
+  const slideStyle: React.CSSProperties = animDir === "up"
+    ? { animation: "lbSlideUp 0.28s cubic-bezier(0.22,1,0.36,1) forwards" }
+    : animDir === "down"
+    ? { animation: "lbSlideDown 0.28s cubic-bezier(0.22,1,0.36,1) forwards" }
+    : { animation: "lbFadeIn 0.24s cubic-bezier(0.22,1,0.36,1)" };
 
   return (
     <>
       <style>{`
-        @keyframes lbSlideLeft {
-          from { transform: translateX(0); opacity: 1; }
-          to   { transform: translateX(-60px); opacity: 0; }
+        @keyframes lbSlideUp {
+          from { transform: translateY(0); opacity: 1; }
+          to   { transform: translateY(-70px); opacity: 0; }
         }
-        @keyframes lbSlideRight {
-          from { transform: translateX(0); opacity: 1; }
-          to   { transform: translateX(60px); opacity: 0; }
+        @keyframes lbSlideDown {
+          from { transform: translateY(0); opacity: 1; }
+          to   { transform: translateY(70px); opacity: 0; }
         }
         @keyframes lbFadeIn {
-          from { transform: translateX(0); opacity: 0.4; }
-          to   { transform: translateX(0); opacity: 1; }
+          from { transform: translateY(0); opacity: 0; }
+          to   { transform: translateY(0); opacity: 1; }
         }
       `}</style>
 
@@ -100,37 +100,37 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
           <Icon name="X" size={20} className="text-white" />
         </button>
 
-        {/* Стрелка влево */}
+        {/* Стрелка вверх */}
         {idx > 0 && (
           <button
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="absolute top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
             onClick={e => { e.stopPropagation(); prev(); }}>
-            <Icon name="ChevronLeft" size={22} className="text-white" />
+            <Icon name="ChevronUp" size={22} className="text-white" />
           </button>
         )}
 
-        {/* Стрелка вправо */}
+        {/* Стрелка вниз */}
         {idx < photos.length - 1 && (
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="absolute bottom-20 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
             onClick={e => { e.stopPropagation(); next(); }}>
-            <Icon name="ChevronRight" size={22} className="text-white" />
+            <Icon name="ChevronDown" size={22} className="text-white" />
           </button>
         )}
 
         {/* Точки-индикаторы */}
         {photos.length > 1 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5">
             {photos.map((_, i) => (
               <button
                 key={i}
-                onClick={e => { e.stopPropagation(); goTo(i, i > idx ? "left" : "right"); }}
+                onClick={e => { e.stopPropagation(); goTo(i, i > idx ? "up" : "down"); }}
                 className="rounded-full transition-all duration-300"
                 style={{
-                  width: i === idx ? 22 : 7,
-                  height: 7,
+                  height: i === idx ? 22 : 7,
+                  width: 7,
                   background: i === idx
                     ? "linear-gradient(135deg,#FF2D78,#9B59B6)"
                     : "rgba(255,255,255,0.3)",
@@ -143,7 +143,7 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
 
         {/* Счётчик */}
         <div
-          className="absolute top-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-white/60 text-xs font-semibold"
+          className="absolute top-5 left-5 px-3 py-1 rounded-full text-white/60 text-xs font-semibold"
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}>
           {idx + 1} / {photos.length}
         </div>

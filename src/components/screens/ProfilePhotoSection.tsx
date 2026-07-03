@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { getStreakReward } from "@/lib/streakRewards";
 
@@ -50,12 +50,25 @@ export function ProfilePhotoSection({
   onLike,
   onOpenChat,
   onOpenGiftSheet,
+  onTouchStart,
+  onTouchEnd,
   streakDays = 0,
 }: ProfilePhotoSectionProps) {
   const streakReward = getStreakReward(streakDays);
   const [burst, setBurst] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const touchStartY = useRef(0);
+  const [animDir, setAnimDir] = useState<"up" | "down" | null>(null);
+  const prevIdxRef = useRef(photoIdx);
+
+  useEffect(() => {
+    if (photoIdx !== prevIdxRef.current) {
+      setAnimDir(photoIdx > prevIdxRef.current ? "up" : "down");
+      prevIdxRef.current = photoIdx;
+      const t = setTimeout(() => setAnimDir(null), 320);
+      return () => clearTimeout(t);
+    }
+  }, [photoIdx]);
 
   const handleLikeClick = () => {
     if (liked) return;
@@ -66,6 +79,12 @@ export function ProfilePhotoSection({
 
   const goNext = () => { if (photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1); };
   const goPrev = () => { if (photoIdx > 0) onPhotoIdx(i => i - 1); };
+
+  const photoAnimStyle: React.CSSProperties = animDir === "up"
+    ? { animation: "ppsSlideUp 0.32s cubic-bezier(0.22,1,0.36,1)" }
+    : animDir === "down"
+    ? { animation: "ppsSlideDown 0.32s cubic-bezier(0.22,1,0.36,1)" }
+    : {};
 
   void loadingPhotos;
 
@@ -87,22 +106,25 @@ export function ProfilePhotoSection({
           style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
           <Icon name="X" size={20} className="text-white" />
         </button>
-        <ProtectedImage src={currentPhoto} className="w-full max-h-full"
-          style={{ objectFit: "contain" }} protect />
+        <div key={photoIdx} style={photoAnimStyle} className="w-full max-h-full flex items-center justify-center">
+          <ProtectedImage src={currentPhoto} className="w-full max-h-full"
+            style={{ objectFit: "contain" }} protect />
+        </div>
 
-        {/* Стрелки листания */}
+        {/* Стрелка вверх */}
         {totalPhotos > 1 && photoIdx > 0 && (
           <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
-            <Icon name="ChevronLeft" size={22} className="text-white" />
+            <Icon name="ChevronUp" size={22} className="text-white" />
           </button>
         )}
+        {/* Стрелка вниз */}
         {totalPhotos > 1 && photoIdx < totalPhotos - 1 && (
           <button onClick={(e) => { e.stopPropagation(); goNext(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            className="absolute bottom-16 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
-            <Icon name="ChevronRight" size={22} className="text-white" />
+            <Icon name="ChevronDown" size={22} className="text-white" />
           </button>
         )}
 
@@ -118,16 +140,36 @@ export function ProfilePhotoSection({
       </div>
     )}
 
+    <style>{`
+      @keyframes ppsSlideUp {
+        from { transform: translateY(28px); opacity: 0.3; }
+        to   { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes ppsSlideDown {
+        from { transform: translateY(-28px); opacity: 0.3; }
+        to   { transform: translateY(0); opacity: 1; }
+      }
+    `}</style>
+
     <div className="flex-shrink-0">
 
       {/* ── Фото (половина экрана) ── */}
-      <div className="relative w-full overflow-hidden" style={{ height: "50dvh" }}>
-        <ProtectedImage
-          src={currentPhoto}
-          className="absolute inset-0 w-full h-full"
-          style={{ objectFit: "cover" }}
-          protect
-        />
+      <div className="relative w-full overflow-hidden" style={{ height: "50dvh" }}
+        onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; onTouchStart?.(e); }}
+        onTouchEnd={(e) => {
+          const dy = touchStartY.current - e.changedTouches[0].clientY;
+          if (dy > 50 && photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1);
+          else if (dy < -50 && photoIdx > 0) onPhotoIdx(i => i - 1);
+          onTouchEnd?.(e);
+        }}>
+        <div key={photoIdx} style={{ ...photoAnimStyle, position: "absolute", inset: 0 }}>
+          <ProtectedImage
+            src={currentPhoto}
+            className="absolute inset-0 w-full h-full"
+            style={{ objectFit: "cover" }}
+            protect
+          />
+        </div>
 
         {/* Градиент снизу */}
         <div className="absolute inset-0 pointer-events-none"
@@ -160,14 +202,14 @@ export function ProfilePhotoSection({
           aria-label="Открыть фото"
         />
 
-        {/* Узкие зоны листания по краям */}
+        {/* Узкие зоны листания сверху/снизу */}
         {totalPhotos > 1 && (
           <>
-            <button className="absolute left-0 z-[6] bg-transparent"
-              style={{ top: 64, bottom: 130, width: "22%", WebkitTapHighlightColor: "transparent" }}
+            <button className="absolute left-0 right-0 z-[6] bg-transparent"
+              style={{ top: 64, height: "18%", WebkitTapHighlightColor: "transparent" }}
               onClick={goPrev} aria-label="Предыдущее фото" />
-            <button className="absolute right-0 z-[6] bg-transparent"
-              style={{ top: 64, bottom: 130, width: "22%", WebkitTapHighlightColor: "transparent" }}
+            <button className="absolute left-0 right-0 z-[6] bg-transparent"
+              style={{ bottom: 130, height: "18%", WebkitTapHighlightColor: "transparent" }}
               onClick={goNext} aria-label="Следующее фото" />
           </>
         )}
