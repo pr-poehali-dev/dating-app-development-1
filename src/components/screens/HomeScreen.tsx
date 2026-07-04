@@ -34,7 +34,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const [giftBuying, setGiftBuying] = useState<number | null>(null);
   const [giftPreview, setGiftPreview] = useState<number | null>(null);
   const [giftDone, setGiftDone] = useState<number | null>(null);
-  const [giftCategory, setGiftCategory] = useState("heart");
+  const [giftCategory, setGiftCategory] = useState("special");
   const [showNewUsers, setShowNewUsers] = useState(false);
   const [showStoryUpload, setShowStoryUpload] = useState(false);
   const [storiesRefreshKey, setStoriesRefreshKey] = useState(0);

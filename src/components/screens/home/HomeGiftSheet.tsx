@@ -36,7 +36,7 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
 
         {/* Категории */}
         <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar flex-shrink-0">
-          {([{ id: "heart", label: "Сердца", emoji: "❤️" }, { id: "rose", label: "Розы", emoji: "🌹" }, { id: "bear", label: "Мишки", emoji: "🧸" }, { id: "ring", label: "Кольца", emoji: "💍" }] as const).map(cat => (
+          {([{ id: "special", label: "Особые", emoji: "✨" }, { id: "heart", label: "Сердца", emoji: "❤️" }, { id: "rose", label: "Розы", emoji: "🌹" }, { id: "bear", label: "Мишки", emoji: "🧸" }, { id: "ring", label: "Кольца", emoji: "💍" }] as const).map(cat => (
             <button key={cat.id}
               onClick={() => onCategoryChange(cat.id)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl flex-shrink-0 transition-all text-sm font-semibold active:scale-95 ${giftCategory === cat.id ? "text-white" : "text-white/50"}`}
