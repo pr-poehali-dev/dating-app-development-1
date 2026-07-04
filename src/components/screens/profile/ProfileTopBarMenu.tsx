@@ -5,8 +5,6 @@ import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalShee
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
-
 export function ProfileTopBarMenu({
   menuOpen,
   onMenuToggle,
@@ -135,11 +133,20 @@ export function ProfileTopBarMenu({
           {/* Шапка — аватар + имя */}
           <div className="flex items-center gap-3 px-4 py-3.5"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-            <img
-              src={currentUser.photo_url || FALLBACK_PHOTO}
-              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-              style={{ border: "2px solid rgba(255,45,120,0.4)" }}
-            />
+            {currentUser.photo_url ? (
+              <img
+                src={currentUser.photo_url}
+                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                style={{ border: "2px solid rgba(255,45,120,0.4)" }}
+              />
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center"
+                style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.4), rgba(155,89,182,0.4))", border: "2px solid rgba(255,45,120,0.4)" }}
+              >
+                <Icon name="User" size={16} className="text-white/70" />
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-white font-bold text-sm leading-tight truncate">{currentUser.name || "Профиль"}</p>
               <p className="text-white/35 text-xs truncate">@{currentUser.username || currentUser.email?.split("@")[0] || "user"}</p>

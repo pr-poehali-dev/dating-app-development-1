@@ -2,7 +2,6 @@ import Icon from "@/components/ui/icon";
 import { type Profile } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 9;
 
 interface Props {
@@ -76,7 +75,7 @@ export function PeopleGrid({
       {/* Сетка */}
       <div className="grid grid-cols-3 gap-1 px-1 pt-3 pb-4">
         {profiles.map((p, idx) => {
-          const photo = p.photo_url || FALLBACK_PHOTO;
+          const photo = p.photo_url;
           const isLiked = likedIds.has(p.id);
           const isMe = p.id === currentUserId;
           const isLocked = !isPremium && !isMe && idx >= FREE_LIMIT;
@@ -87,11 +86,23 @@ export function PeopleGrid({
               className="people-card relative overflow-hidden group transition-all active:scale-[0.97]"
               style={{ aspectRatio: "2/3", borderRadius: 16 }}>
 
-              <img
-                src={photo}
-                className="w-full h-full object-cover"
-                style={isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : undefined}
-              />
+              {photo ? (
+                <img
+                  src={photo}
+                  className="w-full h-full object-cover"
+                  style={isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : undefined}
+                />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))",
+                    ...(isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : {}),
+                  }}
+                >
+                  <Icon name="User" size={40} className="text-white/60" />
+                </div>
+              )}
 
               {/* Градиент снизу */}
               {!isLocked && (
