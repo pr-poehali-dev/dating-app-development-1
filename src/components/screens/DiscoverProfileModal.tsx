@@ -10,6 +10,7 @@ import { DiscoverHeartAnim } from "@/components/screens/profile/DiscoverHeartAni
 import { DiscoverFollowersSheet } from "@/components/screens/profile/DiscoverFollowersSheet";
 import { DiscoverUserGiftsSheet } from "@/components/screens/profile/DiscoverUserGiftsSheet";
 import { isUserOnline } from "@/lib/online";
+import { useBackHandler } from "@/hooks/backStack";
 
 export const PROFILES_FALLBACK = [
   {
@@ -67,6 +68,19 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   const [profileStreakDays, setProfileStreakDays] = useState(0);
 
   const mainPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
+
+  // Кнопка "Назад": закрываем вложенные слои по одному, потом — сам профиль
+  useBackHandler(true, () => {
+    if (viewFollowerProfile) { setViewFollowerProfile(null); return; }
+    if (showReport) { setShowReport(false); return; }
+    if (showGiftSheet) { setShowGiftSheet(false); return; }
+    if (showUserGifts) { setShowUserGifts(false); return; }
+    if (showFollowers) { setShowFollowers(false); return; }
+    if (showMsgInput) { setShowMsgInput(false); return; }
+    if (showMenu) { setShowMenu(false); return; }
+    if (photoTab) { setPhotoTab(null); return; }
+    onClose();
+  });
 
   useEffect(() => {
     setPhotos([]);

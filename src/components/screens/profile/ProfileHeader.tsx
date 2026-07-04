@@ -135,7 +135,7 @@ export function ProfileTopBar({
 }) {
   return (
     <div className="px-4 pb-2 flex items-center justify-between flex-shrink-0"
-      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}>
+      style={{ paddingTop: "calc(max(env(safe-area-inset-top, 0px), 28px) + 12px)" }}>
       <h2 className="text-white font-bold text-2xl">Профиль</h2>
       <div className="flex items-center gap-2">
         {/* Изменить */}

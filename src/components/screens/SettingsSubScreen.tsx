@@ -5,6 +5,7 @@ import { SettingsScreenContent } from "@/components/screens/SettingsScreenConten
 import { PasswordModal, DeleteAccountModal } from "@/components/screens/SettingsModals";
 import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
+import { useBackHandler } from "@/hooks/backStack";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
 type SettingsScreenType = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
@@ -38,6 +39,16 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [menuMsg, setMenuMsg] = useState("");
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
+
+  // Кнопка "Назад": сначала закрываем открытые окошки (смена пароля,
+  // удаление аккаунта, документы, меню), и только потом — сам раздел настроек.
+  useBackHandler(true, () => {
+    if (pwModal) { setPwModal(false); return; }
+    if (deleteConfirm) { setDeleteConfirm(false); return; }
+    if (showLegal) { setShowLegal(false); return; }
+    if (menuOpen) { setMenuOpen(false); return; }
+    onClose();
+  });
 
   // ── Блокировки ──────────────────────────────────────────────────────────────
   const [blocks, setBlocks] = useState<BlockedUser[]>([]);

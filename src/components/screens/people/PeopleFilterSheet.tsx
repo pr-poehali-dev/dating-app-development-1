@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type DiscoverParams } from "@/lib/api";
+import { useBackHandler } from "@/hooks/backStack";
 
 const AGE_FLOOR = 18;
 const AGE_CEIL = 80;
@@ -68,6 +69,8 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
     setAgeMin(18); setAgeMax(60); setLookingFor("all"); setCity("");
   };
 
+  useBackHandler(true, onClose);
+
   const genders = [
     { val: "female", label: "Девушки", icon: "Venus",  grad: "linear-gradient(135deg,#FF6B9D,#FF2D78)", glow: "rgba(255,45,120,0.5)" },
     { val: "male",   label: "Парни",   icon: "Mars",   grad: "linear-gradient(135deg,#4F8EF7,#7B5CF5)", glow: "rgba(79,142,247,0.5)" },
@@ -75,38 +78,33 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
   ] as const;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center"
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)" }}
-      onClick={onClose}>
-      <div className="w-full max-w-sm animate-slide-up flex flex-col"
-        style={{ background: "#120d1e", borderRadius: "28px 28px 0 0", maxHeight: "90dvh" }}
-        onClick={e => e.stopPropagation()}>
-
-        {/* Handle */}
-        <div className="w-10 h-1 rounded-full mx-auto mt-2 mb-1.5" style={{ background: "rgba(255,255,255,0.15)" }} />
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center"
+      style={{ background: "#120d1e" }}>
+      <div className="w-full max-w-sm flex flex-col h-full"
+        style={{ background: "#120d1e" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-1 pb-2.5"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div>
-            <h3 className="text-white font-bold text-base leading-tight">Основные фильтры</h3>
-            <p className="text-white/30 text-[11px] mt-0.5">Настрой поиск под себя</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={reset}
-              className="px-2.5 py-1 rounded-xl text-xs font-semibold transition-all active:scale-95 text-white/45"
-              style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
-              Сбросить
-            </button>
+        <div className="flex items-center justify-between px-5 pb-3 flex-shrink-0"
+          style={{ paddingTop: "calc(max(env(safe-area-inset-top, 0px), 28px) + 12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-3">
             <button onClick={onClose}
-              className="w-7 h-7 rounded-full flex items-center justify-center"
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: "rgba(255,255,255,0.08)" }}>
-              <Icon name="X" size={16} className="text-white/60" />
+              <Icon name="ArrowLeft" size={18} className="text-white/80" />
             </button>
+            <div>
+              <h3 className="text-white font-bold text-lg leading-tight">Основные фильтры</h3>
+              <p className="text-white/30 text-[11px] mt-0.5">Настрой поиск под себя</p>
+            </div>
           </div>
+          <button onClick={reset}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 text-white/45"
+            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>
+            Сбросить
+          </button>
         </div>
 
-        <div className="overflow-y-auto px-5 py-3.5 flex flex-col gap-3.5">
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
 
           {/* Город */}
           <div className="rounded-2xl overflow-hidden"
@@ -289,8 +287,8 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
         </div>
 
         {/* Кнопка применить */}
-        <div className="px-5 pb-7 pt-2.5"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="px-5 pt-2.5 flex-shrink-0"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <button onClick={apply}
             className="btn-grad w-full py-3 text-sm font-bold rounded-2xl flex items-center justify-center gap-2">
             <Icon name="Check" size={16} className="text-white" />

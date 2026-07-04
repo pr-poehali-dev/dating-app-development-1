@@ -416,7 +416,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             screen={settingsScreen}
             currentUser={currentUser}
             onProfileUpdate={onProfileUpdate}
-            onClose={() => setSettingsScreen(null)}
+            onClose={() => { setSettingsScreen(null); setMenuOpen(true); }}
             onLogout={onLogout}
             onPremium={onPremium}
             onNavigate={setSettingsScreen}

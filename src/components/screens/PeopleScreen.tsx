@@ -14,6 +14,7 @@ import { PeopleBoostPicker } from "@/components/screens/people/PeopleBoostPicker
 import { PeopleSuperPicker } from "@/components/screens/people/PeopleSuperPicker";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
+import { useBackHandler } from "@/hooks/backStack";
 
 
 export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, isPremium, currentUserId }: {
@@ -85,6 +86,19 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       metadata,
     });
   };
+
+  // Кнопка "Назад" закрывает открытые окна поиска (кроме тех, что
+  // регистрируют свой обработчик: фильтры и профиль).
+  const anySheet = showAdvancedFilter || showExplore || showTravel || showViewers || showBoosts || showBoostPicker || showSuperPicker;
+  useBackHandler(anySheet, () => {
+    if (showBoostPicker) { setShowBoostPicker(false); resetPromo(); return; }
+    if (showSuperPicker) { setShowSuperPicker(false); resetPromo(); return; }
+    if (showBoosts) { setShowBoosts(false); resetPromo(); return; }
+    if (showViewers) { setShowViewers(false); return; }
+    if (showTravel) { setShowTravel(false); return; }
+    if (showExplore) { setShowExplore(false); return; }
+    if (showAdvancedFilter) { setShowAdvancedFilter(false); return; }
+  });
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQuery = useRef<{ params: DiscoverParams; q?: string }>({ params: {} });

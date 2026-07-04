@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
+import { useBackHandler } from "@/hooks/backStack";
 import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
@@ -68,6 +69,8 @@ export function ProfileInfoSection({
   onViewSubscriptions,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  useBackHandler(!!lightboxUrl, () => setLightboxUrl(null));
 
   return (
     <div className="pb-8 flex flex-col gap-0" style={{ background: "var(--spark-dark)" }}>

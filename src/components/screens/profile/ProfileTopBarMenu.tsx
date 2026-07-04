@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
+import { useBackHandler } from "@/hooks/backStack";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
@@ -26,6 +27,12 @@ export function ProfileTopBarMenu({
 }) {
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
+
+  // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
+  useBackHandler(menuOpen || showLegal, () => {
+    if (showLegal) { setShowLegal(false); return; }
+    onMenuToggle(false);
+  });
 
   const menuItems = [
     {

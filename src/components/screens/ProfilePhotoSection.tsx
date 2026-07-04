@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { getStreakReward } from "@/lib/streakRewards";
+import { useBackHandler } from "@/hooks/backStack";
 
 interface ProfilePhotoSectionProps {
   currentPhoto: string;
@@ -70,6 +71,8 @@ export function ProfilePhotoSection({
       return () => clearTimeout(t);
     }
   }, [photoIdx]);
+
+  useBackHandler(fullscreen, () => setFullscreen(false));
 
   const handleLikeClick = () => {
     if (liked) return;

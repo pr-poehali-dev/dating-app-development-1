@@ -8,6 +8,7 @@ import { useOffline, cacheMatches, cacheMessages, registerSyncHandler, removePen
 import { setAppBadge } from "@/hooks/useNative";
 
 import { useBackButton } from "@/hooks/useBackButton";
+import { popBackHandler } from "@/hooks/backStack";
 
 import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
@@ -210,6 +211,11 @@ export default function Index() {
 
   // Системная кнопка "Назад" (Android) — навигация внутри приложения
   const handleBackButton = useCallback((): boolean => {
+    // 1) Сначала закрываем открытые оверлеи (чужой профиль, настройки,
+    //    смена пароля, фильтры, лайтбокс) — по одному слою за нажатие.
+    if (popBackHandler()) {
+      return true;
+    }
     if (screen === "chat") {
       setChatId(null);
       setScreen(prevScreen);
