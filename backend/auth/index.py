@@ -346,6 +346,22 @@ def handler(event: dict, context) -> dict:
                 return resp(401, {'error': 'Не авторизован'})
             uid = sess[0]
 
+            # Собираем URL всех файлов пользователя ДО удаления из БД (для очистки S3)
+            file_urls = []
+            cur.execute("SELECT photo_url, cover_url FROM users WHERE id = %s", (uid,))
+            urow = cur.fetchone()
+            if urow:
+                file_urls.extend([urow[0], urow[1]])
+            cur.execute("SELECT photo_url FROM profile_photos WHERE user_id = %s", (uid,))
+            file_urls.extend([r[0] for r in cur.fetchall()])
+            cur.execute("SELECT photo_url FROM private_photos WHERE user_id = %s", (uid,))
+            file_urls.extend([r[0] for r in cur.fetchall()])
+            cur.execute("SELECT photo_url FROM posts WHERE user_id = %s", (uid,))
+            file_urls.extend([r[0] for r in cur.fetchall()])
+            cur.execute("SELECT video_url, thumbnail_url FROM stories WHERE user_id = %s", (uid,))
+            for r in cur.fetchall():
+                file_urls.extend([r[0], r[1]])
+
             # Удаляем персональные и связанные данные
             cur.execute("DELETE FROM likes WHERE from_user_id = %s OR to_user_id = %s", (uid, uid))
             cur.execute("DELETE FROM user_blocks WHERE blocker_id = %s OR blocked_id = %s", (uid, uid))
@@ -380,6 +396,28 @@ def handler(event: dict, context) -> dict:
             )
             audit(cur, 'account_removed', 'warning', ip=ip, user_id=uid)
             conn.commit()
+
+            # Удаляем файлы пользователя из S3-хранилища (после успешного commit)
+            try:
+                import boto3
+                s3 = boto3.client(
+                    's3', endpoint_url='https://bucket.poehali.dev',
+                    aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                    aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY']
+                )
+                marker = '/bucket/'
+                for url in file_urls:
+                    if not url or marker not in url:
+                        continue
+                    key = url.split(marker, 1)[1].split('?', 1)[0]
+                    if key:
+                        try:
+                            s3.delete_object(Bucket='files', Key=key)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
             return resp(200, {'ok': True})
 
         if action == 'reset_password':
