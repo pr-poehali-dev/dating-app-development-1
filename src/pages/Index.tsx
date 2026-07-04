@@ -242,7 +242,7 @@ export default function Index() {
       <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
         <div className="app-hearts-layer" />
         <div className="flex flex-col items-center gap-3">
-          <h1 className="font-unbounded text-white text-2xl font-black grad-text">LoveBloom</h1>
+          <h1 className="font-unbounded text-white text-2xl font-black grad-text">Полутон</h1>
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
         </div>
       </div>

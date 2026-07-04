@@ -7,6 +7,8 @@ import os
 import hashlib
 import secrets
 import smtplib
+import urllib.request
+import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -132,6 +134,67 @@ def audit(cur, event_type: str, severity: str, ip: str = None, user_id: int = No
         "INSERT INTO security_events (event_type, severity, ip, user_id, email, details) VALUES (%s, %s, %s, %s, %s, %s)",
         (event_type, severity, ip, user_id, email, json.dumps(details or {}))
     )
+
+def build_user_dict(cur, user_id: int) -> dict:
+    """Собирает полный объект пользователя (как в login)."""
+    cur.execute(
+        "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
+        "FROM users u WHERE u.id = %s", (user_id,)
+    )
+    urow = cur.fetchone()
+    cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
+    user = dict(zip(cols, urow))
+    user['created_at'] = str(user['created_at']) if user['created_at'] else None
+    cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
+    user['followers'] = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (user_id,))
+    user['following'] = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM email_codes WHERE user_id = %s AND used = TRUE", (user_id,))
+    user['email_verified'] = cur.fetchone()[0] > 0
+    return user
+
+
+def oauth_find_or_create(cur, provider: str, provider_uid: str, email: str, name: str, photo_url: str) -> int:
+    """Находит или создаёт пользователя по данным OAuth. Возвращает user_id."""
+    email = (email or '').strip().lower()
+    # 1) Ищем по связке provider+uid
+    cur.execute(
+        "SELECT user_id FROM oauth_accounts WHERE provider = %s AND provider_uid = %s",
+        (provider, str(provider_uid))
+    )
+    row = cur.fetchone()
+    if row:
+        return row[0]
+    # 2) Если есть email — ищем существующего пользователя, привязываем
+    user_id = None
+    if email:
+        cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+        r = cur.fetchone()
+        if r:
+            user_id = r[0]
+    # 3) Создаём нового пользователя
+    if not user_id:
+        placeholder_email = email or f"{provider}_{provider_uid}@oauth.local"
+        cur.execute(
+            "INSERT INTO users (email, password_hash, name, photo_url, verified) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (placeholder_email, 'oauth_no_password', (name or 'Пользователь')[:50], photo_url or None, False)
+        )
+        user_id = cur.fetchone()[0]
+        cur.execute("UPDATE users SET username = %s WHERE id = %s", (f"user_{user_id}", user_id))
+    # Привязываем oauth-аккаунт
+    cur.execute(
+        "INSERT INTO oauth_accounts (user_id, provider, provider_uid, email) VALUES (%s, %s, %s, %s) "
+        "ON CONFLICT (provider, provider_uid) DO NOTHING",
+        (user_id, provider, str(provider_uid), email or None)
+    )
+    return user_id
+
+
+def http_get_json(url: str) -> dict:
+    req = urllib.request.Request(url, headers={'User-Agent': 'Polyuton/1.0'})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return json.loads(r.read().decode('utf-8'))
+
 
 def handler(event: dict, context) -> dict:
     if event.get('httpMethod') == 'OPTIONS':
@@ -441,6 +504,121 @@ def handler(event: dict, context) -> dict:
             audit(cur, 'all_sessions_ended', 'warning', ip=ip, user_id=user_id)
             conn.commit()
             return resp(200, {'ok': True})
+
+        # ── OAuth: получить URL для редиректа ─────────────────────────────────
+        if action == 'oauth_url':
+            provider = (params.get('provider') or body.get('provider') or '').strip()
+            redirect_uri = (params.get('redirect_uri') or body.get('redirect_uri') or '').strip()
+            state = secrets.token_urlsafe(16)
+            if provider == 'vk':
+                client_id = os.environ.get('VK_CLIENT_ID', '')
+                if not client_id:
+                    return resp(400, {'error': 'Вход через ВКонтакте пока не настроен'})
+                url = 'https://oauth.vk.com/authorize?' + urllib.parse.urlencode({
+                    'client_id': client_id,
+                    'redirect_uri': redirect_uri,
+                    'response_type': 'code',
+                    'scope': 'email',
+                    'state': state,
+                    'v': '5.199',
+                })
+                return resp(200, {'url': url, 'state': state})
+            if provider == 'mailru':
+                client_id = os.environ.get('MAILRU_CLIENT_ID', '')
+                if not client_id:
+                    return resp(400, {'error': 'Вход через Mail.ru пока не настроен'})
+                url = 'https://oauth.mail.ru/login?' + urllib.parse.urlencode({
+                    'client_id': client_id,
+                    'redirect_uri': redirect_uri,
+                    'response_type': 'code',
+                    'scope': 'userinfo',
+                    'state': state,
+                })
+                return resp(200, {'url': url, 'state': state})
+            return resp(400, {'error': 'Неизвестный провайдер'})
+
+        # ── OAuth: обмен кода на сессию ───────────────────────────────────────
+        if action == 'oauth_callback':
+            provider = (body.get('provider') or '').strip()
+            code = (body.get('code') or '').strip()
+            redirect_uri = (body.get('redirect_uri') or '').strip()
+            if not code or not provider:
+                return resp(400, {'error': 'Некорректный запрос'})
+
+            provider_uid = None
+            email = ''
+            name = ''
+            photo_url = ''
+
+            if provider == 'vk':
+                client_id = os.environ.get('VK_CLIENT_ID', '')
+                client_secret = os.environ.get('VK_CLIENT_SECRET', '')
+                if not client_id or not client_secret:
+                    return resp(400, {'error': 'Вход через ВКонтакте пока не настроен'})
+                token_url = 'https://oauth.vk.com/access_token?' + urllib.parse.urlencode({
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'redirect_uri': redirect_uri,
+                    'code': code,
+                })
+                tdata = http_get_json(token_url)
+                if 'access_token' not in tdata:
+                    return resp(400, {'error': 'Не удалось войти через ВКонтакте'})
+                provider_uid = tdata.get('user_id')
+                email = tdata.get('email', '')
+                info_url = 'https://api.vk.com/method/users.get?' + urllib.parse.urlencode({
+                    'user_ids': provider_uid,
+                    'fields': 'photo_200',
+                    'access_token': tdata['access_token'],
+                    'v': '5.199',
+                })
+                idata = http_get_json(info_url)
+                arr = (idata.get('response') or [])
+                if arr:
+                    u = arr[0]
+                    name = f"{u.get('first_name', '')} {u.get('last_name', '')}".strip()
+                    photo_url = u.get('photo_200', '')
+
+            elif provider == 'mailru':
+                client_id = os.environ.get('MAILRU_CLIENT_ID', '')
+                client_secret = os.environ.get('MAILRU_CLIENT_SECRET', '')
+                if not client_id or not client_secret:
+                    return resp(400, {'error': 'Вход через Mail.ru пока не настроен'})
+                token_body = urllib.parse.urlencode({
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                    'grant_type': 'authorization_code',
+                    'code': code,
+                    'redirect_uri': redirect_uri,
+                }).encode('utf-8')
+                treq = urllib.request.Request(
+                    'https://oauth.mail.ru/token', data=token_body,
+                    headers={'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Polyuton/1.0'}
+                )
+                with urllib.request.urlopen(treq, timeout=10) as r:
+                    tdata = json.loads(r.read().decode('utf-8'))
+                if 'access_token' not in tdata:
+                    return resp(400, {'error': 'Не удалось войти через Mail.ru'})
+                info_url = 'https://oauth.mail.ru/userinfo?' + urllib.parse.urlencode({'access_token': tdata['access_token']})
+                idata = http_get_json(info_url)
+                provider_uid = idata.get('id')
+                email = idata.get('email', '')
+                name = idata.get('name', '') or idata.get('nickname', '')
+                photo_url = idata.get('image', '')
+            else:
+                return resp(400, {'error': 'Неизвестный провайдер'})
+
+            if not provider_uid:
+                return resp(400, {'error': 'Не удалось получить данные аккаунта'})
+
+            user_id = oauth_find_or_create(cur, provider, str(provider_uid), email, name, photo_url)
+            new_token = secrets.token_hex(32)
+            cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))
+            cur.execute("UPDATE users SET online = TRUE, last_seen = NOW() WHERE id = %s", (user_id,))
+            audit(cur, f'oauth_{provider}_login', 'info', ip=ip, user_id=user_id, email=email)
+            conn.commit()
+            user = build_user_dict(cur, user_id)
+            return resp(200, {'token': new_token, 'user': user})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
 

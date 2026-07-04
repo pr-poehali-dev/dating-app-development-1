@@ -19,6 +19,8 @@ export function AuthForm({
   onOpenTerms,
   onOpenPrivacy,
   onEmailTakenDismiss,
+  onOAuth,
+  oauthLoading,
 }: {
   mode: "login" | "register";
   name: string;
@@ -38,6 +40,8 @@ export function AuthForm({
   onOpenTerms: () => void;
   onOpenPrivacy: () => void;
   onEmailTakenDismiss: () => void;
+  onOAuth: (provider: "vk" | "mailru") => void;
+  oauthLoading: "vk" | "mailru" | null;
 }) {
   const inputCls =
     "w-full text-white placeholder-white/40 rounded-2xl px-4 py-3.5 text-sm outline-none border transition-colors font-golos" +
@@ -194,6 +198,39 @@ export function AuthForm({
               Забыл пароль?
             </button>
           )}
+
+          {/* Разделитель */}
+          <div className="flex items-center gap-3 py-0.5">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
+            <span className="text-white/35 text-xs">или войти через</span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
+          </div>
+
+          {/* Кнопки соцсетей */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => onOAuth("vk")}
+              disabled={oauthLoading !== null}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
+              style={{ background: "#0077FF", boxShadow: "0 4px 16px rgba(0,119,255,0.35)" }}
+            >
+              {oauthLoading === "vk"
+                ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin inline-block" />
+                : <><span className="font-black text-base leading-none">VK</span>ВКонтакте</>}
+            </button>
+            <button
+              type="button"
+              onClick={() => onOAuth("mailru")}
+              disabled={oauthLoading !== null}
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg,#005FF9,#7000FF)", boxShadow: "0 4px 16px rgba(112,0,255,0.35)" }}
+            >
+              {oauthLoading === "mailru"
+                ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin inline-block" />
+                : <><Icon name="Mail" size={17} />Mail.ru</>}
+            </button>
+          </div>
 
           <p className="text-white/40 text-xs text-center leading-relaxed px-2">
             Продолжая, ты принимаешь{" "}

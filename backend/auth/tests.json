@@ -22,6 +22,22 @@
       "body": {"email": "notanemail"},
       "expectedStatus": 400,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "oauth_url — неизвестный провайдер",
+      "method": "POST",
+      "path": "/?action=oauth_url",
+      "body": {"provider": "unknown", "redirect_uri": "https://example.com/oauth"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "oauth_callback — пустой код",
+      "method": "POST",
+      "path": "/?action=oauth_callback",
+      "body": {"provider": "vk", "code": ""},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
     }
   ]
 }
