@@ -107,7 +107,7 @@ export function ProfilePhotoSection({
         }}>
         <button onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
           className="absolute right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full"
-          style={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+          style={{ top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
           <Icon name="X" size={20} className="text-white" />
         </button>
         <div key={photoIdx} style={photoAnimStyle} className="w-full max-h-full flex items-center justify-center">
@@ -119,7 +119,7 @@ export function ProfilePhotoSection({
         {totalPhotos > 1 && photoIdx > 0 && (
           <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
             className="absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+            style={{ top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
             <Icon name="ChevronUp" size={22} className="text-white" />
           </button>
         )}
@@ -222,7 +222,7 @@ export function ProfilePhotoSection({
 
         {/* Кнопки шапки */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-30"
-          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
+          style={{ paddingTop: "calc(max(env(safe-area-inset-top, 0px), 28px) + 16px)" }}>
           <button onClick={onClose}
             className="flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0"
             style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.15)" }}>
