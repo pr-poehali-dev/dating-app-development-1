@@ -4,19 +4,10 @@ import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
 import { AuthLegalSheet } from "./AuthLegalSheet";
 
-// Redirect URI для OAuth. На нашем домене всегда используем фиксированный
-// punycode-адрес — он должен совпадать с настройками ВК/Mail.ru символ в символ.
-const PUNYCODE_ORIGIN = "https://xn----utbhbbdxh.xn--p1ai";
-function getOAuthRedirect(): string {
-  const host = window.location.hostname;
-  // Наш домен (кириллица или punycode) → всегда punycode
-  if (host === "полутон.рф" || host === "xn----utbhbbdxh.xn--p1ai") {
-    return `${PUNYCODE_ORIGIN}/oauth`;
-  }
-  // Технический адрес / превью — используем как есть
-  return `${window.location.origin}/oauth`;
-}
-const OAUTH_REDIRECT = getOAuthRedirect();
+// Redirect URI для OAuth берём из реального адреса браузера — так он всегда
+// совпадает сам с собой. В настройках ВК/Mail.ru нужно указать ровно этот адрес.
+// window.location.origin для кириллического домена браузер сам отдаёт в punycode.
+const OAUTH_REDIRECT = `${window.location.origin}/oauth`;
 
 export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
   const [mode, setMode] = useState<"login" | "register">("login");
