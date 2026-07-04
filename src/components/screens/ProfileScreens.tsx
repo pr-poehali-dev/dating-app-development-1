@@ -370,7 +370,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               <div className="px-4 py-4 flex items-center justify-between">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-bold text-base">LoveBloom Premium</span>
+                    <span className="text-white font-bold text-base">Полутон Premium</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-black"
                       style={{ background: "rgba(255,255,255,0.25)", color: "white" }}>✨ GOLD</span>
                   </div>
