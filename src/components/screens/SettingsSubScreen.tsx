@@ -81,7 +81,11 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const handleDeleteAccount = async () => {
     closeMenu();
     setDeleteConfirm(false);
-    await authApi.logout();
+    try {
+      await authApi.deleteAccount();
+    } catch {
+      await authApi.logout();
+    }
     onLogout?.();
   };
 

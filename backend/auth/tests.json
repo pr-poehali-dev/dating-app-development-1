@@ -46,6 +46,14 @@
       "body": {"provider": "vk", "code": "somecode", "redirect_uri": "https://example.com/oauth"},
       "expectedStatus": 400,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "delete_account — без авторизации возвращает 401",
+      "method": "POST",
+      "path": "/?action=delete_account",
+      "body": {},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }

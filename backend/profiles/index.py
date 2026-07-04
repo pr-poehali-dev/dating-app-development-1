@@ -236,6 +236,7 @@ def handler(event: dict, context) -> dict:
                 "u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = %s)",
                 "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
                 "u.incognito = FALSE",
+                "u.removed_at IS NULL",
             ]
             q_params = [age_min, age_max, me['id'], me['id']]
 

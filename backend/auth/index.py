@@ -338,6 +338,50 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
             return resp(200, {'ok': True})
 
+        if action == 'delete_account':
+            # Полное удаление аккаунта пользователя
+            cur.execute("SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW()", (token,))
+            sess = cur.fetchone()
+            if not sess:
+                return resp(401, {'error': 'Не авторизован'})
+            uid = sess[0]
+
+            # Удаляем персональные и связанные данные
+            cur.execute("DELETE FROM likes WHERE from_user_id = %s OR to_user_id = %s", (uid, uid))
+            cur.execute("DELETE FROM user_blocks WHERE blocker_id = %s OR blocked_id = %s", (uid, uid))
+            cur.execute("DELETE FROM user_subscriptions WHERE subscriber_id = %s OR target_id = %s", (uid, uid))
+            cur.execute("DELETE FROM messages WHERE match_id IN (SELECT id FROM matches WHERE user1_id = %s OR user2_id = %s)", (uid, uid))
+            cur.execute("DELETE FROM matches WHERE user1_id = %s OR user2_id = %s", (uid, uid))
+            cur.execute("DELETE FROM post_likes WHERE user_id = %s OR post_id IN (SELECT id FROM posts WHERE user_id = %s)", (uid, uid))
+            cur.execute("DELETE FROM post_comments WHERE user_id = %s OR post_id IN (SELECT id FROM posts WHERE user_id = %s)", (uid, uid))
+            cur.execute("DELETE FROM posts WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM stories WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM profile_photos WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM private_photos WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM profile_boosts WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM notifications WHERE user_id = %s OR from_user_id = %s", (uid, uid))
+            cur.execute("DELETE FROM push_subscriptions WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM oauth_accounts WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM user_streaks WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM user_gifts WHERE sender_id = %s OR recipient_id = %s", (uid, uid))
+            cur.execute("DELETE FROM live_viewers WHERE user_id = %s OR stream_id IN (SELECT id FROM live_streams WHERE user_id = %s)", (uid, uid))
+            cur.execute("DELETE FROM live_messages WHERE user_id = %s OR stream_id IN (SELECT id FROM live_streams WHERE user_id = %s)", (uid, uid))
+            cur.execute("DELETE FROM live_streams WHERE user_id = %s", (uid,))
+            cur.execute("DELETE FROM sessions WHERE user_id = %s", (uid,))
+
+            # Анонимизируем и помечаем аккаунт удалённым (чтобы не показывался нигде)
+            cur.execute(
+                "UPDATE users SET removed_at = NOW(), online = FALSE, premium = FALSE, incognito = TRUE, "
+                "email = %s, password_hash = 'deleted', name = 'Удалённый пользователь', username = %s, "
+                "photo_url = NULL, cover_url = NULL, bio = NULL, city = NULL, country = NULL, "
+                "age = NULL, tags = NULL, latitude = NULL, longitude = NULL "
+                "WHERE id = %s",
+                (f'removed_{uid}@removed.local', f'removed_{uid}', uid)
+            )
+            audit(cur, 'account_removed', 'warning', ip=ip, user_id=uid)
+            conn.commit()
+            return resp(200, {'ok': True})
+
         if action == 'reset_password':
             email = body.get('email', '').strip().lower()
             if not email or '@' not in email:

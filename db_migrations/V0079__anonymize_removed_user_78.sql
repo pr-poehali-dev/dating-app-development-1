@@ -1,0 +1,19 @@
+UPDATE users SET
+  removed_at = NOW(),
+  online = FALSE,
+  premium = FALSE,
+  incognito = TRUE,
+  email = 'removed_78@removed.local',
+  password_hash = 'removed',
+  name = 'Удалённый пользователь',
+  username = 'removed_78',
+  photo_url = NULL,
+  cover_url = NULL,
+  bio = NULL,
+  city = NULL,
+  country = NULL,
+  age = NULL,
+  tags = NULL,
+  latitude = NULL,
+  longitude = NULL
+WHERE id = 78;

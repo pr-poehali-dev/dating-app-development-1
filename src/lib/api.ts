@@ -166,6 +166,9 @@ export const authApi = {
   endAllSessions: () =>
     req<{ ok: boolean }>("auth", "end_all_sessions", { method: "POST" }),
 
+  deleteAccount: () =>
+    req<{ ok: boolean }>("auth", "delete_account", { method: "POST" }),
+
   oauthUrl: (provider: "vk" | "mailru", redirect_uri: string) =>
     req<{ url: string; state: string; code_verifier?: string }>("auth", "oauth_url", {
       method: "POST",

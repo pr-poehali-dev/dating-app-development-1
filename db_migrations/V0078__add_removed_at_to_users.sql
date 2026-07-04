@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS removed_at TIMESTAMP DEFAULT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_removed_at ON users(removed_at);
