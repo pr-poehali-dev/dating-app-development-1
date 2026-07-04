@@ -63,7 +63,7 @@ export function AuthForm({
       </div>
 
       <div
-        className="relative z-10 flex flex-col h-full"
+        className="relative z-10 flex flex-col h-full overflow-y-auto"
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
@@ -71,7 +71,7 @@ export function AuthForm({
       >
 
         {/* Верхняя часть — лого */}
-        <div className="flex-1 flex flex-col items-center justify-end pb-8 px-6">
+        <div className="flex-1 flex flex-col items-center justify-end pb-8 px-6" style={{ minHeight: 220 }}>
           <div className="mb-5 relative flex items-center justify-center">
             <div className="absolute rounded-3xl"
               style={{
@@ -100,7 +100,7 @@ export function AuthForm({
         </div>
 
         {/* Нижняя панель — форма */}
-        <div className="flex-shrink-0 px-5 pb-8 flex flex-col gap-4">
+        <div className="flex-shrink-0 px-5 pb-5 flex flex-col gap-4">
 
           {/* Переключатель Вход / Регистрация */}
           <div className="flex rounded-2xl p-1" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.08)" }}>

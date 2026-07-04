@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
@@ -345,12 +346,13 @@ export function ProfileInfoSection({
         </button>
       </div>
 
-      {/* Lightbox просмотр фото */}
-      {lightboxUrl && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}
+      {/* Lightbox просмотр фото — через портал в body, чтобы перекрыть таб-бар */}
+      {lightboxUrl && createPortal(
+        <div className="fixed inset-0 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)", zIndex: 2147483000 }}
           onClick={() => setLightboxUrl(null)}>
-          <button className="absolute top-5 right-5 glass-card p-2.5 z-10"
+          <button className="absolute right-5 glass-card p-2.5 z-10"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
             onClick={() => setLightboxUrl(null)}>
             <Icon name="X" size={20} className="text-white" />
           </button>
@@ -358,7 +360,8 @@ export function ProfileInfoSection({
             watermark="LoveBloom · скриншот запрещён"
             style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
             onClick={e => e.stopPropagation()} />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

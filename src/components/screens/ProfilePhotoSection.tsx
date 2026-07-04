@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { getStreakReward } from "@/lib/streakRewards";
 
@@ -90,10 +91,10 @@ export function ProfilePhotoSection({
 
   return (
     <>
-    {/* Полноэкранный просмотр */}
-    {fullscreen && (
-      <div className="fixed inset-0 z-[80] flex items-center justify-center"
-        style={{ background: "rgba(0,0,0,0.96)" }}
+    {/* Полноэкранный просмотр — через портал в body, чтобы перекрыть таб-бар */}
+    {fullscreen && createPortal(
+      <div className="fixed inset-0 flex items-center justify-center"
+        style={{ background: "rgba(0,0,0,0.96)", zIndex: 2147483000 }}
         onClick={() => setFullscreen(false)}
         onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
         onTouchEnd={(e) => {
@@ -102,8 +103,8 @@ export function ProfilePhotoSection({
           else if (dy < -50 && photoIdx > 0) onPhotoIdx(i => i - 1);
         }}>
         <button onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
-          className="absolute top-4 right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full"
-          style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+          className="absolute right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full"
+          style={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
           <Icon name="X" size={20} className="text-white" />
         </button>
         <div key={photoIdx} style={photoAnimStyle} className="w-full max-h-full flex items-center justify-center">
@@ -114,30 +115,32 @@ export function ProfilePhotoSection({
         {/* Стрелка вверх */}
         {totalPhotos > 1 && photoIdx > 0 && (
           <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
-            className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+            className="absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ top: "calc(env(safe-area-inset-top, 0px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
             <Icon name="ChevronUp" size={22} className="text-white" />
           </button>
         )}
         {/* Стрелка вниз */}
         {totalPhotos > 1 && photoIdx < totalPhotos - 1 && (
           <button onClick={(e) => { e.stopPropagation(); goNext(); }}
-            className="absolute bottom-16 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
+            className="absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 56px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
             <Icon name="ChevronDown" size={22} className="text-white" />
           </button>
         )}
 
         {/* Полоски-индикаторы */}
         {totalPhotos > 1 && (
-          <div className="absolute bottom-6 left-0 right-0 flex gap-1.5 justify-center px-8">
+          <div className="absolute left-0 right-0 flex gap-1.5 justify-center px-8"
+            style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)" }}>
             {Array.from({ length: totalPhotos }).map((_, i) => (
               <div key={i} className="rounded-full transition-all"
                 style={{ height: 3, width: i === photoIdx ? 22 : 7, background: i === photoIdx ? "#fff" : "rgba(255,255,255,0.4)" }} />
             ))}
           </div>
         )}
-      </div>
+      </div>,
+      document.body
     )}
 
     <style>{`
