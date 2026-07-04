@@ -37,9 +37,11 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
     const url = new URL(window.location.href);
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
+    const deviceId = url.searchParams.get("device_id") || "";
     if (!code) return;
     const provider = sessionStorage.getItem("oauth_provider") as "vk" | "mailru" | null;
     const savedState = sessionStorage.getItem("oauth_state");
+    const codeVerifier = sessionStorage.getItem("oauth_verifier") || "";
     // Чистим URL сразу, возвращаемся на главную
     window.history.replaceState({}, "", "/");
     if (!provider || (savedState && state && savedState !== state)) {
@@ -48,13 +50,14 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
     }
     setOAuthLoading(provider);
     authApi
-      .oauthCallback(provider, code, OAUTH_REDIRECT)
+      .oauthCallback(provider, code, OAUTH_REDIRECT, { code_verifier: codeVerifier, device_id: deviceId })
       .then((res) => onAuth(res.user))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : "Ошибка входа"))
       .finally(() => {
         setOAuthLoading(null);
         sessionStorage.removeItem("oauth_provider");
         sessionStorage.removeItem("oauth_state");
+        sessionStorage.removeItem("oauth_verifier");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -63,9 +66,10 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
     setError("");
     setOAuthLoading(provider);
     try {
-      const { url, state } = await authApi.oauthUrl(provider, OAUTH_REDIRECT);
+      const { url, state, code_verifier } = await authApi.oauthUrl(provider, OAUTH_REDIRECT);
       sessionStorage.setItem("oauth_provider", provider);
       sessionStorage.setItem("oauth_state", state);
+      if (code_verifier) sessionStorage.setItem("oauth_verifier", code_verifier);
       window.location.href = url;
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Ошибка");

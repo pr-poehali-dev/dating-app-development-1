@@ -167,15 +167,20 @@ export const authApi = {
     req<{ ok: boolean }>("auth", "end_all_sessions", { method: "POST" }),
 
   oauthUrl: (provider: "vk" | "mailru", redirect_uri: string) =>
-    req<{ url: string; state: string }>("auth", "oauth_url", {
+    req<{ url: string; state: string; code_verifier?: string }>("auth", "oauth_url", {
       method: "POST",
       body: JSON.stringify({ provider, redirect_uri }),
     }),
 
-  oauthCallback: async (provider: "vk" | "mailru", code: string, redirect_uri: string) => {
+  oauthCallback: async (
+    provider: "vk" | "mailru",
+    code: string,
+    redirect_uri: string,
+    extra?: { code_verifier?: string; device_id?: string },
+  ) => {
     const data = await req<{ token: string; user: User }>("auth", "oauth_callback", {
       method: "POST",
-      body: JSON.stringify({ provider, code, redirect_uri }),
+      body: JSON.stringify({ provider, code, redirect_uri, ...(extra || {}) }),
     });
     setToken(data.token);
     cacheViewer(data.user);

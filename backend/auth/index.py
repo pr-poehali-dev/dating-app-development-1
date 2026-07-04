@@ -5,10 +5,12 @@
 import json
 import os
 import hashlib
+import base64
 import secrets
 import smtplib
 import urllib.request
 import urllib.parse
+import urllib.error
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -514,15 +516,20 @@ def handler(event: dict, context) -> dict:
                 client_id = os.environ.get('VK_CLIENT_ID', '')
                 if not client_id:
                     return resp(400, {'error': 'Вход через ВКонтакте пока не настроен'})
-                url = 'https://oauth.vk.com/authorize?' + urllib.parse.urlencode({
+                # VK ID (OAuth 2.1) требует PKCE: генерируем code_verifier / code_challenge
+                code_verifier = secrets.token_urlsafe(64)[:128]
+                digest = hashlib.sha256(code_verifier.encode('ascii')).digest()
+                code_challenge = base64.urlsafe_b64encode(digest).decode('ascii').rstrip('=')
+                url = 'https://id.vk.com/authorize?' + urllib.parse.urlencode({
                     'client_id': client_id,
                     'redirect_uri': redirect_uri,
                     'response_type': 'code',
                     'scope': 'email',
                     'state': state,
-                    'v': '5.199',
+                    'code_challenge': code_challenge,
+                    'code_challenge_method': 's256',
                 })
-                return resp(200, {'url': url, 'state': state})
+                return resp(200, {'url': url, 'state': state, 'code_verifier': code_verifier})
             if provider == 'mailru':
                 client_id = os.environ.get('MAILRU_CLIENT_ID', '')
                 if not client_id:
@@ -552,32 +559,53 @@ def handler(event: dict, context) -> dict:
 
             if provider == 'vk':
                 client_id = os.environ.get('VK_CLIENT_ID', '')
-                client_secret = os.environ.get('VK_CLIENT_SECRET', '')
-                if not client_id or not client_secret:
+                if not client_id:
                     return resp(400, {'error': 'Вход через ВКонтакте пока не настроен'})
-                token_url = 'https://oauth.vk.com/access_token?' + urllib.parse.urlencode({
-                    'client_id': client_id,
-                    'client_secret': client_secret,
-                    'redirect_uri': redirect_uri,
+                code_verifier = (body.get('code_verifier') or '').strip()
+                device_id = (body.get('device_id') or '').strip()
+                if not code_verifier or not device_id:
+                    return resp(400, {'error': 'Не удалось войти через ВКонтакте'})
+                # VK ID (OAuth 2.1): обмен кода на токен через POST на id.vk.com
+                token_body = urllib.parse.urlencode({
+                    'grant_type': 'authorization_code',
                     'code': code,
-                })
-                tdata = http_get_json(token_url)
+                    'code_verifier': code_verifier,
+                    'client_id': client_id,
+                    'device_id': device_id,
+                    'redirect_uri': redirect_uri,
+                }).encode('utf-8')
+                treq = urllib.request.Request(
+                    'https://id.vk.com/oauth2/auth', data=token_body,
+                    headers={'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Polyuton/1.0'}
+                )
+                try:
+                    with urllib.request.urlopen(treq, timeout=10) as r:
+                        tdata = json.loads(r.read().decode('utf-8'))
+                except urllib.error.HTTPError as he:
+                    tdata = json.loads(he.read().decode('utf-8'))
                 if 'access_token' not in tdata:
                     return resp(400, {'error': 'Не удалось войти через ВКонтакте'})
                 provider_uid = tdata.get('user_id')
-                email = tdata.get('email', '')
-                info_url = 'https://api.vk.com/method/users.get?' + urllib.parse.urlencode({
-                    'user_ids': provider_uid,
-                    'fields': 'photo_200',
+                # Профиль пользователя через VK ID user_info
+                info_body = urllib.parse.urlencode({
+                    'client_id': client_id,
                     'access_token': tdata['access_token'],
-                    'v': '5.199',
-                })
-                idata = http_get_json(info_url)
-                arr = (idata.get('response') or [])
-                if arr:
-                    u = arr[0]
-                    name = f"{u.get('first_name', '')} {u.get('last_name', '')}".strip()
-                    photo_url = u.get('photo_200', '')
+                }).encode('utf-8')
+                ireq = urllib.request.Request(
+                    'https://id.vk.com/oauth2/user_info', data=info_body,
+                    headers={'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'Polyuton/1.0'}
+                )
+                try:
+                    with urllib.request.urlopen(ireq, timeout=10) as r:
+                        idata = json.loads(r.read().decode('utf-8'))
+                except urllib.error.HTTPError as he:
+                    idata = json.loads(he.read().decode('utf-8'))
+                u = idata.get('user') or {}
+                if not provider_uid:
+                    provider_uid = u.get('user_id')
+                email = u.get('email', '') or tdata.get('email', '')
+                name = f"{u.get('first_name', '')} {u.get('last_name', '')}".strip()
+                photo_url = u.get('avatar', '')
 
             elif provider == 'mailru':
                 client_id = os.environ.get('MAILRU_CLIENT_ID', '')

@@ -38,6 +38,14 @@
       "body": {"provider": "vk", "code": ""},
       "expectedStatus": 400,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "oauth_callback — vk без code_verifier",
+      "method": "POST",
+      "path": "/?action=oauth_callback",
+      "body": {"provider": "vk", "code": "somecode", "redirect_uri": "https://example.com/oauth"},
+      "expectedStatus": 400,
+      "bodyMatcher": "partial"
     }
   ]
 }
