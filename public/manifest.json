@@ -53,7 +53,7 @@
   "related_applications": [
     {
       "platform": "webapp",
-      "url": "https://love-bloom.ru/manifest.json",
+      "url": "https://полуто-н.рф/manifest.json",
       "id": "polyuton-app-v1"
     }
   ],
@@ -63,7 +63,7 @@
     "push"
   ],
   "scope_extensions": [
-    { "origin": "https://love-bloom.ru" }
+    { "origin": "https://полуто-н.рф" }
   ],
   "shortcuts": [
     {

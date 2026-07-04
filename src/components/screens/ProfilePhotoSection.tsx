@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { getStreakReward } from "@/lib/streakRewards";
 import { useBackHandler } from "@/hooks/backStack";
+import { haptic } from "@/hooks/useNative";
 
 interface ProfilePhotoSectionProps {
   currentPhoto: string;
@@ -133,9 +134,11 @@ export function ProfilePhotoSection({
           const willPrev = dy < -Math.min(50, threshold) && photoIdx > 0;
           setDragPhaseFs("settling");
           if (willNext) {
+            haptic("selection");
             setDragYFs(h);
             setTimeout(() => { onPhotoIdx(i => i + 1); setDragYFs(0); setDragPhaseFs("idle"); }, 300);
           } else if (willPrev) {
+            haptic("selection");
             setDragYFs(-h);
             setTimeout(() => { onPhotoIdx(i => i - 1); setDragYFs(0); setDragPhaseFs("idle"); }, 300);
           } else {
@@ -244,9 +247,11 @@ export function ProfilePhotoSection({
           const willPrev = dy < -Math.min(50, threshold) && photoIdx > 0;
           setDragPhase("settling");
           if (willNext) {
+            haptic("selection");
             setDragY(h);
             setTimeout(() => { onPhotoIdx(i => i + 1); setDragY(0); setDragPhase("idle"); }, 300);
           } else if (willPrev) {
+            haptic("selection");
             setDragY(-h);
             setTimeout(() => { onPhotoIdx(i => i - 1); setDragY(0); setDragPhase("idle"); }, 300);
           } else {
