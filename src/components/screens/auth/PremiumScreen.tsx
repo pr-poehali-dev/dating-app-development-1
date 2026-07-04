@@ -57,12 +57,18 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
   };
 
   const features = [
-    { icon: "Heart",     label: "Безлимитные лайки каждый день" },
-    { icon: "Eye",       label: "Смотри, кто тебя лайкнул" },
-    { icon: "Zap",       label: "Приоритет в поиске — больше показов" },
-    { icon: "RefreshCw", label: "Отмена последнего свайпа" },
-    { icon: "Star",      label: "Суперлайки каждый день" },
-    { icon: "Shield",    label: "Режим инкогнито" },
+    { icon: "Heart",       label: "Безлимитные лайки",           desc: "Лайкай сколько угодно — никаких дневных ограничений. Больше симпатий каждый день." },
+    { icon: "Eye",         label: "Кто тебя лайкнул",            desc: "Смотри всех, кому ты понравился, без размытия — и сразу отвечай взаимностью." },
+    { icon: "Zap",         label: "Приоритет в поиске",          desc: "Твоя анкета показывается выше остальных — в разы больше просмотров и новых знакомств." },
+    { icon: "RefreshCw",   label: "Отмена свайпа",               desc: "Случайно пропустил интересную анкету? Верни последний свайп одним касанием." },
+    { icon: "Star",        label: "Суперлайки каждый день",      desc: "Выделяйся из толпы — суперлайк заметят сразу, шанс на взаимность заметно выше." },
+    { icon: "Shield",      label: "Режим инкогнито",             desc: "Просматривай анкеты незаметно. Тебя увидят только те, кому ты сам поставил лайк." },
+    { icon: "MapPin",      label: "Люди рядом без границ",        desc: "Смотри всех поблизости и меняй город — знакомься где угодно, даже в другой поездке." },
+    { icon: "Filter",      label: "Расширенные фильтры",          desc: "Ищи по возрасту, интересам, росту и другим параметрам — только подходящие анкеты." },
+    { icon: "MessageCircle", label: "Сообщения без совпадения",  desc: "Пиши первым тем, кто понравился, не дожидаясь взаимного лайка." },
+    { icon: "Rocket",      label: "Буст профиля",                 desc: "Поднимай анкету в топ на время — стань самым заметным среди новых людей." },
+    { icon: "BadgeCheck",  label: "Значок Premium",               desc: "Золотой бейдж у имени — больше доверия и откликов на твою анкету." },
+    { icon: "Ban",         label: "Без рекламы",                  desc: "Никаких баннеров и промо — только знакомства и чистый интерфейс." },
   ];
 
   return (
@@ -231,17 +237,27 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
       </div>
 
       {/* Фичи */}
-      <div className="mx-4 mb-4 rounded-2xl p-4"
+      <div className="px-4 mb-2">
+        <p className="text-white font-bold text-base mb-0.5">Что входит в подписку</p>
+        <p className="text-white/40 text-xs">Полный доступ ко всем возможностям Полутон</p>
+      </div>
+      <div className="mx-4 mb-4 rounded-2xl p-3.5"
         style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex flex-col gap-3.5">
-          {features.map((f) => (
-            <div key={f.label} className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-2xl flex items-center justify-center flex-shrink-0 prem-feature-icon">
-                <Icon name={f.icon as "Heart"|"Eye"|"Zap"|"RefreshCw"|"Star"|"Shield"} size={15} className="text-white" />
+        <div className="flex flex-col">
+          {features.map((f, i) => (
+            <div key={f.label} className="flex items-start gap-3 py-3"
+              style={i < features.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.06)" } : undefined}>
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 prem-feature-icon">
+                <Icon name={f.icon as "Heart"} size={16} className="text-white" fallback="Sparkles" />
               </div>
-              <span className="text-white/80 text-sm flex-1">{f.label}</span>
-              <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 prem-check">
-                <Icon name="Check" size={10} className="text-white" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-white font-semibold text-sm">{f.label}</span>
+                  <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 prem-check">
+                    <Icon name="Check" size={9} className="text-white" />
+                  </div>
+                </div>
+                <p className="text-white/45 text-xs leading-snug mt-0.5">{f.desc}</p>
               </div>
             </div>
           ))}
