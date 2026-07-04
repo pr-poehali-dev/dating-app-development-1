@@ -29,7 +29,7 @@ function ChatGiftMessage({ text, out }: { text: string; out: boolean }) {
         <div className="flex items-center justify-center" style={{ width: 80, height: 80 }}>
           {giftDef ? (
             <GiftItem
-              category={giftDef.category as "heart" | "rose" | "bear" | "ring"}
+              category={giftDef.category as "heart" | "rose" | "bear" | "ring" | "special"}
               variant={giftDef.variant ?? 0}
               animKey={giftDef.anim}
               size={80}

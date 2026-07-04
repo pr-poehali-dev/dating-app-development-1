@@ -36,7 +36,7 @@ export function GiftDetailModal({ gift, onClose }: Props) {
         {/* Анимированный подарок */}
         <div className="w-36 h-36 flex items-center justify-center">
           <GiftItem
-            category={gift.category as "heart" | "rose" | "bear" | "ring"}
+            category={gift.category as "heart" | "rose" | "bear" | "ring" | "special"}
             variant={gift.variant}
             animKey={gift.anim}
             size={144}

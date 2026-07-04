@@ -4,8 +4,9 @@ import GiftRose from "./GiftRose";
 import GiftBear from "./GiftBear";
 import GiftRing from "./GiftRing";
 import GiftParticles from "./GiftParticles";
+import AnimatedGift from "./AnimatedGift";
 
-type GiftCategory = "heart" | "rose" | "bear" | "ring";
+type GiftCategory = "heart" | "rose" | "bear" | "ring" | "special";
 type Rarity = "common" | "rare" | "epic" | "legendary";
 
 interface GiftItemProps {
@@ -70,6 +71,11 @@ export default function GiftItem({ category, variant, animKey, size = 56, rarity
 
   const flashColor = RARITY_FLASH[rarity];
   const hasParticles = rarity !== "common";
+
+  // Особые анимированные подарки (в стиле Telegram) с фоном
+  if (category === "special") {
+    return <AnimatedGift size={size} withBackground burst={selected} />;
+  }
 
   return (
     <div style={{ position: "relative", width: size, height: size, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

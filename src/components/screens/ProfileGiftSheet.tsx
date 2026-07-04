@@ -37,13 +37,16 @@ export const GIFTS = [
   { id: 30, name: "Кольцо Эпик",     emoji: "💍", price: 7490,  anim: "gift-3d-ring",        rarity: "epic",      category: "ring", variant: 5 },
   { id: 31, name: "Кольцо Вечности", emoji: "💎", price: 14990, anim: "gift-3d-ring-legend", rarity: "legendary", category: "ring", variant: 6 },
   { id: 32, name: "Кольцо богов",    emoji: "✨", price: 24990, anim: "gift-rainbow",        rarity: "legendary", category: "ring", variant: 7 },
+  /* ─── Особые (анимированные, в стиле Telegram) ─── */
+  { id: 33, name: "Крутой Пёс",      emoji: "🐶", price: 1990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 0 },
 ];
 
 const CATEGORIES = [
-  { id: "heart", label: "Сердца",     emoji: "❤️" },
-  { id: "rose",  label: "Розы",       emoji: "🌹" },
-  { id: "bear",  label: "Мишки",      emoji: "🧸" },
-  { id: "ring",  label: "Кольца",     emoji: "💍" },
+  { id: "special", label: "Особые",     emoji: "✨" },
+  { id: "heart",   label: "Сердца",     emoji: "❤️" },
+  { id: "rose",    label: "Розы",       emoji: "🌹" },
+  { id: "bear",    label: "Мишки",      emoji: "🧸" },
+  { id: "ring",    label: "Кольца",     emoji: "💍" },
 ];
 
 export const RARITY_STYLE: Record<string, { label: string; border: string; bg: string; text: string; glow: string }> = {
@@ -79,7 +82,7 @@ export function ProfileGiftSheet({
   onSelectGift,
   onPayGift,
 }: ProfileGiftSheetProps) {
-  const [activeCategory, setActiveCategory] = useState("heart");
+  const [activeCategory, setActiveCategory] = useState("special");
   const filtered = GIFTS.filter(g => g.category === activeCategory);
 
   return (
@@ -141,7 +144,7 @@ export function ProfileGiftSheet({
                       {rs.label}
                     </span>
                   )}
-                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={sel} />
+                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={sel} />
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
                   </p>
@@ -161,7 +164,7 @@ export function ProfileGiftSheet({
             return (
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
-                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
+                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
                   {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}

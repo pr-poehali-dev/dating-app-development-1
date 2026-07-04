@@ -51,7 +51,7 @@ export function GiftsGrid({
         {gifts.map((gift) => {
           const rs = RARITY_COLORS[gift.gift_rarity] || RARITY_COLORS.common;
           const giftDef = GIFTS.find(g => g.id === gift.gift_id);
-          const category = (gift.gift_category || giftDef?.category || "heart") as "heart" | "rose" | "bear" | "ring";
+          const category = (gift.gift_category || giftDef?.category || "heart") as "heart" | "rose" | "bear" | "ring" | "special";
           const variant = gift.gift_variant ?? giftDef?.variant ?? 0;
           const rarity = (gift.gift_rarity || "common") as "common" | "rare" | "epic" | "legendary";
           const animKey = giftDef?.anim ?? "gift-float";
