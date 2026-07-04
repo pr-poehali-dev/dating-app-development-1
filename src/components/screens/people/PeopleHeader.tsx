@@ -24,7 +24,7 @@ export function PeopleHeader({
 }: Props) {
   return (
     <div className="px-4 pb-3 flex-shrink-0 screen-header"
-      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
 
       {/* Заголовок + кнопки */}
       <div className="flex items-center justify-between mb-3">

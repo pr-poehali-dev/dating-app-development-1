@@ -83,7 +83,8 @@ export function LiveStreamList({
 
       <div className="flex flex-col h-full">
         {/* Хедер */}
-        <div className="flex-shrink-0 px-4 pt-2 pb-3">
+        <div className="flex-shrink-0 px-4 pb-3"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
           <div className="flex items-center justify-between mb-3">
             <h1 className="text-white font-black text-xl tracking-tight">
               Live <span className="text-pink-500">•</span>

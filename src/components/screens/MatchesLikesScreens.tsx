@@ -120,7 +120,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
       <div className="flex flex-col h-full overflow-y-auto">
         {/* Шапка */}
         <div className="px-4 pb-3 flex items-center justify-between flex-shrink-0"
-          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div>
             <h2 className="text-white font-bold text-2xl leading-tight">Сообщения</h2>
             <p className="text-white/35 text-xs mt-0.5">{matches.length} {matches.length === 1 ? "диалог" : matches.length < 5 ? "диалога" : "диалогов"}</p>

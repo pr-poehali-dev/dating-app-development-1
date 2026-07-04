@@ -10,7 +10,7 @@ interface Props {
 export function HomeHeader({ unreadCount, onCreateClick, onGiftsClick, onNotifsClick }: Props) {
   return (
     <div className="flex items-center justify-between px-4 pb-3 flex-shrink-0"
-      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
       {/* Лого */}
       <div className="flex items-center gap-2.5">
         <div className="relative">

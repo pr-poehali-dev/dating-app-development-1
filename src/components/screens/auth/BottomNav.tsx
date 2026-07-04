@@ -25,9 +25,9 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
         }
       `}</style>
       <div
-        className="relative z-10 px-4 pt-2"
+        className="relative z-10 px-4 pt-1.5"
         style={{
-          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)",
+          paddingBottom: "max(env(safe-area-inset-bottom, 0px), 6px)",
           background: "rgba(18,12,28,0.97)",
           backdropFilter: "blur(24px)",
           borderTop: "1px solid rgba(255,255,255,0.05)",
@@ -43,7 +43,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
               <button
                 key={item.screen}
                 onClick={() => onChange(item.screen)}
-                className="relative flex flex-col items-center gap-1.5 py-2 px-4 rounded-2xl transition-all duration-200 active:scale-90"
+                className="relative flex flex-col items-center gap-2 py-1.5 px-4 rounded-2xl transition-all duration-200 active:scale-90"
               >
                 {/* Активный фон-пятно */}
                 {isActive && (
@@ -71,7 +71,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
                   >
                     <Icon
                       name={item.icon as "Sparkles"|"Compass"|"Flame"|"MessageCircle"|"CircleUser"}
-                      size={24}
+                      size={21}
                       strokeWidth={isActive ? 2.5 : 1.5}
                       style={{
                         color: isActive

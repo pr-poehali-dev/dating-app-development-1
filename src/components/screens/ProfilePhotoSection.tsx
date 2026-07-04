@@ -63,6 +63,17 @@ export function ProfilePhotoSection({
   const [animDir, setAnimDir] = useState<"up" | "down" | null>(null);
   const prevIdxRef = useRef(photoIdx);
 
+  // Плавный drag пальцем: сдвигаем фото вслед за жестом, затем доезжаем/возвращаемся
+  const [dragY, setDragY] = useState(0);
+  const [dragPhase, setDragPhase] = useState<"idle" | "dragging" | "settling">("idle");
+  const dragStartY = useRef(0);
+  const containerHeightRef = useRef(1);
+
+  const [dragYFs, setDragYFs] = useState(0);
+  const [dragPhaseFs, setDragPhaseFs] = useState<"idle" | "dragging" | "settling">("idle");
+  const dragStartYFs = useRef(0);
+  const containerHeightRefFs = useRef(1);
+
   useEffect(() => {
     if (photoIdx !== prevIdxRef.current) {
       setAnimDir(photoIdx > prevIdxRef.current ? "up" : "down");
@@ -96,24 +107,71 @@ export function ProfilePhotoSection({
     <>
     {/* Полноэкранный просмотр — через портал в body, чтобы перекрыть таб-бар */}
     {fullscreen && createPortal(
-      <div className="fixed inset-0 flex items-center justify-center"
+      <div className="fixed inset-0 flex items-center justify-center overflow-hidden"
         style={{ background: "rgba(0,0,0,0.96)", zIndex: 2147483000 }}
-        onClick={() => setFullscreen(false)}
-        onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; }}
+        onClick={() => { if (dragPhaseFs === "idle") setFullscreen(false); }}
+        onTouchStart={(e) => {
+          if (dragPhaseFs === "settling") return;
+          touchStartY.current = e.touches[0].clientY;
+          dragStartYFs.current = e.touches[0].clientY;
+          containerHeightRefFs.current = e.currentTarget.clientHeight || window.innerHeight || 1;
+          setDragPhaseFs("dragging");
+        }}
+        onTouchMove={(e) => {
+          if (dragPhaseFs !== "dragging") return;
+          const rawDy = dragStartYFs.current - e.touches[0].clientY;
+          const atStart = photoIdx === 0 && rawDy < 0;
+          const atEnd = photoIdx === totalPhotos - 1 && rawDy > 0;
+          setDragYFs((atStart || atEnd) ? rawDy * 0.35 : rawDy);
+        }}
         onTouchEnd={(e) => {
+          if (dragPhaseFs !== "dragging") return;
           const dy = touchStartY.current - e.changedTouches[0].clientY;
-          if (dy > 50 && photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1);
-          else if (dy < -50 && photoIdx > 0) onPhotoIdx(i => i - 1);
+          const h = containerHeightRefFs.current;
+          const threshold = h * 0.15;
+          const willNext = dy > Math.min(50, threshold) && photoIdx < totalPhotos - 1;
+          const willPrev = dy < -Math.min(50, threshold) && photoIdx > 0;
+          setDragPhaseFs("settling");
+          if (willNext) {
+            setDragYFs(h);
+            setTimeout(() => { onPhotoIdx(i => i + 1); setDragYFs(0); setDragPhaseFs("idle"); }, 300);
+          } else if (willPrev) {
+            setDragYFs(-h);
+            setTimeout(() => { onPhotoIdx(i => i - 1); setDragYFs(0); setDragPhaseFs("idle"); }, 300);
+          } else {
+            setDragYFs(0);
+            setTimeout(() => setDragPhaseFs("idle"), 300);
+          }
         }}>
         <button onClick={(e) => { e.stopPropagation(); setFullscreen(false); }}
           className="absolute right-4 z-10 flex items-center justify-center w-10 h-10 rounded-full"
           style={{ top: "calc(max(env(safe-area-inset-top, 0px), 28px) + 16px)", background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)" }}>
           <Icon name="X" size={20} className="text-white" />
         </button>
-        <div key={photoIdx} style={photoAnimStyle} className="w-full max-h-full flex items-center justify-center">
+        <div key={photoIdx} style={{
+          ...photoAnimStyle,
+          transform: `translateY(${-dragYFs}px)`,
+          transition: dragPhaseFs === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+        }} className="w-full max-h-full flex items-center justify-center">
           <ProtectedImage src={currentPhoto} className="w-full max-h-full"
             style={{ objectFit: "contain" }} protect />
         </div>
+        {/* Соседнее фото — плавно подтягивается во время свайпа */}
+        {dragYFs !== 0 && (() => {
+          const nextIdx = dragYFs > 0 ? photoIdx + 1 : photoIdx - 1;
+          if (nextIdx < 0 || nextIdx >= totalPhotos) return null;
+          const h = containerHeightRefFs.current;
+          const offset = dragYFs > 0 ? h - dragYFs : -h - dragYFs;
+          return (
+            <div className="absolute inset-0 flex items-center justify-center" style={{
+              transform: `translateY(${offset}px)`,
+              transition: dragPhaseFs === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+            }}>
+              <ProtectedImage src={photos[nextIdx] || currentPhoto} className="w-full max-h-full"
+                style={{ objectFit: "contain" }} protect />
+            </div>
+          );
+        })()}
 
         {/* Стрелка вверх */}
         {totalPhotos > 1 && photoIdx > 0 && (
@@ -161,14 +219,48 @@ export function ProfilePhotoSection({
 
       {/* ── Фото (половина экрана) ── */}
       <div className="relative w-full overflow-hidden" style={{ height: "50dvh" }}
-        onTouchStart={(e) => { touchStartY.current = e.touches[0].clientY; onTouchStart?.(e); }}
+        onTouchStart={(e) => {
+          if (dragPhase === "settling") return;
+          touchStartY.current = e.touches[0].clientY;
+          dragStartY.current = e.touches[0].clientY;
+          containerHeightRef.current = e.currentTarget.clientHeight || 1;
+          setDragPhase("dragging");
+          onTouchStart?.(e);
+        }}
+        onTouchMove={(e) => {
+          if (dragPhase !== "dragging") return;
+          const rawDy = dragStartY.current - e.touches[0].clientY;
+          const atStart = photoIdx === 0 && rawDy < 0;
+          const atEnd = photoIdx === totalPhotos - 1 && rawDy > 0;
+          const dy = (atStart || atEnd) ? rawDy * 0.35 : rawDy;
+          setDragY(dy);
+        }}
         onTouchEnd={(e) => {
+          if (dragPhase !== "dragging") return;
           const dy = touchStartY.current - e.changedTouches[0].clientY;
-          if (dy > 50 && photoIdx < totalPhotos - 1) onPhotoIdx(i => i + 1);
-          else if (dy < -50 && photoIdx > 0) onPhotoIdx(i => i - 1);
+          const h = containerHeightRef.current;
+          const threshold = h * 0.18;
+          const willNext = dy > Math.min(50, threshold) && photoIdx < totalPhotos - 1;
+          const willPrev = dy < -Math.min(50, threshold) && photoIdx > 0;
+          setDragPhase("settling");
+          if (willNext) {
+            setDragY(h);
+            setTimeout(() => { onPhotoIdx(i => i + 1); setDragY(0); setDragPhase("idle"); }, 300);
+          } else if (willPrev) {
+            setDragY(-h);
+            setTimeout(() => { onPhotoIdx(i => i - 1); setDragY(0); setDragPhase("idle"); }, 300);
+          } else {
+            setDragY(0);
+            setTimeout(() => setDragPhase("idle"), 300);
+          }
           onTouchEnd?.(e);
         }}>
-        <div key={photoIdx} style={{ ...photoAnimStyle, position: "absolute", inset: 0 }}>
+        <div key={photoIdx} style={{
+          ...photoAnimStyle,
+          position: "absolute", inset: 0,
+          transform: `translateY(${-dragY}px)`,
+          transition: dragPhase === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+        }}>
           <ProtectedImage
             src={currentPhoto}
             className="absolute inset-0 w-full h-full"
@@ -176,6 +268,28 @@ export function ProfilePhotoSection({
             protect
           />
         </div>
+        {/* Соседнее фото — плавно подтягивается снизу/сверху во время свайпа */}
+        {dragY !== 0 && (
+          (() => {
+            const nextIdx = dragY > 0 ? photoIdx + 1 : photoIdx - 1;
+            if (nextIdx < 0 || nextIdx >= totalPhotos) return null;
+            const offset = dragY > 0 ? containerHeightRef.current - dragY : -containerHeightRef.current - dragY;
+            return (
+              <div style={{
+                position: "absolute", inset: 0,
+                transform: `translateY(${offset}px)`,
+                transition: dragPhase === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
+              }}>
+                <ProtectedImage
+                  src={photos[nextIdx] || currentPhoto}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ objectFit: "cover" }}
+                  protect
+                />
+              </div>
+            );
+          })()
+        )}
 
         {/* Градиент снизу */}
         <div className="absolute inset-0 pointer-events-none"
