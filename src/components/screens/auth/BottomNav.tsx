@@ -5,12 +5,15 @@ type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" |
 
 export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
-    { screen: "discover", icon: "House",          label: "Главная" },
-    { screen: "photos",   icon: "SearchCheck",    label: "Поиск" },
-    { screen: "live",     icon: "Radio",          label: "Live" },
-    { screen: "matches",  icon: "MessagesSquare",  label: "Чаты", badge: unreadMessages > 0 ? unreadMessages : undefined },
-    { screen: "profile",  icon: "UserRound",       label: "Профиль" },
+    { screen: "discover", icon: "House",              label: "Главная" },
+    { screen: "photos",   icon: "Compass",            label: "Поиск" },
+    { screen: "live",     icon: "Flame",               label: "Live" },
+    { screen: "matches",  icon: "MessageCircleHeart",  label: "Чаты", badge: unreadMessages > 0 ? unreadMessages : undefined },
+    { screen: "profile",  icon: "CircleUserRound",     label: "Профиль" },
   ];
+
+  const activeIdx = Math.max(0, items.findIndex(i => i.screen === active));
+  const activeIsLive = items[activeIdx]?.screen === "live";
 
   const handleChange = (s: Screen) => {
     if (s !== active) haptic("selection");
@@ -22,98 +25,108 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
       <style>{`
         @keyframes navPing {
           0%   { transform: scale(1); opacity: 0.9; }
-          75%  { transform: scale(2.2); opacity: 0; }
-          100% { transform: scale(2.2); opacity: 0; }
+          75%  { transform: scale(2.1); opacity: 0; }
+          100% { transform: scale(2.1); opacity: 0; }
         }
-        @keyframes navPop {
-          0%   { transform: translateY(0) scale(1); }
-          45%  { transform: translateY(-15px) scale(1.12); }
-          70%  { transform: translateY(-11px) scale(0.97); }
-          100% { transform: translateY(-13px) scale(1); }
+        @keyframes navIconIn {
+          0%   { transform: scale(0.6) rotate(-8deg); opacity: 0.4; }
+          60%  { transform: scale(1.15) rotate(3deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
-        .nav-btn-active .nav-bubble { animation: navPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .nav-icon-active { animation: navIconIn 0.32s cubic-bezier(0.34,1.56,0.64,1); }
       `}</style>
-      <div className="relative z-10 px-3" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 10px)" }}>
+      <div className="relative z-10 px-3" style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 8px)" }}>
         <div
-          className="relative flex items-end justify-around"
+          className="relative flex items-center"
           style={{
             background: "rgba(16,10,24,0.94)",
             backdropFilter: "blur(24px)",
             border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 28,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
-            padding: "8px 4px 8px",
+            borderRadius: 22,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04)",
+            padding: "5px",
           }}>
+
+          {/* Скользящий индикатор-таблетка */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              top: 5, bottom: 5,
+              left: 5,
+              width: `calc((100% - 10px) / 5)`,
+              transform: `translateX(${activeIdx * 100}%)`,
+              transition: "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <div
+              className="w-full h-full"
+              style={{
+                borderRadius: 16,
+                background: activeIsLive
+                  ? "linear-gradient(135deg,#FF6B35,#FFC24C)"
+                  : "linear-gradient(135deg,#FF2D78,#B84FE0)",
+                boxShadow: activeIsLive
+                  ? "0 4px 14px rgba(255,140,50,0.45)"
+                  : "0 4px 14px rgba(255,45,120,0.4)",
+              }}
+            />
+          </div>
 
           {items.map((item) => {
             const isActive = active === item.screen;
             const isLive = item.screen === "live";
-            const grad = isLive ? "linear-gradient(135deg,#FF6B35,#FFC24C)" : "linear-gradient(135deg,#FF2D78,#B84FE0)";
-            const glow = isLive ? "rgba(255,140,50,0.55)" : "rgba(255,45,120,0.5)";
 
             return (
               <button
                 key={item.screen}
                 onClick={() => handleChange(item.screen)}
-                className={`relative flex flex-col items-center justify-end flex-1 transition-transform duration-150 active:scale-90 ${isActive ? "nav-btn-active" : ""}`}
-                style={{ height: 52 }}
+                className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-transform duration-150 active:scale-90"
+                style={{ zIndex: 1 }}
               >
-                {/* Пузырь-иконка */}
-                <div
-                  className="nav-bubble relative flex items-center justify-center flex-shrink-0"
-                  style={{
-                    width: isActive ? 44 : 26,
-                    height: isActive ? 44 : 26,
-                    borderRadius: isActive ? 16 : 10,
-                    background: isActive ? grad : "transparent",
-                    boxShadow: isActive ? `0 6px 18px ${glow}` : "none",
-                    transition: "width 0.28s cubic-bezier(0.34,1.56,0.64,1), height 0.28s cubic-bezier(0.34,1.56,0.64,1), border-radius 0.28s ease, background 0.2s ease, box-shadow 0.2s ease",
-                  }}
-                >
+                <div key={isActive ? "on" : "off"} className={isActive ? "nav-icon-active" : ""}>
                   <Icon
-                    name={item.icon as "House"|"SearchCheck"|"Radio"|"MessagesSquare"|"UserRound"}
-                    size={isActive ? 21 : 19}
-                    strokeWidth={isActive ? 2.3 : 1.8}
+                    name={item.icon as "House"|"Compass"|"Flame"|"MessageCircleHeart"|"CircleUserRound"}
+                    size={20}
+                    strokeWidth={isActive ? 2.3 : 1.7}
                     style={{
                       color: isActive
                         ? "#fff"
                         : isLive
                         ? "rgba(255,140,50,0.6)"
-                        : "rgba(255,255,255,0.38)",
+                        : "rgba(255,255,255,0.4)",
                       transition: "color 0.2s",
                     }}
                   />
-
-                  {/* Бейдж */}
-                  {item.badge && (
-                    <div
-                      className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[9px] text-white font-black"
-                      style={{
-                        background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
-                        boxShadow: "0 2px 8px rgba(255,45,120,0.7)",
-                        border: "1.5px solid rgba(16,10,24,0.94)",
-                      }}
-                    >
-                      {item.badge > 9 ? "9+" : item.badge}
-                    </div>
-                  )}
-
-                  {/* Пульс Live */}
-                  {isLive && !isActive && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full" style={{ background: "#FF8C32" }}>
-                      <span className="absolute inset-0 rounded-full" style={{ background: "#FF8C32", animation: "navPing 1.8s ease-out infinite" }} />
-                    </span>
-                  )}
                 </div>
+
+                {/* Бейдж */}
+                {item.badge && (
+                  <div
+                    className="absolute top-0.5 right-3 min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center text-[8.5px] text-white font-black"
+                    style={{
+                      background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
+                      boxShadow: "0 2px 6px rgba(255,45,120,0.7)",
+                      border: "1.5px solid rgba(16,10,24,0.94)",
+                    }}
+                  >
+                    {item.badge > 9 ? "9+" : item.badge}
+                  </div>
+                )}
+
+                {/* Пульс Live */}
+                {isLive && !isActive && (
+                  <span className="absolute top-1 right-3.5 w-1.5 h-1.5 rounded-full" style={{ background: "#FF8C32" }}>
+                    <span className="absolute inset-0 rounded-full" style={{ background: "#FF8C32", animation: "navPing 1.8s ease-out infinite" }} />
+                  </span>
+                )}
 
                 {/* Лейбл */}
                 <span
-                  className="text-[9.5px] leading-none tracking-wide mt-1.5"
+                  className="text-[9.5px] leading-none tracking-wide"
                   style={{
-                    color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.3)",
+                    color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.32)",
                     fontWeight: isActive ? 700 : 500,
-                    transform: isActive ? "translateY(-13px)" : "none",
-                    transition: "color 0.2s, transform 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+                    transition: "color 0.2s",
                   }}
                 >
                   {item.label}
