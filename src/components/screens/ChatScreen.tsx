@@ -11,6 +11,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInputBar } from "@/components/chat/ChatInputBar";
 import { ChatContextMenu, ChatVanishPicker, ChatMenu, ChatAwardPicker } from "@/components/chat/ChatModals";
 import { CompatibilityGame } from "@/components/screens/CompatibilityGame";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -74,6 +75,10 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
       }
     }).catch(() => {});
   }, [matchId]);
+
+  useAppRefresh(() => {
+    messagesApi.getByMatch(matchId).then((d) => setMsgs(d.messages)).catch(() => {});
+  });
 
   useEffect(() => {
     if (videoCall) return;

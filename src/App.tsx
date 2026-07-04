@@ -11,7 +11,9 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 const queryClient = new QueryClient();
 
 function AppInner() {
-  usePullToRefresh(() => window.location.reload());
+  usePullToRefresh(() => {
+    window.dispatchEvent(new CustomEvent("app:refresh"));
+  });
   return (
     <BrowserRouter>
       <Routes>

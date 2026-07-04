@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { matchesApi, likesApi, type Match, type LikedBy } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
@@ -62,12 +63,17 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
   const [confirmDelete, setConfirmDelete] = useState<Match | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  const loadMatches = useCallback((silent?: boolean) => {
+    if (!silent) setLoading(true);
     matchesApi.getAll()
       .then((d) => setMatches(d.matches))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadMatches(); }, [loadMatches]);
+
+  useAppRefresh(() => loadMatches(true));
 
   const handleDelete = async () => {
     if (!confirmDelete) return;
@@ -252,12 +258,17 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
   const [likedMe, setLikedMe] = useState<LikedBy[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadLikedMe = useCallback((silent?: boolean) => {
+    if (!silent) setLoading(true);
     likesApi.getLikedMe()
       .then((d) => setLikedMe(d.liked_me))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadLikedMe(); }, [loadLikedMe]);
+
+  useAppRefresh(() => loadLikedMe(true));
 
   if (loading) return (
     <div className="flex flex-col h-full items-center justify-center">

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { postsApi, liveApi, notificationsApi, type Post, type LiveStream, type User, type Profile } from "@/lib/api";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { CreateMenu } from "@/components/screens/HomeFeedWidgets";
 import { CommentSheet } from "@/components/screens/HomeCommentSheet";
@@ -44,13 +45,18 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const [caption, setCaption] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
+  const loadFeed = useCallback((silent?: boolean) => {
+    if (!silent) setLoading(true);
     Promise.all([
       postsApi.getFeed().then((d) => setPosts(d.posts)).catch(() => {}),
       liveApi.list().then((d) => setStreams(d.streams)).catch(() => {}),
     ]).finally(() => setLoading(false));
     notificationsApi.unreadCount().then(d => setUnreadCount(d.unread_count)).catch(() => {});
   }, []);
+
+  useEffect(() => { loadFeed(); }, [loadFeed]);
+
+  useAppRefresh(() => loadFeed(true));
 
   const handleLike = async (post: Post) => {
     try {

@@ -5,6 +5,7 @@ import { LiveStreamList } from "@/components/screens/LiveStreamList";
 import { useLiveWebRTC } from "@/components/screens/useLiveWebRTC";
 import { useLivePoll } from "@/components/screens/useLivePoll";
 import { useLiveActions } from "@/components/screens/useLiveActions";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed }: {
   currentUser: User;
@@ -78,6 +79,8 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   });
 
   useEffect(() => { loadStreams(); }, []);
+
+  useAppRefresh(() => { if (!activeStream) loadStreams(); });
 
   useEffect(() => {
     return () => { webrtc.stopCamera(); webrtc.stopAllPeers(); };

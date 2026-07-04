@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, streaksApi, type User, type MyGift } from "@/lib/api";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 // Re-exports
 export { EditProfileModal } from "@/components/screens/EditProfileModal";
@@ -93,16 +94,23 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     ...galleryPhotos.map(p => p.photo_url),
   ];
 
-  useEffect(() => {
+  const loadTabData = useCallback((silent?: boolean) => {
     if (activeTab === "photos") {
-      setGalleryLoading(true);
+      if (!silent) setGalleryLoading(true);
       profilesApi.listProfilePhotos().then(r => { setGalleryPhotos(r.photos); }).finally(() => setGalleryLoading(false));
     }
     if (activeTab === "gifts") {
-      setGiftsLoading(true);
+      if (!silent) setGiftsLoading(true);
       profilesApi.myGifts().then(r => { setMyGifts(r.gifts); }).finally(() => setGiftsLoading(false));
     }
   }, [activeTab]);
+
+  useEffect(() => { loadTabData(); }, [loadTabData]);
+
+  useAppRefresh(() => {
+    streaksApi.checkin().then(d => { if (d?.current_streak) setStreakDays(d.current_streak); }).catch(() => {});
+    loadTabData(true);
+  });
 
   const handleGalleryDelete = async (id: number) => {
     setGalleryDeleteId(id);

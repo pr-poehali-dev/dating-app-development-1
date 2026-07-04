@@ -15,6 +15,7 @@ import { PeopleSuperPicker } from "@/components/screens/people/PeopleSuperPicker
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 import { useBackHandler } from "@/hooks/backStack";
+import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 
 export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, isPremium, currentUserId }: {
@@ -126,6 +127,8 @@ export function PeopleScreen({ onOpenChat, onGoToChats, onPremium, onOpenSelf, i
       .then(d => setViewersCount(d.notifications.filter(n => n.type === "view").length))
       .catch(() => {});
   }, []);
+
+  useAppRefresh(() => load(lastQuery.current.params, lastQuery.current.q, true));
 
   const handleOpenViewerProfile = (userId: number) => {
     postsApi.getUserProfile(userId)

@@ -151,9 +151,9 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
 
         try { await onRefresh(); } catch (_e) { /* ignore */ }
 
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise(r => setTimeout(r, 200));
         resetIndicator(el);
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => setTimeout(r, 150));
         refreshing.current = false;
       } else {
         resetIndicator(el);
