@@ -192,7 +192,7 @@ function getFromDB(db, storeName) {
 
 /* ─── PUSH УВЕДОМЛЕНИЯ ────────────────────────────────────────────────────── */
 self.addEventListener("push", (e) => {
-  let data = { title: "LoveBloom 💘", body: "Новое уведомление", url: "/" };
+  let data = { title: "Полутон 💘", body: "Новое уведомление", url: "/" };
   try {
     if (e.data) data = { ...data, ...JSON.parse(e.data.text()) };
   } catch {}
@@ -200,8 +200,8 @@ self.addEventListener("push", (e) => {
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/7f6a4d91-3e00-44d9-a406-f95ab5bd0fed.png",
-      badge: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/03cd7dfb-872e-4460-b1fa-a3e2f995275b.png",
+      icon: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png",
+      badge: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png",
       tag: data.tag || "lovebloom-push",
       renotify: true,
       requireInteraction: false,

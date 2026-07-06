@@ -34,7 +34,7 @@ def get_me(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
 
-LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/38a015fd-cfd8-4bad-9fae-1106d60ea1d2.jpg'
+LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
 
 def build_email_html(preheader: str, heading: str, intro: str, highlight_label: str, highlight_value: str, note: str, footer: str) -> str:
     """Единый брендированный HTML-шаблон писем Полутон (тёмная тема, розово-фиолетовый градиент)."""

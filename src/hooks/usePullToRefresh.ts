@@ -48,21 +48,6 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
     return el;
   }, []);
 
-  const setSpinner = useCallback((el: HTMLDivElement) => {
-    const arrow = el.querySelector("#__ptr_arrow__") as SVGElement;
-    const text = el.querySelector("#__ptr_text__") as HTMLElement;
-    if (arrow) arrow.innerHTML = `<path d="M21 12a9 9 0 1 1-6.219-8.56" stroke-linecap="round"/>`;
-    if (text) text.textContent = "Обновляем...";
-    arrow?.style.setProperty("animation", "ptr_spin 0.7s linear infinite");
-
-    if (!document.getElementById("__ptr_style__")) {
-      const s = document.createElement("style");
-      s.id = "__ptr_style__";
-      s.textContent = `@keyframes ptr_spin { to { transform: rotate(360deg); } }`;
-      document.head.appendChild(s);
-    }
-  }, []);
-
   const resetIndicator = useCallback((el: HTMLDivElement) => {
     el.style.transform = "translateX(-50%) translateY(-60px)";
     el.style.opacity = "0";
@@ -144,16 +129,10 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
 
       if (dy >= THRESHOLD) {
         refreshing.current = true;
-        setSpinner(el);
-        el.style.transform = "translateX(-50%) translateY(44px)";
-        el.style.opacity = "1";
-        el.style.transition = "transform 0.3s ease, opacity 0.2s";
+        resetIndicator(el);
 
         try { await onRefresh(); } catch (_e) { /* ignore */ }
 
-        await new Promise(r => setTimeout(r, 200));
-        resetIndicator(el);
-        await new Promise(r => setTimeout(r, 150));
         refreshing.current = false;
       } else {
         resetIndicator(el);
@@ -169,5 +148,5 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
     };
-  }, [onRefresh, getIndicator, setSpinner, resetIndicator]);
+  }, [onRefresh, getIndicator, resetIndicator]);
 }
