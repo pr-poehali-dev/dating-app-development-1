@@ -138,8 +138,8 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
         </div>
 
         {/* Список чатов */}
-        <div className="px-3 pt-3 flex flex-col gap-0.5 flex-1">
-          {matches.map((m) => {
+        <div className="flex flex-col flex-1">
+          {matches.map((m, idx) => {
             const lastMsgText = !m.last_msg
               ? "Совпадение! Напиши первым 👋"
               : m.last_msg.startsWith("__AUDIO__") ? "🎤 Голосовое"
@@ -160,47 +160,42 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
               : "";
 
             return (
-              <LongPressToDelete key={m.match_id} onDelete={() => setConfirmDelete(m)}>
-                <button onClick={() => onChat(m.match_id)}
-                  className="w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl text-left transition-all active:scale-[0.98]"
-                  style={m.unread_count > 0 ? { background: "rgba(255,45,120,0.07)" } : {}}>
+              <div key={m.match_id}>
+                <LongPressToDelete onDelete={() => setConfirmDelete(m)}>
+                  <button onClick={() => onChat(m.match_id)}
+                    className="w-full flex items-center gap-3.5 px-4 py-3 text-left active:opacity-70 transition-opacity">
 
-                  {/* Аватар */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-14 h-14 rounded-2xl overflow-hidden"
-                      style={m.unread_count > 0 ? { boxShadow: "0 0 0 2px rgba(255,45,120,0.5)" } : { boxShadow: "0 0 0 1px rgba(255,255,255,0.08)" }}>
-                      <img src={m.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover" />
+                    {/* Аватар */}
+                    <div className="relative flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden">
+                        <img src={m.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover" />
+                      </div>
+                      {isUserOnline(m.last_seen, m.online) && (
+                        <div className="absolute top-0 left-0 w-3.5 h-3.5 rounded-full bg-green-500"
+                          style={{ border: "2px solid #000", boxShadow: "0 0 6px rgba(34,197,94,0.6)" }} />
+                      )}
                     </div>
-                    {isUserOnline(m.last_seen, m.online) && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-400"
-                        style={{ border: "2px solid #0f0a1a", boxShadow: "0 0 6px rgba(74,222,128,0.6)" }} />
-                    )}
-                  </div>
 
-                  {/* Текст */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="text-white font-bold text-sm truncate">
-                        {m.name}{m.age ? `, ${m.age}` : ""}
-                      </span>
-                      <span className={`text-xs flex-shrink-0 ml-2 ${m.unread_count > 0 ? "text-pink-400" : "text-white/30"}`}>
+                    {/* Текст */}
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className={`text-white truncate ${m.unread_count > 0 ? "font-bold" : "font-semibold"}`} style={{ fontSize: 16 }}>
+                          {m.name}{m.age ? `, ${m.age}` : ""}
+                        </p>
+                        <p className={`truncate mt-0.5 ${m.unread_count > 0 ? "text-white/90" : "text-white/45"}`} style={{ fontSize: 14.5 }}>
+                          {lastMsgText}
+                        </p>
+                      </div>
+                      <span className="text-white/35 flex-shrink-0 whitespace-nowrap" style={{ fontSize: 12.5 }}>
                         {timeStr}
                       </span>
                     </div>
-                    <p className={`text-sm truncate ${m.unread_count > 0 ? "text-white/75 font-medium" : "text-white/35"}`}>
-                      {lastMsgText}
-                    </p>
-                  </div>
-
-                  {/* Бейдж непрочитанных */}
-                  {m.unread_count > 0 && (
-                    <div className="min-w-[22px] h-[22px] rounded-full flex items-center justify-center text-[10px] text-white font-black flex-shrink-0 px-1.5"
-                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.5)" }}>
-                      {m.unread_count > 99 ? "99+" : m.unread_count}
-                    </div>
-                  )}
-                </button>
-              </LongPressToDelete>
+                  </button>
+                </LongPressToDelete>
+                {idx < matches.length - 1 && (
+                  <div style={{ marginLeft: "88px", borderBottom: "1px solid rgba(255,255,255,0.08)" }} />
+                )}
+              </div>
             );
           })}
         </div>
