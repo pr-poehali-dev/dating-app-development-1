@@ -243,6 +243,18 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
   };
   const cancelHold = () => { if (holdTimer.current) clearTimeout(holdTimer.current); };
 
+  const timeAgoRu = (dateStr: string) => {
+    const d = dateStr.endsWith("Z") ? dateStr : dateStr + "Z";
+    const diff = Math.max(0, Date.now() - new Date(d).getTime());
+    const min = Math.floor(diff / 60000);
+    if (min < 1) return "только что";
+    if (min < 60) return `${min} ${min === 1 ? "минуту" : min < 5 ? "минуты" : "минут"} назад`;
+    const h = Math.floor(min / 60);
+    if (h < 24) return `${h} ${h === 1 ? "час" : h < 5 ? "часа" : "часов"} назад`;
+    const days = Math.floor(h / 24);
+    return `${days} ${days === 1 ? "день" : days < 5 ? "дня" : "дней"} назад`;
+  };
+
   const SWIPE_DELETE_THRESHOLD = 90;
 
   const onMsgTouchStart = (e: React.TouchEvent, msg: Message) => {
@@ -321,7 +333,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
               <p className="text-white/40 text-sm">Напиши первым — начни общение!</p>
             </div>
           )}
-          {msgs.map((msg) => {
+          {msgs.map((msg, msgIdx) => {
             const timeStr = new Date(
               msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z"
             ).toLocaleTimeString("ru", { hour: "2-digit", minute: "2-digit" });
@@ -335,8 +347,23 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             const isSwiping = swipeId === msg.id && swipeDx < 0;
             const willDelete = swipeDx <= -90;
 
+            const prevMsg = msgs[msgIdx - 1];
+            const showTimeSeparator = !prevMsg || (
+              new Date(msg.created_at.endsWith("Z") ? msg.created_at : msg.created_at + "Z").getTime()
+              - new Date(prevMsg.created_at.endsWith("Z") ? prevMsg.created_at : prevMsg.created_at + "Z").getTime()
+            ) > 15 * 60 * 1000;
+
+            const isLastOut = msg.out && (msgIdx === msgs.length - 1 || !msgs.slice(msgIdx + 1).some(m => m.out));
+
             return (
               <div key={msg.id} className="relative" style={{ marginBottom: 2 }}>
+                {showTimeSeparator && (
+                  <div className="flex justify-center my-2">
+                    <span className="text-white/45 text-[12px] px-3 py-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                      {timeAgoRu(msg.created_at)}
+                    </span>
+                  </div>
+                )}
                 {isSwiping && (
                   <div className="absolute inset-y-0 right-0 flex items-center justify-end pr-3 pointer-events-none"
                     style={{ width: Math.min(-swipeDx, 120) }}>
@@ -371,9 +398,17 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
                 ) : (
                   /* Обычные пузыри */
                   <div className={`flex flex-col gap-0.5 ${msg.out ? "items-end" : "items-start"}`} style={{ maxWidth: "80%" }}>
-                    <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
-                      style={{ cursor: "pointer" }}>
-                      {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
+                    <div className="relative">
+                      <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
+                        style={{ cursor: "pointer" }}>
+                        {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
+                      </div>
+                      {isLastOut && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ background: "#FF6A3D", border: "2px solid #0f0a1a" }}>
+                          <Icon name="Check" size={9} className="text-white" />
+                        </div>
+                      )}
                     </div>
                     <span className={`text-[10px] mt-0.5 px-1 ${msg.out ? "text-right text-white/35" : "text-white/30"}`}>
                       {timeStr}

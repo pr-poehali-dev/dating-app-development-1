@@ -189,19 +189,19 @@ export function ChatInputBar({
       )}
 
       {/* Строка ввода */}
-      <div className="px-3 py-3 flex items-center gap-2"
-        style={{ borderTop: (showPlus || showEmoji) ? "none" : "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="px-3 py-2.5"
+        style={{ borderTop: (showPlus || showEmoji) ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
 
         {recording ? (
           /* Режим записи голоса */
-          <>
+          <div className="flex items-center gap-2">
             <button onClick={() => onStopRecording(true)}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}>
               <Icon name="Trash2" size={17} className="text-white/55" />
             </button>
-            <div className="flex-1 flex items-center gap-2.5 rounded-full px-4 py-2.5"
-              style={{ background: "rgba(255,45,120,0.1)", border: "1.5px solid rgba(255,45,120,0.3)" }}>
+            <div className="flex-1 flex items-center gap-2.5 rounded-full px-4 py-3"
+              style={{ background: "rgba(0,0,0,0.35)", border: "1.5px solid rgba(255,255,255,0.14)" }}>
               <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse" />
               <span className="text-white/90 text-sm font-mono font-semibold">
                 {String(Math.floor(recordSecs / 60)).padStart(2, "0")}:{String(recordSecs % 60).padStart(2, "0")}
@@ -209,70 +209,63 @@ export function ChatInputBar({
               <span className="text-white/40 text-xs flex-1">Идёт запись...</span>
             </div>
             <button onClick={() => onStopRecording(false)}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }}>
-              <Icon name="Send" size={15} className="text-white" />
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+              style={{ background: "linear-gradient(135deg,#FF6A3D,#FF2D78)", boxShadow: "0 2px 10px rgba(255,60,90,0.4)" }}>
+              <Icon name="Send" size={16} className="text-white" />
             </button>
-          </>
+          </div>
         ) : (
-          /* Обычный режим */
-          <>
+          /* Обычный режим — единая капсула, как в референсе */
+          <div className="flex items-center gap-2.5 rounded-full pl-1.5 pr-1.5 py-1.5"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.14)" }}>
+
             {/* Плюс */}
             <button onClick={onTogglePlus}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
-              style={showPlus
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.4)" }
-                : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <Icon name={showPlus ? "X" : "Plus"} size={18} className="text-white" />
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+              style={{ color: "rgba(255,255,255,0.6)" }}>
+              <Icon name={showPlus ? "X" : "Plus"} size={22} />
+            </button>
+
+            {/* Стикеры (иконка чата с молнией) */}
+            <button onClick={onToggleStickers}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-lg"
+              style={showStickers ? { color: "#FF6B35" } : {}}>
+              {showStickers ? <Icon name="X" size={18} className="text-white/60" /> : "🎌"}
             </button>
 
             {/* Поле ввода */}
-            <div className="flex-1 relative">
-              <input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => onInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSend()}
-                onFocus={() => { if (showPlus) onTogglePlus(); if (showEmoji) onToggleEmoji(); }}
-                placeholder="Написать..."
-                className="w-full text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border transition-colors font-golos pr-10"
-                style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.12)" }}
-              />
-            </div>
-
-            {/* Стикеры */}
-            <button onClick={onToggleStickers}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
-              style={showStickers
-                ? { background: "linear-gradient(135deg,#FF6B35,#9B59B6)", boxShadow: "0 2px 8px rgba(255,107,53,0.4)" }
-                : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              {showStickers ? <Icon name="X" size={16} className="text-white" /> : "🎌"}
-            </button>
-
-            {/* Эмодзи */}
-            <button onClick={onToggleEmoji}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90 text-xl"
-              style={showEmoji
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 8px rgba(255,45,120,0.4)" }
-                : { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              {showEmoji ? <Icon name="X" size={16} className="text-white" /> : "😊"}
-            </button>
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => onInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && onSend()}
+              onFocus={() => { if (showPlus) onTogglePlus(); if (showEmoji) onToggleEmoji(); }}
+              placeholder="Напиши сообщение..."
+              className="flex-1 min-w-0 bg-transparent text-white placeholder-white/35 outline-none text-[15px] font-golos"
+            />
 
             {/* Отправить / Микрофон */}
             {input.trim() ? (
               <button onClick={onSend}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }}>
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                style={{ background: "linear-gradient(135deg,#FF6A3D,#FF2D78)", boxShadow: "0 2px 10px rgba(255,60,90,0.4)" }}>
                 <Icon name="Send" size={15} className="text-white" />
               </button>
             ) : (
               <button onClick={onStartRecording}
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
-                style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
-                <Icon name="Mic" size={17} className="text-white/70" />
+                className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-all"
+                style={{ color: "rgba(255,255,255,0.6)" }}>
+                <Icon name="Mic" size={20} />
               </button>
             )}
-          </>
+
+            {/* Эмодзи */}
+            <button onClick={onToggleEmoji}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+              style={showEmoji ? { color: "#FF2D78" } : { color: "rgba(255,255,255,0.6)" }}>
+              {showEmoji ? <Icon name="X" size={18} /> : <Icon name="Smile" size={20} />}
+            </button>
+          </div>
         )}
       </div>
     </>
