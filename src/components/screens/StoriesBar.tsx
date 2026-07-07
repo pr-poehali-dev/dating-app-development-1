@@ -3,6 +3,8 @@ import { StoryViewer, type StoryGroup } from "./StoryViewer";
 import Icon from "@/components/ui/icon";
 
 const STORIES_URL = "https://functions.poehali.dev/bb965e64-26b6-440e-9d6d-c746aa07b497";
+const CARD_W = 104;
+const CARD_H = 168;
 
 export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refreshKey }: {
   currentUserId?: number;
@@ -13,13 +15,7 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
   const [groups, setGroups] = useState<StoryGroup[]>([]);
   const [viewIdx, setViewIdx] = useState<number | null>(null);
   const [seen, setSeen] = useState<Set<number>>(new Set());
-  const [showSoon, setShowSoon] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const handleSoonClick = () => {
-    setShowSoon(true);
-    setTimeout(() => setShowSoon(false), 2500);
-  };
 
   useEffect(() => {
     fetch(STORIES_URL)
@@ -48,40 +44,28 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
   return (
     <>
       <div ref={scrollRef}
-        className="flex gap-4 px-4 pt-4 pb-3 overflow-x-auto scrollbar-hide"
+        className="flex gap-3 px-4 pt-4 pb-3 overflow-x-auto scrollbar-hide"
         style={{ scrollSnapType: "x mandatory" }}>
 
         {/* Добавить свою историю */}
         {onAddStory && (
           <button
             onClick={onAddStory}
-            className="flex-shrink-0 flex flex-col items-center gap-2 active:scale-95 transition-transform"
-            style={{ scrollSnapAlign: "start" }}>
-            <div className="relative">
-              <div className="w-[62px] h-[62px] rounded-full"
-                style={{
-                  background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
-                  padding: "2px",
-                }}>
-                <div className="w-full h-full rounded-full overflow-hidden relative"
-                  style={{ border: "2px solid #1a1625" }}>
-                  {currentUserPhoto
-                    ? <img src={currentUserPhoto} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center" style={{ background: "#1a1625" }}>
-                        <Icon name="Plus" size={22} className="text-white" />
-                      </div>
-                  }
-                  {/* Иконка + поверх фото */}
-                  {currentUserPhoto && (
-                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", border: "2px solid #1a1625" }}>
-                      <Icon name="Plus" size={10} className="text-white" />
-                    </div>
-                  )}
-                </div>
-              </div>
+            className="relative flex-shrink-0 rounded-2xl overflow-hidden active:scale-95 transition-transform"
+            style={{ width: CARD_W, height: CARD_H, scrollSnapAlign: "start" }}>
+            {currentUserPhoto ? (
+              <img src={currentUserPhoto} className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0" style={{ background: "linear-gradient(160deg,#2a2338,#1a1625)" }} />
+            )}
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.3) 100%)" }} />
+            <div className="absolute top-2.5 left-2.5 w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#FF6B35,#FF2D78)", border: "2.5px solid #1a1625", boxShadow: "0 2px 10px rgba(255,45,120,0.4)" }}>
+              <Icon name="Camera" size={17} className="text-white" />
             </div>
-            <span className="text-white/70 text-[10px] font-medium w-[64px] text-center leading-tight">Моя история</span>
+            <div className="absolute bottom-2.5 left-2.5 right-2.5">
+              <p className="text-white text-[12px] font-bold truncate">Моя история</p>
+            </div>
           </button>
         )}
 
@@ -92,49 +76,48 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
             <button
               key={g.user_id}
               onClick={() => { setViewIdx(i); markSeen(i); }}
-              className="flex-shrink-0 flex flex-col items-center gap-2"
-              style={{ scrollSnapAlign: "start" }}>
-              <div className="relative">
-                {/* Кольцо вокруг аватара */}
-                <div className="w-[62px] h-[62px] rounded-full"
-                  style={{
-                    padding: "2.5px",
-                    background: wasSeen
-                      ? "rgba(255,255,255,0.12)"
-                      : "linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6)",
-                    boxShadow: wasSeen ? "none" : "0 0 12px rgba(255,45,120,0.35)",
-                  }}>
-                  <div className="w-full h-full rounded-full overflow-hidden"
-                    style={{ border: "2px solid #1a1625" }}>
-                    {g.avatar
-                      ? <img src={g.avatar} className="w-full h-full object-cover" />
-                      : <div className="w-full h-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-base">
-                          {g.user_name[0]}
-                        </div>
-                    }
-                  </div>
+              className="relative flex-shrink-0 rounded-2xl overflow-hidden active:scale-95 transition-transform"
+              style={{ width: CARD_W, height: CARD_H, scrollSnapAlign: "start" }}>
+              {g.avatar ? (
+                <img src={g.avatar} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl">
+                  {g.user_name[0]}
                 </div>
-                {/* Счётчик историй */}
-                <div className="absolute -bottom-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1"
-                  style={{
-                    background: wasSeen ? "rgba(255,255,255,0.18)" : "linear-gradient(135deg,#FF2D78,#9B59B6)",
-                    border: "2px solid #1a1625",
-                    fontSize: 8,
-                    fontWeight: 800,
-                    color: "white",
-                  }}>
-                  {g.stories.length}
+              )}
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.22) 100%)" }} />
+
+              {/* Аватар с кольцом в углу */}
+              <div className="absolute top-2.5 left-2.5 w-9 h-9 rounded-xl"
+                style={{
+                  padding: 2,
+                  background: wasSeen ? "rgba(255,255,255,0.25)" : "linear-gradient(135deg,#FF2D78,#FF6B35,#FFD700,#9B59B6)",
+                  boxShadow: wasSeen ? "none" : "0 0 10px rgba(255,45,120,0.5)",
+                }}>
+                <div className="w-full h-full rounded-[9px] overflow-hidden" style={{ border: "1.5px solid #1a1625" }}>
+                  {g.avatar
+                    ? <img src={g.avatar} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-[11px]">{g.user_name[0]}</div>
+                  }
                 </div>
               </div>
-              <span className={`text-[10px] font-medium w-[62px] text-center truncate leading-tight ${wasSeen ? "text-white/35" : "text-white/80"}`}>
-                {g.user_name}
-              </span>
+
+              {/* Счётчик историй */}
+              {g.stories.length > 1 && (
+                <div className="absolute top-2.5 right-2.5 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.5)", fontSize: 9, fontWeight: 800, color: "white" }}>
+                  {g.stories.length}
+                </div>
+              )}
+
+              <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                <p className={`text-[12px] font-bold truncate ${wasSeen ? "text-white/50" : "text-white"}`}>{g.user_name}</p>
+              </div>
             </button>
           );
         })}
       </div>
 
-      {/* Разделитель */}
       {(groups.length > 0 || onAddStory) && (
         <div className="mx-4 mb-1" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }} />
       )}
@@ -146,26 +129,6 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
           currentUserId={currentUserId}
           onClose={() => setViewIdx(null)}
         />
-      )}
-
-      {/* Подсказка «Скоро в обновлении» */}
-      {showSoon && (
-        <div className="fixed left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 px-4 py-3 rounded-2xl"
-          style={{
-            bottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
-            background: "rgba(26,22,37,0.96)",
-            border: "1px solid rgba(255,45,120,0.35)",
-            boxShadow: "0 8px 28px rgba(0,0,0,0.45)",
-            backdropFilter: "blur(10px)",
-            maxWidth: "calc(100vw - 32px)",
-            animation: "fadeInUp 0.25s ease",
-          }}>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-            <Icon name="Clock" size={16} className="text-white" />
-          </div>
-          <span className="text-white text-sm font-medium">Эта функция появится в следующем обновлении</span>
-        </div>
       )}
     </>
   );
