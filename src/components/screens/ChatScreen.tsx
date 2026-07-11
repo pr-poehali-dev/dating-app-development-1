@@ -308,7 +308,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerName={partnerName}
           partnerPhoto={partnerPhoto}
           subscribed={subscribed}
-          isBot={partnerName === 'LoveBloom'}
+          isBot={partnerName === 'Полутон'}
           onBack={onBack}
           onProfileClick={() => setShowPartnerProfile(true)}
           onSubscribeToggle={() => {
@@ -502,7 +502,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onGrantPhoto={() => { setShowChatMenu(false); sendSystem("__GRANT_PHOTO__"); }}
           onRequestPhoto={() => { setShowChatMenu(false); sendSystem("__REQUEST_PHOTO__"); }}
           onClose={() => setShowChatMenu(false)}
-          isBot={partnerName === 'LoveBloom'}
+          isBot={partnerName === 'Полутон'}
           subscribed={subscribed}
           onSubscribeToggle={() => {
             if (!partnerId) return;

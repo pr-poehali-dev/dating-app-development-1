@@ -357,7 +357,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   amount: finalAmount,
-                  description: `LoveBloom Premium — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
+                  description: `Полутон Premium — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
                   user_email: currentUser.email,
                   return_url: window.location.origin + "/?payment=success",
                   metadata: {

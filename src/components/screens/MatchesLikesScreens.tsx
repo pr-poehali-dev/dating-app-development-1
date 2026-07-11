@@ -282,7 +282,7 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-white font-bold text-base">LoveBloom Premium</span>
+              <span className="text-white font-bold text-base">Полутон Premium</span>
               <span className="premium-badge">GOLD</span>
             </div>
             <p className="text-white/60 text-sm">Смотри, кто тебя лайкнул — без ограничений</p>

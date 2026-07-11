@@ -243,7 +243,7 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
         </div>
         {/* Текст */}
         <div className="flex flex-col items-center gap-1 text-center">
-          <span className="text-white font-black text-base tracking-wide">LoveBloom Premium</span>
+          <span className="text-white font-black text-base tracking-wide">Полутон Premium</span>
           <span className="text-white/60 text-xs font-semibold">активирован на {planLabel}</span>
           {until && (
             <span className="text-white/35 text-[11px]">активен до {until}</span>

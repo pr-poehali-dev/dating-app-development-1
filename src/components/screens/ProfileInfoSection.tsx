@@ -325,7 +325,7 @@ export function ProfileInfoSection({
             style={{ background: "rgba(255,255,255,0.04)" }}>
             <Icon name="Calendar" size={12} className="text-white/20" />
             <span className="text-white/25 text-xs">
-              На LoveBloom с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
+              На Полутон с {new Date(profileData.created_at).toLocaleDateString("ru", { month: "long", year: "numeric" })}
             </span>
           </div>
         </div>
@@ -360,7 +360,7 @@ export function ProfileInfoSection({
             <Icon name="X" size={20} className="text-white" />
           </button>
           <ProtectedImage src={lightboxUrl} className="rounded-2xl"
-            watermark="LoveBloom · скриншот запрещён"
+            watermark="Полутон · скриншот запрещён"
             style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
             onClick={e => e.stopPropagation()} />
         </div>,

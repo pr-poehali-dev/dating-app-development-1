@@ -834,7 +834,7 @@ def handler(event: dict, context) -> dict:
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
-        # ── Публикация поста от LoveBloom ────────────────────────────────────
+        # ── Публикация поста от Полутон ────────────────────────────────────
         if action == 'admin_post_create':
             photo_url = body.get('photo_url', '').strip()
             caption = body.get('caption', '').strip()
@@ -849,7 +849,7 @@ def handler(event: dict, context) -> dict:
             else:
                 cur.execute(
                     "INSERT INTO users (name, email, password_hash, photo_url, verified) "
-                    "VALUES ('LoveBloom', %s, 'system', %s, TRUE) RETURNING id",
+                    "VALUES ('Полутон', %s, 'system', %s, TRUE) RETURNING id",
                     (LBLOOM_EMAIL, LBLOOM_PHOTO)
                 )
                 sys_id = cur.fetchone()[0]
@@ -861,7 +861,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'post_id': post_row[0], 'created_at': str(post_row[1])})
 
-        # ── Список постов от LoveBloom ────────────────────────────────────────
+        # ── Список постов от Полутон ────────────────────────────────────────
         if action == 'admin_posts_list':
             LBLOOM_EMAIL = 'system@lbloom.ru'
             cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
@@ -880,7 +880,7 @@ def handler(event: dict, context) -> dict:
             posts = [dict(zip(cols, r)) for r in cur.fetchall()]
             return resp(200, {'posts': posts})
 
-        # ── Удалить пост LoveBloom ────────────────────────────────────────────
+        # ── Удалить пост Полутон ────────────────────────────────────────────
         if action == 'admin_post_delete':
             post_id = body.get('id')
             if not post_id:
@@ -1083,14 +1083,14 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
-        # ── Отправить предупреждение пользователю от LoveBloom ───────────────
+        # ── Отправить предупреждение пользователю от Полутон ───────────────
         if action == 'send_warning':
             user_id = body.get('user_id')
             warning_text = body.get('text', '').strip()
             if not user_id or not warning_text:
                 return resp(400, {'error': 'user_id и text обязательны'})
 
-            # Ищем системный аккаунт LoveBloom по email, при отсутствии — создаём
+            # Ищем системный аккаунт Полутон по email, при отсутствии — создаём
             LBLOOM_EMAIL = 'system@lbloom.ru'
             LBLOOM_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/9a554cba-69a8-400b-aa59-3cdbaf1dc299.jpg'
             cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (LBLOOM_EMAIL,))
@@ -1098,7 +1098,7 @@ def handler(event: dict, context) -> dict:
             if not sys_row:
                 cur.execute(
                     "INSERT INTO users (name, email, password_hash, photo_url, verified) "
-                    "VALUES ('LoveBloom', %s, 'system_no_login', %s, TRUE) RETURNING id",
+                    "VALUES ('Полутон', %s, 'system_no_login', %s, TRUE) RETURNING id",
                     (LBLOOM_EMAIL, LBLOOM_PHOTO)
                 )
                 sys_row = cur.fetchone()
@@ -1136,7 +1136,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
 
             try:
-                _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от LoveBloom', warning_text[:100], '/')
+                _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от Полутон', warning_text[:100], '/')
             except Exception:
                 pass
 

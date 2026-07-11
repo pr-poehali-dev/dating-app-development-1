@@ -184,7 +184,7 @@ export function MarketingPosts({ token }: { token: string }) {
               <div className="flex items-center gap-2.5 px-3 pt-3 pb-2">
                 <img src={LBLOOM_ICON} className="w-7 h-7 rounded-full object-cover" />
                 <div className="flex-1">
-                  <p className="text-white font-semibold text-xs">LoveBloom</p>
+                  <p className="text-white font-semibold text-xs">Полутон</p>
                   <p className="text-white/30 text-[10px]">{new Date(p.created_at).toLocaleString("ru", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
                 </div>
                 <button onClick={() => handlePostDelete(p.id)}

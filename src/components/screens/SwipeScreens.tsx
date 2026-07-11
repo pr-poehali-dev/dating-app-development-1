@@ -269,7 +269,7 @@ export function DiscoverScreen({ onFilter }: { onFilter: () => void }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-5 py-4 relative z-10">
         <div>
-          <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
+          <h1 className="font-unbounded text-white text-xl font-black grad-text">Полутон</h1>
           <p className="text-white/40 text-xs">Москва · Найдено 284</p>
         </div>
         <button onClick={onFilter} className="glass-card px-4 py-2 flex items-center gap-2 text-white/80 text-sm">
@@ -367,7 +367,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <div className="flex items-center gap-2">
             <img src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/51fe4ec6-6465-42e1-b1ed-df2cd706037f.jpg" className="w-8 h-8 rounded-xl object-cover" />
-            <h1 className="font-unbounded text-white text-xl font-black grad-text">LoveBloom</h1>
+            <h1 className="font-unbounded text-white text-xl font-black grad-text">Полутон</h1>
           </div>
 
           <button

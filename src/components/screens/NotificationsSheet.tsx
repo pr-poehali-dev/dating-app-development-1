@@ -157,7 +157,7 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                           style={{ boxShadow: "0 4px 16px rgba(255,45,120,0.4)" }}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-bold text-sm">LoveBloom Premium активирован</p>
+                          <p className="text-white font-bold text-sm">Полутон Premium активирован</p>
                           <p className="text-white/60 text-xs mt-0.5">
                             {planLabel ? `Подписка на ${planLabel}` : "Подписка активна"}
                             {until ? ` · до ${until}` : ""}

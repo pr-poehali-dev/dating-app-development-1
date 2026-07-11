@@ -756,7 +756,7 @@ def handler(event: dict, context) -> dict:
                     if vapid_private:
                         cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=%s", (target_id,))
                         subs = cur.fetchall()
-                        payload = json.dumps({'title': f'⭐ {me["name"] or "Кто-то"} подписался на вас', 'body': 'Новый подписчик в LoveBloom', 'url': '/'})
+                        payload = json.dumps({'title': f'⭐ {me["name"] or "Кто-то"} подписался на вас', 'body': 'Новый подписчик в Полутон', 'url': '/'})
                         bad = []
                         for rid, ep, p256, auth in subs:
                             try:
