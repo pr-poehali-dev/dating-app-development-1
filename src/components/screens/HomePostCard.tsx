@@ -336,7 +336,7 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
           <img
             src={post.photo_url}
             className="w-full object-cover cursor-pointer"
-            style={{ maxHeight: 420 }}
+            style={{ maxHeight: 560 }}
             onClick={() => setLightbox(true)}
           />
           {/* Анимация сердца при двойном тапе */}
@@ -353,37 +353,34 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
         <div className="px-4 pt-3 pb-2 flex items-center gap-1">
           {/* Лайк */}
           <button onClick={handleLike}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all active:scale-90"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full transition-all active:scale-90"
             style={{
               background: liked ? "rgba(255,45,120,0.12)" : "rgba(255,255,255,0.05)",
               border: liked ? "1px solid rgba(255,45,120,0.25)" : "1px solid rgba(255,255,255,0.08)",
               transform: bouncing ? "scale(1.15)" : "scale(1)",
               transition: "transform 0.2s, background 0.2s",
             }}>
-            <Icon name="Heart" size={18}
+            <Icon name="Heart" size={14}
               style={{ color: liked ? "#FF2D78" : "rgba(255,255,255,0.55)", fill: liked ? "#FF2D78" : "transparent", transition: "all 0.2s" }} />
-            <span className="text-sm font-semibold"
+            <span className="text-xs font-semibold"
               style={{ color: liked ? "#FF2D78" : "rgba(255,255,255,0.55)" }}>{count}</span>
           </button>
 
-          {/* Комментарий */}
+          {/* Комментарий — прячем текст подписи внутрь этой кнопки */}
           <button onClick={() => onComment(post)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full transition-all active:scale-90"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-90 flex-1 min-w-0"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <Icon name="MessageCircle" size={18} className="text-white/55" />
-            <span className="text-white/55 text-sm font-semibold">{post.comments_count}</span>
+            <Icon name="MessageCircle" size={14} className="text-white/55 flex-shrink-0" />
+            <span className="text-white/55 text-xs font-semibold flex-shrink-0">{post.comments_count}</span>
+            {caption && (
+              <span className="text-white/40 text-xs truncate min-w-0 ml-1">
+                <span className="text-white/60 font-semibold">{post.author_name}</span> {caption}
+              </span>
+            )}
           </button>
         </div>
 
-        {/* Подпись */}
-        {caption && (
-          <div className="px-4 pb-4">
-            <span className="text-white font-bold text-sm">{post.author_name} </span>
-            <span className="text-white/65 text-sm leading-relaxed">{caption}</span>
-          </div>
-        )}
-
-        {!caption && <div className="pb-3" />}
+        <div className="pb-3" />
       </div>
 
       {/* Lightbox */}
