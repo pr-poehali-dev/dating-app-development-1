@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Props {
   isPremium: boolean;
@@ -10,7 +11,6 @@ interface Props {
   onOpenGrid: () => void;
 }
 
-const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 3;
 const BOT_IDS = new Set([22]);
 
@@ -110,9 +110,9 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
                   onClick={() => isLocked ? onPremium() : onProfile(user)}
                   className="relative rounded-2xl overflow-hidden active:scale-95 transition-transform"
                   style={{ width: 88, height: 116 }}>
-                  <img
-                    src={user.photo_url || FALLBACK}
-                    className="absolute inset-0 w-full h-full object-cover"
+                  <UserAvatar
+                    src={user.photo_url}
+                    className="absolute inset-0 w-full h-full"
                   />
 
                   {/* Блюр для заблокированных */}

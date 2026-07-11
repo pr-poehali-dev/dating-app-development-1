@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { type User, type BlockedUser, type MyStream, blocksApi, liveApi, feedbackApi } from "@/lib/api";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 // ─── SettingsSheet ─────────────────────────────────────────────────────────────
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
@@ -92,7 +93,6 @@ function BlacklistSheet({ onClose }: { onClose: () => void }) {
     setUnblockingId(null);
   };
 
-  const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center"
@@ -122,7 +122,7 @@ function BlacklistSheet({ onClose }: { onClose: () => void }) {
           ) : blocks.map((user) => (
             <div key={user.id} className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <img src={user.photo_url || FALLBACK} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <UserAvatar src={user.photo_url} className="w-10 h-10 rounded-full flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-semibold truncate">{user.name}{user.age ? `, ${user.age}` : ""}</p>
                 <p className="text-white/30 text-xs">Заблокирован</p>

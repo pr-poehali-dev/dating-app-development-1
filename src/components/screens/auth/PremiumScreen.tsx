@@ -194,7 +194,8 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
       `}</style>
 
       {/* Кнопка закрытия */}
-      <div className="flex items-center justify-end px-5 pt-5 pb-0">
+      <div className="flex items-center justify-end px-5 pb-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}>
         <button onClick={onClose}
           className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
           style={{ background: "rgba(255,255,255,0.08)" }}>
@@ -338,7 +339,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
       </div>
 
       {/* Кнопка оплаты */}
-      <div className="px-4 pb-8">
+      <div className="px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)" }}>
         {error && <p className="text-red-400 text-xs text-center mb-3">{error}</p>}
         <button
           disabled={paying}

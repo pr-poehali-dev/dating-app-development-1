@@ -67,7 +67,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   }>({ followers: 0, following: 0 });
   const [profileStreakDays, setProfileStreakDays] = useState(0);
 
-  const mainPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
+  const mainPhoto = currentProfile.photo_url || "";
 
   // Кнопка "Назад": закрываем вложенные слои по одному, потом — сам профиль
   useBackHandler(true, () => {
@@ -110,7 +110,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         })
         .catch(() => {});
 
-      const cPhoto = currentProfile.photo_url || PROFILES_FALLBACK[0].photo;
+      const cPhoto = currentProfile.photo_url || "";
       const galleryReq = profilesApi.getUserProfilePhotos(currentProfile.id)
         .then(r => {
           setGalleryPhotos(r.photos);

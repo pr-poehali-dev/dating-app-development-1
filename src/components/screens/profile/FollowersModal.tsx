@@ -3,8 +3,7 @@ import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
 import { DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
 import { isUserOnline } from "@/lib/online";
-
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 type TabType = "followers" | "following";
 type UserItem = { id: number; name: string; age?: number; photo_url?: string; verified?: boolean; online?: boolean; last_seen?: string };
@@ -43,83 +42,80 @@ export function FollowersModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-end justify-center"
-        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
-        onClick={onClose}>
-        <div className="w-full max-w-sm rounded-t-3xl flex flex-col"
-          style={{ background: "var(--spark-dark2,#1a1030)", maxHeight: "80dvh" }}
-          onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-50 flex flex-col"
+        style={{ background: "var(--spark-dark2,#1a1030)" }}>
 
-          {/* Шапка */}
-          <div className="flex items-center justify-between px-5 pt-5 pb-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-            <div className="flex gap-1 rounded-2xl p-1" style={{ background: "rgba(255,255,255,0.06)" }}>
-              {(["followers", "following"] as TabType[]).map(t => (
-                <button key={t} onClick={() => setTab(t)}
-                  className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${tab === t ? "text-white" : "text-white/40"}`}
-                  style={tab === t
-                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
-                    : undefined}>
-                  {t === "followers" ? "Подписчики" : "Подписки"}
-                </button>
-              ))}
+        {/* Шапка */}
+        <div className="flex items-center gap-3 px-4 flex-shrink-0"
+          style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 12px)", paddingBottom: "12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={onClose}
+            className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
+            style={{ background: "rgba(255,255,255,0.08)" }}>
+            <Icon name="ArrowLeft" size={20} className="text-white" />
+          </button>
+          <div className="flex gap-1 rounded-2xl p-1 flex-1" style={{ background: "rgba(255,255,255,0.06)" }}>
+            {(["followers", "following"] as TabType[]).map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                className={`flex-1 px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${tab === t ? "text-white" : "text-white/40"}`}
+                style={tab === t
+                  ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+                  : undefined}>
+                {t === "followers" ? "Подписчики" : "Подписки"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Список */}
+        <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-2 pb-8">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Icon name="Loader2" size={28} className="text-white/30 animate-spin" />
             </div>
-            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
-              <Icon name="X" size={20} />
-            </button>
-          </div>
-
-          {/* Список */}
-          <div className="overflow-y-auto flex-1 px-4 py-3 flex flex-col gap-2 pb-8">
-            {loading ? (
-              <div className="flex justify-center py-10">
-                <Icon name="Loader2" size={28} className="text-white/30 animate-spin" />
-              </div>
-            ) : list.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center">
-                <Icon name={tab === "followers" ? "Users" : "UserCheck"} size={36} className="text-white/15" />
-                <p className="text-white/30 text-sm">
-                  {tab === "followers" ? "Пока нет подписчиков" : "Ты ни на кого не подписан"}
-                </p>
-              </div>
-            ) : (
-              list.map(user => (
-                <button key={user.id}
-                  onClick={() => setViewProfile(user as Profile)}
-                  className="flex items-center gap-3 p-2 rounded-2xl w-full text-left transition-all active:scale-95"
-                  style={{ background: "rgba(255,255,255,0.04)" }}>
-                  <div className="relative flex-shrink-0">
-                    <img src={user.photo_url || FALLBACK_PHOTO}
-                      className="w-12 h-12 rounded-full object-cover"
-                      style={{ border: "2px solid rgba(255,45,120,0.3)" }} />
-                    {isUserOnline(user.last_seen, user.online) && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"
-                        style={{ borderColor: "var(--spark-dark2,#1a1030)" }} />
+          ) : list.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <Icon name={tab === "followers" ? "Users" : "UserCheck"} size={36} className="text-white/15" />
+              <p className="text-white/30 text-sm">
+                {tab === "followers" ? "Пока нет подписчиков" : "Ты ни на кого не подписан"}
+              </p>
+            </div>
+          ) : (
+            list.map(user => (
+              <button key={user.id}
+                onClick={() => setViewProfile(user as Profile)}
+                className="flex items-center gap-3 p-2 rounded-2xl w-full text-left transition-all active:scale-95"
+                style={{ background: "rgba(255,255,255,0.04)" }}>
+                <div className="relative flex-shrink-0">
+                  <UserAvatar src={user.photo_url}
+                    className="w-12 h-12 rounded-full"
+                    style={{ border: "2px solid rgba(255,45,120,0.3)" }} />
+                  {isUserOnline(user.last_seen, user.online) && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"
+                      style={{ borderColor: "var(--spark-dark2,#1a1030)" }} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-white font-semibold text-sm truncate">
+                      {user.name}{user.age ? `, ${user.age}` : ""}
+                    </p>
+                    {user.verified && (
+                      <div className="flex-shrink-0 flex items-center justify-center"
+                        style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 1.5px rgba(255,45,120,0.3), 0 2px 6px rgba(255,45,120,0.45)" }}>
+                        <Icon name="BadgeCheck" size={12} className="text-white" />
+                      </div>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-white font-semibold text-sm truncate">
-                        {user.name}{user.age ? `, ${user.age}` : ""}
-                      </p>
-                      {user.verified && (
-                        <div className="flex-shrink-0 flex items-center justify-center"
-                          style={{ width: 18, height: 18, borderRadius: "50%", background: "linear-gradient(135deg,#FF2D78,#C061FF)", boxShadow: "0 0 0 1.5px rgba(255,45,120,0.3), 0 2px 6px rgba(255,45,120,0.45)" }}>
-                          <Icon name="BadgeCheck" size={12} className="text-white" />
-                        </div>
-                      )}
-                    </div>
-                    {isUserOnline(user.last_seen, user.online) ? (
-                      <p className="text-green-400 text-[11px] mt-0.5">в сети</p>
-                    ) : (
-                      <p className="text-white/30 text-[11px] mt-0.5">не в сети</p>
-                    )}
-                  </div>
-                  <Icon name="ChevronRight" size={16} className="text-white/25 flex-shrink-0" />
-                </button>
-              ))
-            )}
-          </div>
+                  {isUserOnline(user.last_seen, user.online) ? (
+                    <p className="text-green-400 text-[11px] mt-0.5">в сети</p>
+                  ) : (
+                    <p className="text-white/30 text-[11px] mt-0.5">не в сети</p>
+                  )}
+                </div>
+                <Icon name="ChevronRight" size={16} className="text-white/25 flex-shrink-0" />
+              </button>
+            ))
+          )}
         </div>
       </div>
 

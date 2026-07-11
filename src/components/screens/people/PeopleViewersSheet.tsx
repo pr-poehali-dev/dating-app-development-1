@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { notificationsApi, likesApi, type Notification } from "@/lib/api";
-
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Props {
   isPremium?: boolean;
@@ -63,7 +62,7 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium, onOpenProfil
         </h3>
       </div>
 
-      <div className="overflow-y-auto flex-1 px-5 py-3 pb-6">
+      <div className="overflow-y-auto flex-1 px-3 py-3 pb-6">
           {loading ? (
             <div className="flex justify-center py-10">
               <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
@@ -92,56 +91,76 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium, onOpenProfil
                   </div>
                 </button>
               )}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-1.5">
                 {viewers.map((v, i) => {
                   const liked = likedIds.has(v.from_user_id);
                   const matched = matchedIds.has(v.from_user_id);
                   return (
-                  <div key={i}
-                    className="flex flex-col items-center gap-2 pt-4 pb-3 px-2 rounded-2xl transition-all"
-                    style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <div key={i} className="flex flex-col gap-1.5">
                     <button type="button"
                       onClick={() => {
                         if (isPremium && v.from_user_id) onOpenProfile?.(v.from_user_id);
                         else if (!isPremium) { onClose(); onPremium?.(); }
                       }}
-                      className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 transition-all active:scale-95">
-                      <img
-                        src={v.photo_url || FALLBACK_PHOTO}
-                        className="w-full h-full object-cover"
-                        style={!isPremium ? { filter: "blur(12px)", transform: "scale(1.15)" } : {}}
+                      className="relative overflow-hidden transition-all active:scale-[0.97]"
+                      style={{ aspectRatio: "2/3", borderRadius: 16 }}>
+                      <UserAvatar
+                        src={v.photo_url}
+                        className="absolute inset-0 w-full h-full"
+                        style={!isPremium ? { filter: "blur(14px)", transform: "scale(1.12)" } : {}}
                       />
+
+                      {/* Градиент снизу */}
+                      <div className="absolute inset-0 pointer-events-none"
+                        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)" }} />
+
                       {!isPremium && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Icon name="Lock" size={20} className="text-white/80" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                          style={{ background: "rgba(10,5,20,0.55)", backdropFilter: "blur(2px)" }}>
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                            style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 4px 12px rgba(255,45,120,0.5)" }}>
+                            <Icon name="Lock" size={14} className="text-white" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Имя и время снизу */}
+                      {isPremium ? (
+                        <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
+                          <p className="text-white text-[12px] font-extrabold leading-tight truncate tracking-tight"
+                            style={{ textShadow: "0 1px 6px rgba(0,0,0,0.6)" }}>
+                            {v.name}
+                          </p>
+                          <p className="text-white/60 text-[9px] font-medium truncate leading-tight mt-0.5"
+                            style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}>{timeAgo(v.created_at)}</p>
+                        </div>
+                      ) : (
+                        <div className="absolute bottom-0 left-0 right-0 px-2 pb-2 flex flex-col items-center gap-1">
+                          <div className="h-3 w-14 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
+                          <p className="text-white/50 text-[9px]">{timeAgo(v.created_at)}</p>
                         </div>
                       )}
                     </button>
-                    {isPremium ? (
-                      <p className="text-white font-semibold text-sm text-center truncate w-full px-1">{v.name}</p>
-                    ) : (
-                      <div className="h-3.5 w-16 rounded-full mx-auto" style={{ background: "rgba(255,255,255,0.15)" }} />
-                    )}
-                    <p className="text-white/30 text-[11px] text-center">{timeAgo(v.created_at)}</p>
+
                     {isPremium ? (
                       <button type="button"
                         onClick={() => handleLikeBack(v.from_user_id)}
                         disabled={liked}
-                        className="w-full mt-0.5 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                        className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-semibold transition-all active:scale-95"
                         style={{
                           background: matched ? "rgba(34,197,94,0.18)" : liked ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg,#FF2D78,#9B59B6)",
                           color: matched ? "#22c55e" : "white",
                         }}>
-                        <Icon name={matched ? "Check" : "Heart"} size={15} className={!liked && !matched ? "text-white" : ""} />
-                        {matched ? "Совпадение!" : liked ? "Лайк отправлен" : "Лайкнуть в ответ"}
+                        <Icon name={matched ? "Check" : "Heart"} size={12} className={!liked && !matched ? "text-white" : ""} />
+                        {matched ? "Матч!" : liked ? "Лайк" : "В ответ"}
                       </button>
                     ) : (
                       <button type="button"
                         onClick={() => { onClose(); onPremium?.(); }}
-                        className="w-full mt-0.5 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                        className="w-full flex items-center justify-center gap-1 py-1.5 rounded-xl text-[11px] font-semibold transition-all active:scale-95"
                         style={{ background: "rgba(255,45,120,0.12)", color: "#FF2D78" }}>
-                        <Icon name="Heart" size={15} className="text-pink-400" />
-                        Лайкнуть в ответ
+                        <Icon name="Heart" size={12} className="text-pink-400" />
+                        В ответ
                       </button>
                     )}
                   </div>

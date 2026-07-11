@@ -122,6 +122,30 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
 
+  // Плавное скрытие/появление нижней панели при скролле ленты (на любом экране)
+  const [navVisible, setNavVisible] = useState(true);
+  const lastScrollMap = useRef(new WeakMap<EventTarget, number>());
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (!target || typeof target.scrollTop !== "number") return;
+      const scrollTop = target.scrollTop;
+      const last = lastScrollMap.current.get(target) ?? 0;
+      const delta = scrollTop - last;
+      if (scrollTop <= 4) {
+        setNavVisible(true);
+      } else if (delta > 6) {
+        setNavVisible(false);
+      } else if (delta < -6) {
+        setNavVisible(true);
+      }
+      lastScrollMap.current.set(target, scrollTop);
+    };
+    document.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", handleScroll, true);
+  }, []);
+  useEffect(() => { setNavVisible(true); }, [screen]);
+
   const [prevScreen, setPrevScreen] = useState<Screen>("matches");
   const [animDir, setAnimDir] = useState<"left" | "right" | "up">("right");
   const [animKey, setAnimKey] = useState(0);
@@ -296,7 +320,15 @@ export default function Index() {
             {screen === "admin_verify" && <AdminVerifyScreen onClose={() => navigateTo("profile")} />}
           </div>
         </div>
-        {isMain && <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} />}
+        {isMain && (
+          <div style={{
+            transform: navVisible ? "translateY(0)" : "translateY(120%)",
+            opacity: navVisible ? 1 : 0,
+            transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease",
+          }}>
+            <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} />
+          </div>
+        )}
       </div>
     </div>
   );

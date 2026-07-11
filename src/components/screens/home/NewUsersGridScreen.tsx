@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type Profile } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface Props {
   isPremium: boolean;
@@ -10,7 +11,6 @@ interface Props {
   onBack: () => void;
 }
 
-const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 const FREE_LIMIT = 3;
 const BOT_IDS = new Set([22]);
 
@@ -90,10 +90,10 @@ export function NewUsersGridScreen({ isPremium, onProfile, onPremium, onBack }: 
                     onClick={() => isLocked ? onPremium() : onProfile(user)}
                     className="relative rounded-2xl overflow-hidden active:scale-95 transition-transform"
                     style={{ aspectRatio: "3/4" }}>
-                    <img
-                      src={user.photo_url || FALLBACK}
+                    <UserAvatar
+                      src={user.photo_url}
                       alt=""
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full"
                     />
 
                     {/* Блюр для заблокированных */}
@@ -118,7 +118,7 @@ export function NewUsersGridScreen({ isPremium, onProfile, onPremium, onBack }: 
                     {!isLocked && (
                       <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
                         style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                        NEW
+                        НОВЫЙ
                       </div>
                     )}
 

@@ -1,6 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { type Profile } from "@/lib/api";
-import { PROFILES_FALLBACK } from "@/components/screens/DiscoverProfileModal";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 interface FollowersSheetProps {
   visible: boolean;
@@ -44,8 +44,8 @@ export function DiscoverFollowersSheet({ visible, profileName, loading, follower
                 className="flex items-center gap-3 p-2 rounded-2xl w-full text-left transition-all active:scale-95"
                 style={{ background: "rgba(255,255,255,0.04)" }}>
                 <div className="relative flex-shrink-0">
-                  <img src={user.photo_url || PROFILES_FALLBACK[0].photo}
-                    className="w-12 h-12 rounded-full object-cover"
+                  <UserAvatar src={user.photo_url}
+                    className="w-12 h-12 rounded-full"
                     style={{ border: "2px solid rgba(255,45,120,0.3)" }} />
                   {user.online && (
                     <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2"

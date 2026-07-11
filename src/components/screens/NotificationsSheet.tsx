@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { notificationsApi, type Notification } from "@/lib/api";
-
-const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 
 function timeAgo(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -185,7 +184,7 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                           style={{ border: "2px solid rgba(255,45,120,0.3)" }}
                         />
                       ) : (
-                        <img src={n.photo_url || FALLBACK} className="w-11 h-11 rounded-full object-cover" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
+                        <UserAvatar src={n.photo_url} className="w-11 h-11 rounded-full" style={{ border: "2px solid rgba(255,255,255,0.1)" }} />
                       )}
                       <div className="absolute -bottom-0.5 -right-0.5">
                         <NotifIcon type={n.type} />

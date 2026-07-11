@@ -156,8 +156,15 @@ export function ProfilePhotoSection({
           transform: `translateY(${-dragYFs}px)`,
           transition: dragPhaseFs === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
         }} className="w-full max-h-full flex items-center justify-center">
-          <ProtectedImage src={currentPhoto} className="w-full max-h-full"
-            style={{ objectFit: "contain" }} protect />
+          {currentPhoto ? (
+            <ProtectedImage src={currentPhoto} className="w-full max-h-full"
+              style={{ objectFit: "contain" }} protect />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))" }}>
+              <Icon name="User" size={64} className="text-white/70" />
+            </div>
+          )}
         </div>
         {/* Соседнее фото — плавно подтягивается во время свайпа */}
         {dragYFs !== 0 && (() => {
@@ -165,13 +172,21 @@ export function ProfilePhotoSection({
           if (nextIdx < 0 || nextIdx >= totalPhotos) return null;
           const h = containerHeightRefFs.current;
           const offset = dragYFs > 0 ? h - dragYFs : -h - dragYFs;
+          const neighborFs = photos[nextIdx] || currentPhoto;
           return (
             <div className="absolute inset-0 flex items-center justify-center" style={{
               transform: `translateY(${offset}px)`,
               transition: dragPhaseFs === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
             }}>
-              <ProtectedImage src={photos[nextIdx] || currentPhoto} className="w-full max-h-full"
-                style={{ objectFit: "contain" }} protect />
+              {neighborFs ? (
+                <ProtectedImage src={neighborFs} className="w-full max-h-full"
+                  style={{ objectFit: "contain" }} protect />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))" }}>
+                  <Icon name="User" size={64} className="text-white/70" />
+                </div>
+              )}
             </div>
           );
         })()}
@@ -266,12 +281,19 @@ export function ProfilePhotoSection({
           transform: `translateY(${-dragY}px)`,
           transition: dragPhase === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
         }}>
-          <ProtectedImage
-            src={currentPhoto}
-            className="absolute inset-0 w-full h-full"
-            style={{ objectFit: "cover" }}
-            protect
-          />
+          {currentPhoto ? (
+            <ProtectedImage
+              src={currentPhoto}
+              className="absolute inset-0 w-full h-full"
+              style={{ objectFit: "cover" }}
+              protect
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))" }}>
+              <Icon name="User" size={64} className="text-white/70" />
+            </div>
+          )}
         </div>
         {/* Соседнее фото — плавно подтягивается снизу/сверху во время свайпа */}
         {dragY !== 0 && (
@@ -279,18 +301,26 @@ export function ProfilePhotoSection({
             const nextIdx = dragY > 0 ? photoIdx + 1 : photoIdx - 1;
             if (nextIdx < 0 || nextIdx >= totalPhotos) return null;
             const offset = dragY > 0 ? containerHeightRef.current - dragY : -containerHeightRef.current - dragY;
+            const neighbor = photos[nextIdx] || currentPhoto;
             return (
               <div style={{
                 position: "absolute", inset: 0,
                 transform: `translateY(${offset}px)`,
                 transition: dragPhase === "dragging" ? "none" : "transform 0.3s cubic-bezier(0.22,1,0.36,1)",
               }}>
-                <ProtectedImage
-                  src={photos[nextIdx] || currentPhoto}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ objectFit: "cover" }}
-                  protect
-                />
+                {neighbor ? (
+                  <ProtectedImage
+                    src={neighbor}
+                    className="absolute inset-0 w-full h-full"
+                    style={{ objectFit: "cover" }}
+                    protect
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))" }}>
+                    <Icon name="User" size={64} className="text-white/70" />
+                  </div>
+                )}
               </div>
             );
           })()
