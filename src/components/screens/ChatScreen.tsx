@@ -502,6 +502,18 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onGrantPhoto={() => { setShowChatMenu(false); sendSystem("__GRANT_PHOTO__"); }}
           onRequestPhoto={() => { setShowChatMenu(false); sendSystem("__REQUEST_PHOTO__"); }}
           onClose={() => setShowChatMenu(false)}
+          isBot={partnerName === 'LoveBloom'}
+          subscribed={subscribed}
+          onSubscribeToggle={() => {
+            if (!partnerId) return;
+            const next = !subscribed;
+            setSubscribed(next);
+            profilesApi.subscribeToggle(partnerId).then(r => setSubscribed(r.subscribed)).catch(() => setSubscribed(!next));
+          }}
+          onShare={async () => {
+            haptic("light");
+            await nativeShare({ title: `${partnerName} — Полутон`, text: `Познакомься с ${partnerName} в Полутон!`, url: "https://полуто-н.рф" });
+          }}
         />
       )}
 

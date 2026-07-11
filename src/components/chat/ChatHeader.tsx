@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { haptic, nativeShare } from "@/hooks/useNative";
+import { haptic } from "@/hooks/useNative";
 
 interface Props {
   partnerName: string;
@@ -17,11 +17,9 @@ interface Props {
 export function ChatHeader({
   partnerName,
   partnerPhoto,
-  subscribed,
   isBot = false,
   onBack,
   onProfileClick,
-  onSubscribeToggle,
   onVideoCall,
   onMenuOpen,
   onCompatibility,
@@ -71,11 +69,6 @@ export function ChatHeader({
 
       {/* Кнопки действий */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        {!isBot && <button onClick={onSubscribeToggle}
-          className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
-          style={{ background: subscribed ? "rgba(255,200,0,0.15)" : "rgba(255,255,255,0.07)", border: subscribed ? "1px solid rgba(255,200,0,0.3)" : "1px solid rgba(255,255,255,0.1)" }}>
-          <Icon name="Star" size={17} className={subscribed ? "text-yellow-400" : "text-white/50"} />
-        </button>}
         {!isBot && onCompatibility && (
           <button onClick={onCompatibility}
             className="relative w-9 h-9 flex items-center justify-center rounded-full active:scale-90 text-base"
@@ -106,14 +99,6 @@ export function ChatHeader({
             `}</style>
           </button>
         )}
-        {!isBot && <button onClick={async () => {
-            haptic("light");
-            await nativeShare({ title: `${partnerName} — Полутон`, text: `Познакомься с ${partnerName} в Полутон!`, url: "https://полуто-н.рф" });
-          }}
-          className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
-          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <Icon name="Share2" size={15} className="text-white/60" />
-        </button>}
         {!isBot && <button onClick={() => { haptic("medium"); onVideoCall(); }}
           className="w-9 h-9 flex items-center justify-center rounded-full transition-all active:scale-90"
           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>

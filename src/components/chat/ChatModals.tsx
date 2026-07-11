@@ -105,14 +105,18 @@ export function ChatVanishPicker({ photos, onPick, onClose }: VanishPickerProps)
   );
 }
 
-// ─── Меню чата (предоставить / запросить доступ к фото) ───────────────────────
+// ─── Меню чата (подписка / поделиться / доступ к фото) ────────────────────────
 interface ChatMenuProps {
   onGrantPhoto: () => void;
   onRequestPhoto: () => void;
   onClose: () => void;
+  subscribed?: boolean;
+  onSubscribeToggle?: () => void;
+  onShare?: () => void;
+  isBot?: boolean;
 }
 
-export function ChatMenu({ onGrantPhoto, onRequestPhoto, onClose }: ChatMenuProps) {
+export function ChatMenu({ onGrantPhoto, onRequestPhoto, onClose, subscribed, onSubscribeToggle, onShare, isBot }: ChatMenuProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
@@ -127,6 +131,36 @@ export function ChatMenu({ onGrantPhoto, onRequestPhoto, onClose }: ChatMenuProp
           </button>
         </div>
         <div className="flex flex-col gap-2">
+          {!isBot && onSubscribeToggle && (
+            <button
+              onClick={() => { onSubscribeToggle(); onClose(); }}
+              className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
+              style={{ background: "rgba(255,255,255,0.05)" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(255,200,0,0.15)" }}>
+                <Icon name="Star" size={20} className={subscribed ? "text-yellow-400" : "text-yellow-400/70"} />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">{subscribed ? "Отписаться" : "Подписаться"}</p>
+                <p className="text-white/40 text-xs mt-0.5">{subscribed ? "Больше не получать обновления профиля" : "Следить за обновлениями профиля"}</p>
+              </div>
+            </button>
+          )}
+          {!isBot && onShare && (
+            <button
+              onClick={() => { onShare(); onClose(); }}
+              className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
+              style={{ background: "rgba(255,255,255,0.05)" }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(255,255,255,0.08)" }}>
+                <Icon name="Share2" size={18} className="text-white/60" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm">Поделиться профилем</p>
+                <p className="text-white/40 text-xs mt-0.5">Отправить ссылку на этот профиль</p>
+              </div>
+            </button>
+          )}
           <button
             onClick={onGrantPhoto}
             className="flex items-center gap-4 px-4 py-4 rounded-2xl w-full text-left transition-all active:scale-95"
