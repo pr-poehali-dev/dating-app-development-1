@@ -60,7 +60,11 @@
   "prefer_related_applications": false,
   "permissions": [
     "notifications",
-    "push"
+    "push",
+    "camera",
+    "microphone",
+    "geolocation",
+    "storage"
   ],
   "scope_extensions": [
     { "origin": "https://полуто-н.рф" }
