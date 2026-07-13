@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/icon";
+import { useBackHandler } from "@/hooks/backStack";
 
 export const GIFTS = [
   /* ─── Сердца ─── */
@@ -38,7 +39,14 @@ export const GIFTS = [
   { id: 31, name: "Кольцо Вечности", emoji: "💎", price: 14990, anim: "gift-3d-ring-legend", rarity: "legendary", category: "ring", variant: 6 },
   { id: 32, name: "Кольцо богов",    emoji: "✨", price: 24990, anim: "gift-rainbow",        rarity: "legendary", category: "ring", variant: 7 },
   /* ─── Особые (анимированные, в стиле Telegram) ─── */
-  { id: 33, name: "Крутой Пёс",      emoji: "🐶", price: 1990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 0 },
+  { id: 33, name: "Крутой Пёс",      emoji: "🐶", price: 990,   anim: "gift-animated",       rarity: "common",    category: "special", variant: 0 },
+  { id: 34, name: "Милый Кот",       emoji: "🐱", price: 990,   anim: "gift-animated",       rarity: "common",    category: "special", variant: 1 },
+  { id: 35, name: "Кролик",          emoji: "🐰", price: 1490,  anim: "gift-animated",       rarity: "rare",      category: "special", variant: 2 },
+  { id: 36, name: "Ракета",         emoji: "🚀", price: 2990,  anim: "gift-animated",       rarity: "rare",      category: "special", variant: 3 },
+  { id: 37, name: "Единорог",       emoji: "🦄", price: 4990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 4 },
+  { id: 38, name: "Звезда удачи",   emoji: "⭐", price: 6990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 5 },
+  { id: 39, name: "Королевская корона", emoji: "👑", price: 14990, anim: "gift-animated",   rarity: "legendary", category: "special", variant: 6 },
+  { id: 40, name: "Дракон",         emoji: "🐉", price: 29990, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 7 },
 ];
 
 const CATEGORIES = [
@@ -85,32 +93,27 @@ export function ProfileGiftSheet({
   const [activeCategory, setActiveCategory] = useState("special");
   const filtered = GIFTS.filter(g => g.category === activeCategory);
 
-  return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end"
-      style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)" }}
-      onClick={onClose}>
-      <div className="rounded-t-3xl flex flex-col max-h-[86dvh]"
-        style={{ background: "var(--spark-card)", border: "1px solid var(--spark-divider)" }}
-        onClick={e => e.stopPropagation()}>
+  useBackHandler(true, onClose);
 
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.2)" }} />
-        </div>
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--spark-dark, #0f0a1a)" }}>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pb-2 pt-1">
-          <div>
-            <p className="text-white font-bold text-lg">Подарить {recipientName}</p>
+        <div className="flex items-center gap-3 px-5 pb-3 flex-shrink-0"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <button onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(255,255,255,0.08)" }}>
+            <Icon name="ArrowLeft" size={18} className="text-white/80" />
+          </button>
+          <div className="flex-1">
+            <p className="text-white font-bold text-lg leading-tight">Подарить {recipientName}</p>
             <p className="text-white/40 text-xs mt-0.5">Выберите подарок</p>
           </div>
-          <button onClick={onClose} className="text-white/40">
-            <Icon name="X" size={20} />
-          </button>
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-2 px-4 pb-3 overflow-x-auto no-scrollbar">
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar flex-shrink-0">
           {CATEGORIES.map(cat => (
             <button key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
@@ -124,7 +127,8 @@ export function ProfileGiftSheet({
           ))}
         </div>
 
-        <div className="overflow-y-auto px-4 pb-6">
+        <div className="overflow-y-auto flex-1 px-4"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
           {/* Gift grid */}
           <div className="grid grid-cols-4 gap-2.5 mb-4">
             {filtered.map((gift) => {
@@ -188,7 +192,6 @@ export function ProfileGiftSheet({
             );
           })()}
         </div>
-      </div>
     </div>
   );
 }
