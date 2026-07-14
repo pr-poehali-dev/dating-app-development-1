@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { useBackHandler } from "@/hooks/backStack";
@@ -56,7 +57,7 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
     ? { animation: "lbSlideDown 0.28s cubic-bezier(0.22,1,0.36,1) forwards" }
     : { animation: "lbFadeIn 0.24s cubic-bezier(0.22,1,0.36,1)" };
 
-  return (
+  return createPortal(
     <>
       <style>{`
         @keyframes lbSlideUp {
@@ -74,8 +75,8 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] flex flex-col"
-        style={{ background: "rgba(0,0,0,0.97)", backdropFilter: "blur(24px)" }}
+        className="fixed inset-0 flex flex-col"
+        style={{ background: "rgba(0,0,0,0.97)", backdropFilter: "blur(24px)", zIndex: 2147483000 }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -151,6 +152,7 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
           </div>
         )}
       </div>
-    </>
+    </>,
+    document.body
   );
 }
