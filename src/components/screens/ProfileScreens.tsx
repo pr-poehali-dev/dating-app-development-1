@@ -10,7 +10,6 @@ export { VerifyScreen, AdminVerifyScreen } from "@/components/screens/VerifyScre
 import { EditProfileModal } from "@/components/screens/EditProfileModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
-import { ProfilePhotoSection } from "@/components/screens/profile/ProfilePhotoSection";
 import { ProfilePhotosScreen } from "@/components/screens/profile/ProfilePhotosScreen";
 import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
@@ -240,6 +239,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           onPremium={onPremium}
           onSettingsPrivate={() => { setShowPhotosScreen(false); setSettingsScreen("private_photos"); }}
           onClose={() => setShowPhotosScreen(false)}
+          onOpenLightbox={(idx) => setLightboxIdx(idx)}
         />
       )}
 
@@ -320,7 +320,17 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
                 return (
                   <button
                     key={key}
-                    onClick={() => setActiveTab(isActive ? null : key as ActiveTab)}
+                    onClick={() => {
+                      if (key === "photos") {
+                        if (galleryPhotos.length === 0 && !galleryLoading) {
+                          setGalleryLoading(true);
+                          profilesApi.listProfilePhotos().then(r => setGalleryPhotos(r.photos)).finally(() => setGalleryLoading(false));
+                        }
+                        setShowPhotosScreen(true);
+                        return;
+                      }
+                      setActiveTab(isActive ? null : key as ActiveTab);
+                    }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-[0.97]"
                     style={isActive
                       ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 2px 10px rgba(255,45,120,0.35)" }
@@ -335,38 +345,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {/* Стрик активности */}
           <StreakWidget />
-
-          {/* 1. Фото / Приватные фото */}
-          <ProfilePhotoSection
-            currentUser={currentUser}
-            localPhoto={localPhoto}
-            localCover={localCover}
-            photoUploading={photoUploading}
-            coverUploading={coverUploading}
-            galleryPhotos={galleryPhotos}
-            galleryLoading={galleryLoading}
-            galleryUploading={galleryUploading}
-            galleryDeleteId={galleryDeleteId}
-            onCoverUpload={() => { setPhotoUploadMode("cover"); coverInputRef.current?.click(); }}
-            onCoverDelete={() => {
-              setLocalCover("");
-              onProfileUpdate({ cover_url: "" });
-              profilesApi.deleteCover().catch(() => {});
-            }}
-            onAvatarUpload={() => { setPhotoUploadMode("avatar"); coverInputRef.current?.click(); }}
-            onPhotoDelete={() => {
-              setLocalPhoto("");
-              onPhotoUpdate("");
-              onProfileUpdate({ photo_url: "" });
-              profilesApi.deletePhoto().catch(() => {});
-            }}
-            onGalleryAdd={() => { setPhotoUploadMode("gallery"); galleryInputRef.current?.click(); }}
-            onGalleryDelete={handleGalleryDelete}
-            onPremium={onPremium}
-            onSettingsPrivate={() => setSettingsScreen("private_photos")}
-            activeTab={activeTab as string | null}
-            onOpenLightbox={(idx) => setLightboxIdx(idx)}
-          />
 
           {/* 2. Premium баннер */}
           {!currentUser.premium && (

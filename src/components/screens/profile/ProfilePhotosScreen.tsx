@@ -21,6 +21,7 @@ export function ProfilePhotosScreen({
   onPremium,
   onSettingsPrivate,
   onClose,
+  onOpenLightbox,
 }: {
   currentUser: User;
   localPhoto: string;
@@ -40,9 +41,13 @@ export function ProfilePhotosScreen({
   onPremium: () => void;
   onSettingsPrivate: () => void;
   onClose: () => void;
+  onOpenLightbox?: (idx: number) => void;
 }) {
   const [subTab, setSubTab] = useState<"public" | "private">("public");
   const maxGallery = currentUser.premium ? 5 : 1;
+  // Индексы совпадают с массивом allPhotos в ProfileScreens: обложка + аватар + галерея
+  const avatarIdx = localCover ? 1 : 0;
+  const galleryStartIdx = avatarIdx + (localPhoto ? 1 : 0);
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col" style={{ background: "var(--spark-dark, #0d0d0d)", animation: "slideUp 0.28s ease" }}>
@@ -121,7 +126,8 @@ export function ProfilePhotosScreen({
 
               {/* Фото на фон */}
               <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="relative overflow-hidden" style={{ height: 80 }}>
+                <div className="relative overflow-hidden" style={{ height: 80, cursor: localCover && onOpenLightbox ? "pointer" : "default" }}
+                  onClick={localCover && onOpenLightbox ? () => onOpenLightbox(0) : undefined}>
                   {localCover
                     ? <img src={localCover} className="w-full h-full object-cover object-top" />
                     : <div className="absolute inset-0 flex items-center justify-center"
@@ -154,7 +160,8 @@ export function ProfilePhotosScreen({
 
               {/* Фото профиля */}
               <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 80 }}>
+                <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 80, cursor: localPhoto && onOpenLightbox ? "pointer" : "default" }}
+                  onClick={localPhoto && onOpenLightbox ? () => onOpenLightbox(avatarIdx) : undefined}>
                   {localPhoto
                     ? <img src={localPhoto} className="w-full h-full object-cover object-top" />
                     : <div className="absolute inset-0 flex items-center justify-center"
@@ -204,12 +211,14 @@ export function ProfilePhotosScreen({
               ) : (
                 <div className="grid grid-cols-3 gap-1.5">
                   {galleryPhotos.map((photo, idx) => (
-                    <div key={photo.id} className="relative rounded-xl overflow-hidden" style={{ aspectRatio: "1/1" }}>
+                    <div key={photo.id} className="relative rounded-xl overflow-hidden"
+                      style={{ aspectRatio: "1/1", cursor: onOpenLightbox ? "pointer" : "default" }}
+                      onClick={onOpenLightbox ? () => onOpenLightbox(galleryStartIdx + idx) : undefined}>
                       <img src={photo.photo_url} className="w-full h-full object-cover" />
                       <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 50%, rgba(0,0,0,0.55) 100%)" }} />
                       <span className="absolute bottom-1 left-1.5 text-white/50 text-[9px] font-medium">{idx + 1}</span>
                       <button
-                        onClick={() => onGalleryDelete(photo.id)}
+                        onClick={e => { e.stopPropagation(); onGalleryDelete(photo.id); }}
                         disabled={galleryDeleteId === photo.id}
                         className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center transition-all active:scale-90"
                         style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)" }}>
