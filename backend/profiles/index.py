@@ -232,13 +232,14 @@ def handler(event: dict, context) -> dict:
             zodiac_filter_val = params.get('zodiac', '').strip()
 
             conditions = [
+                "u.id != %s",
                 "(u.age IS NULL OR u.age BETWEEN %s AND %s)",
                 "u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = %s)",
                 "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
                 "u.incognito = FALSE",
                 "u.removed_at IS NULL",
             ]
-            q_params = [age_min, age_max, me['id'], me['id']]
+            q_params = [me['id'], age_min, age_max, me['id'], me['id']]
 
             if looking_for == 'female':
                 conditions.append("u.gender = 'female'")
