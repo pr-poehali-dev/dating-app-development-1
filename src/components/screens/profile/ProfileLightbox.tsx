@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { useBackHandler } from "@/hooks/backStack";
 
 interface ProfileLightboxProps {
   photos: string[];
@@ -14,6 +15,8 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
   const [sliding, setSliding] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+
+  useBackHandler(true, onClose);
 
   if (photos.length === 0) return null;
 
@@ -71,39 +74,46 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
       `}</style>
 
       <div
-        className="fixed inset-0 z-[100] flex items-center justify-center"
+        className="fixed inset-0 z-[100] flex flex-col"
         style={{ background: "rgba(0,0,0,0.97)", backdropFilter: "blur(24px)" }}
-        onClick={onClose}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        {/* Фото */}
-        <div style={slideStyle} onClick={e => e.stopPropagation()}>
-          <ProtectedImage
-            src={photos[idx]}
-            className="rounded-2xl"
-            hideOnBlur={false}
-            style={{
-              maxHeight: "82dvh",
-              maxWidth: "96vw",
-              objectFit: "contain",
-              boxShadow: "0 16px 60px rgba(0,0,0,0.7)",
-            }}
-          />
+        {/* Шапка с кнопкой "Назад" */}
+        <div className="flex items-center gap-3 px-4 flex-shrink-0"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)", paddingBottom: 12 }}
+          onClick={e => e.stopPropagation()}>
+          <button onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+            style={{ background: "rgba(255,255,255,0.1)" }}>
+            <Icon name="ArrowLeft" size={18} className="text-white" />
+          </button>
+          <span className="text-white/80 text-sm font-semibold">
+            {idx + 1} / {photos.length}
+          </span>
         </div>
 
-        {/* Закрыть */}
-        <button
-          className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
-          onClick={onClose}>
-          <Icon name="X" size={20} className="text-white" />
-        </button>
+        {/* Фото */}
+        <div className="flex-1 flex items-center justify-center min-h-0" onClick={onClose}>
+          <div style={slideStyle} onClick={e => e.stopPropagation()}>
+            <ProtectedImage
+              src={photos[idx]}
+              className="rounded-2xl"
+              hideOnBlur={false}
+              style={{
+                maxHeight: "72dvh",
+                maxWidth: "96vw",
+                objectFit: "contain",
+                boxShadow: "0 16px 60px rgba(0,0,0,0.7)",
+              }}
+            />
+          </div>
+        </div>
 
         {/* Стрелка вверх */}
         {idx > 0 && (
           <button
-            className="absolute top-5 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
+            className="absolute top-20 left-1/2 -translate-x-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
             onClick={e => { e.stopPropagation(); prev(); }}>
             <Icon name="ChevronUp" size={22} className="text-white" />
@@ -140,13 +150,6 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
             ))}
           </div>
         )}
-
-        {/* Счётчик */}
-        <div
-          className="absolute top-5 left-5 px-3 py-1 rounded-full text-white/60 text-xs font-semibold"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)" }}>
-          {idx + 1} / {photos.length}
-        </div>
       </div>
     </>
   );

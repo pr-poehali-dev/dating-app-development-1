@@ -21,6 +21,7 @@ export function ProfilePhotoSection({
   onPremium,
   onSettingsPrivate,
   activeTab,
+  onOpenLightbox,
 }: {
   currentUser: User;
   localPhoto: string;
@@ -40,8 +41,12 @@ export function ProfilePhotoSection({
   onPremium: () => void;
   onSettingsPrivate: () => void;
   activeTab: string | null;
+  onOpenLightbox?: (idx: number) => void;
 }) {
   const maxGallery = currentUser.premium ? 5 : 1;
+  // Индексы совпадают с массивом allPhotos: обложка + аватар + галерея
+  const avatarIdx = localCover ? 1 : 0;
+  const galleryStartIdx = avatarIdx + (localPhoto ? 1 : 0);
   const [photoSubTab, setPhotoSubTab] = useState<"public" | "private">("public");
 
   return (
@@ -158,7 +163,8 @@ export function ProfilePhotoSection({
           <div className="rounded-2xl overflow-hidden"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="relative w-full h-32 flex items-center justify-center"
-              style={{ background: localPhoto ? "transparent" : "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))" }}>
+              style={{ background: localPhoto ? "transparent" : "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))", cursor: localPhoto ? "pointer" : "default" }}
+              onClick={localPhoto && onOpenLightbox ? () => onOpenLightbox(avatarIdx) : undefined}>
               {localPhoto
                 ? <img src={localPhoto} className="w-full h-full object-cover object-top" />
                 : <div className="flex flex-col items-center gap-1">
@@ -176,14 +182,14 @@ export function ProfilePhotoSection({
                 <span className="text-white/60 text-[10px] uppercase tracking-widest">Фото профиля</span>
                 <div className="flex items-center gap-2">
                   {localPhoto && (
-                    <button onClick={onPhotoDelete} disabled={photoUploading}
+                    <button onClick={e => { e.stopPropagation(); onPhotoDelete(); }} disabled={photoUploading}
                       className="px-3 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5 transition-all active:scale-95"
                       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.14)" }}>
                       <Icon name="Trash2" size={13} className="text-white/70" />
                       Удалить
                     </button>
                   )}
-                  <button onClick={onAvatarUpload} disabled={photoUploading}
+                  <button onClick={e => { e.stopPropagation(); onAvatarUpload(); }} disabled={photoUploading}
                     className="btn-grad px-4 py-2 text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-1.5">
                     <Icon name="Camera" size={13} className="text-white" />
                     Изменить
@@ -212,7 +218,8 @@ export function ProfilePhotoSection({
               <div className="grid grid-cols-2 gap-2">
                 {galleryPhotos.map((photo, idx) => (
                   <div key={photo.id} className="relative rounded-2xl overflow-hidden"
-                    style={{ aspectRatio: "4/5" }}>
+                    style={{ aspectRatio: "4/5", cursor: onOpenLightbox ? "pointer" : "default" }}
+                    onClick={onOpenLightbox ? () => onOpenLightbox(galleryStartIdx + idx) : undefined}>
                     <img src={photo.photo_url} className="w-full h-full object-cover" />
                     <div className="absolute inset-0"
                       style={{ background: "linear-gradient(transparent 55%, rgba(0,0,0,0.6) 100%)" }} />
@@ -220,7 +227,7 @@ export function ProfilePhotoSection({
                       Фото {idx + 1}
                     </span>
                     <button
-                      onClick={() => onGalleryDelete(photo.id)}
+                      onClick={e => { e.stopPropagation(); onGalleryDelete(photo.id); }}
                       disabled={galleryDeleteId === photo.id}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
                       style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.12)" }}>

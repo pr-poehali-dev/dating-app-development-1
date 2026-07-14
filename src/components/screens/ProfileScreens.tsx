@@ -365,6 +365,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onPremium={onPremium}
             onSettingsPrivate={() => setSettingsScreen("private_photos")}
             activeTab={activeTab as string | null}
+            onOpenLightbox={(idx) => setLightboxIdx(idx)}
           />
 
           {/* 2. Premium баннер */}
