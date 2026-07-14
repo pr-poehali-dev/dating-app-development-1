@@ -11,6 +11,7 @@ import { EditProfileModal } from "@/components/screens/EditProfileModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
 import { ProfilePhotosScreen } from "@/components/screens/profile/ProfilePhotosScreen";
+import { ProfileGiftsScreen } from "@/components/screens/profile/ProfileGiftsScreen";
 import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
@@ -61,6 +62,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [activeTab, setActiveTab] = useState<ActiveTab>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showPhotosScreen, setShowPhotosScreen] = useState(false);
+  const [showGiftsScreen, setShowGiftsScreen] = useState(false);
 
   const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
   const toggleTheme = () => {
@@ -243,6 +245,15 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
         />
       )}
 
+      {/* ── Полноэкранный экран подарков ── */}
+      {showGiftsScreen && (
+        <ProfileGiftsScreen
+          myGifts={myGifts}
+          giftsLoading={giftsLoading}
+          onClose={() => setShowGiftsScreen(false)}
+        />
+      )}
+
       {/* ── Лайтбокс фото ── */}
       {lightboxIdx !== null && allPhotos.length > 0 && (
         <ProfileLightbox
@@ -329,6 +340,14 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
                         setShowPhotosScreen(true);
                         return;
                       }
+                      if (key === "gifts") {
+                        if (myGifts.length === 0 && !giftsLoading) {
+                          setGiftsLoading(true);
+                          profilesApi.myGifts().then(r => setMyGifts(r.gifts)).finally(() => setGiftsLoading(false));
+                        }
+                        setShowGiftsScreen(true);
+                        return;
+                      }
                       setActiveTab(isActive ? null : key as ActiveTab);
                     }}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl transition-all active:scale-[0.97]"
@@ -384,11 +403,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onProfileUpdate={onProfileUpdate}
           />
 
-          {/* 4. Вкладки: Статистика / Магазин / Подарки */}
+          {/* 4. Вкладки: Статистика / Магазин */}
           <ProfileTabPanels
             activeTab={activeTab}
-            myGifts={myGifts}
-            giftsLoading={giftsLoading}
             onPremium={onPremium}
           />
 

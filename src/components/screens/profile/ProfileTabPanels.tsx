@@ -1,17 +1,13 @@
 import Icon from "@/components/ui/icon";
-import { type MyGift } from "@/lib/api";
-import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 
 interface ProfileTabPanelsProps {
   activeTab: ActiveTab;
-  myGifts: MyGift[];
-  giftsLoading: boolean;
   onPremium: () => void;
 }
 
-export function ProfileTabPanels({ activeTab, myGifts, giftsLoading, onPremium }: ProfileTabPanelsProps) {
+export function ProfileTabPanels({ activeTab, onPremium }: ProfileTabPanelsProps) {
   return (
     <>
       {/* Панель: Статистика */}
@@ -58,13 +54,6 @@ export function ProfileTabPanels({ activeTab, myGifts, giftsLoading, onPremium }
               <span className="text-pink-400 font-bold text-sm flex-shrink-0">{price}</span>
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Панель: Подарки */}
-      {activeTab === "gifts" && (
-        <div className="w-full mt-3">
-          <GiftsGrid gifts={myGifts} loading={giftsLoading} />
         </div>
       )}
     </>
