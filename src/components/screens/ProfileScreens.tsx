@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, streaksApi, type User, type MyGift } from "@/lib/api";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 // Re-exports
 export { EditProfileModal } from "@/components/screens/EditProfileModal";
@@ -64,18 +65,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [showPhotosScreen, setShowPhotosScreen] = useState(false);
   const [showGiftsScreen, setShowGiftsScreen] = useState(false);
 
-  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.remove("light");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.add("light");
-      localStorage.setItem("theme", "light");
-    }
-  };
+  const { theme: appTheme, setTheme: setAppTheme } = useAppTheme();
 
   const [galleryPhotos, setGalleryPhotos] = useState<{ id: number; photo_url: string }[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(false);
@@ -275,8 +265,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
+          appTheme={appTheme}
+          onAppThemeChange={setAppTheme}
         />
 
         {/* Скрытые инпуты */}

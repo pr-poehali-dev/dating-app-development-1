@@ -27,9 +27,7 @@ interface SettingsScreenContentProps {
   onNotifToggle: (key: keyof SettingsScreenContentProps["notif"]) => void;
 
   // appearance
-  isDark: boolean;
   appear: { compactCards: boolean; showAge: boolean };
-  onToggleTheme: () => void;
   onAppearToggle: (key: keyof SettingsScreenContentProps["appear"]) => void;
 
   // sounds
@@ -77,9 +75,7 @@ export function SettingsScreenContent({
   onPrivacyToggle,
   notif,
   onNotifToggle,
-  isDark,
   appear,
-  onToggleTheme,
   onAppearToggle,
   sounds,
   onSoundsToggle,
@@ -117,9 +113,7 @@ export function SettingsScreenContent({
         onPrivacyToggle={onPrivacyToggle}
         notif={notif}
         onNotifToggle={onNotifToggle}
-        isDark={isDark}
         appear={appear}
-        onToggleTheme={onToggleTheme}
         onAppearToggle={onAppearToggle}
         sounds={sounds}
         onSoundsToggle={onSoundsToggle}

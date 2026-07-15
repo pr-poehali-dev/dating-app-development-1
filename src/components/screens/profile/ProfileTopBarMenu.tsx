@@ -2,7 +2,9 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
+import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
 import { useBackHandler } from "@/hooks/backStack";
+import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
@@ -13,8 +15,8 @@ export function ProfileTopBarMenu({
   onLogout,
   onVerify,
   currentUser,
-  isDark,
-  onToggleTheme,
+  appTheme,
+  onAppThemeChange,
 }: {
   menuOpen: boolean;
   onMenuToggle: (open: boolean) => void;
@@ -22,14 +24,16 @@ export function ProfileTopBarMenu({
   onLogout: () => void;
   onVerify: () => void;
   currentUser: User;
-  isDark?: boolean;
-  onToggleTheme?: () => void;
+  appTheme?: AppTheme;
+  onAppThemeChange?: (t: AppTheme) => void;
 }) {
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
+  const [showTheme, setShowTheme] = useState(false);
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
-  useBackHandler(menuOpen || showLegal, () => {
+  useBackHandler(menuOpen || showLegal || showTheme, () => {
+    if (showTheme) { setShowTheme(false); return; }
     if (showLegal) { setShowLegal(false); return; }
     onMenuToggle(false);
   });
@@ -107,6 +111,15 @@ export function ProfileTopBarMenu({
       iconColor: "text-white/50",
       badge: undefined,
     },
+    ...(onAppThemeChange ? [{
+      icon: "Palette" as const,
+      label: "Тема оформления",
+      sub: appTheme ? THEME_META[appTheme].sub : "Выбери настроение приложения",
+      action: () => { setShowTheme(true); },
+      iconBg: "rgba(255,45,120,0.12)",
+      iconColor: "text-pink-400",
+      badge: appTheme ? THEME_META[appTheme].label : undefined,
+    }] : []),
   ];
 
   return (
@@ -116,6 +129,14 @@ export function ProfileTopBarMenu({
           legalTab={legalTab}
           onTabChange={setLegalTab}
           onClose={() => setShowLegal(false)}
+        />
+      )}
+
+      {showTheme && appTheme && onAppThemeChange && (
+        <ProfileThemeSheet
+          appTheme={appTheme}
+          onSelect={onAppThemeChange}
+          onClose={() => setShowTheme(false)}
         />
       )}
 
@@ -183,31 +204,6 @@ export function ProfileTopBarMenu({
               </button>
             ))}
           </div>
-
-          {/* Тема */}
-          {onToggleTheme && (
-            <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <button disabled
-                className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl mt-2 cursor-not-allowed opacity-50"
-                style={{ background: "transparent" }}>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: isDark ? "rgba(251,191,36,0.12)" : "rgba(99,102,241,0.12)" }}>
-                    <Icon name={isDark ? "Sun" : "Moon"} size={15} className={isDark ? "text-amber-400" : "text-indigo-400"} />
-                  </div>
-                  <div>
-                    <p className="text-white/90 text-sm font-semibold leading-tight">{isDark ? "Светлая тема" : "Тёмная тема"}</p>
-                    <p className="text-white/30 text-[11px] leading-tight mt-0.5">Заработает в следующем обновлении</p>
-                  </div>
-                </div>
-                <div className="w-11 h-6 rounded-full relative flex-shrink-0"
-                  style={{ background: "rgba(255,255,255,0.1)" }}>
-                  <div className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-md"
-                    style={{ left: "3px" }} />
-                </div>
-              </button>
-            </div>
-          )}
 
           {/* Выйти */}
           <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>

@@ -3,8 +3,9 @@ import { type User } from "@/lib/api";
 import { ProfileCoverAvatar } from "@/components/screens/profile/ProfileCoverAvatar";
 import { ProfileTopBarMenu } from "@/components/screens/profile/ProfileTopBarMenu";
 import { getStreakReward } from "@/lib/streakRewards";
+import { type AppTheme } from "@/hooks/useAppTheme";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 
 export function ProfileHeader({
@@ -120,8 +121,8 @@ export function ProfileTopBar({
   onLogout,
   onVerify,
   currentUser,
-  isDark,
-  onToggleTheme,
+  appTheme,
+  onAppThemeChange,
 }: {
   menuOpen: boolean;
   onEditOpen: () => void;
@@ -130,8 +131,8 @@ export function ProfileTopBar({
   onLogout: () => void;
   onVerify: () => void;
   currentUser: User;
-  isDark?: boolean;
-  onToggleTheme?: () => void;
+  appTheme?: AppTheme;
+  onAppThemeChange?: (t: AppTheme) => void;
 }) {
   return (
     <div className="px-4 pb-2 flex items-center justify-between flex-shrink-0"
@@ -163,8 +164,8 @@ export function ProfileTopBar({
             onLogout={onLogout}
             onVerify={onVerify}
             currentUser={currentUser}
-            isDark={isDark}
-            onToggleTheme={onToggleTheme}
+            appTheme={appTheme}
+            onAppThemeChange={onAppThemeChange}
           />
         </div>
       </div>

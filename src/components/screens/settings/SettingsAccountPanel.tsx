@@ -30,9 +30,7 @@ interface Props {
   onNotifToggle: (key: keyof Props["notif"]) => void;
 
   // appearance
-  isDark: boolean;
   appear: { compactCards: boolean; showAge: boolean };
-  onToggleTheme: () => void;
   onAppearToggle: (key: keyof Props["appear"]) => void;
 
   // sounds
@@ -99,9 +97,7 @@ export function SettingsAccountPanel(props: Props) {
           onPrivacyToggle={props.onPrivacyToggle}
           notif={props.notif}
           onNotifToggle={props.onNotifToggle}
-          isDark={props.isDark}
           appear={props.appear}
-          onToggleTheme={props.onToggleTheme}
           onAppearToggle={props.onAppearToggle}
           sounds={props.sounds}
           onSoundsToggle={props.onSoundsToggle}

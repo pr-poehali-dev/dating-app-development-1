@@ -117,7 +117,6 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     setNotif(next);
     notifSettingsApi.update({ [key]: next[key] }).catch(() => {});
   };
-  const [isDark, setIsDark] = useState(() => localStorage.getItem("theme") !== "light");
   const [appear, setAppear] = useState(() => {
     try {
       const saved = localStorage.getItem("appear_settings");
@@ -137,18 +136,6 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     }
   };
   const [sounds, setSounds] = useState({ messages: true, matches: true, notifications: true });
-
-  const toggleTheme = () => {
-    const next = !isDark;
-    setIsDark(next);
-    if (next) {
-      document.documentElement.classList.remove("light");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.add("light");
-      localStorage.setItem("theme", "light");
-    }
-  };
 
   const [video, setVideo] = useState({ autoAccept: false, blurBg: true, mirrorCamera: true });
   const [privacy, setPrivacy] = useState({ showOnline: true, showDistance: true, readReceipts: true, searchable: true });
@@ -302,9 +289,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         onPrivacyToggle={(key) => setPrivacy(p => ({ ...p, [key]: !p[key] }))}
         notif={notif}
         onNotifToggle={handleNotifToggle}
-        isDark={isDark}
         appear={appear}
-        onToggleTheme={toggleTheme}
         onAppearToggle={handleAppearToggle}
         sounds={sounds}
         onSoundsToggle={(key) => setSounds(s => ({ ...s, [key]: !s[key] }))}

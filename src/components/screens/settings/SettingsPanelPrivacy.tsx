@@ -13,9 +13,7 @@ interface Props {
   notif: { matches: boolean; messages: boolean; likes: boolean; promo: boolean };
   onNotifToggle: (key: keyof Props["notif"]) => void;
 
-  isDark: boolean;
   appear: { compactCards: boolean; showAge: boolean };
-  onToggleTheme: () => void;
   onAppearToggle: (key: keyof Props["appear"]) => void;
 
   sounds: { messages: boolean; matches: boolean; notifications: boolean };
@@ -39,9 +37,7 @@ export function SettingsPanelPrivacy({
   onPrivacyToggle,
   notif,
   onNotifToggle,
-  isDark,
   appear,
-  onToggleTheme,
   onAppearToggle,
   sounds,
   onSoundsToggle,
@@ -160,9 +156,6 @@ export function SettingsPanelPrivacy({
       {/* ── Внешний вид ── */}
       {screen === "appearance" && (
         <div className="mx-5 glass-card overflow-hidden">
-          <Row label="Тёмная тема" sub="Тёмный фон интерфейса">
-            <Toggle value={isDark} onChange={onToggleTheme} />
-          </Row>
           <Row label="Компактные карточки" sub="Меньше информации на карточке">
             <Toggle value={appear.compactCards} onChange={() => onAppearToggle("compactCards")} />
           </Row>

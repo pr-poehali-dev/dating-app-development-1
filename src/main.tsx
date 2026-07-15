@@ -2,10 +2,9 @@ import * as React from 'react';
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
+import { initAppTheme } from '@/hooks/useAppTheme'
 
-if (localStorage.getItem("theme") === "light") {
-  document.documentElement.classList.add("light");
-}
+initAppTheme();
 
 createRoot(document.getElementById("root")!).render(<App />);
 
