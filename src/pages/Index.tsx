@@ -10,7 +10,7 @@ import { setAppBadge } from "@/hooks/useNative";
 import { useBackButton } from "@/hooks/useBackButton";
 import { popBackHandler } from "@/hooks/backStack";
 
-import { AuthScreen, PremiumScreen, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
+import { AuthScreen, PremiumScreen, PremiumScreenDesktop, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
@@ -329,7 +329,9 @@ export default function Index() {
           onClose={() => navigateTo("discover")}
         />
       )}
-      {screen === "premium" && <PremiumScreen onClose={() => navigateTo("discover")} currentUser={currentUser} />}
+      {screen === "premium" && (isDesktop
+        ? <PremiumScreenDesktop onClose={() => navigateTo("discover")} currentUser={currentUser} />
+        : <PremiumScreen onClose={() => navigateTo("discover")} currentUser={currentUser} />)}
       {screen === "verify" && <VerifyScreen onClose={() => navigateTo("profile")} />}
       {screen === "admin_verify" && <AdminVerifyScreen onClose={() => navigateTo("profile")} />}
     </>

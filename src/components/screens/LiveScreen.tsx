@@ -2,10 +2,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { liveApi, type User, type LiveStream, type LiveMessage } from "@/lib/api";
 import { LiveActiveStream } from "@/components/screens/LiveActiveStream";
 import { LiveStreamList } from "@/components/screens/LiveStreamList";
+import { LiveStreamListDesktop } from "@/components/screens/LiveStreamListDesktop";
 import { useLiveWebRTC } from "@/components/screens/useLiveWebRTC";
 import { useLivePoll } from "@/components/screens/useLivePoll";
 import { useLiveActions } from "@/components/screens/useLiveActions";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 
 export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed }: {
   currentUser: User;
@@ -27,6 +29,7 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
   const [activeTab, setActiveTab] = useState("popular");
   const [tabSearch, setTabSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const isDesktop = useIsDesktop();
   const [showTools, setShowTools] = useState(false);
 
   const webrtc = useLiveWebRTC(currentUser.id);
@@ -120,26 +123,26 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
     );
   }
 
-  return (
-    <LiveStreamList
-      currentUser={currentUser}
-      streams={streams}
-      loading={loading}
-      activeTab={activeTab}
-      tabSearch={tabSearch}
-      showSettings={showSettings}
-      showTools={showTools}
-      showStart={showStart}
-      streamTitle={streamTitle}
-      onTabChange={setActiveTab}
-      onTabSearchChange={setTabSearch}
-      onJoin={actions.handleJoin}
-      onShowSettings={setShowSettings}
-      onShowTools={setShowTools}
-      onShowStart={setShowStart}
-      onStreamTitleChange={setStreamTitle}
-      onStartStream={() => actions.handleStartStream(streamTitle)}
-      streamError={actions.streamError}
-    />
-  );
+  const listProps = {
+    currentUser,
+    streams,
+    loading,
+    activeTab,
+    tabSearch,
+    showSettings,
+    showTools,
+    showStart,
+    streamTitle,
+    onTabChange: setActiveTab,
+    onTabSearchChange: setTabSearch,
+    onJoin: actions.handleJoin,
+    onShowSettings: setShowSettings,
+    onShowTools: setShowTools,
+    onShowStart: setShowStart,
+    onStreamTitleChange: setStreamTitle,
+    onStartStream: () => actions.handleStartStream(streamTitle),
+    streamError: actions.streamError,
+  };
+
+  return isDesktop ? <LiveStreamListDesktop {...listProps} /> : <LiveStreamList {...listProps} />;
 }
