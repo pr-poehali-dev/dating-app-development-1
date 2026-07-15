@@ -353,6 +353,16 @@ html.theme-amber {
   transition: background-color 0.3s ease;
 }
 
+/* Модификатор для десктопной страницы входа: страница должна скроллиться
+   (под формой идёт блок "скачать приложение" и футер), поэтому снимаем
+   fixed/overflow:hidden, но оставляем фон и анимации звёзд/свечения. */
+.app-bg.app-bg-scrollable {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+}
+
 /* Контейнер экрана: на мобильном — 100% ширины, на десктопе — ограничен */
 .app-screen-container {
   width: 100%;

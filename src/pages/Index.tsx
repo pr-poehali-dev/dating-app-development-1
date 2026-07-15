@@ -289,7 +289,7 @@ export default function Index() {
   if (!currentUser) {
     if (isDesktop) {
       return (
-        <div className="app-bg" style={{ minHeight: "100vh" }}>
+        <div className="app-bg app-bg-scrollable">
           <div className="app-hearts-layer" />
           {showFooterTerms && <AuthLegalSheet tab="terms" onClose={() => setShowFooterTerms(false)} />}
           {showFooterPrivacy && <AuthLegalSheet tab="privacy" onClose={() => setShowFooterPrivacy(false)} />}
