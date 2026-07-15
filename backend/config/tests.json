@@ -1,0 +1,12 @@
+{
+  "tests": [
+    {
+      "name": "Yandex Maps public key",
+      "method": "GET",
+      "path": "/?action=yandex_maps_key",
+      "expectedStatus": 200,
+      "expectedBody": {"api_key": "string"},
+      "bodyMatcher": "partial"
+    }
+  ]
+}

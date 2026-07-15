@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
+import { loadYandexMaps, reverseGeocode, searchGeocode, type YMapsMap, type YMapsPlacemark } from "@/lib/yandexMaps";
 
 interface Props {
   onClose: () => void;
@@ -12,47 +13,43 @@ export function PeopleTravelMode({ onClose, onApply }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<unknown>(null);
-  const marker = useRef<unknown>(null);
+  const yandexMap = useRef<YMapsMap | null>(null);
+  const marker = useRef<YMapsPlacemark | null>(null);
   const [coords, setCoords] = useState<[number, number]>([55.7558, 37.6176]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Загружаем leaflet карту
+  // Загружаем Яндекс.Карты
   useEffect(() => {
     let canceled = false;
     (async () => {
-      const L = (await import("leaflet")).default;
-      await import("leaflet/dist/leaflet.css");
-      if (canceled || !mapRef.current || leafletMap.current) return;
+      const ymaps = await loadYandexMaps();
+      if (canceled || !mapRef.current || yandexMap.current) return;
 
-      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false })
-        .setView(coords, 10);
-
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19 }).addTo(map);
-
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FF2D78,#9B59B6);border:3px solid white;box-shadow:0 6px 20px rgba(255,45,120,0.7);display:flex;align-items:center;justify-content:center;transform:translate(-50%,-100%)">
-          <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'/><circle cx='12' cy='10' r='3'/></svg>
-        </div>`,
-        iconSize: [0, 0],
+      const map = new ymaps.Map(mapRef.current, {
+        center: coords,
+        zoom: 10,
+        controls: [],
       });
 
-      const m = L.marker(coords, { icon, draggable: true }).addTo(map);
-      m.on("dragend", async () => {
-        const pos = m.getLatLng();
-        setCoords([pos.lat, pos.lng]);
+      const m = new ymaps.Placemark(
+        coords,
+        {},
+        { preset: "islands#pinkDotIcon", draggable: true }
+      );
+      m.events.add("dragend", async () => {
+        const [lat, lon] = m.geometry.getCoordinates();
+        setCoords([lat, lon]);
         try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json&accept-language=ru`);
-          const d = await r.json();
-          const found = d.address?.city || d.address?.town || d.address?.village || "";
+          const res = await reverseGeocode(lat, lon);
+          const found = res?.city || "";
           setQuery(found);
           setCity(found);
         } catch { /* ignore */ }
       });
+      map.geoObjects.add(m);
 
       marker.current = m;
-      leafletMap.current = map;
+      yandexMap.current = map;
       setMapLoaded(true);
     })();
     return () => { canceled = true; };
@@ -65,9 +62,8 @@ export function PeopleTravelMode({ onClose, onApply }: Props) {
     if (val.length < 2) { setSuggestions([]); return; }
     debounceRef.current = setTimeout(async () => {
       try {
-        const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&format=json&accept-language=ru&limit=5`);
-        const data = await r.json();
-        setSuggestions(data.map((d: { display_name: string }) => d.display_name));
+        const results = await searchGeocode(val, 5);
+        setSuggestions(results.map((r) => r.displayName));
       } catch { /* ignore */ }
     }, 400);
   };
@@ -77,18 +73,12 @@ export function PeopleTravelMode({ onClose, onApply }: Props) {
     setCity(name.split(",")[0].trim());
     setSuggestions([]);
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`);
-      const data = await r.json();
-      if (data[0]) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        setCoords([lat, lon]);
-        if (leafletMap.current) {
-          (leafletMap.current as { setView: (c: [number, number], z: number) => void }).setView([lat, lon], 10);
-        }
-        if (marker.current) {
-          (marker.current as { setLatLng: (c: [number, number]) => void }).setLatLng([lat, lon]);
-        }
+      const results = await searchGeocode(name, 1);
+      const found = results[0];
+      if (found) {
+        setCoords([found.lat, found.lon]);
+        yandexMap.current?.setCenter([found.lat, found.lon], 10);
+        marker.current?.geometry.setCoordinates([found.lat, found.lon]);
       }
     } catch { /* ignore */ }
   };

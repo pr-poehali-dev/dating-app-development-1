@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { type User, type BlockedUser, type MyStream, blocksApi, liveApi, feedbackApi } from "@/lib/api";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { reverseGeocode } from "@/lib/yandexMaps";
 
 // ─── SettingsSheet ─────────────────────────────────────────────────────────────
 export function SettingsSheet({ onClose }: { onClose: () => void }) {
@@ -14,9 +15,8 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
     setGeoLoading(true);
     navigator.geolocation.getCurrentPosition(async (pos) => {
       try {
-        const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json`);
-        const d = await r.json();
-        setLocation(d.address?.city || d.address?.town || d.address?.country || "");
+        const res = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+        setLocation(res?.city || res?.country || "");
       } catch { /* ignore */ }
       setGeoLoading(false);
     }, () => setGeoLoading(false));

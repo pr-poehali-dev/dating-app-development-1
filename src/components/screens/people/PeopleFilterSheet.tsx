@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type DiscoverParams } from "@/lib/api";
 import { useBackHandler } from "@/hooks/backStack";
+import { reverseGeocode } from "@/lib/yandexMaps";
 
 const AGE_FLOOR = 18;
 const AGE_CEIL = 80;
@@ -148,9 +149,8 @@ export function PeopleFilterSheet({ filters, onApply, onClose, onAdvancedFilter,
                       navigator.geolocation.getCurrentPosition(
                         async pos => {
                           try {
-                            const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&format=json&accept-language=ru`);
-                            const d = await r.json();
-                            const detected = d.address?.city || d.address?.town || d.address?.village || d.address?.county || "";
+                            const res = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+                            const detected = res?.city || "";
                             if (detected) setCity(detected); else setGeoError("Город не найден");
                           } catch { setGeoError("Ошибка запроса"); }
                           finally { setGeoLoading(false); }

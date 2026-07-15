@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import { loadYandexMaps, reverseGeocode } from "@/lib/yandexMaps";
 
 interface Props {
   lat: string;
   lon: string;
 }
 
-const tileFor = (lat: string, lon: string, zoom = 14, w = 320, h = 180) =>
-  `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=${zoom}&size=${w}x${h}&maptype=mapnik&markers=${lat},${lon},red-dot`;
+const tileFor = (lat: string, lon: string, zoom = 15, w = 320, h = 180) =>
+  `https://static-maps.yandex.ru/1.x/?ll=${lon},${lat}&z=${zoom}&size=${w},${h}&l=map&pt=${lon},${lat},pm2rdm`;
 
 export default function LocationMessage({ lat, lon }: Props) {
   const [address, setAddress] = useState<string>("");
@@ -16,22 +17,16 @@ export default function LocationMessage({ lat, lon }: Props) {
 
   useEffect(() => {
     let cancel = false;
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru&zoom=14`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancel) return;
-        const a = d?.address || {};
-        const parts = [a.road, a.house_number, a.city || a.town || a.village, a.country]
-          .filter(Boolean);
-        setAddress(parts.join(", ") || d?.display_name || "");
+    reverseGeocode(parseFloat(lat), parseFloat(lon))
+      .then((res) => {
+        if (cancel || !res) return;
+        setAddress(res.displayName || [res.city, res.country].filter(Boolean).join(", "));
       })
       .catch(() => {});
     return () => { cancel = true; };
   }, [lat, lon]);
 
-  const gmaps = `https://www.google.com/maps?q=${lat},${lon}`;
   const ymaps = `https://yandex.ru/maps/?pt=${lon},${lat}&z=15&l=map`;
-  const osm = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=15/${lat}/${lon}`;
 
   return (
     <>
@@ -105,27 +100,13 @@ export default function LocationMessage({ lat, lon }: Props) {
           </span>
         </div>
 
-        {/* Кнопки навигации */}
-        <div className="flex gap-1.5">
-          <a href={gmaps} target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-white active:scale-95 transition-transform"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <Icon name="Navigation" size={10} className="text-white/80" />
-            Google
-          </a>
-          <a href={ymaps} target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-white active:scale-95 transition-transform"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <Icon name="Navigation" size={10} className="text-white/80" />
-            Yandex
-          </a>
-          <a href={osm} target="_blank" rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-semibold text-white active:scale-95 transition-transform"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }}>
-            <Icon name="ExternalLink" size={10} className="text-white/80" />
-            OSM
-          </a>
-        </div>
+        {/* Кнопка навигации */}
+        <a href={ymaps} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[11px] font-semibold text-white active:scale-95 transition-transform"
+          style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.12)" }}>
+          <Icon name="Navigation" size={11} className="text-white/80" />
+          Открыть в Яндекс.Картах
+        </a>
       </div>
 
       {open && <LocationLightbox lat={lat} lon={lon} address={address} onClose={() => setOpen(false)} />}
@@ -135,36 +116,29 @@ export default function LocationMessage({ lat, lon }: Props) {
 
 function LocationLightbox({ lat, lon, address, onClose }: { lat: string; lon: string; address: string; onClose: () => void }) {
   const mapEl = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
+  const mapRef = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
     let canceled = false;
     (async () => {
-      const L = (await import("leaflet")).default;
-      await import("leaflet/dist/leaflet.css");
+      const ymaps = await loadYandexMaps();
       if (canceled || !mapEl.current) return;
 
-      const map = L.map(mapEl.current, { zoomControl: false, attributionControl: false })
-        .setView([parseFloat(lat), parseFloat(lon)], 15);
+      const latN = parseFloat(lat);
+      const lonN = parseFloat(lon);
 
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-      }).addTo(map);
-
-      const icon = L.divIcon({
-        className: "",
-        html: `<div style="
-          width:36px;height:36px;border-radius:50%;
-          background:linear-gradient(135deg,#FF2D78,#9B59B6);
-          border:3px solid white;
-          box-shadow:0 6px 20px rgba(255,45,120,0.7);
-          display:flex;align-items:center;justify-content:center;
-          transform:translate(-50%,-100%);
-        "><svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z'/><circle cx='12' cy='10' r='3'/></svg></div>`,
-        iconSize: [0, 0],
+      const map = new ymaps.Map(mapEl.current, {
+        center: [latN, lonN],
+        zoom: 15,
+        controls: ["zoomControl"],
       });
-      L.marker([parseFloat(lat), parseFloat(lon)], { icon }).addTo(map);
-      L.control.zoom({ position: "bottomright" }).addTo(map);
+
+      const placemark = new ymaps.Placemark(
+        [latN, lonN],
+        {},
+        { preset: "islands#pinkDotIcon" }
+      );
+      map.geoObjects.add(placemark);
 
       mapRef.current = map;
     })();
@@ -172,14 +146,13 @@ function LocationLightbox({ lat, lon, address, onClose }: { lat: string; lon: st
     return () => {
       canceled = true;
       if (mapRef.current) {
-        try { (mapRef.current as { remove: () => void }).remove(); } catch { /* ignore */ }
+        try { mapRef.current.destroy(); } catch { /* ignore */ }
         mapRef.current = null;
       }
     };
   }, [lat, lon]);
 
-  const gmaps = `https://www.google.com/maps?q=${lat},${lon}`;
-  const ymaps = `https://yandex.ru/maps/?pt=${lon},${lat}&z=15&l=map`;
+  const ymapsUrl = `https://yandex.ru/maps/?pt=${lon},${lat}&z=15&l=map`;
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col"
@@ -201,20 +174,14 @@ function LocationLightbox({ lat, lon, address, onClose }: { lat: string; lon: st
       {/* Карта */}
       <div ref={mapEl} className="flex-1" style={{ background: "#1a0030" }} />
 
-      {/* Нижняя панель с кнопками маршрута */}
+      {/* Нижняя панель с кнопкой маршрута */}
       <div className="px-4 pt-3 pb-6 flex gap-2"
         style={{ background: "rgba(0,0,0,0.7)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-        <a href={gmaps} target="_blank" rel="noopener noreferrer"
+        <a href={ymapsUrl} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform"
           style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
           <Icon name="Navigation" size={16} className="text-white" />
-          Google Maps
-        </a>
-        <a href={ymaps} target="_blank" rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-semibold active:scale-95 transition-transform"
-          style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.15)" }}>
-          <Icon name="Navigation" size={16} className="text-white/90" />
-          Yandex
+          Открыть в Яндекс.Картах
         </a>
       </div>
     </div>

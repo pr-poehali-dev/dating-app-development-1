@@ -11,6 +11,7 @@ const URLS = {
   feedback: "https://functions.poehali.dev/2a5b54bc-ebf4-4dd3-b9e1-8cac88e504c3",
   streaks: "https://functions.poehali.dev/3ce9087c-7bc0-41d7-9ed9-81ef6b7272dd",
   compatibility: "https://functions.poehali.dev/3c47a214-b397-4193-9c25-8db3eb79b2d9",
+  config: "https://functions.poehali.dev/6ceb1501-cae9-4306-9855-f9195741490c",
 };
 
 function getToken(): string {
@@ -498,6 +499,11 @@ export const notifSettingsApi = {
   get: () => req<{ matches: boolean; messages: boolean; likes: boolean; promo: boolean }>("profiles", "get_notif_settings"),
   update: (settings: { matches?: boolean; messages?: boolean; likes?: boolean; promo?: boolean }) =>
     req<{ ok: boolean }>("profiles", "update_notif_settings", { method: "POST", body: JSON.stringify(settings) }),
+};
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+export const configApi = {
+  yandexMapsKey: () => req<{ api_key: string }>("config", "yandex_maps_key"),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────

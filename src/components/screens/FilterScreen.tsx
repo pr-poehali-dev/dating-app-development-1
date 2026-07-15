@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, type DiscoverParams } from "@/lib/api";
+import { reverseGeocode } from "@/lib/yandexMaps";
 
 // ─── FilterScreen ─────────────────────────────────────────────────────────────
 export function FilterScreen({ initial, onApply, onClose }: {
@@ -38,10 +39,9 @@ export function FilterScreen({ initial, onApply, onClose }: {
         setUseGeo(true);
         if (radius === 0) setRadius(50);
         try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-          const data = await r.json();
-          const c = data.address?.country || "";
-          const ci = data.address?.city || data.address?.town || data.address?.village || "";
+          const res = await reverseGeocode(lat, lon);
+          const c = res?.country || "";
+          const ci = res?.city || "";
           if (c) setCountry(c);
           if (ci) setCity(ci);
           profilesApi.updateGeo(lat, lon, c, ci).catch(() => {});

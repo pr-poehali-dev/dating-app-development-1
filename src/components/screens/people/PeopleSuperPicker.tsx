@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { loadYandexMaps, searchGeocode, type YMapsMap } from "@/lib/yandexMaps";
 
 const AGE_MIN = 18;
 const AGE_MAX = 80;
@@ -61,13 +60,12 @@ function AgeRangeSlider({ min, max, onChange }: { min: number; max: number; onCh
 
 const RADIUS_PRESETS = [5, 10, 25, 50, 100];
 
-interface CityResult { display_name: string; lat: string; lon: string; }
+interface CityResult { display_name: string; lat: number; lon: number; }
 
 function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number) => void }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const leafletMap = useRef<L.Map | null>(null);
-  const circleRef = useRef<L.Circle | null>(null);
-  const markerRef = useRef<L.CircleMarker | null>(null);
+  const yandexMap = useRef<YMapsMap | null>(null);
+  const circleRef = useRef<{ geometry: { setCoordinates: (c: [number, number]) => void; setRadius: (r: number) => void } } | null>(null);
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
   const [searching, setSearching] = useState(false);
@@ -75,37 +73,38 @@ function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number)
   const [globalMode, setGlobalMode] = useState(false);
 
   const moveMap = useCallback((lat: number, lon: number) => {
-    if (!leafletMap.current || !circleRef.current || !markerRef.current) return;
-    const latlng = L.latLng(lat, lon);
-    leafletMap.current.setView(latlng, 10, { animate: true });
-    circleRef.current.setLatLng(latlng);
-    markerRef.current.setLatLng(latlng);
+    if (!yandexMap.current || !circleRef.current) return;
+    yandexMap.current.setCenter([lat, lon], 10);
+    circleRef.current.geometry.setCoordinates([lat, lon]);
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || leafletMap.current) return;
-    const map = L.map(mapRef.current, {
-      center: [55.751244, 37.618423], zoom: 9,
-      zoomControl: false, attributionControl: false,
-    });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19 }).addTo(map);
-    const circle = L.circle([55.751244, 37.618423], {
-      radius: radius * 1000, color: "#FF2D78", fillColor: "#FF2D78", fillOpacity: 0.13, weight: 2,
-    }).addTo(map);
-    const marker = L.circleMarker([55.751244, 37.618423], {
-      radius: 7, color: "#FF2D78", fillColor: "#FF2D78", fillOpacity: 1, weight: 2,
-    }).addTo(map);
-    map.on("click", (e) => {
-      circle.setLatLng(e.latlng);
-      marker.setLatLng(e.latlng);
-    });
-    leafletMap.current = map;
-    circleRef.current = circle;
-    markerRef.current = marker;
-    return () => { map.remove(); leafletMap.current = null; };
+    if (!mapRef.current || yandexMap.current) return;
+    let canceled = false;
+    (async () => {
+      const ymaps = await loadYandexMaps();
+      if (canceled || !mapRef.current || yandexMap.current) return;
+      const map = new ymaps.Map(mapRef.current, {
+        center: [55.751244, 37.618423], zoom: 9,
+        controls: [],
+      });
+      const circle = new ymaps.Circle(
+        [[55.751244, 37.618423], radius * 1000],
+        {},
+        { fillColor: "#FF2D7822", strokeColor: "#FF2D78", strokeWidth: 2 }
+      );
+      map.geoObjects.add(circle);
+      map.events.add("click", (e) => {
+        const coords = e.get("coords") as [number, number] | undefined;
+        if (coords) circle.geometry.setCoordinates(coords);
+      });
+      yandexMap.current = map;
+      circleRef.current = circle;
+    })();
+    return () => { canceled = true; };
   }, []);
 
-  useEffect(() => { circleRef.current?.setRadius(radius * 1000); }, [radius]);
+  useEffect(() => { circleRef.current?.geometry.setRadius(radius * 1000); }, [radius]);
 
   const handleCityInput = (q: string) => {
     setCityQuery(q);
@@ -114,11 +113,8 @@ function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number)
     setSearching(true);
     searchTimer.current = setTimeout(async () => {
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=0`, {
-          headers: { "Accept-Language": "ru" }
-        });
-        const data = await res.json();
-        setCityResults(data);
+        const results = await searchGeocode(q, 5);
+        setCityResults(results.map((r) => ({ display_name: r.displayName, lat: r.lat, lon: r.lon })));
       } catch { setCityResults([]); }
       setSearching(false);
     }, 400);
@@ -127,7 +123,7 @@ function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number)
   const selectCity = (city: CityResult) => {
     setCityQuery(city.display_name.split(",")[0]);
     setCityResults([]);
-    moveMap(parseFloat(city.lat), parseFloat(city.lon));
+    moveMap(city.lat, city.lon);
   };
 
   return (
