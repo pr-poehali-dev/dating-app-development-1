@@ -366,6 +366,14 @@ html.theme-amber {
   }
 }
 
+/* Десктопный layout: сайдбар + широкий контент, без мобильного ограничения ширины */
+.app-screen-container.desktop-mode {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
 /*
  * Переопределяем max-w-sm для мобильных устройств.
  * На телефоне (< 640px) max-w-sm = 100% ширины, не 384px.

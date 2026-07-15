@@ -73,7 +73,7 @@ export function PeopleGrid({
   return (
     <>
       {/* Сетка */}
-      <div className="grid grid-cols-3 gap-1 px-1 pt-3 pb-4">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-1 sm:gap-2.5 px-1 sm:px-4 pt-3 pb-4">
         {profiles.map((p, idx) => {
           const photo = p.photo_url;
           const isLiked = likedIds.has(p.id);

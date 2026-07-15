@@ -10,7 +10,8 @@ import { setAppBadge } from "@/hooks/useNative";
 import { useBackButton } from "@/hooks/useBackButton";
 import { popBackHandler } from "@/hooks/backStack";
 
-import { AuthScreen, PremiumScreen, BottomNav } from "@/components/screens/AuthPremiumNav";
+import { AuthScreen, PremiumScreen, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
 import { PeopleScreen } from "@/components/screens/PeopleScreen";
@@ -121,6 +122,7 @@ export default function Index() {
 
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
+  const isDesktop = useIsDesktop();
 
   // Плавное скрытие/появление нижней панели при скролле ленты (на любом экране)
   const [navVisible, setNavVisible] = useState(true);
@@ -283,8 +285,85 @@ export default function Index() {
     return (
       <div className="app-bg flex justify-center" style={{ height: "100dvh", minHeight: "100vh" }}>
         <div className="app-hearts-layer" />
-        <div className="app-screen-container h-full">
-          <AuthScreen onAuth={handleAuth} />
+        <div
+          className={isDesktop ? "h-full flex items-center justify-center" : "app-screen-container h-full"}
+          style={isDesktop ? { width: "100%", maxWidth: 1200 } : undefined}
+        >
+          {isDesktop ? (
+            <div className="flex items-center gap-16 px-10">
+              <div className="hidden lg:flex flex-col gap-4 max-w-md">
+                <h2 className="font-unbounded text-white text-5xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
+                  Знакомься.<br />Общайся.<br />
+                  <span className="grad-text">Влюбляйся.</span>
+                </h2>
+                <p className="text-white/50 text-base mt-2">Полутон — место, где начинаются настоящие истории.</p>
+              </div>
+              <div className="relative rounded-[32px] overflow-hidden flex-shrink-0"
+                style={{ width: 400, height: 780, boxShadow: "0 30px 80px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <AuthScreen onAuth={handleAuth} />
+              </div>
+            </div>
+          ) : (
+            <AuthScreen onAuth={handleAuth} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const screensContent = (
+    <>
+      {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => navigateTo("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} />}
+      {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} onOpenSelf={() => navigateTo("profile")} isPremium={!!currentUser.premium} currentUserId={currentUser.id} />}
+      {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}
+      <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
+        <RealMatchesScreen onChat={openChat} />
+      </div>
+      {screen === "likes" && <RealLikesScreen onPremium={() => navigateTo("premium")} />}
+      {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => navigateTo("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => navigateTo("verify")} />}
+      {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
+      {screen === "filter" && (
+        <FilterScreen
+          initial={{}}
+          onApply={() => navigateTo("discover")}
+          onClose={() => navigateTo("discover")}
+        />
+      )}
+      {screen === "premium" && <PremiumScreen onClose={() => navigateTo("discover")} currentUser={currentUser} />}
+      {screen === "verify" && <VerifyScreen onClose={() => navigateTo("profile")} />}
+      {screen === "admin_verify" && <AdminVerifyScreen onClose={() => navigateTo("profile")} />}
+    </>
+  );
+
+  // ── Десктопная версия: боковая навигация вместо нижнего меню ──
+  if (isDesktop) {
+    // Экранам с постами/лентой — узкая центрированная колонка (как в соцсетях),
+    // экранам с сеткой людей/чатами — вся доступная ширина.
+    const narrowScreens: Screen[] = ["discover", "profile"];
+    const contentMaxWidth = narrowScreens.includes(screen) ? 640 : undefined;
+    // Открытый чат — тоже показываем сайдбар (на десктопе места достаточно)
+    const showSidebar = isMain || screen === "chat";
+
+    return (
+      <div className="app-bg flex justify-center">
+        <div className="app-hearts-layer" />
+        <OfflineBanner offlineState={offlineState} />
+        {showConfetti && <PremiumConfetti />}
+        <div className="app-screen-container desktop-mode" style={{ height: "100dvh" }}>
+          {showSidebar && (
+            <DesktopSidebar
+              active={screen === "chat" ? "matches" : screen}
+              onChange={(s) => navigateTo(s as Screen)}
+              unreadMessages={unreadMessages}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+            />
+          )}
+          <div className="flex-1 overflow-hidden relative" style={{ maxWidth: contentMaxWidth, margin: contentMaxWidth ? "0 auto" : undefined }}>
+            <div key={animKey} className="h-full w-full">
+              {screensContent}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -299,25 +378,7 @@ export default function Index() {
         <div className="flex-1 overflow-hidden relative">
           <div key={animKey}
             className={`h-full w-full ${animDir === "right" ? "screen-enter-right" : animDir === "left" ? "screen-enter-left" : "screen-enter-up"}`}>
-            {screen === "discover" && <HomeScreen currentUser={currentUser} onGoLive={() => navigateTo("live")} onJoinLive={handleJoinLive} onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} />}
-            {screen === "photos" && <PeopleScreen onOpenChat={openChat} onGoToChats={goToChats} onPremium={() => navigateTo("premium")} onOpenSelf={() => navigateTo("profile")} isPremium={!!currentUser.premium} currentUserId={currentUser.id} />}
-            {screen === "live" && <LiveScreen currentUser={currentUser} initialStream={joinStream} onStreamConsumed={() => setJoinStream(null)} />}
-            <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
-              <RealMatchesScreen onChat={openChat} />
-            </div>
-            {screen === "likes" && <RealLikesScreen onPremium={() => navigateTo("premium")} />}
-            {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => navigateTo("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => navigateTo("verify")} />}
-            {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
-            {screen === "filter" && (
-              <FilterScreen
-                initial={{}}
-                onApply={() => navigateTo("discover")}
-                onClose={() => navigateTo("discover")}
-              />
-            )}
-            {screen === "premium" && <PremiumScreen onClose={() => navigateTo("discover")} currentUser={currentUser} />}
-            {screen === "verify" && <VerifyScreen onClose={() => navigateTo("profile")} />}
-            {screen === "admin_verify" && <AdminVerifyScreen onClose={() => navigateTo("profile")} />}
+            {screensContent}
           </div>
         </div>
         {isMain && (
