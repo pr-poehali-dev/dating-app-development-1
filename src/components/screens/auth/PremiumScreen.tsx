@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { postsApi2, profilesApi } from "@/lib/api";
 
 const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png";
+const BG_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/566a84d5-251d-4644-9509-2e4e44d143af.jpg";
 
 const DEFAULT_PLANS = [
   { plan: "1month",  label: "1 месяц",    price_per_month: 699,  total_amount: 699,  duration_months: 1,  popular: false },
@@ -10,8 +11,66 @@ const DEFAULT_PLANS = [
   { plan: "12month", label: "12 месяцев", price_per_month: 249,  total_amount: 2988, duration_months: 12, popular: false },
 ];
 
+type TierKey = "start" | "plus" | "gold";
+
+interface Tier {
+  key: TierKey;
+  name: string;
+  tagline: string;
+  accent: string;
+  accent2: string;
+  features: { icon: string; label: string }[];
+}
+
+const TIERS: Tier[] = [
+  {
+    key: "start",
+    name: "СТАРТ",
+    tagline: "Первые шаги к знакомствам",
+    accent: "#3B82F6",
+    accent2: "#9B59B6",
+    features: [
+      { icon: "Heart", label: "Безлимитные лайки" },
+      { icon: "RefreshCw", label: "Отмена свайпа" },
+      { icon: "Filter", label: "Базовые фильтры поиска" },
+      { icon: "Image", label: "1 приватное фото" },
+    ],
+  },
+  {
+    key: "plus",
+    name: "ПЛЮС",
+    tagline: "Больше внимания и контроля",
+    accent: "#FF2D78",
+    accent2: "#FF6B35",
+    features: [
+      { icon: "Heart", label: "Всё из тарифа Старт, и…" },
+      { icon: "Eye", label: "Кто тебя лайкнул — без размытия" },
+      { icon: "Zap", label: "Приоритет анкеты в поиске" },
+      { icon: "Star", label: "Суперлайки каждый день" },
+      { icon: "Image", label: "2 приватных фото" },
+      { icon: "Sparkles", label: "Поиск по гороскопу" },
+    ],
+  },
+  {
+    key: "gold",
+    name: "ЗОЛОТО",
+    tagline: "Полный доступ без ограничений",
+    accent: "#FFD700",
+    accent2: "#FF2D78",
+    features: [
+      { icon: "Heart", label: "Всё из тарифа Плюс, и…" },
+      { icon: "Shield", label: "Режим инкогнито" },
+      { icon: "Rocket", label: "Буст профиля в топ" },
+      { icon: "BadgeCheck", label: "Золотой значок Premium" },
+      { icon: "MessageCircle", label: "Сообщения без совпадения" },
+      { icon: "MapPin", label: "Поиск в любом городе" },
+    ],
+  },
+];
+
 export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; currentUser?: { id: number; email: string; name: string } | null }) {
   const [rawPlans, setRawPlans] = useState(DEFAULT_PLANS);
+  const [tier, setTier] = useState<TierKey>("plus");
 
   useEffect(() => {
     postsApi2.getPremiumPlans()
@@ -56,23 +115,16 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
     }
   };
 
-  const features = [
-    { icon: "Heart",       label: "Безлимитные лайки",           desc: "Без дневных ограничений" },
-    { icon: "Eye",         label: "Кто тебя лайкнул",            desc: "Видно всех без размытия" },
-    { icon: "Zap",         label: "Приоритет в поиске",          desc: "Анкета выше остальных" },
-    { icon: "RefreshCw",   label: "Отмена свайпа",               desc: "Верни последний свайп" },
-    { icon: "Star",        label: "Суперлайки каждый день",      desc: "Выделяйся из толпы" },
-    { icon: "Shield",      label: "Режим инкогнито",             desc: "Смотри анкеты незаметно" },
-    { icon: "MapPin",      label: "Люди рядом без границ",        desc: "Меняй город поиска" },
-    { icon: "Filter",      label: "Расширенные фильтры",          desc: "Поиск по параметрам" },
-    { icon: "MessageCircle", label: "Сообщения без совпадения",  desc: "Пиши первым, кому хочешь" },
-    { icon: "Rocket",      label: "Буст профиля",                 desc: "Подними анкету в топ" },
-    { icon: "BadgeCheck",  label: "Значок Premium",               desc: "Золотой бейдж у имени" },
-    { icon: "Sparkles",    label: "Поиск по гороскопу",           desc: "По знаку и совместимости" },
-  ];
+  const active = TIERS.find((t) => t.key === tier)!;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto" style={{ background: "linear-gradient(160deg, #130d22 0%, #1e1235 50%, #2a1545 100%)" }}>
+    <div className="flex flex-col h-full overflow-y-auto relative" style={{ background: "#0f0a1a" }}>
+      {/* Фоновая картинка */}
+      <div className="absolute inset-0 pointer-events-none" style={{ height: 420 }}>
+        <img src={BG_URL} className="w-full h-full object-cover" style={{ opacity: 0.5 }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(15,10,26,0.15) 0%, #0f0a1a 92%)" }} />
+      </div>
+
       <style>{`
         @keyframes premSpin {
           0%   { background-position: 0% 50%; }
@@ -80,10 +132,6 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
           50%  { background-position: 100% 100%; }
           75%  { background-position: 0% 100%; }
           100% { background-position: 0% 50%; }
-        }
-        @keyframes premOrbit {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
         }
         @keyframes logoHeartbeat {
           0%   { transform: scale(1); }
@@ -93,62 +141,12 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
           56%  { transform: scale(1); }
           100% { transform: scale(1); }
         }
-        @keyframes logoPulse {
-          0%   { box-shadow: 0 0 0 0 rgba(255,45,120,0.5), 0 0 40px rgba(255,45,120,0.3); }
-          50%  { box-shadow: 0 0 0 16px rgba(255,45,120,0), 0 0 60px rgba(255,45,120,0.5); }
-          100% { box-shadow: 0 0 0 0 rgba(255,45,120,0), 0 0 40px rgba(255,45,120,0.3); }
-        }
         @keyframes glowRingPulse {
           0%   { opacity: 0.7; transform: scale(1); }
           50%  { opacity: 1;   transform: scale(1.06); }
           100% { opacity: 0.7; transform: scale(1); }
         }
-        .prem-logo-img {
-          animation: logoHeartbeat 1.4s ease-in-out infinite;
-        }
-        .prem-logo-ring {
-          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #3B82F6, #FF2D78);
-          background-size: 400% 400%;
-          animation: premSpin 4s ease infinite, logoPulse 1.4s ease-in-out infinite;
-          border-radius: 28px;
-          padding: 3px;
-        }
-        .prem-logo-inner {
-          background: #130d22;
-          border-radius: 25px;
-          overflow: hidden;
-          width: 100%;
-          height: 100%;
-        }
-        .prem-glow-ring {
-          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #3B82F6, #FF2D78);
-          background-size: 400% 400%;
-          animation: premSpin 5s ease infinite;
-          border-radius: 9999px;
-          padding: 3px;
-          box-shadow: 0 0 50px rgba(255,45,120,0.6), 0 0 100px rgba(155,89,182,0.3);
-        }
-        .prem-glow-inner {
-          background: #1A1625;
-          border-radius: 9999px;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .prem-plan-border {
-          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #FF2D78);
-          background-size: 300% 300%;
-          animation: premSpin 4s ease infinite;
-          border-radius: 20px;
-          padding: 2px;
-        }
-        .prem-plan-border-idle {
-          background: rgba(255,255,255,0.08);
-          border-radius: 20px;
-          padding: 2px;
-        }
+        .prem-logo-img { animation: logoHeartbeat 1.4s ease-in-out infinite; }
         .prem-plan-inner {
           background: rgba(10,5,20,0.88);
           backdrop-filter: blur(12px);
@@ -157,135 +155,114 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
           height: 100%;
         }
         .prem-btn {
-          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700, #9B59B6, #3B82F6, #FF2D78);
           background-size: 300% 300%;
           animation: premSpin 4s ease infinite;
           border-radius: 18px;
-          box-shadow: 0 0 30px rgba(255,45,120,0.5), 0 4px 20px rgba(155,89,182,0.3);
-        }
-        .prem-feature-icon {
-          background: linear-gradient(135deg, #FF2D78, #9B59B6, #FF6B35);
-          background-size: 200% 200%;
-          animation: premSpin 5s ease infinite;
-        }
-        .prem-check {
-          background: linear-gradient(135deg, #FF2D78, #FFD700);
-          background-size: 200% 200%;
-          animation: premSpin 4s ease infinite reverse;
-        }
-        .prem-badge {
-          background: linear-gradient(135deg, #FF2D78, #FF6B35, #FFD700);
-          background-size: 200% 200%;
-          animation: premSpin 3s ease infinite;
-          border-radius: 99px;
-          padding: 3px 14px;
-          font-size: 11px;
-          font-weight: 800;
-          color: white;
-          letter-spacing: 0.03em;
-        }
-        .prem-stars {
-          position: absolute;
-          inset: 0;
-          overflow: hidden;
-          pointer-events: none;
-          border-radius: 28px;
         }
       `}</style>
 
       {/* Кнопка закрытия */}
-      <div className="flex items-center justify-end px-5 pb-0"
+      <div className="relative flex items-center justify-end px-5 pb-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}>
         <button onClick={onClose}
           className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90"
-          style={{ background: "rgba(255,255,255,0.08)" }}>
-          <Icon name="X" size={18} className="text-white/60" />
+          style={{ background: "rgba(255,255,255,0.1)" }}>
+          <Icon name="X" size={18} className="text-white/70" />
         </button>
       </div>
 
       {/* Hero: логотип + заголовок */}
-      <div className="flex flex-col items-center px-5 pt-4 pb-6">
-        {/* Логотип с heartbeat */}
-        <div className="relative mb-5">
-          {/* Внешнее кольцо-glow */}
+      <div className="relative flex flex-col items-center px-5 pt-3 pb-5">
+        <div className="relative mb-4">
           <div className="absolute inset-0 rounded-[30px]"
             style={{
-              background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+              background: `linear-gradient(135deg,${active.accent},${active.accent2})`,
               filter: "blur(18px)",
-              opacity: 0.6,
+              opacity: 0.55,
               animation: "glowRingPulse 1.4s ease-in-out infinite",
               transform: "scale(1.15)",
             }} />
-          {/* Рамка-градиент */}
-          <div className="prem-logo-ring relative" style={{ width: 100, height: 100 }}>
-            <div className="prem-logo-inner">
-              <img
-                src={LOGO_URL}
-                alt="Полутон"
-                className="prem-logo-img w-full h-full object-cover"
-              />
+          <div className="relative rounded-[28px] p-[3px]" style={{ width: 84, height: 84, background: `linear-gradient(135deg,${active.accent},${active.accent2})` }}>
+            <div className="rounded-[25px] overflow-hidden w-full h-full" style={{ background: "#130d22" }}>
+              <img src={LOGO_URL} alt="Полутон" className="prem-logo-img w-full h-full object-cover" />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-2">
-          <h2 className="font-unbounded text-white font-black text-2xl text-center tracking-wide">Полутон</h2>
-          <span className="prem-badge">PREMIUM</span>
-        </div>
+        <h2 className="font-unbounded text-white font-black text-2xl text-center tracking-wide mb-1">Полутон</h2>
         <p className="text-white/45 text-sm text-center leading-relaxed">
           Знакомься быстрее · Находи лучшее
         </p>
       </div>
 
-      {/* Фичи */}
-      <div className="px-4 mb-2">
-        <p className="text-white font-bold text-base mb-0.5">Что входит в подписку</p>
-        <p className="text-white/40 text-xs">Полный доступ ко всем возможностям Полутон</p>
-      </div>
-      <div className="mx-4 mb-4 rounded-2xl p-3.5"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex flex-col">
-          {features.map((f, i) => (
-            <div key={f.label} className="flex items-start gap-3 py-3"
-              style={i < features.length - 1 ? { borderBottom: "1px solid rgba(255,255,255,0.06)" } : undefined}>
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 prem-feature-icon">
-                <Icon name={f.icon as "Heart"} size={16} className="text-white" fallback="Sparkles" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-white font-semibold text-sm">{f.label}</span>
-                  <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 prem-check">
-                    <Icon name="Check" size={9} className="text-white" />
-                  </div>
-                </div>
-                <p className="text-white/45 text-xs leading-snug mt-0.5">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Табы тарифов */}
+      <div className="relative mx-4 mb-5 p-1 rounded-2xl flex" style={{ background: "rgba(255,255,255,0.06)" }}>
+        {TIERS.map((t) => (
+          <button key={t.key} onClick={() => setTier(t.key)}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+            style={tier === t.key
+              ? { background: "#fff", color: "#130d22" }
+              : { background: "transparent", color: "rgba(255,255,255,0.55)" }}>
+            {t.name}
+          </button>
+        ))}
       </div>
 
-      {/* Планы */}
-      <div className="mx-4 flex flex-col gap-3 mb-5">
+      {/* Заголовок тарифа */}
+      <div className="relative px-5 mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-white font-black text-xs uppercase tracking-widest" style={{ color: active.accent }}>
+            Полутон {active.name}
+          </span>
+        </div>
+        <p className="text-white font-bold text-xl mb-1">{active.tagline}</p>
+      </div>
+
+      {/* Фичи тарифа */}
+      <div className="relative px-5 mb-6 flex flex-col gap-3.5">
+        {active.features.map((f) => (
+          <div key={f.label} className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `linear-gradient(135deg,${active.accent}33,${active.accent2}33)` }}>
+              <Icon name={f.icon as "Heart"} size={16} style={{ color: active.accent }} fallback="Sparkles" />
+            </div>
+            <span className="text-white/85 text-[15px] font-medium">{f.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Планы длительности */}
+      <div className="relative mx-4 flex flex-col gap-2.5 mb-5">
         {plans.map((p, i) => (
           <button key={p.label} onClick={() => setSelected(i)}
-            className={`relative text-left transition-all active:scale-[0.98] ${selected === i ? "prem-plan-border" : "prem-plan-border-idle"}`}>
-            <div className="prem-plan-inner px-4 py-3.5">
+            className="relative text-left transition-all active:scale-[0.98] rounded-2xl p-[2px]"
+            style={selected === i
+              ? { background: `linear-gradient(135deg,${active.accent},${active.accent2})` }
+              : { background: "rgba(255,255,255,0.08)" }}>
+            <div className="prem-plan-inner px-4 py-3">
               {p.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <span className="prem-badge">🔥 ВЫГОДНЕЕ ВСЕГО</span>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <span className="rounded-full px-3 py-0.5 text-[10px] font-black text-white"
+                    style={{ background: `linear-gradient(135deg,${active.accent},${active.accent2})` }}>
+                    ЛУЧШАЯ ЦЕНА
+                  </span>
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white font-bold text-sm">{p.label}</p>
-                  {p.total && <p className="text-white/35 text-xs mt-0.5">{p.total} всего</p>}
+                <div className="flex items-center gap-2.5">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={selected === i
+                      ? { background: `linear-gradient(135deg,${active.accent},${active.accent2})` }
+                      : { border: "2px solid rgba(255,255,255,0.25)" }}>
+                    {selected === i && <Icon name="Check" size={12} className="text-white" />}
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">{p.label}</p>
+                    {p.total && <p className="text-white/35 text-xs mt-0.5">{p.total} всего</p>}
+                  </div>
                 </div>
                 <div className="text-right">
-                  <span className="font-black text-xl"
-                    style={{ background: "linear-gradient(90deg,#FF2D78,#FFD700,#9B59B6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundSize: "200% 100%", animation: "premSpin 4s ease infinite" }}>
-                    {p.price}
-                  </span>
+                  <span className="text-white font-black text-lg">{p.price}</span>
                   <span className="text-white/40 text-sm">{p.per}</span>
                 </div>
               </div>
@@ -295,7 +272,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
       </div>
 
       {/* Промокод */}
-      <div className="px-4 mb-4">
+      <div className="relative px-4 mb-4">
         {!promoApplied ? (
           <div className="flex gap-2">
             <input
@@ -308,14 +285,14 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
               style={{
                 background: "rgba(255,255,255,0.06)",
                 border: promoError ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                caretColor: "#FF2D78",
+                caretColor: active.accent,
               }}
             />
             <button
               onClick={handleApplyPromo}
               disabled={promoLoading || !promoCode.trim()}
               className="px-4 py-2.5 rounded-2xl text-white text-sm font-bold disabled:opacity-40 transition-all active:scale-95"
-              style={{ background: "rgba(255,45,120,0.25)", border: "1px solid rgba(255,45,120,0.3)" }}>
+              style={{ background: `${active.accent}33`, border: `1px solid ${active.accent}55` }}>
               {promoLoading
                 ? <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin block" />
                 : "Применить"}
@@ -339,7 +316,7 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
       </div>
 
       {/* Кнопка оплаты */}
-      <div className="px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)" }}>
+      <div className="relative px-4" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)" }}>
         {error && <p className="text-red-400 text-xs text-center mb-3">{error}</p>}
         <button
           disabled={paying}
@@ -357,13 +334,14 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   amount: finalAmount,
-                  description: `Полутон Premium — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
+                  description: `Полутон ${active.name} — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
                   user_email: currentUser.email,
                   return_url: window.location.origin + "/?payment=success",
                   metadata: {
                     user_id: String(currentUser.id),
                     user_name: currentUser.name,
                     plan: plan.plan,
+                    tier: active.key,
                     promo_code: promoApplied || undefined,
                     promo_discount: promoDiscount || undefined,
                   },
@@ -381,7 +359,8 @@ export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; c
               setPaying(false);
             }
           }}
-          className="prem-btn w-full py-4 text-base font-black text-white disabled:opacity-60 flex items-center justify-center gap-2">
+          className="prem-btn w-full py-4 text-base font-black text-white disabled:opacity-60 flex items-center justify-center gap-2"
+          style={{ backgroundImage: `linear-gradient(135deg,${active.accent},${active.accent2},${active.accent})` }}>
           {paying
             ? <><div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />Создаём платёж...</>
             : promoDiscount > 0

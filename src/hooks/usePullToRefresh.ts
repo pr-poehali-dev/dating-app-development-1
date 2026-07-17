@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const THRESHOLD = 120;
-const MAX_PULL = 160;
-const ACTIVATE_AT = 24;
+const THRESHOLD = 200;
+const MAX_PULL = 240;
+const ACTIVATE_AT = 70;
 
 export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
   const startY = useRef(0);
