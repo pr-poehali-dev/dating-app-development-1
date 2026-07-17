@@ -112,9 +112,17 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const startRecording = async () => {
     setMicError(null);
 
+    // Микрофон работает только в защищённом контексте (HTTPS). В APK-обёртке
+    // с http:// или file:// getUserMedia недоступен — частая причина «отказа».
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      setMicError("Запись недоступна: приложение открыто по незащищённому соединению. Обнови приложение до последней версии.");
+      setTimeout(() => setMicError(null), 6000);
+      return;
+    }
+
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      setMicError("Запись голосовых сообщений не поддерживается в этом браузере.");
-      setTimeout(() => setMicError(null), 5000);
+      setMicError("Запись голосовых сообщений недоступна. Обнови приложение или открой его в браузере.");
+      setTimeout(() => setMicError(null), 6000);
       return;
     }
     if (typeof MediaRecorder === "undefined") {
@@ -135,8 +143,19 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
       const err = e as { name?: string };
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
-        setMicError("Нет доступа к микрофону. Разреши доступ в настройках телефона: Приложения → Полутон → Разрешения → Микрофон.");
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError" || err?.name === "SecurityError") {
+        // Уточняем причину: заблокировано в системе или ещё не спрашивали
+        let deniedBySystem = false;
+        try {
+          const perm = await navigator.permissions?.query({ name: "microphone" as PermissionName });
+          if (perm?.state === "denied") deniedBySystem = true;
+        } catch { /* Permissions API может не поддерживаться */ }
+
+        if (deniedBySystem) {
+          setMicError("Доступ к микрофону запрещён. Открой Настройки телефона → Приложения → Полутон → Разрешения → Микрофон и включи доступ.");
+        } else {
+          setMicError("Нужен доступ к микрофону. Нажми кнопку записи ещё раз и разреши доступ во всплывающем окне.");
+        }
       } else if (err?.name === "NotReadableError") {
         setMicError("Микрофон занят другим приложением. Закрой его и попробуй снова.");
       } else if (err?.name === "NotFoundError") {
@@ -144,7 +163,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
       } else {
         setMicError("Не удалось включить микрофон. Попробуй ещё раз.");
       }
-      setTimeout(() => setMicError(null), 5000);
+      setTimeout(() => setMicError(null), 6000);
       return;
     }
 
