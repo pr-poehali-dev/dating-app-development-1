@@ -271,7 +271,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
       {/* Контент */}
       {screen === "security" && (
         <div className="flex-1 overflow-y-auto pb-8">
-          <SecurityPanel onLogout={onLogout} />
+          <SecurityPanel onLogout={onLogout} currentUser={currentUser} />
         </div>
       )}
       {screen !== "security" && <SettingsScreenContent

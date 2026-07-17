@@ -20,6 +20,9 @@ import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "
 import { PeopleScreen } from "@/components/screens/PeopleScreen";
 import { RealProfileScreen, VerifyScreen, AdminVerifyScreen } from "@/components/screens/ProfileScreens";
 import { HomeScreen } from "@/components/screens/HomeScreen";
+import { LockScreen } from "@/components/screens/LockScreen";
+import { isPinEnabled, getPinUserId } from "@/hooks/usePinLock";
+import { isBiometricRegistered } from "@/hooks/useBiometrics";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
@@ -30,11 +33,19 @@ export default function Index() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
+  // Экран блокировки (PIN/биометрия) при запуске приложения — только если
+  // для этого пользователя на этом устройстве включён хотя бы один способ
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     if (authApi.isLoggedIn()) {
       authApi.me()
-        .then((d) => setCurrentUser(d.user))
+        .then((d) => {
+          setCurrentUser(d.user);
+          const hasPin = isPinEnabled() && getPinUserId() === d.user.id;
+          const hasBio = isBiometricRegistered(d.user.id);
+          if (hasPin || hasBio) setLocked(true);
+        })
         .catch(() => {})
         .finally(() => setAuthLoading(false));
     } else {
@@ -286,6 +297,16 @@ export default function Index() {
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
         </div>
       </div>
+    );
+  }
+
+  if (currentUser && locked) {
+    return (
+      <LockScreen
+        userId={currentUser.id}
+        onUnlock={() => setLocked(false)}
+        onLogout={() => { setLocked(false); handleLogout(); }}
+      />
     );
   }
 
