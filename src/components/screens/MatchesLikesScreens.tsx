@@ -273,13 +273,25 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
-      <div className="px-5 pt-5 pb-3">
-        <h2 className="text-white font-golos font-bold text-2xl">Ты им понравился</h2>
-        <p className="text-white/40 text-sm mt-0.5">{likedMe.length} человек лайкнули тебя</p>
+      {/* Шапка */}
+      <div className="px-5 pb-3 flex items-center gap-2.5"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}>
+        <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.2), rgba(155,89,182,0.15))", border: "1px solid rgba(255,45,120,0.25)" }}>
+          <Icon name="Heart" size={17} className="text-pink-400" />
+        </div>
+        <div>
+          <h2 className="text-white font-golos font-bold text-2xl leading-tight">Ты им понравился</h2>
+          <p className="text-white/40 text-sm mt-0.5">{likedMe.length} человек лайкнули тебя</p>
+        </div>
       </div>
+
+      {/* Premium-баннер */}
       <div className="mx-5 mb-5 p-5 rounded-3xl relative overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.25))", border: "1px solid rgba(255,45,120,0.3)" }}>
-        <div className="flex items-start justify-between mb-3">
+        <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full pointer-events-none"
+          style={{ background: "radial-gradient(circle, rgba(255,215,0,0.18), transparent 70%)" }} />
+        <div className="flex items-start justify-between mb-3 relative">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-white font-bold text-base">Полутон Premium</span>
@@ -289,20 +301,49 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
           </div>
           <div className="text-3xl">✨</div>
         </div>
-        <button onClick={onPremium} className="btn-grad px-5 py-2.5 text-sm w-full">Открыть все лайки</button>
+        <button onClick={onPremium} className="btn-grad px-5 py-2.5 text-sm w-full relative">Открыть все лайки</button>
       </div>
+
       {likedMe.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 gap-3">
-          <div className="text-5xl">❤️</div>
-          <p className="text-white/50 text-sm text-center">Пока никто не лайкнул.<br />Заполни профиль и лайкай сам!</p>
+        <div className="flex flex-col items-center justify-center flex-1 gap-5 px-8 text-center">
+          <div className="relative w-24 h-24 flex items-center justify-center">
+            {/* Glow rings */}
+            <div className="absolute inset-0 rounded-[28px]"
+              style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.2),rgba(155,89,182,0.16))", border: "1px solid rgba(255,45,120,0.28)", boxShadow: "0 0 36px rgba(255,45,120,0.22)" }} />
+            <div className="absolute inset-[-7px] rounded-[32px]" style={{ border: "1px solid rgba(255,45,120,0.1)" }} />
+            {/* Pulsing heart glow */}
+            <div className="absolute inset-0 rounded-[28px] animate-pulse" style={{ background: "radial-gradient(circle, rgba(255,45,120,0.15), transparent 70%)" }} />
+            {/* Icon */}
+            <svg width="42" height="42" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative">
+              <defs>
+                <linearGradient id="likesGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#FF2D78"/>
+                  <stop offset="100%" stopColor="#9B59B6"/>
+                </linearGradient>
+              </defs>
+              <path d="M12 21s-7.5-4.6-10.2-9.2C.3 8.9 1.4 5.3 4.6 4.1c2-.8 4.2-.2 5.6 1.4l1.8 2 1.8-2c1.4-1.6 3.6-2.2 5.6-1.4 3.2 1.2 4.3 4.8 2.8 7.7C19.5 16.4 12 21 12 21z"
+                fill="url(#likesGrad)" opacity="0.18" stroke="url(#likesGrad)" strokeWidth="1.5" strokeLinejoin="round"/>
+            </svg>
+            {/* Sparkle dot */}
+            <div className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-pink-500 border-2 border-[#0d0518]" style={{ boxShadow: "0 0 8px #FF2D78" }} />
+          </div>
+          <div>
+            <p className="text-white/70 font-semibold text-base mb-1">Пока никто не лайкнул</p>
+            <p className="text-white/35 text-sm leading-relaxed">Заполни профиль и лайкай сам —<br />совпадения не заставят себя ждать!</p>
+          </div>
         </div>
       ) : (
         <div className="px-5 grid grid-cols-2 gap-3">
           {likedMe.map((p, i) => (
-            <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-[3/4]">
+            <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-[3/4] transition-transform active:scale-[0.97]"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
               <img src={p.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover"
                 style={{ filter: p.blurred ? "blur(20px) brightness(0.7)" : "none" }} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
+              <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(255,45,120,0.9)", boxShadow: "0 0 8px rgba(255,45,120,0.6)" }}>
+                <Icon name="Heart" size={12} className="text-white" style={{ fill: "white" }} />
+              </div>
               {p.blurred && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button onClick={onPremium} className="glass-card p-3 flex flex-col items-center gap-1">

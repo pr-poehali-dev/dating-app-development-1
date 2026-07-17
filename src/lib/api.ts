@@ -205,6 +205,7 @@ export interface DiscoverParams {
   radius_km?: number;
   online_only?: boolean;
   new_only?: boolean;
+  verified_only?: boolean;
   zodiac?: string;
 }
 
