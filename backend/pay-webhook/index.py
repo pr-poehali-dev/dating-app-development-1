@@ -108,6 +108,11 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
     if not user_id:
         return
 
+    # Уровень подписки (start/plus/gold), по умолчанию gold для обратной совместимости
+    tier = metadata.get('tier', '') if metadata else ''
+    if tier not in ('start', 'plus', 'gold'):
+        tier = 'gold'
+
     # Защита от дубликатов по payment_id
     cur.execute(
         "SELECT id FROM notifications WHERE user_id = %s AND type = 'premium_activated' AND text = %s LIMIT 1",
@@ -129,12 +134,14 @@ def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:
 
     # Активируем premium
     cur.execute(
-        "UPDATE users SET premium = TRUE, premium_until = %s WHERE id = %s",
-        (premium_until, user_id)
+        "UPDATE users SET premium = TRUE, premium_until = %s, premium_tier = %s WHERE id = %s",
+        (premium_until, tier, user_id)
     )
 
+    tier_labels = {'start': 'Старт', 'plus': 'Плюс', 'gold': 'Золото'}
+    tier_label = tier_labels.get(tier, 'Premium')
     plan_labels = {'1month': '1 месяц', '3month': '3 месяца', '6month': '6 месяцев', '12month': '12 месяцев'}
-    plan_label = plan_labels.get(plan, plan)
+    plan_label = f"{tier_label} — {plan_labels.get(plan, plan)}"
     until_str = premium_until.strftime('%d.%m.%Y')
 
     # Уведомление в колокольчик (text = payment_id для дедупликации, ref_id = месяцы)

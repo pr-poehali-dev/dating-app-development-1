@@ -593,6 +593,7 @@ export interface User {
   gender?: string;
   looking_for?: string;
   premium?: boolean;
+  premium_tier?: "start" | "plus" | "gold";
   height?: number;
   weight?: number;
   relationship_status?: string;
@@ -619,6 +620,7 @@ export interface Profile {
   online?: boolean;
   last_seen?: string;
   premium?: boolean;
+  premium_tier?: "start" | "plus" | "gold";
   height?: number;
   weight?: number;
   gender?: string;

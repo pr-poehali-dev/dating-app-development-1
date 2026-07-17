@@ -1,9 +1,11 @@
 import Icon from "@/components/ui/icon";
 import type { StreakReward } from "@/lib/streakRewards";
+import { TIER_STYLES, resolveTier, type PremiumTier } from "@/lib/premiumTiers";
 
 interface ProfilePhotoBadgesProps {
   profileVerified?: boolean;
   profilePremium?: boolean;
+  profilePremiumTier?: PremiumTier | null;
   profileBoosted?: boolean;
   streakReward: StreakReward | null;
 }
@@ -12,9 +14,13 @@ interface ProfilePhotoBadgesProps {
 export function ProfilePhotoBadges({
   profileVerified,
   profilePremium,
+  profilePremiumTier,
   profileBoosted,
   streakReward,
 }: ProfilePhotoBadgesProps) {
+  const tier = resolveTier(profilePremium, profilePremiumTier);
+  const tierStyle = tier ? TIER_STYLES[tier] : null;
+
   return (
     <>
       {profileVerified && (
@@ -23,19 +29,19 @@ export function ProfilePhotoBadges({
           <Icon name="BadgeCheck" size={14} className="text-white" />
         </div>
       )}
-      {profilePremium && (
+      {tierStyle && (
         <span className="relative inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full font-black leading-none tracking-wider select-none flex-shrink-0 overflow-hidden"
           style={{
-            background: "linear-gradient(120deg,#9A6A06,#FFD700,#FFF6C2,#FFD700,#9A6A06)",
+            background: tierStyle.gradient,
             backgroundSize: "200% 100%",
-            color: "#3a2700",
-            border: "1px solid rgba(255,236,150,0.85)",
-            boxShadow: "0 2px 10px rgba(255,200,40,0.55), inset 0 1px 1px rgba(255,255,255,0.6)",
-            textShadow: "0 1px 0 rgba(255,255,255,0.35)",
+            color: tierStyle.textColor,
+            border: `1px solid ${tierStyle.border}`,
+            boxShadow: `${tierStyle.shadow}, inset 0 1px 1px rgba(255,255,255,0.4)`,
+            textShadow: "0 1px 0 rgba(255,255,255,0.25)",
             animation: "goldShimmer 2.5s linear infinite",
           }}>
-          <Icon name="Crown" size={11} style={{ color: "#3a2700" }} />
-          PREMIUM
+          <Icon name={tierStyle.icon as "Crown"} size={11} style={{ color: tierStyle.textColor }} />
+          {tierStyle.label}
           <span className="absolute inset-0 pointer-events-none"
             style={{
               background: "linear-gradient(75deg, transparent 35%, rgba(255,255,255,0.85) 50%, transparent 65%)",

@@ -293,7 +293,7 @@ def handler(event: dict, context) -> dict:
             else:
                 all_params = q_params
             cur.execute(f"""
-                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium, u.height, u.weight, u.relationship_status, u.last_seen, u.show_age, u.zodiac,
+                SELECT u.id, u.name, u.age, u.city, u.country, u.bio, u.photo_url, u.tags, u.verified, u.online, u.username, u.premium, u.premium_tier, u.height, u.weight, u.relationship_status, u.last_seen, u.show_age, u.zodiac,
                        (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted{geo_select}
                 FROM users u
                 WHERE {where_clause}
@@ -301,7 +301,7 @@ def handler(event: dict, context) -> dict:
                 LIMIT 60
             """, all_params)
             rows = cur.fetchall()
-            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium', 'height', 'weight', 'relationship_status', 'last_seen', 'show_age', 'zodiac', 'boosted']
+            cols = ['id', 'name', 'age', 'city', 'country', 'bio', 'photo_url', 'tags', 'verified', 'online', 'username', 'premium', 'premium_tier', 'height', 'weight', 'relationship_status', 'last_seen', 'show_age', 'zodiac', 'boosted']
             if geo_select:
                 cols.append('distance_km')
             profiles_list = []
@@ -784,7 +784,7 @@ def handler(event: dict, context) -> dict:
             uid = int(params.get('user_id', 0))
             cur.execute("""
                 SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.last_seen, u.created_at,
-                       u.username, u.premium, u.cover_url, u.gender, u.height, u.weight, u.relationship_status,
+                       u.username, u.premium, u.premium_tier, u.cover_url, u.gender, u.height, u.weight, u.relationship_status,
                        (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted
                 FROM users u WHERE u.id = %s
             """, (uid,))
@@ -792,7 +792,7 @@ def handler(event: dict, context) -> dict:
             if not row:
                 return resp(404, {'error': 'Пользователь не найден'})
             cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'last_seen', 'created_at',
-                    'username', 'premium', 'cover_url', 'gender', 'height', 'weight', 'relationship_status', 'boosted']
+                    'username', 'premium', 'premium_tier', 'cover_url', 'gender', 'height', 'weight', 'relationship_status', 'boosted']
             profile = dict(zip(cols, row))
             profile['created_at'] = str(profile['created_at'])
             profile['last_seen'] = str(profile['last_seen']) if profile['last_seen'] else None

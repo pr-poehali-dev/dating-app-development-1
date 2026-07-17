@@ -316,6 +316,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           profileUsername={currentProfile.username}
           profileVerified={currentProfile.verified}
           profilePremium={currentProfile.premium}
+          profilePremiumTier={currentProfile.premium_tier}
           profileBoosted={currentProfile.boosted}
           profileOnline={isUserOnline(currentProfile.last_seen, currentProfile.online)}
           coverUrl={currentProfile.cover_url}

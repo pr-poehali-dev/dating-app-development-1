@@ -3,6 +3,7 @@ import { type User } from "@/lib/api";
 import { ProfileCoverAvatar } from "@/components/screens/profile/ProfileCoverAvatar";
 import { ProfileTopBarMenu } from "@/components/screens/profile/ProfileTopBarMenu";
 import { getStreakReward } from "@/lib/streakRewards";
+import { TIER_STYLES, resolveTier } from "@/lib/premiumTiers";
 import { type AppTheme } from "@/hooks/useAppTheme";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
@@ -31,6 +32,8 @@ export function ProfileHeader({
   onCoverOpen?: () => void;
 }) {
   const streakReward = getStreakReward(streakDays);
+  const tier = resolveTier(currentUser.premium, currentUser.premium_tier);
+  const tierStyle = tier ? TIER_STYLES[tier] : null;
 
   return (
     <div className="flex flex-col items-center mb-0" style={{ position: "relative", zIndex: 1 }}>
@@ -71,18 +74,19 @@ export function ProfileHeader({
           {currentUser.username && (
             <span className="text-white/35 text-xs font-mono">@{currentUser.username}</span>
           )}
-          {currentUser.premium && (
-            <span className="relative overflow-hidden text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none"
+          {tierStyle && (
+            <span className="relative overflow-hidden text-[10px] px-2.5 py-0.5 rounded-full font-black leading-none tracking-wide select-none flex items-center gap-1"
               style={{
-                background: "linear-gradient(120deg,#B8860B,#FFD700,#FFF0A0,#FFD700,#B8860B)",
+                background: tierStyle.gradient,
                 backgroundSize: "200% 100%",
-                color: "#1a1000",
-                boxShadow: "0 0 8px rgba(255,215,0,0.6), 0 0 2px rgba(255,215,0,0.9), inset 0 1px 0 rgba(255,255,255,0.4)",
+                color: tierStyle.textColor,
+                boxShadow: `${tierStyle.shadow}, inset 0 1px 0 rgba(255,255,255,0.3)`,
                 animation: "goldShimmer 2.5s linear infinite",
-                border: "1px solid rgba(255,215,0,0.5)",
-                textShadow: "0 1px 0 rgba(255,255,255,0.4)",
+                border: `1px solid ${tierStyle.border}`,
+                textShadow: "0 1px 0 rgba(255,255,255,0.25)",
               }}>
-              ✦ PREMIUM
+              <Icon name={tierStyle.icon as "Crown"} size={10} style={{ color: tierStyle.textColor }} />
+              {tierStyle.label}
             </span>
           )}
           {streakReward && (

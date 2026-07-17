@@ -1,4 +1,5 @@
 import { getStreakReward } from "@/lib/streakRewards";
+import type { PremiumTier } from "@/lib/premiumTiers";
 import { useProfilePhotoGestures } from "@/components/screens/profile-photo/useProfilePhotoGestures";
 import { ProfilePhotoFullscreen } from "@/components/screens/profile-photo/ProfilePhotoFullscreen";
 import { ProfilePhotoMain } from "@/components/screens/profile-photo/ProfilePhotoMain";
@@ -15,6 +16,7 @@ interface ProfilePhotoSectionProps {
   profileUsername?: string;
   profileVerified?: boolean;
   profilePremium?: boolean;
+  profilePremiumTier?: PremiumTier | null;
   profileBoosted?: boolean;
   profileOnline?: boolean;
   coverUrl?: string;
@@ -42,6 +44,7 @@ export function ProfilePhotoSection({
   profileUsername,
   profileVerified,
   profilePremium,
+  profilePremiumTier,
   profileBoosted,
   profileOnline,
   onClose,
@@ -124,6 +127,7 @@ export function ProfilePhotoSection({
       profileUsername={profileUsername}
       profileVerified={profileVerified}
       profilePremium={profilePremium}
+      profilePremiumTier={profilePremiumTier}
       profileBoosted={profileBoosted}
       streakReward={streakReward}
       photoAnimStyle={photoAnimStyle}

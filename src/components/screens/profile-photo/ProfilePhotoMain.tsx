@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import type { StreakReward } from "@/lib/streakRewards";
+import type { PremiumTier } from "@/lib/premiumTiers";
 import { ProfilePhotoBadges } from "@/components/screens/profile-photo/ProfilePhotoBadges";
 
 interface ProfilePhotoMainProps {
@@ -15,6 +16,7 @@ interface ProfilePhotoMainProps {
   profileUsername?: string;
   profileVerified?: boolean;
   profilePremium?: boolean;
+  profilePremiumTier?: PremiumTier | null;
   profileBoosted?: boolean;
   streakReward: StreakReward | null;
   photoAnimStyle: React.CSSProperties;
@@ -49,6 +51,7 @@ export function ProfilePhotoMain({
   profileUsername,
   profileVerified,
   profilePremium,
+  profilePremiumTier,
   profileBoosted,
   streakReward,
   photoAnimStyle,
@@ -202,6 +205,7 @@ export function ProfilePhotoMain({
             <ProfilePhotoBadges
               profileVerified={profileVerified}
               profilePremium={profilePremium}
+              profilePremiumTier={profilePremiumTier}
               profileBoosted={profileBoosted}
               streakReward={streakReward}
             />
