@@ -6,6 +6,23 @@ import { useAppRefresh } from "@/hooks/useAppRefresh";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
+const AUDIO_MIME_CANDIDATES = [
+  "audio/mp4",
+  "audio/aac",
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/ogg;codecs=opus",
+  "audio/ogg",
+];
+
+function pickAudioMimeType(): string {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return "";
+  for (const type of AUDIO_MIME_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(type)) return type;
+  }
+  return "";
+}
+
 // ─── useChatScreenLogic ─────────────────────────────────────────────────────────
 export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [msgs, setMsgs] = useState<Message[]>([]);
@@ -94,29 +111,28 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
 
   const startRecording = async () => {
     setMicError(null);
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setMicError("Запись голосовых сообщений не поддерживается в этом браузере.");
+      setTimeout(() => setMicError(null), 5000);
+      return;
+    }
+    if (typeof MediaRecorder === "undefined") {
+      setMicError("Запись голосовых сообщений не поддерживается в этом браузере.");
+      setTimeout(() => setMicError(null), 5000);
+      return;
+    }
+
+    const mimeType = pickAudioMimeType();
+    if (!mimeType) {
+      setMicError("Устройство не поддерживает ни один формат записи звука.");
+      setTimeout(() => setMicError(null), 5000);
+      return;
+    }
+
+    let stream: MediaStream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg" });
-      audioChunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-      mr.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType });
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const base64 = (reader.result as string).split(",")[1];
-          try {
-            const up = await profilesApi.uploadAudio(base64, mr.mimeType);
-            if (up?.url) await sendSystem(`__AUDIO__${up.url}`);
-          } catch { void 0; }
-        };
-        reader.readAsDataURL(blob);
-      };
-      mr.start();
-      mediaRecorderRef.current = mr;
-      setRecording(true);
-      setRecordSecs(0);
-      recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
       const err = e as { name?: string };
       if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
@@ -128,6 +144,47 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
       } else {
         setMicError("Не удалось включить микрофон. Попробуй ещё раз.");
       }
+      setTimeout(() => setMicError(null), 5000);
+      return;
+    }
+
+    try {
+      const mr = new MediaRecorder(stream, { mimeType });
+      audioChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (audioChunksRef.current.length === 0) return;
+        const blob = new Blob(audioChunksRef.current, { type: mr.mimeType });
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64 = (reader.result as string).split(",")[1];
+          try {
+            const up = await profilesApi.uploadAudio(base64, mr.mimeType);
+            if (up?.url) await sendSystem(`__AUDIO__${up.url}`);
+            else setMicError("Не удалось отправить голосовое. Попробуй ещё раз.");
+          } catch {
+            setMicError("Не удалось отправить голосовое. Проверь соединение и попробуй снова.");
+            setTimeout(() => setMicError(null), 5000);
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+      mr.onerror = () => {
+        stream.getTracks().forEach(t => t.stop());
+        setRecording(false);
+        if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+        setMicError("Ошибка записи звука. Попробуй ещё раз.");
+        setTimeout(() => setMicError(null), 5000);
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+      setRecordSecs(0);
+      recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
+    } catch {
+      stream.getTracks().forEach(t => t.stop());
+      setMicError("Не удалось начать запись. Попробуй ещё раз.");
       setTimeout(() => setMicError(null), 5000);
     }
   };
