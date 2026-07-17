@@ -12,8 +12,6 @@ import { popBackHandler } from "@/hooks/backStack";
 
 import { AuthScreen, PremiumScreen, PremiumScreenDesktop, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import { AuthDownloadSection } from "@/components/screens/auth/AuthDownloadSection";
-import { AuthFooter } from "@/components/screens/auth/AuthFooter";
-import { AuthLegalSheet } from "@/components/screens/auth/AuthLegalSheet";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
@@ -140,8 +138,6 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
   const isDesktop = useIsDesktop();
-  const [showFooterTerms, setShowFooterTerms] = useState(false);
-  const [showFooterPrivacy, setShowFooterPrivacy] = useState(false);
 
   // Плавное скрытие/появление нижней панели при скролле ленты (на любом экране)
   const [navVisible, setNavVisible] = useState(true);
@@ -315,8 +311,6 @@ export default function Index() {
       return (
         <div className="app-bg app-bg-scrollable">
           <div className="app-hearts-layer" />
-          {showFooterTerms && <AuthLegalSheet tab="terms" onClose={() => setShowFooterTerms(false)} />}
-          {showFooterPrivacy && <AuthLegalSheet tab="privacy" onClose={() => setShowFooterPrivacy(false)} />}
 
           <div className="relative flex items-center justify-center px-10 py-16" style={{ minHeight: "100vh" }}>
             <div className="flex items-center gap-16">
@@ -336,7 +330,6 @@ export default function Index() {
 
           <div className="relative">
             <AuthDownloadSection />
-            <AuthFooter onOpenTerms={() => setShowFooterTerms(true)} onOpenPrivacy={() => setShowFooterPrivacy(true)} />
           </div>
         </div>
       );
