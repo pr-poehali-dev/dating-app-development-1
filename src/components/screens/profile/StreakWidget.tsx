@@ -32,7 +32,6 @@ function FlameIcon({ color, size = 20 }: { color: string; size?: number }) {
 export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
   const [data, setData] = useState<StreakData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [celebrating, setCelebrating] = useState(false);
 
   const FALLBACK: StreakData = { current_streak: 0, longest_streak: 0, total_days: 0, active_today: false, streak_frozen: false, next_milestone: 3, reached_milestone: false, milestones: [3,7,14,30,60,100,365] };
 
@@ -47,10 +46,8 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
     try {
       const updated = await streaksApi.checkin();
       if (updated && typeof updated.current_streak === "number") {
-        if (updated.reached_milestone) setCelebrating(true);
         setData(updated);
         onCheckin?.();
-        setTimeout(() => setCelebrating(false), 2000);
       }
     } catch { /* ignore */ }
   };
