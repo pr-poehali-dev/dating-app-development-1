@@ -11,7 +11,10 @@ interface Props {
 }
 
 function timeAgo(iso: string) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  // Бэкенд отдаёт время в UTC без суффикса зоны — без явного 'Z' браузер
+  // трактует строку как локальное время, и расчёт сдвигается на разницу с UTC.
+  const utcIso = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`;
+  const diff = (Date.now() - new Date(utcIso).getTime()) / 1000;
   if (diff < 60) return "только что";
   if (diff < 3600) return `${Math.floor(diff / 60)} мин назад`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} ч назад`;

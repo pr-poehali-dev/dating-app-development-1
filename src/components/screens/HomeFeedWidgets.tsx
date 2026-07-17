@@ -5,7 +5,11 @@ import { type Post, type LiveStream } from "@/lib/api";
 export const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
 
 export function timeAgo(dt: string) {
-  const d = (Date.now() - new Date(dt).getTime()) / 1000;
+  // Бэкенд отдаёт время в UTC без суффикса зоны (например "2026-07-17T09:40:11").
+  // Без явного 'Z' браузер трактует такую строку как локальное время,
+  // из-за чего расчёт "сколько времени прошло" сдвигается на разницу с UTC.
+  const utcDt = /[zZ]|[+-]\d{2}:?\d{2}$/.test(dt) ? dt : `${dt}Z`;
+  const d = (Date.now() - new Date(utcDt).getTime()) / 1000;
   if (d < 60) return "только что";
   if (d < 3600) return `${Math.floor(d / 60)} мин назад`;
   if (d < 86400) return `${Math.floor(d / 3600)} ч назад`;
