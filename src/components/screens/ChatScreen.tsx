@@ -1,4 +1,5 @@
 import { profilesApi } from "@/lib/api";
+import Icon from "@/components/ui/icon";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInputBar } from "@/components/chat/ChatInputBar";
 import { ChatMessagesList } from "@/components/chat/ChatMessagesList";
@@ -75,6 +76,17 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onMsgTouchEnd={c.onMsgTouchEnd}
           sendSystem={c.sendSystem}
         />
+
+        {c.micError && (
+          <div className="mx-3 mb-2 px-3.5 py-2.5 rounded-2xl flex items-start gap-2.5"
+            style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.22)" }}>
+            <Icon name="MicOff" size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <span className="text-red-400 text-xs leading-relaxed flex-1">{c.micError}</span>
+            <button onClick={() => c.setMicError(null)} className="flex-shrink-0">
+              <Icon name="X" size={15} className="text-red-400/60" />
+            </button>
+          </div>
+        )}
 
         <ChatInputBar
           input={c.input}

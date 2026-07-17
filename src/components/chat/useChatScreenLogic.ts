@@ -31,6 +31,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [subscribed, setSubscribed] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
+  const [micError, setMicError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -92,6 +93,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   }, [matchId, videoCall]);
 
   const startRecording = async () => {
+    setMicError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/ogg" });
@@ -115,8 +117,18 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
       setRecording(true);
       setRecordSecs(0);
       recordTimerRef.current = setInterval(() => setRecordSecs(s => s + 1), 1000);
-    } catch {
-      alert("Нет доступа к микрофону. Разреши в настройках браузера.");
+    } catch (e) {
+      const err = e as { name?: string };
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setMicError("Нет доступа к микрофону. Разреши доступ в настройках телефона: Приложения → Полутон → Разрешения → Микрофон.");
+      } else if (err?.name === "NotReadableError") {
+        setMicError("Микрофон занят другим приложением. Закрой его и попробуй снова.");
+      } else if (err?.name === "NotFoundError") {
+        setMicError("Микрофон не найден на устройстве.");
+      } else {
+        setMicError("Не удалось включить микрофон. Попробуй ещё раз.");
+      }
+      setTimeout(() => setMicError(null), 5000);
     }
   };
 
@@ -302,7 +314,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     showVideoCircle, setShowVideoCircle,
     showCompatibility, setShowCompatibility,
     subscribed, setSubscribed,
-    recording, recordSecs,
+    recording, recordSecs, micError, setMicError,
     inputRef, bottomRef, fileRef, cameraRef,
     swipeId, swipeDx,
     startRecording, stopRecording,
