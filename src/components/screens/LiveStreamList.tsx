@@ -149,7 +149,6 @@ export function LiveStreamList({
               loading={loading}
               activeTab={activeTab}
               tabSearch={tabSearch}
-              onTabSearchChange={onTabSearchChange}
               onJoin={onJoin}
             />
           )}

@@ -10,14 +10,13 @@ import { useBackHandler } from "@/hooks/backStack";
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
 type SettingsScreenType = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
-export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium, onNavigate }: {
+export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium }: {
   screen: SettingsScreenType;
   currentUser: User;
   onProfileUpdate: (data: Partial<User>) => void;
   onClose: () => void;
   onLogout?: () => void;
   onPremium?: () => void;
-  onNavigate?: (s: SettingsScreenType) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);

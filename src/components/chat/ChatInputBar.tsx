@@ -22,9 +22,9 @@ interface Props {
   showEmoji: boolean;
   showStickers: boolean;
   geoLoading: boolean;
-  inputRef: RefObject<HTMLInputElement | null>;
-  fileRef: RefObject<HTMLInputElement | null>;
-  cameraRef: RefObject<HTMLInputElement | null>;
+  inputRef: RefObject<HTMLInputElement>;
+  fileRef: RefObject<HTMLInputElement>;
+  cameraRef: RefObject<HTMLInputElement>;
   onInputChange: (val: string) => void;
   onSend: () => void;
   onStartRecording: () => void;
@@ -57,6 +57,8 @@ export function ChatInputBar({
     { icon: "Timer",  label: "Исчезает",   action: onOpenVanishPicker,                                   color: "#9B59B6" },
     { icon: "MapPin", label: "Локация",    action: onSendLocation, loading: geoLoading,                  color: "#10B981" },
     { icon: "Circle", label: "Кружок",     action: onOpenVideoCircle,                                    color: "#FF6B35" },
+    { icon: "Video",  label: "Видеозвонок", action: onOpenVideoCall,                                     color: "#EF4444" },
+    { icon: "Award",  label: "Награда",    action: onOpenAwardPicker,                                    color: "#FCD34D" },
   ] as const;
 
   return (

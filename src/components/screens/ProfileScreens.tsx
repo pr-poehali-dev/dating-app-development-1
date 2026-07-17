@@ -282,7 +282,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           photoUploading={photoUploading}
           coverUploading={coverUploading}
           photoError={photoError}
-          onEditOpen={() => setEditOpen(true)}
           onAvatarClick={() => {
             if (galleryPhotos.length === 0 && !galleryLoading) {
               setGalleryLoading(true);
@@ -300,10 +299,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
               setLightboxIdx(0);
             }
           }}
-          onSettingsScreen={(s) => setSettingsScreen(s)}
-          onLogout={onLogout}
-          onVerify={onVerify}
-          onPremium={onPremium}
           streakDays={streakDays}
         />
 
@@ -413,7 +408,6 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
             onClose={() => { setSettingsScreen(null); setMenuOpen(true); }}
             onLogout={onLogout}
             onPremium={onPremium}
-            onNavigate={setSettingsScreen}
           />
         </div>
       )}

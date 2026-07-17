@@ -31,7 +31,7 @@ export function usePushNotifications(enabled: boolean) {
       // Подписываемся
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(public_key),
+        applicationServerKey: urlBase64ToUint8Array(public_key) as BufferSource,
       });
 
       await pushApi.subscribe(sub.toJSON() as PushSubscriptionJSON);

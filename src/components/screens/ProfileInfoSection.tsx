@@ -35,16 +35,7 @@ interface ProfileInfoSectionProps {
   onOpenGiftSheet?: () => void;
   userGifts?: MyGift[];
   userGiftsLoading?: boolean;
-  isOwnProfile?: boolean;
-  onViewSubscriptions?: () => void;
 }
-
-const RS_LABEL: Record<string, string> = {
-  single: "Свободен",
-  searching: "В поиске",
-  complicated: "Всё сложно",
-  open: "Своб. отношения",
-};
 
 export function ProfileInfoSection({
   currentProfile,
@@ -65,8 +56,6 @@ export function ProfileInfoSection({
   onOpenGiftSheet,
   userGifts = [],
   userGiftsLoading = false,
-  isOwnProfile = false,
-  onViewSubscriptions,
 }: ProfileInfoSectionProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 

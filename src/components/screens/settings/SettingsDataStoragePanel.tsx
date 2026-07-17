@@ -35,7 +35,7 @@ function DonutChart({ segments, total, cleared }: {
   return (
     <svg width={200} height={200} viewBox="0 0 200 200">
       <defs>
-        {segments.map((s, i) => (
+        {segments.map((_s, i) => (
           <filter key={i} id={`glow${i}`} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>

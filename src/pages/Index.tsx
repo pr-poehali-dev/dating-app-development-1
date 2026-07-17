@@ -4,7 +4,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import SplashScreen from "@/components/screens/SplashScreen";
 import OfflineBanner from "@/components/OfflineBanner";
-import { useOffline, cacheMatches, cacheMessages, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
+import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
 import { setAppBadge } from "@/hooks/useNative";
 
 import { useBackButton } from "@/hooks/useBackButton";

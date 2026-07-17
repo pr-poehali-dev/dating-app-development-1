@@ -5,7 +5,6 @@ import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/Pr
 import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessageSheet";
 import { ProfilePhotoSection } from "@/components/screens/ProfilePhotoSection";
 import { ProfileInfoSection } from "@/components/screens/ProfileInfoSection";
-import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 import { DiscoverHeartAnim } from "@/components/screens/profile/DiscoverHeartAnim";
 import { DiscoverFollowersSheet } from "@/components/screens/profile/DiscoverFollowersSheet";
 import { DiscoverUserGiftsSheet } from "@/components/screens/profile/DiscoverUserGiftsSheet";

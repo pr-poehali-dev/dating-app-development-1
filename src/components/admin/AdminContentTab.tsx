@@ -10,8 +10,8 @@ const WARNING_PRESETS = [
   "⚠️ Ваш пост был удалён за нарушение правил. Публикация откровенных материалов запрещена условиями использования сервиса.",
 ];
 
-function WarningDialog({ userId, userName, onConfirm, onCancel }: {
-  userId: number; userName: string;
+function WarningDialog({ userName, onConfirm, onCancel }: {
+  userName: string;
   onConfirm: (text: string) => void; onCancel: () => void;
 }) {
   const [text, setText] = useState(WARNING_PRESETS[0]);
@@ -215,7 +215,7 @@ export function AdminContentTab({ token }: { token: string }) {
   return (
     <div className="flex flex-col gap-3">
       {warnTarget && (
-        <WarningDialog userId={warnTarget.userId} userName={warnTarget.name}
+        <WarningDialog userName={warnTarget.name}
           onConfirm={handleWarnConfirm} onCancel={() => setWarnTarget(null)} />
       )}
 

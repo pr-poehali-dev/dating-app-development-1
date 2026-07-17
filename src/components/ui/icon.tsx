@@ -7,12 +7,14 @@ interface IconProps extends LucideProps {
   fallback?: string;
 }
 
+const Icons = LucideIcons as unknown as Record<string, React.FC<LucideProps>>;
+
 const Icon: React.FC<IconProps> = ({ name, fallback = 'CircleAlert', ...props }) => {
-  const IconComponent = (LucideIcons as Record<string, React.FC<LucideProps>>)[name];
+  const IconComponent = Icons[name];
 
   if (!IconComponent) {
     // Если иконка не найдена, используем fallback иконку
-    const FallbackIcon = (LucideIcons as Record<string, React.FC<LucideProps>>)[fallback];
+    const FallbackIcon = Icons[fallback];
 
     // Если даже fallback не найден, возвращаем пустой span
     if (!FallbackIcon) {

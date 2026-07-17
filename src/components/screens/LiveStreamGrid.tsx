@@ -40,12 +40,11 @@ export function StreamCard({ stream, onJoin }: { stream: LiveStream; onJoin: (s:
 }
 
 // ── Список трансляций ─────────────────────────────────────────────────────────
-export function LiveStreamGrid({ streams, loading, activeTab, tabSearch, onTabSearchChange, onJoin }: {
+export function LiveStreamGrid({ streams, loading, activeTab, tabSearch, onJoin }: {
   streams: LiveStream[];
   loading: boolean;
   activeTab: string;
   tabSearch: string;
-  onTabSearchChange: (v: string) => void;
   onJoin: (s: LiveStream) => void;
 }) {
   let filtered = [...streams];

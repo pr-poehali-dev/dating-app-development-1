@@ -6,7 +6,6 @@ import { getStreakReward } from "@/lib/streakRewards";
 import { type AppTheme } from "@/hooks/useAppTheme";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
-type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 
 export function ProfileHeader({
   currentUser,
@@ -16,14 +15,9 @@ export function ProfileHeader({
   coverUploading,
   photoError,
   streakDays = 0,
-  onEditOpen,
   onAvatarClick,
   onCoverClick,
   onCoverOpen,
-  onSettingsScreen,
-  onLogout,
-  onVerify,
-  onPremium,
 }: {
   currentUser: User;
   localPhoto: string;
@@ -32,14 +26,9 @@ export function ProfileHeader({
   coverUploading: boolean;
   photoError: string;
   streakDays?: number;
-  onEditOpen: () => void;
   onAvatarClick: () => void;
   onCoverClick: () => void;
   onCoverOpen?: () => void;
-  onSettingsScreen: (s: SettingsScreen) => void;
-  onLogout: () => void;
-  onVerify: () => void;
-  onPremium: () => void;
 }) {
   const streakReward = getStreakReward(streakDays);
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useYookassa, YookassaPayload } from './useYookassa';
 import Icon from '@/components/ui/icon';
 

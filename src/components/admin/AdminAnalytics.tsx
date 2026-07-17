@@ -160,8 +160,6 @@ export function AnalyticsTab({ token }: { token: string }) {
     { id: "finance"  as const, label: "Финансы",    icon: "DollarSign",   color: "#FCD34D" },
   ];
 
-  const active = sections.find(s => s.id === section)!;
-
   return (
     <div className="flex flex-col gap-5">
       {/* Переключатель секций */}

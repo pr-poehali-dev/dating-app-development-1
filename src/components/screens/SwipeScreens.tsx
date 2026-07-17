@@ -11,7 +11,12 @@ export { DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal"
 
 import { PROFILES_FALLBACK, DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
 
-type LocalProfile = (typeof PROFILES_FALLBACK)[0];
+type LocalProfile = (typeof PROFILES_FALLBACK)[0] & {
+  premium?: boolean;
+  height?: number;
+  weight?: number;
+  relationship_status?: string;
+};
 
 const PROFILES_DEMO = [
   {
