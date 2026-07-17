@@ -87,14 +87,16 @@ export default function Index() {
       .catch(() => {});
   }, [!!currentUser, offlineState.isOnline]);
 
-  // Счётчик непрочитанных сообщений + нативный бейдж на иконке
+  // Счётчик непрочитанных сообщений и новых лайков + нативный бейдж на иконке
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadLikes, setUnreadLikes] = useState(0);
   useEffect(() => {
     if (!currentUser) return;
     const fetchUnread = () => {
       notificationsApi.unreadCount().then(d => {
         const count = d.messages || 0;
         setUnreadMessages(count);
+        setUnreadLikes(d.likes || 0);
         setAppBadge(count); // нативный бейдж на иконке приложения
       }).catch(() => {});
     };
@@ -103,9 +105,10 @@ export default function Index() {
     return () => clearInterval(interval);
   }, [!!currentUser]);
 
-  // Сбрасываем счётчик при открытии чатов
+  // Сбрасываем счётчики при открытии соответствующих экранов
   useEffect(() => {
     if (screen === "matches") { setUnreadMessages(0); setAppBadge(0); }
+    if (screen === "likes") { setUnreadLikes(0); }
   }, [screen]);
 
   // Heartbeat — обновляем online/last_seen каждые 60 сек
@@ -374,6 +377,7 @@ export default function Index() {
               active={screen === "chat" ? "matches" : screen}
               onChange={(s) => navigateTo(s as Screen)}
               unreadMessages={unreadMessages}
+              likesCount={unreadLikes}
               currentUser={currentUser}
               onLogout={handleLogout}
             />
@@ -406,7 +410,7 @@ export default function Index() {
             opacity: navVisible ? 1 : 0,
             transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease",
           }}>
-            <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} />
+            <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} likesCount={unreadLikes} />
           </div>
         )}
       </div>

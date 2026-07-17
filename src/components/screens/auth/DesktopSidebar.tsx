@@ -4,10 +4,11 @@ import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
-export function DesktopSidebar({ active, onChange, unreadMessages = 0, currentUser, onLogout }: {
+export function DesktopSidebar({ active, onChange, unreadMessages = 0, likesCount = 0, currentUser, onLogout }: {
   active: Screen;
   onChange: (s: Screen) => void;
   unreadMessages?: number;
+  likesCount?: number;
   currentUser: User;
   onLogout?: () => void;
 }) {
@@ -16,7 +17,7 @@ export function DesktopSidebar({ active, onChange, unreadMessages = 0, currentUs
     { screen: "photos",   icon: "Compass",            label: "Поиск" },
     { screen: "live",     icon: "Flame",               label: "Live" },
     { screen: "matches",  icon: "MessageCircleHeart",  label: "Чаты", badge: unreadMessages > 0 ? unreadMessages : undefined },
-    { screen: "likes",    icon: "Heart",               label: "Лайки" },
+    { screen: "likes",    icon: "Heart",               label: "Лайки", badge: likesCount > 0 ? likesCount : undefined },
     { screen: "profile",  icon: "CircleUserRound",     label: "Профиль" },
   ];
 

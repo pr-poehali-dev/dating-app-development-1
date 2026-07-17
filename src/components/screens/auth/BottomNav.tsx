@@ -3,12 +3,13 @@ import { haptic } from "@/hooks/useNative";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
-export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number }) {
+export function BottomNav({ active, onChange, unreadMessages = 0, likesCount = 0 }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number; likesCount?: number }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
     { screen: "discover", icon: "House",              label: "Главная" },
     { screen: "photos",   icon: "Compass",            label: "Поиск" },
     { screen: "live",     icon: "Flame",               label: "Live" },
     { screen: "matches",  icon: "MessageCircleHeart",  label: "Чаты", badge: unreadMessages > 0 ? unreadMessages : undefined },
+    { screen: "likes",    icon: "Heart",               label: "Лайки", badge: likesCount > 0 ? likesCount : undefined },
     { screen: "profile",  icon: "CircleUserRound",     label: "Профиль" },
   ];
 
@@ -53,7 +54,7 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
             style={{
               top: 5, bottom: 5,
               left: 5,
-              width: `calc((100% - 10px) / 5)`,
+              width: `calc((100% - 10px) / 6)`,
               transform: `translateX(${activeIdx * 100}%)`,
               transition: "transform 0.38s cubic-bezier(0.34,1.56,0.64,1)",
             }}
@@ -81,12 +82,12 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
                 key={item.screen}
                 onClick={() => handleChange(item.screen)}
                 className="relative flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-transform duration-150 active:scale-90"
-                style={{ zIndex: 1 }}
+                style={{ zIndex: 1, minWidth: 0 }}
               >
                 <div key={isActive ? "on" : "off"} className={isActive ? "nav-icon-active" : ""}>
                   <Icon
-                    name={item.icon as "House"|"Compass"|"Flame"|"MessageCircleHeart"|"CircleUserRound"}
-                    size={20}
+                    name={item.icon as "House"|"Compass"|"Flame"|"MessageCircleHeart"|"Heart"|"CircleUserRound"}
+                    size={19}
                     strokeWidth={isActive ? 2.3 : 1.7}
                     style={{
                       color: isActive
@@ -102,8 +103,9 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
                 {/* Бейдж */}
                 {item.badge && (
                   <div
-                    className="absolute top-0.5 right-3 min-w-[15px] h-[15px] px-1 rounded-full flex items-center justify-center text-[8.5px] text-white font-black"
+                    className="absolute top-0.5 min-w-[14px] h-[14px] px-1 rounded-full flex items-center justify-center text-[8px] text-white font-black"
                     style={{
+                      left: "calc(50% + 7px)",
                       background: "linear-gradient(135deg, #FF2D78, #9B59B6)",
                       boxShadow: "0 2px 6px rgba(255,45,120,0.7)",
                       border: "1.5px solid rgba(16,10,24,0.94)",
@@ -115,14 +117,14 @@ export function BottomNav({ active, onChange, unreadMessages = 0 }: { active: Sc
 
                 {/* Пульс Live */}
                 {isLive && !isActive && (
-                  <span className="absolute top-1 right-3.5 w-1.5 h-1.5 rounded-full" style={{ background: "#FF8C32" }}>
+                  <span className="absolute top-1 rounded-full" style={{ left: "calc(50% + 8px)", width: 6, height: 6, background: "#FF8C32" }}>
                     <span className="absolute inset-0 rounded-full" style={{ background: "#FF8C32", animation: "navPing 1.8s ease-out infinite" }} />
                   </span>
                 )}
 
                 {/* Лейбл */}
                 <span
-                  className="text-[9.5px] leading-none tracking-wide"
+                  className="text-[8.5px] leading-none tracking-wide"
                   style={{
                     color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.32)",
                     fontWeight: isActive ? 700 : 500,
