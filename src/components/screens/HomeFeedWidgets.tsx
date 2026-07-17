@@ -199,7 +199,7 @@ export function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
       onClick={onClose}>
       <div className="w-full max-w-sm animate-slide-up"
-        style={{ background: "var(--spark-dark2,#1a1625)", borderRadius: "24px 24px 0 0" }}
+        style={{ background: "linear-gradient(180deg, #1e1830 0%, #17112a 100%)", borderRadius: "24px 24px 0 0", border: "1px solid rgba(255,255,255,0.06)", borderBottom: "none" }}
         onClick={(e) => e.stopPropagation()}>
         <div className="w-10 h-1 rounded-full mx-auto mt-3 mb-4" style={{ background: "rgba(255,255,255,0.2)" }} />
         <p className="text-white/40 text-xs uppercase tracking-widest px-5 mb-3">Создать</p>
@@ -207,9 +207,9 @@ export function CreateMenu({ onPhoto, onStory, onLive, onClose }: {
           {items.map((item) => (
             <button key={item.label} disabled={item.soon}
               onClick={() => { if (item.soon) return; item.action(); onClose(); }}
-              className={`flex items-center gap-4 px-5 py-4 transition-colors text-left ${item.soon ? "cursor-not-allowed opacity-50" : "hover:bg-white/5"}`}>
+              className={`flex items-center gap-4 px-5 py-4 transition-all text-left active:scale-[0.98] ${item.soon ? "cursor-not-allowed opacity-50" : "hover:bg-white/5"}`}>
               <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: `${item.color}22` }}>
+                style={{ background: `${item.color}22`, border: `1px solid ${item.color}33`, boxShadow: `0 2px 10px ${item.color}25` }}>
                 <Icon name={item.icon as "Image" | "Film" | "Radio"} size={20} style={{ color: item.color }} />
               </div>
               <div className="flex-1">
