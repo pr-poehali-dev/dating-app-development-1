@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { messagesApi } from "@/lib/api";
+import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 
 type CallState = "calling" | "incoming" | "connected" | "ended";
 
@@ -156,6 +157,12 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
   };
 
   const getMedia = async () => {
+    const prereq = checkMediaPrereqs("микрофону и камере");
+    if (prereq) {
+      setMediaError(prereq);
+      throw new Error(prereq);
+    }
+
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS });
@@ -165,12 +172,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
         stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: AUDIO_CONSTRAINTS });
         setMediaError("Камера недоступна — звонок только с аудио");
       } catch (e) {
-        const err = e as { name?: string };
-        if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
-          setMediaError("Разреши доступ к микрофону в настройках браузера");
-        } else {
-          setMediaError("Не удалось получить доступ к микрофону или камере");
-        }
+        setMediaError(await describeMediaError(e, "микрофону и камере", "camera"));
         throw e;
       }
     }
