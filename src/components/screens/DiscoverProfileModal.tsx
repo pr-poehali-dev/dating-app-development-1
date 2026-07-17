@@ -11,6 +11,7 @@ import { DiscoverFollowersSheet } from "@/components/screens/profile/DiscoverFol
 import { DiscoverUserGiftsSheet } from "@/components/screens/profile/DiscoverUserGiftsSheet";
 import { isUserOnline } from "@/lib/online";
 import { useBackHandler } from "@/hooks/backStack";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 export const PROFILES_FALLBACK = [
   {
@@ -21,7 +22,7 @@ export const PROFILES_FALLBACK = [
     distance: "3 км",
     bio: "Люблю кофе, рассветы и случайные путешествия. Ищу человека, с которым можно потеряться в незнакомом городе ☕",
     tags: ["Путешествия", "Кофе", "Йога", "Кино"],
-    photo: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg",
+    photo: DEFAULT_AVATAR,
     verified: true,
     online: true,
   },
@@ -67,7 +68,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
   }>({ followers: 0, following: 0 });
   const [profileStreakDays, setProfileStreakDays] = useState(0);
 
-  const mainPhoto = currentProfile.photo_url || "";
+  const mainPhoto = currentProfile.photo_url || DEFAULT_AVATAR;
 
   // Кнопка "Назад": закрываем вложенные слои по одному, потом — сам профиль
   useBackHandler(true, () => {
@@ -110,7 +111,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         })
         .catch(() => {});
 
-      const cPhoto = currentProfile.photo_url || "";
+      const cPhoto = currentProfile.photo_url || DEFAULT_AVATAR;
       const galleryReq = profilesApi.getUserProfilePhotos(currentProfile.id)
         .then(r => {
           setGalleryPhotos(r.photos);
@@ -282,7 +283,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       {showMsgInput && (
         <ProfileSendMessageSheet
           profileName={currentProfile.name}
-          profilePhoto={currentProfile.photo_url || ""}
+          profilePhoto={currentProfile.photo_url || DEFAULT_AVATAR}
           msgText={msgText}
           sendingMsg={sendingMsg}
           msgSent={msgSent}

@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { getStreakReward } from "@/lib/streakRewards";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 function DefaultCover() {
   return (
@@ -95,10 +96,7 @@ export function ProfileCoverAvatar({
                 : "0 4px 20px rgba(255,45,120,0.45)",
             }}>
             <div className="w-full h-full rounded-full overflow-hidden bg-[var(--spark-dark)] flex items-center justify-center">
-              {localPhoto
-                ? <img src={localPhoto} className="w-full h-full object-cover" style={{ opacity: photoUploading ? 0.5 : 1 }} />
-                : <Icon name="User" size={36} className="text-white/20" />
-              }
+              <img src={localPhoto || DEFAULT_AVATAR} className="w-full h-full object-cover" style={{ opacity: photoUploading ? 0.5 : 1 }} />
             </div>
           </div>
           {/* Значок стрика на аватаре */}

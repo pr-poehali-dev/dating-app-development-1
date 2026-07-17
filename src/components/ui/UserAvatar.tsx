@@ -1,4 +1,5 @@
-import Icon from "@/components/ui/icon";
+/** Аватар по умолчанию для пользователей без фото — силуэт на фирменном градиенте */
+export const DEFAULT_AVATAR = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
 interface UserAvatarProps {
   src?: string | null;
@@ -11,28 +12,16 @@ interface UserAvatarProps {
 
 /**
  * Универсальный аватар пользователя.
- * Если фото нет — показывает нейтральную заглушку с иконкой профиля
- * вместо стокового фото.
+ * Если фото нет — показывает стандартную заглушку DEFAULT_AVATAR
+ * вместо иконки профиля.
  */
 export function UserAvatar({
   src,
   alt = "",
   className = "",
   style,
-  iconSize = 24,
-  iconClassName = "text-white/70",
 }: UserAvatarProps) {
-  if (src) {
-    return <img src={src} alt={alt} className={`${className} object-cover`} style={style} />;
-  }
-  return (
-    <div
-      className={`${className} flex items-center justify-center`}
-      style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))", ...style }}
-    >
-      <Icon name="User" size={iconSize} className={iconClassName} />
-    </div>
-  );
+  return <img src={src || DEFAULT_AVATAR} alt={alt} className={`${className} object-cover`} style={style} />;
 }
 
 export default UserAvatar;

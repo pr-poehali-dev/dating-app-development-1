@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { type BlockedUser } from "@/lib/api";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 interface Props {
   blocks: BlockedUser[];
@@ -25,15 +26,8 @@ export function SettingsPanelBlocked({ blocks, blocksLoading, unblocking, onUnbl
         <div className="flex flex-col gap-2">
           {blocks.map(user => (
             <div key={user.id} className="glass-card px-4 py-3 flex items-center gap-3">
-              {user.photo_url ? (
-                <img src={user.photo_url} alt={user.name}
-                  className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-11 h-11 rounded-full flex-shrink-0 flex items-center justify-center"
-                  style={{ background: "rgba(255,255,255,0.08)" }}>
-                  <Icon name="User" size={20} className="text-white/30" />
-                </div>
-              )}
+              <img src={user.photo_url || DEFAULT_AVATAR} alt={user.name}
+                className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-white font-semibold text-sm truncate">{user.name}</p>
                 {user.age && <p className="text-white/40 text-xs">{user.age} лет</p>}

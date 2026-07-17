@@ -263,7 +263,7 @@ export function AdminPromos({ token }: { token: string }) {
                         {uses.map(u => (
                           <div key={u.id} className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl"
                             style={{ background: "rgba(255,255,255,0.03)" }}>
-                            <img src={u.photo_url || "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg"}
+                            <img src={u.photo_url || "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg"}
                               className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-semibold truncate">

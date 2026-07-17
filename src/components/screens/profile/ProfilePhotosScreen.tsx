@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 export function ProfilePhotosScreen({
   currentUser,
@@ -162,13 +163,7 @@ export function ProfilePhotosScreen({
               <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="relative overflow-hidden flex items-center justify-center" style={{ height: 80, cursor: localPhoto && onOpenLightbox ? "pointer" : "default" }}
                   onClick={localPhoto && onOpenLightbox ? () => onOpenLightbox(avatarIdx) : undefined}>
-                  {localPhoto
-                    ? <img src={localPhoto} className="w-full h-full object-cover object-top" />
-                    : <div className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.07),rgba(155,89,182,0.07))" }}>
-                        <Icon name="User" size={22} className="text-white/15" />
-                      </div>
-                  }
+                  <img src={localPhoto || DEFAULT_AVATAR} className="w-full h-full object-cover object-top" />
                   <div className="absolute inset-0" style={{ background: "linear-gradient(transparent 30%, rgba(0,0,0,0.65) 100%)" }} />
                   {photoUploading && (
                     <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.55)" }}>

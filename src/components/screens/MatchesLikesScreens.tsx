@@ -4,7 +4,7 @@ import { matchesApi, likesApi, type Match, type LikedBy } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
 // ─── LongPressToDelete — удаление по долгому нажатию ─────────────────────────
 function LongPressToDelete({ onDelete, children }: { onDelete: () => void; children: React.ReactNode }) {

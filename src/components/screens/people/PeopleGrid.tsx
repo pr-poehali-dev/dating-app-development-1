@@ -1,6 +1,7 @@
 import Icon from "@/components/ui/icon";
 import { type Profile } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 const FREE_LIMIT = 9;
 
@@ -86,23 +87,11 @@ export function PeopleGrid({
               className="people-card relative overflow-hidden group transition-all active:scale-[0.97]"
               style={{ aspectRatio: "2/3", borderRadius: 16 }}>
 
-              {photo ? (
-                <img
-                  src={photo}
-                  className="w-full h-full object-cover"
-                  style={isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : undefined}
-                />
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255,45,120,0.35), rgba(155,89,182,0.35))",
-                    ...(isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : {}),
-                  }}
-                >
-                  <Icon name="User" size={40} className="text-white/60" />
-                </div>
-              )}
+              <img
+                src={photo || DEFAULT_AVATAR}
+                className="w-full h-full object-cover"
+                style={isLocked ? { filter: "blur(14px)", transform: "scale(1.12)" } : undefined}
+              />
 
               {/* Градиент снизу */}
               {!isLocked && (

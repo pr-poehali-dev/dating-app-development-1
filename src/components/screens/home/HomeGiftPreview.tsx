@@ -4,6 +4,7 @@ import { matchesApi, profilesApi, messagesApi, type Match, type Profile } from "
 import { GIFTS, RARITY_STYLE, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 import GiftItem from "@/components/gifts/GiftItem";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 interface Props {
   giftPreview: number;
@@ -94,14 +95,7 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }:
             {selectedRecipient ? (
               <div className="w-full rounded-2xl px-3 py-2.5 flex items-center gap-3"
                 style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.35)" }}>
-                {selectedRecipient.photo_url ? (
-                  <img src={selectedRecipient.photo_url} className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-                    <Icon name="User" size={18} className="text-white" />
-                  </div>
-                )}
+                <img src={selectedRecipient.photo_url || DEFAULT_AVATAR} className="w-10 h-10 rounded-full object-cover" />
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-semibold truncate">{selectedRecipient.name}</p>
                   <p className="text-white/40 text-xs">Получатель подарка</p>
@@ -141,13 +135,7 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }:
                         <button key={p.id}
                           onClick={() => setSelectedRecipient({ id: p.id, name: p.name, photo_url: p.photo_url })}
                           className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors">
-                          {p.photo_url ? (
-                            <img src={p.photo_url} className="w-8 h-8 rounded-full object-cover" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                              <Icon name="User" size={14} className="text-white/50" />
-                            </div>
-                          )}
+                          <img src={p.photo_url || DEFAULT_AVATAR} className="w-8 h-8 rounded-full object-cover" />
                           <span className="text-white text-sm truncate flex-1 text-left">{p.name}</span>
                         </button>
                       ))
@@ -171,13 +159,7 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }:
                           <button key={m.match_id}
                             onClick={() => setSelectedRecipient({ id: m.partner_id, name: m.name, photo_url: m.photo_url, match_id: m.match_id })}
                             className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-white/5 transition-colors">
-                            {m.photo_url ? (
-                              <img src={m.photo_url} className="w-8 h-8 rounded-full object-cover" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                <Icon name="User" size={14} className="text-white/50" />
-                              </div>
-                            )}
+                            <img src={m.photo_url || DEFAULT_AVATAR} className="w-8 h-8 rounded-full object-cover" />
                             <span className="text-white text-sm truncate flex-1 text-left">{m.name}</span>
                             {m.online && <span className="w-2 h-2 rounded-full bg-green-400" />}
                           </button>

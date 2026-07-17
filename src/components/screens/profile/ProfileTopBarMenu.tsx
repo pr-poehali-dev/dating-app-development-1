@@ -4,6 +4,7 @@ import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
 import { useBackHandler } from "@/hooks/backStack";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
@@ -161,20 +162,11 @@ export function ProfileTopBarMenu({
           {/* Шапка — аватар + имя */}
           <div className="flex items-center gap-3 px-4 py-3.5"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-            {currentUser.photo_url ? (
-              <img
-                src={currentUser.photo_url}
-                className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-                style={{ border: "2px solid rgba(255,45,120,0.4)" }}
-              />
-            ) : (
-              <div
-                className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center"
-                style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.4), rgba(155,89,182,0.4))", border: "2px solid rgba(255,45,120,0.4)" }}
-              >
-                <Icon name="User" size={16} className="text-white/70" />
-              </div>
-            )}
+            <img
+              src={currentUser.photo_url || DEFAULT_AVATAR}
+              className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+              style={{ border: "2px solid rgba(255,45,120,0.4)" }}
+            />
             <div className="min-w-0">
               <p className="text-white font-bold text-sm leading-tight truncate">{currentUser.name || "Профиль"}</p>
               <p className="text-white/35 text-xs truncate">@{currentUser.username || currentUser.email?.split("@")[0] || "user"}</p>

@@ -1,5 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
+import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
@@ -85,15 +86,8 @@ export function DesktopSidebar({ active, onChange, unreadMessages = 0, currentUs
           onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.08)")}
           onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
         >
-          {currentUser.photo_url ? (
-            <img src={currentUser.photo_url} className="w-9 h-9 rounded-full object-cover flex-shrink-0"
-              style={{ border: "2px solid rgba(255,45,120,0.4)" }} />
-          ) : (
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.4), rgba(155,89,182,0.4))" }}>
-              <Icon name="User" size={16} className="text-white/70" />
-            </div>
-          )}
+          <img src={currentUser.photo_url || DEFAULT_AVATAR} className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+            style={{ border: "2px solid rgba(255,45,120,0.4)" }} />
           <div className="flex-1 min-w-0 text-left">
             <p className="text-white text-sm font-bold truncate">{currentUser.name || "Профиль"}</p>
             <p className="text-white/35 text-[11px] truncate">Открыть профиль</p>

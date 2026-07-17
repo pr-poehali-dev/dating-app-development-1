@@ -4,7 +4,7 @@ import { haptic } from "@/hooks/useNative";
 import { queueAction } from "@/hooks/useOffline";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
 
-const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/65f53640-73d5-4fab-a51a-5f8fff69172e.jpg";
+const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
 // ─── useChatScreenLogic ─────────────────────────────────────────────────────────
 export function useChatScreenLogic(matchId: number, currentUserId: number) {
