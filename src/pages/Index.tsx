@@ -12,6 +12,10 @@ import { popBackHandler } from "@/hooks/backStack";
 
 import { AuthScreen, PremiumScreen, PremiumScreenDesktop, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import { AuthDownloadSection } from "@/components/screens/auth/AuthDownloadSection";
+import { AuthNavbar } from "@/components/screens/auth/AuthNavbar";
+import { AuthFeaturesGrid } from "@/components/screens/auth/AuthFeaturesGrid";
+import { AuthSiteFooter } from "@/components/screens/auth/AuthSiteFooter";
+import { AuthLegalSheet } from "@/components/screens/auth/AuthLegalSheet";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
@@ -138,6 +142,8 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
   const isDesktop = useIsDesktop();
+  const [showSiteTerms, setShowSiteTerms] = useState(false);
+  const [showSitePrivacy, setShowSitePrivacy] = useState(false);
 
   // Плавное скрытие/появление нижней панели при скролле ленты (на любом экране)
   const [navVisible, setNavVisible] = useState(true);
@@ -312,25 +318,43 @@ export default function Index() {
         <div className="app-bg app-bg-scrollable">
           <div className="app-hearts-layer" />
 
-          <div className="relative flex items-center justify-center px-10 py-16" style={{ minHeight: "100vh" }}>
-            <div className="flex items-center gap-16">
-              <div className="hidden lg:flex flex-col gap-4 max-w-md">
-                <h2 className="font-unbounded text-white text-5xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
-                  Знакомься.<br />Общайся.<br />
-                  <span className="grad-text">Влюбляйся.</span>
-                </h2>
-                <p className="text-white/50 text-base mt-2">Полутон — место, где начинаются настоящие истории.</p>
+          {showSiteTerms && <AuthLegalSheet tab="terms" onClose={() => setShowSiteTerms(false)} />}
+          {showSitePrivacy && <AuthLegalSheet tab="privacy" onClose={() => setShowSitePrivacy(false)} />}
+
+          <AuthNavbar onLoginClick={() => document.getElementById("auth-card")?.scrollIntoView({ behavior: "smooth", block: "center" })} />
+
+          {/* Hero: телефоны слева, форма регистрации справа */}
+          <div className="relative flex items-center justify-center px-10 py-16" style={{ minHeight: "calc(100vh - 72px)" }}>
+            <div className="flex items-center gap-16 flex-wrap justify-center">
+              <div className="hidden lg:flex flex-col items-center gap-6 max-w-lg">
+                <img
+                  src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/ea0bcec2-23d4-44da-aa15-1e1e43135d4f.jpg"
+                  alt="Полутон в телефоне"
+                  className="w-full max-w-md object-contain"
+                  style={{ filter: "drop-shadow(0 20px 60px rgba(255,45,120,0.35))" }}
+                />
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <h2 className="font-unbounded text-white text-4xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
+                    Знакомься. Общайся.{" "}
+                    <span className="grad-text">Влюбляйся.</span>
+                  </h2>
+                  <p className="text-white/50 text-base">Полутон — место, где начинаются настоящие истории.</p>
+                </div>
               </div>
-              <div className="relative rounded-[32px] overflow-hidden flex-shrink-0"
-                style={{ width: 400, height: 780, boxShadow: "0 30px 80px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <AuthScreen onAuth={handleAuth} />
+
+              <div id="auth-card">
+                <AuthScreen onAuth={handleAuth} variant="card" />
               </div>
             </div>
           </div>
 
+          <AuthFeaturesGrid />
+
           <div className="relative">
             <AuthDownloadSection />
           </div>
+
+          <AuthSiteFooter onOpenTerms={() => setShowSiteTerms(true)} onOpenPrivacy={() => setShowSitePrivacy(true)} />
         </div>
       );
     }

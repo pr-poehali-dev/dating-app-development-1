@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { authApi, type User } from "@/lib/api";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
+import { AuthHeroCard } from "./AuthHeroCard";
 import { AuthLegalSheet } from "./AuthLegalSheet";
 
 // Redirect URI для OAuth берём из реального адреса браузера — так он всегда
@@ -9,7 +10,7 @@ import { AuthLegalSheet } from "./AuthLegalSheet";
 // window.location.origin для кириллического домена браузер сам отдаёт в punycode.
 const OAUTH_REDIRECT = `${window.location.origin}/oauth`;
 
-export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
+export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User) => void; variant?: "phone" | "card" }) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -104,28 +105,53 @@ export function AuthScreen({ onAuth }: { onAuth: (user: User) => void }) {
         <AuthLegalSheet tab="privacy" onClose={() => setShowPrivacy(false)} />
       )}
 
-      <AuthForm
-        mode={mode}
-        name={name}
-        email={email}
-        password={password}
-        loading={loading}
-        error={error}
-        emailTaken={emailTaken}
-        showPassword={showPassword}
-        onModeChange={setMode}
-        onNameChange={setName}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onShowPasswordToggle={() => setShowPassword(v => !v)}
-        onSubmit={submit}
-        onShowForgot={() => setShowForgot(true)}
-        onOpenTerms={() => setShowTerms(true)}
-        onOpenPrivacy={() => setShowPrivacy(true)}
-        onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
-        onOAuth={startOAuth}
-        oauthLoading={oauthLoading}
-      />
+      {variant === "card" ? (
+        <AuthHeroCard
+          mode={mode}
+          name={name}
+          email={email}
+          password={password}
+          loading={loading}
+          error={error}
+          emailTaken={emailTaken}
+          showPassword={showPassword}
+          onModeChange={setMode}
+          onNameChange={setName}
+          onEmailChange={setEmail}
+          onPasswordChange={setPassword}
+          onShowPasswordToggle={() => setShowPassword(v => !v)}
+          onSubmit={submit}
+          onShowForgot={() => setShowForgot(true)}
+          onOpenTerms={() => setShowTerms(true)}
+          onOpenPrivacy={() => setShowPrivacy(true)}
+          onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
+          onOAuth={startOAuth}
+          oauthLoading={oauthLoading}
+        />
+      ) : (
+        <AuthForm
+          mode={mode}
+          name={name}
+          email={email}
+          password={password}
+          loading={loading}
+          error={error}
+          emailTaken={emailTaken}
+          showPassword={showPassword}
+          onModeChange={setMode}
+          onNameChange={setName}
+          onEmailChange={setEmail}
+          onPasswordChange={setPassword}
+          onShowPasswordToggle={() => setShowPassword(v => !v)}
+          onSubmit={submit}
+          onShowForgot={() => setShowForgot(true)}
+          onOpenTerms={() => setShowTerms(true)}
+          onOpenPrivacy={() => setShowPrivacy(true)}
+          onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
+          onOAuth={startOAuth}
+          oauthLoading={oauthLoading}
+        />
+      )}
     </>
   );
 }
