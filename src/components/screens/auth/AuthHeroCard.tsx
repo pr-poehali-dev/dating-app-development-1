@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { RuStoreLogo, NashStoreLogo, StoreButton } from "./StoreLogos";
+import { StoreDownloadButton } from "./StoreLogos";
 
 export function AuthHeroCard({
   mode,
@@ -57,9 +57,9 @@ export function AuthHeroCard({
       </div>
 
       {/* Магазины приложений */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <StoreButton><RuStoreLogo /></StoreButton>
-        <StoreButton><NashStoreLogo /></StoreButton>
+      <div className="flex gap-3">
+        <StoreDownloadButton store="rustore" />
+        <StoreDownloadButton store="nashstore" />
       </div>
 
       {/* Разделитель */}

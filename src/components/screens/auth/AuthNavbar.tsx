@@ -10,10 +10,6 @@ export function AuthNavbar({ onLoginClick }: { onLoginClick: () => void }) {
           <span className="font-unbounded text-white text-xl font-black grad-text">Полутон</span>
         </div>
 
-        <div className="hidden lg:flex items-center gap-9">
-          <a href="#features" className="text-white/60 text-sm font-medium hover:text-white transition-colors">О приложении</a>
-        </div>
-
         <button onClick={onLoginClick}
           className="px-5 py-2.5 rounded-full text-white text-sm font-bold transition-all active:scale-95 hover:brightness-110"
           style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 4px 16px rgba(255,45,120,0.35)" }}>
