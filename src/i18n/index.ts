@@ -14,10 +14,6 @@ export const LANGUAGES = [
   { code: "zh", label: "中文", country: "Китай", flagCode: "cn", rtl: false },
 ] as const;
 
-export function flagUrl(flagCode: string) {
-  return `https://flagcdn.com/w80/${flagCode}.png`;
-}
-
 export type LanguageCode = typeof LANGUAGES[number]["code"];
 
 const STORAGE_KEY = "poluton_lang";

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
-import { LANGUAGES, setAppLanguage, flagUrl, type LanguageCode } from "@/i18n";
+import { FlagIcon } from "@/components/ui/flag-icon";
+import { LANGUAGES, setAppLanguage, type LanguageCode } from "@/i18n";
 
 export function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
@@ -33,8 +34,8 @@ export function LanguageSwitcher() {
           border: "1px solid rgba(255,255,255,0.16)",
         }}
       >
-        <img src={flagUrl(current.flagCode)} alt={current.country}
-          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+        <FlagIcon code={current.flagCode}
+          className="w-6 h-6 rounded-full"
           style={{ border: "1px solid rgba(255,255,255,0.25)" }} />
         <span className="flex flex-col items-start leading-tight">
           <span className="text-white text-sm font-bold">{current.label}</span>
@@ -58,8 +59,8 @@ export function LanguageSwitcher() {
               className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5"
               style={lang.code === current.code ? { background: "rgba(255,45,120,0.12)" } : undefined}
             >
-              <img src={flagUrl(lang.flagCode)} alt={lang.country}
-                className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+              <FlagIcon code={lang.flagCode}
+                className="w-8 h-8 rounded-full"
                 style={{ border: "1px solid rgba(255,255,255,0.2)" }} />
               <div className="flex flex-col leading-tight flex-1 min-w-0">
                 <span className="text-white text-sm font-semibold">{lang.label}</span>

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 
-const STORAGE_KEY = "poluton_cookie_consent";
+const STORAGE_KEY = "poluton_cookie_consent_v2";
 
 interface ConsentPrefs {
   necessary: true;
