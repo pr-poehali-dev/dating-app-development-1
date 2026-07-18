@@ -158,6 +158,18 @@ const PRIVACY_DOC_SECTIONS = [
       "Для работы приложения могут использоваться технические сервисы (хостинг, доставка уведомлений), обрабатывающие данные в объёме, необходимом для оказания соответствующих услуг.",
     ],
   },
+  {
+    icon: "Cookie",
+    title: "7. Использование cookies и аналогичных технологий",
+    items: [
+      "Сайт Полутон использует файлы cookie и аналогичные технологии (localStorage, идентификаторы сессии) для обеспечения корректной работы сервиса, запоминания настроек Пользователя и авторизации.",
+      "Технически необходимые cookies обеспечивают базовые функции сайта: сохранение сессии входа, языковых настроек, состояния согласия с настоящей Политикой. Без них корректная работа сервиса невозможна.",
+      "Аналитические и функциональные cookies помогают нам понимать, как Пользователи взаимодействуют с сервисом, для улучшения удобства и персонализации интерфейса под предпочтения Пользователя.",
+      "Продолжая использовать сайт Полутон и нажимая кнопку «Принять» в уведомлении о cookies, Пользователь даёт согласие на использование файлов cookie в соответствии с настоящей Политикой.",
+      "Пользователь может ограничить или запретить сохранение cookies в настройках своего браузера, однако это может повлиять на корректность работы отдельных функций сервиса.",
+      "Мы не используем cookies для сбора данных, позволяющих напрямую идентифицировать личность Пользователя без его добровольной регистрации в сервисе.",
+    ],
+  },
 ] as const;
 
 export function AuthLegalContent({ tab, lightBg }: { tab: "terms" | "privacy"; lightBg?: boolean }) {
@@ -205,7 +217,7 @@ export function AuthLegalContent({ tab, lightBg }: { tab: "terms" | "privacy"; l
         <div key={section.title} className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(155,89,182,0.18)" }}>
-              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"} size={14} className="text-purple-500" />
+              <Icon name={section.icon as "FileText"|"BookOpen"|"BookMarked"|"Target"|"Database"|"ShieldCheck"|"UserCheck"|"Info"|"Cookie"} size={14} className="text-purple-500" />
             </div>
             <p className={titleCls}>{section.title}</p>
           </div>

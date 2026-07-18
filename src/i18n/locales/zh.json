@@ -94,5 +94,12 @@
   },
   "language": {
     "select": "语言"
+  },
+  "cookieConsent": {
+    "text": "我们使用 cookies 来让我们的网站对您更加便捷和个性化。这有助于记住您的设置、加快账号登录速度并展示更相关的内容。详情请查看:",
+    "cookiesLink": "cookies 使用政策",
+    "and": "和",
+    "dataLink": "数据保护",
+    "accept": "接受"
   }
 }

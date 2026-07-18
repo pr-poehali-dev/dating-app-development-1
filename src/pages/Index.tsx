@@ -5,6 +5,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import SplashScreen from "@/components/screens/SplashScreen";
 import OfflineBanner from "@/components/OfflineBanner";
+import CookieConsent from "@/components/CookieConsent";
 import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
 import { setAppBadge } from "@/hooks/useNative";
 
@@ -342,6 +343,8 @@ export default function Index() {
           <AuthFeaturesGrid />
 
           <AuthSiteFooter />
+
+          <CookieConsent />
         </div>
       );
     }
@@ -352,6 +355,7 @@ export default function Index() {
         <div className="app-screen-container h-full">
           <AuthScreen onAuth={handleAuth} />
         </div>
+        <CookieConsent />
       </div>
     );
   }
