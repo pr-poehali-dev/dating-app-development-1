@@ -10,6 +10,7 @@ import uuid
 import base64
 import psycopg2
 import boto3
+from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
 
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
@@ -706,6 +707,41 @@ def handler(event: dict, context) -> dict:
                     )
             conn.commit()
             return resp(200, {'ok': True})
+
+        if action == 'ai_test_connection':
+            mod = moderate_text('Привет, как дела?')
+            if mod.get('error'):
+                return resp(200, {'ok': False, 'error': mod['error']})
+            return resp(200, {'ok': True, 'sample_score': mod['score']})
+
+        if action == 'ai_recheck_post':
+            post_id = body.get('post_id')
+            if not post_id:
+                return resp(400, {'error': 'post_id обязателен'})
+            cur.execute("SELECT id, user_id, photo_url, caption FROM posts WHERE id = %s", (post_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Пост не найден'})
+            pid, user_id, photo_url, caption = row
+            mod = moderate_photo(photo_url, purpose='general')
+            if mod.get('error'):
+                return resp(200, {'ok': False, 'error': mod['error']})
+            score = mod['score']
+            block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+            review_th = float(get_setting(cur, 'review_threshold', '40'))
+            verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
+            ai_flag = score >= review_th
+            cur.execute("UPDATE posts SET ai_flagged = %s WHERE id = %s", (ai_flag, pid))
+            if ai_flag:
+                push_to_queue(cur, 'post', pid, user_id, photo_url=photo_url,
+                              ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'Ручная перепроверка',
+                              priority=score_to_priority(score),
+                              status='needs_review' if verdict != 'violation' else 'auto_resolved',
+                              action_taken='auto_blocked' if verdict == 'violation' else None,
+                              reviewed_by='ai')
+            conn.commit()
+            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
 
         # ── Маркетинг: отправить push всем ───────────────────────────────────
         if action == 'push_broadcast':

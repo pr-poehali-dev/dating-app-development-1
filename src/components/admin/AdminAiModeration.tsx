@@ -137,6 +137,122 @@ function QueueCard({ item, onResolve }: { item: QueueItem; onResolve: (id: numbe
   );
 }
 
+function ConnectionTest({ token }: { token: string }) {
+  const [state, setState] = useState<"idle" | "loading" | "ok" | "fail">("idle");
+  const [message, setMessage] = useState("");
+
+  const test = async () => {
+    setState("loading");
+    try {
+      const d = await adminReq(token, "ai_test_connection");
+      if (d.ok) {
+        setState("ok");
+        setMessage(`Соединение с RouterAI работает (тестовый score: ${d.sample_score})`);
+      } else {
+        setState("fail");
+        setMessage(d.error || "Не удалось подключиться");
+      }
+    } catch {
+      setState("fail");
+      setMessage("Ошибка сети");
+    }
+  };
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-white text-sm font-semibold">Проверка подключения к RouterAI</p>
+          <p className="text-white/35 text-xs mt-0.5">Отправит тестовый запрос и покажет результат</p>
+        </div>
+        <button onClick={test} disabled={state === "loading"}
+          className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+          {state === "loading" ? <Icon name="Loader2" size={13} className="animate-spin" /> : <Icon name="Zap" size={13} />}
+          Тест
+        </button>
+      </div>
+      {state === "ok" && (
+        <p className="text-xs flex items-center gap-1.5" style={{ color: "#4ADE80" }}>
+          <Icon name="CheckCircle2" size={13} /> {message}
+        </p>
+      )}
+      {state === "fail" && (
+        <p className="text-xs flex items-center gap-1.5" style={{ color: "#F87171" }}>
+          <Icon name="XCircle" size={13} /> {message}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function RecheckPostPanel({ token, onDone }: { token: string; onDone: () => void }) {
+  const [postId, setPostId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ verdict: string; score: number; reason: string; categories: string[]; flagged: boolean } | null>(null);
+  const [error, setError] = useState("");
+
+  const run = async () => {
+    const id = parseInt(postId, 10);
+    if (!id) return;
+    setBusy(true);
+    setError("");
+    setResult(null);
+    try {
+      const d = await adminReq(token, "ai_recheck_post", { post_id: id });
+      if (d.ok) {
+        setResult(d);
+        onDone();
+      } else {
+        setError(d.error || "Ошибка проверки");
+      }
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verdictStyle: Record<string, { color: string; label: string }> = {
+    safe: { color: "#4ADE80", label: "Всё чисто" },
+    suspicious: { color: "#FBBF24", label: "Подозрительно — в очереди" },
+    violation: { color: "#F87171", label: "Нарушение — заблокировано" },
+  };
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div>
+        <p className="text-white text-sm font-semibold">Перепроверить пост по ID</p>
+        <p className="text-white/35 text-xs mt-0.5">Для постов, опубликованных до подключения ИИ</p>
+      </div>
+      <div className="flex gap-2">
+        <input value={postId} onChange={e => setPostId(e.target.value.replace(/\D/g, ""))}
+          placeholder="Например, 70" inputMode="numeric"
+          onKeyDown={e => e.key === "Enter" && run()}
+          className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+        <button onClick={run} disabled={busy || !postId.trim()}
+          className="px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+          {busy ? <Icon name="Loader2" size={13} className="animate-spin" /> : "Проверить"}
+        </button>
+      </div>
+      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
+      {result && (
+        <div className="rounded-xl p-3 flex flex-col gap-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <p className="text-sm font-bold" style={{ color: (verdictStyle[result.verdict] || verdictStyle.safe).color }}>
+            {(verdictStyle[result.verdict] || verdictStyle.safe).label} · {Math.round(result.score)}%
+          </p>
+          {result.reason && <p className="text-white/50 text-xs">{result.reason}</p>}
+          {result.categories?.length > 0 && <p className="text-white/35 text-xs">Категории: {result.categories.join(", ")}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AiSettingsPanel({ token }: { token: string }) {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -178,6 +294,7 @@ function AiSettingsPanel({ token }: { token: string }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <ConnectionTest token={token} />
       {toggles.map(t => (
         <div key={t.key} className="rounded-2xl p-4 flex items-center justify-between gap-3"
           style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -263,6 +380,7 @@ export function AdminAiModeration({ token }: { token: string }) {
         <AiSettingsPanel token={token} />
       ) : (
         <>
+          <RecheckPostPanel token={token} onDone={load} />
           {stats && (
             <div className="flex gap-2 flex-wrap">
               <StatCard icon="Clock" label="На проверке" value={stats.pending_review} color="#FBBF24" />
