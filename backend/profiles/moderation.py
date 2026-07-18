@@ -1,17 +1,18 @@
 """
-Хелпер AI-модерации: проверка фото через OpenAI Vision (chat.completions с image_url)
-и текста через Moderation API. Запись результатов в очередь ai_moderation_queue.
+Хелпер AI-модерации через RouterAI (OpenAI-совместимый API, routerai.ru).
+Фото анализируется через chat.completions с image_url (Vision), текст — та же модель с JSON-ответом.
+Запись результатов в очередь ai_moderation_queue.
 """
 import json
 import os
 import urllib.request
 
-MODERATION_URL = 'https://api.openai.com/v1/moderations'
-VISION_URL = 'https://api.openai.com/v1/chat/completions'
+ROUTERAI_URL = 'https://routerai.ru/api/v1/chat/completions'
+MODEL = 'openai/gpt-4o-mini'
 
 
-def _openai_key():
-    return os.environ.get('OPENAI_API_KEY', '')
+def _api_key():
+    return os.environ.get('ROUTERAI_API_KEY', '')
 
 
 def get_setting(cur, key: str, default: str = '') -> str:
@@ -24,35 +25,45 @@ def get_setting(cur, key: str, default: str = '') -> str:
 
 
 def moderate_text(text: str) -> dict:
-    key = _openai_key()
+    key = _api_key()
     if not key or not text:
         return {'flagged': False, 'score': 0.0, 'categories': [], 'error': None}
     try:
-        payload = json.dumps({'model': 'omni-moderation-latest', 'input': text}).encode()
-        req = urllib.request.Request(MODERATION_URL, data=payload, method='POST', headers={
+        prompt = (
+            "Ты модератор текста для приложения знакомств. Проанализируй сообщение и верни СТРОГО JSON без пояснений: "
+            '{"spam": true/false, "abuse": true/false, "sexual": true/false, "scam": true/false, "score": 0-100, "reason": "краткая причина на русском"}. '
+            "score — степень уверенности что текст нарушает правила (0 = точно норм, 100 = точное нарушение). Сообщение: " + text[:2000]
+        )
+        payload = json.dumps({
+            'model': MODEL,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': 200,
+            'response_format': {'type': 'json_object'},
+        }).encode()
+        req = urllib.request.Request(ROUTERAI_URL, data=payload, method='POST', headers={
             'Authorization': f'Bearer {key}',
             'Content-Type': 'application/json',
         })
-        with urllib.request.urlopen(req, timeout=8) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read().decode())
-        result = data['results'][0]
-        cat_scores = result.get('category_scores', {})
-        flagged_cats = [c for c, v in cat_scores.items() if v > 0.3]
-        max_score = max(cat_scores.values()) if cat_scores else 0.0
-        return {'flagged': bool(result.get('flagged')), 'score': round(max_score * 100, 1), 'categories': flagged_cats, 'error': None}
+        content = data['choices'][0]['message']['content']
+        parsed = json.loads(content)
+        score = float(parsed.get('score', 0))
+        cats = [c for c in ('spam', 'abuse', 'sexual', 'scam') if parsed.get(c)]
+        return {'flagged': score >= 40, 'score': round(score, 1), 'categories': cats, 'error': None}
     except Exception as e:
         return {'flagged': False, 'score': 0.0, 'categories': [], 'error': str(e)}
 
 
 def moderate_photo(image_url: str, purpose: str = 'general') -> dict:
     """
-    Анализирует фото через OpenAI Vision.
-    purpose: 'general' (пост/галерея) | 'selfie' (верификация — сверка с фото профиля)
-    Возвращает {flagged, score(0-100), categories, reason, error}.
+    Анализирует фото через RouterAI Vision (gpt-4o-mini).
+    purpose: 'general' (пост/галерея) | 'selfie' (верификация)
+    Возвращает {flagged, score(0-100), categories, reason, has_face, error}.
     """
-    key = _openai_key()
+    key = _api_key()
     if not key or not image_url:
-        return {'flagged': False, 'score': 0.0, 'categories': [], 'reason': '', 'error': None}
+        return {'flagged': False, 'score': 0.0, 'categories': [], 'reason': '', 'has_face': True, 'error': None}
     try:
         prompt = (
             "Ты модератор фото для приложения знакомств. Проанализируй изображение и верни СТРОГО JSON без пояснений: "
@@ -60,7 +71,7 @@ def moderate_photo(image_url: str, purpose: str = 'general') -> dict:
             "score — это степень уверенности что фото нарушает правила (0 = точно норм, 100 = точно нарушение: откровенный контент, насилие, шок-контент)."
         )
         payload = json.dumps({
-            'model': 'gpt-4o-mini',
+            'model': MODEL,
             'messages': [{
                 'role': 'user',
                 'content': [
@@ -71,7 +82,7 @@ def moderate_photo(image_url: str, purpose: str = 'general') -> dict:
             'max_tokens': 200,
             'response_format': {'type': 'json_object'},
         }).encode()
-        req = urllib.request.Request(VISION_URL, data=payload, method='POST', headers={
+        req = urllib.request.Request(ROUTERAI_URL, data=payload, method='POST', headers={
             'Authorization': f'Bearer {key}',
             'Content-Type': 'application/json',
         })
@@ -94,8 +105,8 @@ def moderate_photo(image_url: str, purpose: str = 'general') -> dict:
 
 
 def compare_faces(selfie_url: str, profile_photo_url: str) -> dict:
-    """Сверяет селфи с основным фото профиля через Vision. Возвращает {match, confidence, reason}."""
-    key = _openai_key()
+    """Сверяет селфи с основным фото профиля через RouterAI Vision. Возвращает {match, confidence, reason}."""
+    key = _api_key()
     if not key or not selfie_url or not profile_photo_url:
         return {'match': True, 'confidence': 0, 'reason': 'skip', 'error': None}
     try:
@@ -105,7 +116,7 @@ def compare_faces(selfie_url: str, profile_photo_url: str) -> dict:
             '{"same_person": true/false, "confidence": 0-100, "reason": "краткое пояснение на русском"}'
         )
         payload = json.dumps({
-            'model': 'gpt-4o-mini',
+            'model': MODEL,
             'messages': [{
                 'role': 'user',
                 'content': [
@@ -117,7 +128,7 @@ def compare_faces(selfie_url: str, profile_photo_url: str) -> dict:
             'max_tokens': 150,
             'response_format': {'type': 'json_object'},
         }).encode()
-        req = urllib.request.Request(VISION_URL, data=payload, method='POST', headers={
+        req = urllib.request.Request(ROUTERAI_URL, data=payload, method='POST', headers={
             'Authorization': f'Bearer {key}',
             'Content-Type': 'application/json',
         })

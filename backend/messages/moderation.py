@@ -1,16 +1,18 @@
 """
-Хелпер AI-модерации: проверка текста через OpenAI Moderation API,
-запись результатов в очередь ai_moderation_queue.
+Хелпер AI-модерации через RouterAI (OpenAI-совместимый API, routerai.ru).
+Проверка текста через chat.completions с JSON-ответом (нет отдельного /moderations эндпоинта).
+Запись результатов в очередь ai_moderation_queue.
 """
 import json
 import os
 import urllib.request
 
-OPENAI_URL = 'https://api.openai.com/v1/moderations'
+ROUTERAI_URL = 'https://routerai.ru/api/v1/chat/completions'
+MODEL = 'openai/gpt-4o-mini'
 
 
-def _openai_key():
-    return os.environ.get('OPENAI_API_KEY', '')
+def _api_key():
+    return os.environ.get('ROUTERAI_API_KEY', '')
 
 
 def get_setting(cur, key: str, default: str = '') -> str:
@@ -23,23 +25,34 @@ def get_setting(cur, key: str, default: str = '') -> str:
 
 
 def moderate_text(text: str) -> dict:
-    """Проверяет текст через OpenAI Moderation API. Возвращает {flagged, score, categories, error}."""
-    key = _openai_key()
+    """Проверяет текст через RouterAI (gpt-4o-mini). Возвращает {flagged, score, categories, error}."""
+    key = _api_key()
     if not key or not text:
         return {'flagged': False, 'score': 0.0, 'categories': [], 'error': None}
     try:
-        payload = json.dumps({'model': 'omni-moderation-latest', 'input': text}).encode()
-        req = urllib.request.Request(OPENAI_URL, data=payload, method='POST', headers={
+        prompt = (
+            "Ты модератор текста для приложения знакомств. Проанализируй сообщение и верни СТРОГО JSON без пояснений: "
+            '{"spam": true/false, "abuse": true/false, "sexual": true/false, "scam": true/false, "score": 0-100, "reason": "краткая причина на русском"}. '
+            "score — степень уверенности что текст нарушает правила (0 = точно норм, 100 = точное нарушение: спам, оскорбления, мошенничество, "
+            "сексуальный контент, реклама, попытка увести из приложения). Сообщение: " + text[:2000]
+        )
+        payload = json.dumps({
+            'model': MODEL,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': 200,
+            'response_format': {'type': 'json_object'},
+        }).encode()
+        req = urllib.request.Request(ROUTERAI_URL, data=payload, method='POST', headers={
             'Authorization': f'Bearer {key}',
             'Content-Type': 'application/json',
         })
-        with urllib.request.urlopen(req, timeout=8) as r:
+        with urllib.request.urlopen(req, timeout=10) as r:
             data = json.loads(r.read().decode())
-        result = data['results'][0]
-        cat_scores = result.get('category_scores', {})
-        flagged_cats = [c for c, v in cat_scores.items() if v > 0.3]
-        max_score = max(cat_scores.values()) if cat_scores else 0.0
-        return {'flagged': bool(result.get('flagged')), 'score': round(max_score * 100, 1), 'categories': flagged_cats, 'error': None}
+        content = data['choices'][0]['message']['content']
+        parsed = json.loads(content)
+        score = float(parsed.get('score', 0))
+        cats = [c for c in ('spam', 'abuse', 'sexual', 'scam') if parsed.get(c)]
+        return {'flagged': score >= 40, 'score': round(score, 1), 'categories': cats, 'error': None}
     except Exception as e:
         return {'flagged': False, 'score': 0.0, 'categories': [], 'error': str(e)}
 
