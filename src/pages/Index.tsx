@@ -12,6 +12,7 @@ import { popBackHandler } from "@/hooks/backStack";
 
 import { AuthScreen, PremiumScreen, PremiumScreenDesktop, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import { AuthNavbar } from "@/components/screens/auth/AuthNavbar";
+import { LivePhoneMockup } from "@/components/screens/auth/LivePhoneMockup";
 import { AuthFeaturesGrid } from "@/components/screens/auth/AuthFeaturesGrid";
 import { AuthSiteFooter } from "@/components/screens/auth/AuthSiteFooter";
 import { AuthLegalSheet } from "@/components/screens/auth/AuthLegalSheet";
@@ -326,12 +327,7 @@ export default function Index() {
           <div className="relative flex items-center justify-center px-10 py-16" style={{ minHeight: "calc(100vh - 72px)" }}>
             <div className="flex items-center gap-16 flex-wrap justify-center">
               <div className="hidden lg:flex flex-col items-center gap-6 max-w-lg">
-                <img
-                  src="/live-phone/phone.jpg"
-                  alt="Полутон Live — прямой эфир"
-                  className="w-full max-w-[280px] object-contain"
-                  style={{ filter: "drop-shadow(0 20px 60px rgba(255,45,120,0.3))" }}
-                />
+                <LivePhoneMockup />
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h2 className="font-unbounded text-white text-4xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
                     Знакомься. Общайся.{" "}
