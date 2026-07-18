@@ -11,6 +11,7 @@ import smtplib
 import ssl
 import boto3
 import psycopg2
+from moderation import moderate_photo, compare_faces, get_setting, score_to_priority, push_to_queue
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -556,8 +557,32 @@ def handler(event: dict, context) -> dict:
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
-            cur.execute("INSERT INTO profile_photos (user_id, photo_url) VALUES (%s, %s) RETURNING id, created_at", (me['id'], cdn_url))
+
+            # ── AI-модерация фото галереи профиля ──
+            ai_flag = False
+            if get_setting(cur, 'photo_moderation_enabled', 'true') == 'true':
+                mod = moderate_photo(cdn_url, purpose='general')
+                if mod['score'] > 0:
+                    block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                    review_th = float(get_setting(cur, 'review_threshold', '40'))
+                    if mod['score'] >= block_th:
+                        push_to_queue(cur, 'profile_photo', None, me['id'], photo_url=cdn_url,
+                                      ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason=mod['reason'] or 'Автоблокировка фото',
+                                      priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                        conn.commit()
+                        return resp(403, {'error': 'Фото не прошло автоматическую модерацию: ' + (mod['reason'] or 'нарушение правил')})
+                    if mod['score'] >= review_th:
+                        ai_flag = True
+
+            cur.execute("INSERT INTO profile_photos (user_id, photo_url, ai_flagged) VALUES (%s, %s, %s) RETURNING id, created_at", (me['id'], cdn_url, ai_flag))
             row = cur.fetchone()
+            if ai_flag:
+                push_to_queue(cur, 'profile_photo', row[0], me['id'], photo_url=cdn_url,
+                              ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'На проверку', priority=score_to_priority(mod['score']),
+                              status='needs_review', reviewed_by='ai')
             # Уведомить подписчиков
             cur.execute("SELECT subscriber_id FROM user_subscriptions WHERE target_id=%s", (me['id'],))
             subs = [r[0] for r in cur.fetchall()]
@@ -832,11 +857,35 @@ def handler(event: dict, context) -> dict:
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+            # ── AI-модерация фото поста ──
+            ai_flag = False
+            if get_setting(cur, 'photo_moderation_enabled', 'true') == 'true':
+                mod = moderate_photo(cdn_url, purpose='general')
+                if mod['score'] > 0:
+                    block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                    review_th = float(get_setting(cur, 'review_threshold', '40'))
+                    if mod['score'] >= block_th:
+                        push_to_queue(cur, 'post', None, me['id'], photo_url=cdn_url,
+                                      ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason=mod['reason'] or 'Автоблокировка фото',
+                                      priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                        conn.commit()
+                        return resp(403, {'error': 'Фото не прошло автоматическую модерацию: ' + (mod['reason'] or 'нарушение правил')})
+                    if mod['score'] >= review_th:
+                        ai_flag = True
+
             cur.execute(
-                "INSERT INTO posts (user_id, photo_url, caption) VALUES (%s, %s, %s) RETURNING id, created_at",
-                (me['id'], cdn_url, caption or None)
+                "INSERT INTO posts (user_id, photo_url, caption, ai_flagged) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+                (me['id'], cdn_url, caption or None, ai_flag)
             )
             row = cur.fetchone()
+            if ai_flag:
+                push_to_queue(cur, 'post', row[0], me['id'], photo_url=cdn_url,
+                              ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'На проверку', priority=score_to_priority(mod['score']),
+                              status='needs_review', reviewed_by='ai')
             conn.commit()
             return resp(200, {'ok': True, 'post': {'id': row[0], 'photo_url': cdn_url, 'caption': caption, 'created_at': str(row[1])}})
 
@@ -1042,14 +1091,39 @@ def handler(event: dict, context) -> dict:
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+            # ── AI-модерация селфи: NSFW-проверка + сверка лица с фото профиля ──
+            ai_verdict, ai_reason = None, None
+            if get_setting(cur, 'selfie_verification_enabled', 'true') == 'true':
+                mod = moderate_photo(cdn_url, purpose='selfie')
+                if mod.get('has_face') is False:
+                    ai_verdict, ai_reason = 'suspicious', 'ИИ не обнаружил лицо на селфи'
+                elif mod['score'] >= 40:
+                    ai_verdict, ai_reason = 'suspicious', mod['reason'] or 'Подозрительное содержимое селфи'
+                else:
+                    cur.execute("SELECT photo_url FROM users WHERE id=%s", (me['id'],))
+                    prow = cur.fetchone()
+                    profile_photo = prow[0] if prow else None
+                    if profile_photo:
+                        cmp = compare_faces(cdn_url, profile_photo)
+                        if not cmp['match'] and cmp['confidence'] >= 50:
+                            ai_verdict, ai_reason = 'suspicious', 'Лицо на селфи может не совпадать с фото профиля: ' + (cmp['reason'] or '')
+                        else:
+                            ai_verdict, ai_reason = 'safe', 'Лицо совпадает с фото профиля'
+                if ai_verdict == 'suspicious':
+                    push_to_queue(cur, 'selfie', None, me['id'], photo_url=cdn_url,
+                                  ai_verdict='suspicious', ai_score=mod.get('score', 50), ai_categories=mod.get('categories', []),
+                                  ai_reason=ai_reason, priority='medium', status='needs_review', reviewed_by='ai')
+
             cur.execute("SELECT id FROM verification_requests WHERE user_id=%s", (me['id'],))
             if cur.fetchone():
-                cur.execute("UPDATE verification_requests SET selfie_url=%s, status='pending', reviewed_at=NULL, reject_reason=NULL WHERE user_id=%s",
-                            (cdn_url, me['id']))
+                cur.execute("UPDATE verification_requests SET selfie_url=%s, status='pending', reviewed_at=NULL, reject_reason=NULL, ai_verdict=%s, ai_reason=%s WHERE user_id=%s",
+                            (cdn_url, ai_verdict, ai_reason, me['id']))
             else:
-                cur.execute("INSERT INTO verification_requests (user_id, selfie_url) VALUES (%s, %s)", (me['id'], cdn_url))
+                cur.execute("INSERT INTO verification_requests (user_id, selfie_url, ai_verdict, ai_reason) VALUES (%s, %s, %s, %s)",
+                             (me['id'], cdn_url, ai_verdict, ai_reason))
             conn.commit()
-            return resp(200, {'ok': True})
+            return resp(200, {'ok': True, 'ai_verdict': ai_verdict})
 
         # ── БЛОКИРОВКИ ─────────────────────────────────────────────────────────
 

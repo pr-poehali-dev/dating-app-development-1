@@ -3,8 +3,9 @@ import Icon from "@/components/ui/icon";
 
 export const ADMIN_URL = "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18";
 
-export async function adminReq(token: string, action: string, body?: object) {
-  const res = await fetch(`${ADMIN_URL}?action=${action}`, {
+export async function adminReq(token: string, action: string, body?: object, query?: Record<string, string>) {
+  const qs = new URLSearchParams({ action, ...(query || {}) });
+  const res = await fetch(`${ADMIN_URL}?${qs.toString()}`, {
     method: body ? "POST" : "GET",
     headers: { "Content-Type": "application/json", "X-Admin-Token": token },
     body: body ? JSON.stringify(body) : undefined,

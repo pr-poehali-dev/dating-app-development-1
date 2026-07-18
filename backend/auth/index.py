@@ -137,6 +137,14 @@ def audit(cur, event_type: str, severity: str, ip: str = None, user_id: int = No
         (event_type, severity, ip, user_id, email, json.dumps(details or {}))
     )
 
+def is_ip_blocked(cur, ip: str) -> str:
+    """Возвращает причину блокировки, если IP в чёрном списке, иначе None."""
+    if not ip or ip == 'unknown':
+        return None
+    cur.execute("SELECT reason FROM blocked_ips WHERE ip_address = %s", (ip,))
+    row = cur.fetchone()
+    return row[0] if row else None
+
 def build_user_dict(cur, user_id: int) -> dict:
     """Собирает полный объект пользователя (как в login)."""
     cur.execute(
@@ -225,6 +233,12 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'Имя слишком длинное'})
             if len(email) > 255 or '@' not in email:
                 return resp(400, {'error': 'Некорректный email'})
+            # Проверка чёрного списка IP
+            block_reason = is_ip_blocked(cur, ip)
+            if block_reason:
+                audit(cur, 'register_blocked_ip', 'critical', ip=ip, email=email, details={'reason': block_reason})
+                conn.commit()
+                return resp(403, {'error': 'Доступ с этого IP-адреса ограничен'})
             # Rate limit: не более 5 регистраций с одного IP за 10 минут
             if check_rate_limit(cur, ip, 'register', 5, 10):
                 audit(cur, 'register_rate_limit', 'warning', ip=ip, email=email)
@@ -263,6 +277,12 @@ def handler(event: dict, context) -> dict:
         if action == 'login':
             email = body.get('email', '').strip().lower()
             password = body.get('password', '')
+            # Проверка чёрного списка IP
+            block_reason = is_ip_blocked(cur, ip)
+            if block_reason:
+                audit(cur, 'login_blocked_ip', 'critical', ip=ip, email=email, details={'reason': block_reason})
+                conn.commit()
+                return resp(403, {'error': 'Доступ с этого IP-адреса ограничен'})
             # Rate limit: не более 10 попыток с одного IP за 15 минут
             if check_rate_limit(cur, ip, 'login', 10, 15):
                 audit(cur, 'login_rate_limit', 'warning', ip=ip, email=email)

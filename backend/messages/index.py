@@ -8,6 +8,7 @@ import base64
 import uuid
 import psycopg2
 import boto3
+from moderation import moderate_text, score_to_priority, push_to_queue, get_setting
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет Web Push всем подпискам пользователя."""
@@ -136,9 +137,32 @@ def handler(event: dict, context) -> dict:
             )
             if cur.fetchone():
                 return resp(403, {'error': 'Пользователь заблокирован'})
+
+            # ── AI-модерация текста (пропускаем служебные сообщения __AUDIO__/__GIFT__/... ) ──
+            ai_flag = False
+            if not text.startswith('__') and get_setting(cur, 'text_moderation_enabled', 'true') == 'true':
+                mod = moderate_text(text)
+                if mod['score'] > 0:
+                    block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                    review_th = float(get_setting(cur, 'review_threshold', '40'))
+                    if mod['score'] >= block_th:
+                        push_to_queue(cur, 'message', None, me['id'], text_snippet=text[:500],
+                                      ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason='Автоблокировка: ' + ', '.join(mod['categories']),
+                                      priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                        conn.commit()
+                        return resp(403, {'error': 'Сообщение заблокировано автоматической модерацией'})
+                    if mod['score'] >= review_th:
+                        ai_flag = True
+                        push_to_queue(cur, 'message', None, me['id'], text_snippet=text[:500],
+                                      ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason='На проверку: ' + ', '.join(mod['categories']),
+                                      priority=score_to_priority(mod['score']), status='needs_review', reviewed_by='ai')
+
             cur.execute(
-                "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
-                (match_id, me['id'], text)
+                "INSERT INTO messages (match_id, sender_id, text, ai_flagged) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+                (match_id, me['id'], text, ai_flag)
             )
             row = cur.fetchone()
             conn.commit()

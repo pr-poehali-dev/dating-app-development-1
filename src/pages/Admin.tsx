@@ -10,8 +10,9 @@ import { MarketingTab } from "@/components/admin/AdminMarketing";
 import { SubscriptionsTab } from "@/components/admin/AdminSubscriptions";
 import { AdminPromos } from "@/components/admin/AdminPromos";
 import { AdminContentTab } from "@/components/admin/AdminContentTab";
+import { AdminAiModeration } from "@/components/admin/AdminAiModeration";
 
-type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing" | "subscriptions" | "promos" | "content";
+type Tab = "stats" | "users" | "verif" | "reports" | "support" | "analytics" | "security" | "marketing" | "subscriptions" | "promos" | "content" | "ai_moderation";
 
 // ─── Main Admin Page ──────────────────────────────────────────────────────────
 export default function Admin() {
@@ -37,6 +38,7 @@ export default function Admin() {
     { id: "verif",     label: "Верификация",  icon: "BadgeCheck",    group: "Управление" },
     { id: "reports",   label: "Жалобы",       icon: "Flag",          group: "Управление" },
     { id: "content",   label: "18+ Контент",  icon: "ShieldAlert",   group: "Управление" },
+    { id: "ai_moderation", label: "ИИ-модерация", icon: "Sparkles",  group: "Управление" },
     { id: "support",   label: "Поддержка",    icon: "MessageCircle", group: "Управление" },
     { id: "security",      label: "Безопасность", icon: "Shield",        group: "Настройки" },
     { id: "marketing",     label: "Маркетинг",    icon: "Megaphone",     group: "Настройки" },
@@ -152,6 +154,7 @@ export default function Admin() {
           {tab === "subscriptions" && <SubscriptionsTab token={token} />}
           {tab === "promos"        && <AdminPromos      token={token} />}
           {tab === "content"       && <AdminContentTab  token={token} />}
+          {tab === "ai_moderation" && <AdminAiModeration token={token} />}
         </main>
       </div>
     </div>

@@ -601,6 +601,112 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── ИИ-МОДЕРАЦИЯ: умная очередь ───────────────────────────────────────
+
+        if action == 'ai_stats':
+            cur.execute("SELECT COUNT(*) FROM ai_moderation_queue WHERE status = 'needs_review'")
+            pending = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM ai_moderation_queue WHERE action_taken = 'auto_blocked' AND created_at > NOW() - INTERVAL '24 hours'")
+            auto_blocked_24h = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM ai_moderation_queue WHERE created_at > NOW() - INTERVAL '24 hours'")
+            checked_24h = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM ai_moderation_queue WHERE status = 'needs_review' AND priority = 'high'")
+            high_priority = cur.fetchone()[0]
+            cur.execute("""
+                SELECT content_type, COUNT(*) FROM ai_moderation_queue
+                WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY content_type
+            """)
+            by_type = {r[0]: r[1] for r in cur.fetchall()}
+            return resp(200, {
+                'pending_review': pending, 'auto_blocked_24h': auto_blocked_24h,
+                'checked_24h': checked_24h, 'high_priority': high_priority, 'by_type': by_type,
+            })
+
+        if action == 'ai_queue':
+            status = params.get('status', 'needs_review')
+            priority = params.get('priority', '')
+            q = ("SELECT q.id, q.content_type, q.content_id, q.user_id, q.text_snippet, q.photo_url, "
+                 "q.ai_verdict, q.ai_score, q.ai_categories, q.ai_reason, q.priority, q.status, "
+                 "q.action_taken, q.reviewed_by, q.created_at, u.name, u.username, u.photo_url as user_photo, u.ai_violation_count "
+                 "FROM ai_moderation_queue q JOIN users u ON u.id = q.user_id WHERE q.status = %s")
+            qparams = [status]
+            if priority:
+                q += " AND q.priority = %s"
+                qparams.append(priority)
+            q += " ORDER BY CASE q.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, q.created_at DESC LIMIT 100"
+            cur.execute(q, qparams)
+            cols = ['id', 'content_type', 'content_id', 'user_id', 'text_snippet', 'photo_url',
+                    'ai_verdict', 'ai_score', 'ai_categories', 'ai_reason', 'priority', 'status',
+                    'action_taken', 'reviewed_by', 'created_at', 'user_name', 'username', 'user_photo', 'ai_violation_count']
+            items = []
+            for r in cur.fetchall():
+                item = dict(zip(cols, r))
+                try:
+                    item['ai_categories'] = json.loads(item['ai_categories']) if item['ai_categories'] else []
+                except Exception:
+                    item['ai_categories'] = []
+                items.append(item)
+            return resp(200, {'items': items})
+
+        if action == 'ai_queue_resolve':
+            item_id = body.get('id')
+            decision = body.get('decision', '')  # 'approve' | 'remove' | 'ban'
+            if not item_id or decision not in ('approve', 'remove', 'ban'):
+                return resp(400, {'error': 'id и decision (approve|remove|ban) обязательны'})
+            cur.execute("SELECT content_type, content_id, user_id FROM ai_moderation_queue WHERE id = %s", (item_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Запись не найдена'})
+            content_type, content_id, user_id = row
+
+            action_map = {'approve': 'admin_approved', 'remove': 'admin_removed', 'ban': 'admin_banned'}
+            cur.execute(
+                "UPDATE ai_moderation_queue SET status = 'reviewed', action_taken = %s, reviewed_by = 'admin', reviewed_at = NOW() WHERE id = %s",
+                (action_map[decision], item_id)
+            )
+
+            if decision in ('remove', 'ban') and content_id:
+                if content_type == 'post':
+                    cur.execute("DELETE FROM post_comments WHERE post_id = %s", (content_id,))
+                    cur.execute("DELETE FROM post_likes WHERE post_id = %s", (content_id,))
+                    cur.execute("DELETE FROM posts WHERE id = %s", (content_id,))
+                elif content_type == 'profile_photo':
+                    cur.execute("UPDATE profile_photos SET is_hidden = TRUE WHERE id = %s", (content_id,))
+                elif content_type == 'message':
+                    cur.execute("UPDATE messages SET text = '[Удалено модератором]' WHERE id = %s", (content_id,))
+
+            if decision == 'ban':
+                cur.execute(
+                    "INSERT INTO banned_users (user_id, reason) VALUES (%s, %s) ON CONFLICT (user_id) DO NOTHING",
+                    (user_id, 'Нарушение правил (AI-модерация)')
+                )
+                cur.execute("UPDATE sessions SET expires_at = NOW() WHERE user_id = %s", (user_id,))
+                cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
+
+            audit(cur, 'ai_queue_resolved', 'info', ip=ip, user_id=user_id, details={'item_id': item_id, 'decision': decision, 'content_type': content_type})
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        if action == 'ai_settings':
+            cur.execute("SELECT key, value FROM ai_moderation_settings")
+            settings = {r[0]: r[1] for r in cur.fetchall()}
+            return resp(200, {'settings': settings})
+
+        if action == 'ai_settings_update':
+            updates = body.get('settings', {})
+            if not isinstance(updates, dict):
+                return resp(400, {'error': 'settings должен быть объектом'})
+            allowed_keys = {'text_moderation_enabled', 'photo_moderation_enabled', 'selfie_verification_enabled', 'auto_block_threshold', 'review_threshold'}
+            for k, v in updates.items():
+                if k in allowed_keys:
+                    cur.execute(
+                        "INSERT INTO ai_moderation_settings (key, value) VALUES (%s, %s) "
+                        "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+                        (k, str(v))
+                    )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # ── Маркетинг: отправить push всем ───────────────────────────────────
         if action == 'push_broadcast':
             title = body.get('title', '').strip()
