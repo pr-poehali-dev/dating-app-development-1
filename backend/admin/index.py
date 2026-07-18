@@ -743,6 +743,116 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
 
+        # ── Ретроактивное сканирование фото (галерея / аватары / обложки) ────
+        if action == 'ai_scan_status':
+            cur.execute("SELECT COUNT(*) FROM profile_photos WHERE is_hidden = FALSE AND ai_checked_at IS NULL")
+            gallery_left = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE photo_url IS NOT NULL AND photo_url != '' AND ai_avatar_checked_at IS NULL")
+            avatars_left = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE cover_url IS NOT NULL AND cover_url != '' AND ai_cover_checked_at IS NULL")
+            covers_left = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM profile_photos WHERE ai_flagged = TRUE")
+            gallery_flagged = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE ai_avatar_flagged = TRUE")
+            avatars_flagged = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE ai_cover_flagged = TRUE")
+            covers_flagged = cur.fetchone()[0]
+            return resp(200, {
+                'gallery_left': gallery_left, 'avatars_left': avatars_left, 'covers_left': covers_left,
+                'gallery_flagged': gallery_flagged, 'avatars_flagged': avatars_flagged, 'covers_flagged': covers_flagged,
+            })
+
+        if action == 'ai_scan_batch':
+            scan_type = body.get('type', 'gallery')  # 'gallery' | 'avatars' | 'covers'
+            batch_size = 5
+            block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+            review_th = float(get_setting(cur, 'review_threshold', '40'))
+            scanned, flagged_now, errors = 0, 0, []
+
+            if scan_type == 'gallery':
+                cur.execute(
+                    "SELECT id, user_id, photo_url FROM profile_photos WHERE is_hidden = FALSE AND ai_checked_at IS NULL LIMIT %s",
+                    (batch_size,)
+                )
+                rows = cur.fetchall()
+                for pid, user_id, photo_url in rows:
+                    mod = moderate_photo(photo_url, purpose='general')
+                    if mod.get('error'):
+                        errors.append(mod['error'])
+                        cur.execute("UPDATE profile_photos SET ai_checked_at = NOW() WHERE id = %s", (pid,))
+                        continue
+                    score = mod['score']
+                    ai_flag = score >= review_th
+                    verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
+                    cur.execute("UPDATE profile_photos SET ai_flagged = %s, ai_checked_at = NOW() WHERE id = %s", (ai_flag, pid))
+                    if ai_flag:
+                        flagged_now += 1
+                        push_to_queue(cur, 'profile_photo', pid, user_id, photo_url=photo_url,
+                                      ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                                      ai_reason=mod['reason'] or 'Ретро-сканирование',
+                                      priority=score_to_priority(score),
+                                      status='needs_review' if verdict != 'violation' else 'auto_resolved',
+                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      reviewed_by='ai')
+                    scanned += 1
+
+            elif scan_type == 'avatars':
+                cur.execute(
+                    "SELECT id, photo_url FROM users WHERE photo_url IS NOT NULL AND photo_url != '' AND ai_avatar_checked_at IS NULL LIMIT %s",
+                    (batch_size,)
+                )
+                rows = cur.fetchall()
+                for user_id, photo_url in rows:
+                    mod = moderate_photo(photo_url, purpose='general')
+                    if mod.get('error'):
+                        errors.append(mod['error'])
+                        cur.execute("UPDATE users SET ai_avatar_checked_at = NOW() WHERE id = %s", (user_id,))
+                        continue
+                    score = mod['score']
+                    ai_flag = score >= review_th
+                    verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
+                    cur.execute("UPDATE users SET ai_avatar_flagged = %s, ai_avatar_checked_at = NOW() WHERE id = %s", (ai_flag, user_id))
+                    if ai_flag:
+                        flagged_now += 1
+                        push_to_queue(cur, 'profile_photo', None, user_id, photo_url=photo_url,
+                                      ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                                      ai_reason=(mod['reason'] or 'Ретро-сканирование аватара'),
+                                      priority=score_to_priority(score),
+                                      status='needs_review' if verdict != 'violation' else 'auto_resolved',
+                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      reviewed_by='ai')
+                    scanned += 1
+
+            elif scan_type == 'covers':
+                cur.execute(
+                    "SELECT id, cover_url FROM users WHERE cover_url IS NOT NULL AND cover_url != '' AND ai_cover_checked_at IS NULL LIMIT %s",
+                    (batch_size,)
+                )
+                rows = cur.fetchall()
+                for user_id, cover_url in rows:
+                    mod = moderate_photo(cover_url, purpose='general')
+                    if mod.get('error'):
+                        errors.append(mod['error'])
+                        cur.execute("UPDATE users SET ai_cover_checked_at = NOW() WHERE id = %s", (user_id,))
+                        continue
+                    score = mod['score']
+                    ai_flag = score >= review_th
+                    verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
+                    cur.execute("UPDATE users SET ai_cover_flagged = %s, ai_cover_checked_at = NOW() WHERE id = %s", (ai_flag, user_id))
+                    if ai_flag:
+                        flagged_now += 1
+                        push_to_queue(cur, 'profile_photo', None, user_id, photo_url=cover_url,
+                                      ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                                      ai_reason=(mod['reason'] or 'Ретро-сканирование обложки'),
+                                      priority=score_to_priority(score),
+                                      status='needs_review' if verdict != 'violation' else 'auto_resolved',
+                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      reviewed_by='ai')
+                    scanned += 1
+
+            conn.commit()
+            return resp(200, {'ok': True, 'scanned': scanned, 'flagged': flagged_now, 'errors': errors})
+
         # ── Маркетинг: отправить push всем ───────────────────────────────────
         if action == 'push_broadcast':
             title = body.get('title', '').strip()
