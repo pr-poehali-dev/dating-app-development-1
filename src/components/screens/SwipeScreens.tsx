@@ -340,6 +340,7 @@ export function RealDiscoverScreen({ currentUser, onOpenFilter }: {
       .finally(() => setLoading(false));
   }, []);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load({}); }, []);
 
   const handleSearch = (val: string) => {

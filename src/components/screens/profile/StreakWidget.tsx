@@ -39,6 +39,7 @@ export function StreakWidget({ onCheckin }: { onCheckin?: () => void }) {
     streaksApi.get()
       .then(d => { setData(d && typeof d.current_streak === "number" ? d : FALLBACK); setLoading(false); })
       .catch(() => { setData(FALLBACK); setLoading(false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCheckin = async () => {

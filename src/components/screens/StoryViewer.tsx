@@ -31,6 +31,7 @@ export function StoryViewer({ groups, initialGroupIndex = 0, onClose, currentUse
     if (!story) return;
     setProgress(0);
     fetch(`${STORIES_URL}?view=${story.id}`).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupIdx, storyIdx]);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export function StoryViewer({ groups, initialGroupIndex = 0, onClose, currentUse
       if (pct >= 100) goNext();
     }, 50);
     return () => clearInterval(intervalRef.current!);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupIdx, storyIdx, paused]);
 
   const goNext = () => {

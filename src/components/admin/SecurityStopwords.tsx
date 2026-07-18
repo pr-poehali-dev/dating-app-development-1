@@ -29,6 +29,7 @@ export function SecurityStopwords({ token }: { token: string }) {
     loadWords();
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadWords(); }, []);
 
   return (

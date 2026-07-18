@@ -2,7 +2,7 @@
 
 function RussiaFlag() {
   return (
-    <svg viewBox="0 0 3 2" className="w-full h-full">
+    <svg viewBox="0 0 3 2" preserveAspectRatio="none" className="w-full h-full">
       <rect width="3" height="2" fill="#fff" />
       <rect width="3" height="1.333" y="0.667" fill="#0039A6" />
       <rect width="3" height="0.667" y="1.333" fill="#D52B1E" />
@@ -12,7 +12,7 @@ function RussiaFlag() {
 
 function BelarusFlag() {
   return (
-    <svg viewBox="0 0 3 2" className="w-full h-full">
+    <svg viewBox="0 0 3 2" preserveAspectRatio="none" className="w-full h-full">
       <rect width="3" height="2" fill="#D22730" />
       <rect width="3" height="0.5" y="1.5" fill="#00AF66" />
       <rect width="0.3" height="2" fill="#fff" />
@@ -23,7 +23,7 @@ function BelarusFlag() {
 
 function NorthKoreaFlag() {
   return (
-    <svg viewBox="0 0 3 2" className="w-full h-full">
+    <svg viewBox="0 0 3 2" preserveAspectRatio="none" className="w-full h-full">
       <rect width="3" height="2" fill="#fff" />
       <rect width="3" height="0.4" fill="#024FA2" />
       <rect width="3" height="0.4" y="1.6" fill="#024FA2" />
@@ -38,7 +38,7 @@ function NorthKoreaFlag() {
 
 function IranFlag() {
   return (
-    <svg viewBox="0 0 3 2" className="w-full h-full">
+    <svg viewBox="0 0 3 2" preserveAspectRatio="none" className="w-full h-full">
       <rect width="3" height="2" fill="#fff" />
       <rect width="3" height="0.667" fill="#239F40" />
       <rect width="3" height="0.667" y="1.333" fill="#DA0000" />
@@ -49,7 +49,7 @@ function IranFlag() {
 
 function ChinaFlag() {
   return (
-    <svg viewBox="0 0 3 2" className="w-full h-full">
+    <svg viewBox="0 0 3 2" preserveAspectRatio="none" className="w-full h-full">
       <rect width="3" height="2" fill="#DE2910" />
       <g fill="#FFDE00">
         <path d="M0.5,0.2 L0.6,0.5 L0.9,0.5 L0.65,0.68 L0.75,0.98 L0.5,0.8 L0.25,0.98 L0.35,0.68 L0.1,0.5 L0.4,0.5 Z" />

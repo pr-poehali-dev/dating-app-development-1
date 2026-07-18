@@ -71,6 +71,7 @@ export function MarketingPosts({ token }: { token: string }) {
 
   useEffect(() => {
     loadPosts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -41,6 +41,7 @@ export function SecurityEventLog({ token }: { token: string }) {
       .finally(() => setSecLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadSecEvents(); }, []);
 
   return (

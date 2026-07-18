@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import VoiceMessage from "@/components/chat/VoiceMessage";

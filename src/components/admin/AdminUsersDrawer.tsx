@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useCallback, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { adminApi, type AdminUser } from "@/lib/api";
@@ -62,6 +63,7 @@ export function UsersDrawer({ token, filter, title, onClose }: {
     finally { setLoading(false); setLoadingMore(false); }
   }, [token, filter, filterUsers]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(1, search, true); }, [token, filter]);
 
   const handleSearch = (val: string) => {

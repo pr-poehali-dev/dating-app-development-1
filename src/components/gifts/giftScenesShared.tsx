@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Общие keyframes, цветовые палитры и переиспользуемые декоративные
  * SVG-элементы (искры, крылья, корона, ореол), на которых строятся

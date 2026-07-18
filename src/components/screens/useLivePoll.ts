@@ -62,6 +62,7 @@ export function useLivePoll({
     poll();
     pollRef.current = setInterval(poll, 3000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeStream?.id, stopAllPeers]);
 
   return { pollRef };

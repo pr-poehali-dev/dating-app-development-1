@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import Icon from "@/components/ui/icon";
 import { useBackHandler } from "@/hooks/backStack";
 

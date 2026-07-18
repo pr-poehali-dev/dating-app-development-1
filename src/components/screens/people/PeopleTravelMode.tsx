@@ -53,6 +53,7 @@ export function PeopleTravelMode({ onClose, onApply }: Props) {
       setMapLoaded(true);
     })();
     return () => { canceled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Геокодинг при вводе

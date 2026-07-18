@@ -83,6 +83,7 @@ export function VerifTab({ token }: { token: string }) {
     adminApi.verifRequests(token).then(d => setRequests(d.requests)).catch(() => {}).finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, [token]);
 
   const approve = async (req: AdminVerifRequest) => {

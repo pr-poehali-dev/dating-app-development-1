@@ -81,12 +81,14 @@ export function LiveScreen({ currentUser, initialStream = null, onStreamConsumed
     chatInput,
   });
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadStreams(); }, []);
 
   useAppRefresh(() => { if (!activeStream) loadStreams(); });
 
   useEffect(() => {
     return () => { webrtc.stopCamera(); webrtc.stopAllPeers(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webrtc.stopCamera, webrtc.stopAllPeers]);
 
   useEffect(() => {

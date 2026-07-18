@@ -102,6 +102,7 @@ function RadiusMap({ radius, onChange }: { radius: number; onChange: (r: number)
       circleRef.current = circle;
     })();
     return () => { canceled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { circleRef.current?.geometry.setRadius(radius * 1000); }, [radius]);

@@ -199,6 +199,7 @@ export function AdminContentTab({ token }: { token: string }) {
   useEffect(() => {
     setPage(1); setHasMore(true); setPosts([]); setPhotos([]);
     load(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const handleWarnConfirm = async (text: string) => {

@@ -95,13 +95,16 @@ export default function Index() {
     });
   }, []);
 
+  const hasUser = !!currentUser;
+
   // Кэшируем матчи и сообщения при загрузке (офлайн-доступ)
   useEffect(() => {
     if (!currentUser || !navigator.onLine) return;
     matchesApi.getAll()
       .then((d) => cacheMatches(d.matches))
       .catch(() => {});
-  }, [!!currentUser, offlineState.isOnline]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUser, offlineState.isOnline]);
 
   // Счётчик непрочитанных сообщений и новых лайков + нативный бейдж на иконке
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -119,7 +122,8 @@ export default function Index() {
     fetchUnread();
     const interval = setInterval(fetchUnread, 15_000);
     return () => clearInterval(interval);
-  }, [!!currentUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUser]);
 
   // Сбрасываем счётчики при открытии соответствующих экранов
   useEffect(() => {
@@ -140,7 +144,8 @@ export default function Index() {
       // При закрытии вкладки ставим офлайн
       authApi.logout().catch(() => {});
     };
-  }, [!!currentUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUser]);
 
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
@@ -282,6 +287,7 @@ export default function Index() {
     showExitHint();
     navigator.vibrate?.(20);
     return true; // блокируем выход, ждём подтверждения
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, prevScreen, showExitHint]);
 
   useBackButton(currentUser ? screen : "auth", handleBackButton);

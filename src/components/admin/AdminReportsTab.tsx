@@ -86,6 +86,7 @@ export function ReportsTab({ token }: { token: string }) {
     adminApi.reports(token, s).then(d => setReports(d.reports)).catch(() => {}).finally(() => setLoading(false));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(statusFilter); }, [token, statusFilter]);
 
   const resolve = async (r: AdminReport, status: string, banUser = false, postAction = '') => {

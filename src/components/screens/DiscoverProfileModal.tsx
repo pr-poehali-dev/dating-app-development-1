@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { likesApi, profilesApi, notificationsApi, type Profile, type MyGift } from "@/lib/api";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
@@ -121,6 +122,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
 
       Promise.all([profileReq, galleryReq]).finally(() => setLoadingPhotos(false));
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProfile.id]);
 
   const currentPhoto = photos.length > 0 ? photos[photoIdx] : mainPhoto;

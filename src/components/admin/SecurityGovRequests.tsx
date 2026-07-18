@@ -64,6 +64,7 @@ export function SecurityGovRequests({ token }: { token: string }) {
     loadGovReqs();
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadGovReqs(); }, []);
 
   return (

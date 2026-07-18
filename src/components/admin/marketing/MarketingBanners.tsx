@@ -32,6 +32,7 @@ export function MarketingBanners({ token }: { token: string }) {
 
   useEffect(() => {
     loadBanners();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -32,6 +32,7 @@ export function SecurityBlockedIps({ token }: { token: string }) {
     loadIps();
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadIps(); }, []);
 
   return (

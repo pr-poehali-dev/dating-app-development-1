@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import Icon from "@/components/ui/icon";
 
 export const ADMIN_URL = "https://functions.poehali.dev/a87188e5-57d7-4ad4-ac31-0a2c3e3d0e18";

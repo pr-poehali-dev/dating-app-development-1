@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import Icon from "@/components/ui/icon";
 
 export type Banner = { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string };

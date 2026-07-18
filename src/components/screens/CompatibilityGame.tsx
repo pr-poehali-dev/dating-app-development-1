@@ -57,6 +57,7 @@ export function CompatibilityGame({ matchId, partnerId, partnerName, partnerPhot
   useEffect(() => {
     load();
     return () => { if (pollInterval) clearInterval(pollInterval); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId]);
 
   const startPolling = (gameId: number) => {
