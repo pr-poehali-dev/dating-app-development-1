@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { StoreDownloadButton } from "./StoreLogos";
 
@@ -44,6 +45,7 @@ export function AuthHeroCard({
   onOAuth: (provider: "vk" | "mailru") => void;
   oauthLoading: "vk" | "mailru" | null;
 }) {
+  const { t } = useTranslation();
   const inputCls =
     "w-full text-white placeholder-white/40 rounded-2xl px-4 py-3.5 text-sm outline-none border transition-colors font-golos" +
     " focus:border-pink-500/60 border-white/15";
@@ -53,7 +55,7 @@ export function AuthHeroCard({
       style={{ background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.1)", backdropFilter: "blur(20px)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)" }}>
 
       <div className="flex flex-col gap-1">
-        <h2 className="font-unbounded text-white text-2xl font-black">Скачай Полутон бесплатно</h2>
+        <h2 className="font-unbounded text-white text-2xl font-black">{t("auth.downloadFree")}</h2>
       </div>
 
       {/* Магазины приложений */}
@@ -65,7 +67,7 @@ export function AuthHeroCard({
       {/* Разделитель */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
-        <span className="text-white/40 text-xs whitespace-nowrap">или зарегистрируйся здесь</span>
+        <span className="text-white/40 text-xs whitespace-nowrap">{t("auth.orRegisterHere")}</span>
         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.12)" }} />
       </div>
 
@@ -77,7 +79,7 @@ export function AuthHeroCard({
             style={mode === m
               ? { background: "linear-gradient(135deg, #FF2D78, #9B59B6)", boxShadow: "0 2px 12px rgba(255,45,120,0.35)" }
               : undefined}>
-            {m === "login" ? "Вход" : "Регистрация"}
+            {m === "login" ? t("auth.login") : t("auth.register")}
           </button>
         ))}
       </div>
@@ -89,7 +91,7 @@ export function AuthHeroCard({
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
               <Icon name="User" size={16} />
             </span>
-            <input value={name} onChange={(e) => onNameChange(e.target.value)} placeholder="Твоё имя"
+            <input value={name} onChange={(e) => onNameChange(e.target.value)} placeholder={t("auth.namePlaceholder")}
               className={inputCls + " pl-10"}
               style={{ background: "rgba(255,255,255,0.06)" }} />
           </div>
@@ -98,7 +100,7 @@ export function AuthHeroCard({
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
             <Icon name="Mail" size={16} />
           </span>
-          <input value={email} onChange={(e) => onEmailChange(e.target.value)} placeholder="Email" type="email"
+          <input value={email} onChange={(e) => onEmailChange(e.target.value)} placeholder={t("auth.emailPlaceholder")} type="email"
             className={inputCls + " pl-10"}
             style={{ background: "rgba(255,255,255,0.06)" }} />
         </div>
@@ -106,7 +108,7 @@ export function AuthHeroCard({
           <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">
             <Icon name="Lock" size={16} />
           </span>
-          <input value={password} onChange={(e) => onPasswordChange(e.target.value)} placeholder="Пароль"
+          <input value={password} onChange={(e) => onPasswordChange(e.target.value)} placeholder={t("auth.passwordPlaceholder")}
             type={showPassword ? "text" : "password"}
             onKeyDown={(e) => e.key === "Enter" && onSubmit()}
             className={inputCls + " pl-10 pr-11"}
@@ -120,7 +122,7 @@ export function AuthHeroCard({
 
       {mode === "login" && (
         <button onClick={onShowForgot} className="text-white/35 text-xs text-left -mt-2 hover:text-pink-400 transition-colors">
-          Забыл пароль?
+          {t("auth.forgotPassword")}
         </button>
       )}
 
@@ -129,21 +131,21 @@ export function AuthHeroCard({
         <div className="flex flex-col gap-2 px-4 py-3 rounded-2xl" style={{ background: "rgba(255,45,120,0.1)", border: "1px solid rgba(255,45,120,0.25)" }}>
           <div className="flex items-center gap-2">
             <Icon name="UserCheck" size={15} className="text-pink-400 flex-shrink-0" />
-            <p className="text-pink-300 text-sm font-semibold">Этот email уже зарегистрирован</p>
+            <p className="text-pink-300 text-sm font-semibold">{t("auth.emailTakenTitle")}</p>
           </div>
-          <p className="text-white/50 text-xs">Аккаунт с таким email уже существует. Войди в него или восстанови пароль.</p>
+          <p className="text-white/50 text-xs">{t("auth.emailTakenText")}</p>
           <div className="flex gap-2 mt-1">
             <button
               onClick={() => { onEmailTakenDismiss(); onModeChange("login"); }}
               className="flex-1 py-2 rounded-xl text-white text-xs font-bold"
               style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-              Войти в аккаунт
+              {t("auth.loginToAccount")}
             </button>
             <button
               onClick={() => { onEmailTakenDismiss(); onShowForgot(); }}
               className="flex-1 py-2 rounded-xl text-white/60 text-xs font-semibold"
               style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              Забыл пароль
+              {t("auth.forgotPasswordShort")}
             </button>
           </div>
         </div>
@@ -158,13 +160,13 @@ export function AuthHeroCard({
       )}
 
       <p className="text-white/40 text-xs leading-relaxed">
-        Регистрируясь в Полутон, ты соглашаешься с{" "}
+        {t("auth.agreementPrefix")}{" "}
         <button onClick={onOpenTerms} className="text-white/70 font-semibold hover:text-pink-300 transition-colors">
-          Условиями использования
+          {t("footer.terms")}
         </button>
-        . Ознакомься с нашей{" "}
+        . {t("auth.agreementMiddle")}{" "}
         <button onClick={onOpenPrivacy} className="text-white/70 font-semibold hover:text-pink-300 transition-colors">
-          Политикой конфиденциальности
+          {t("footer.privacy")}
         </button>
         .
       </p>
@@ -174,14 +176,14 @@ export function AuthHeroCard({
         className="w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-50 transition-all active:scale-95"
         style={{ background: "linear-gradient(135deg, #FF2D78 0%, #9B59B6 100%)", boxShadow: "0 4px 24px rgba(255,45,120,0.45)" }}>
         {loading
-          ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin inline-block" />Загрузка...</span>
-          : mode === "login" ? "Войти в аккаунт" : "Зарегистрироваться"}
+          ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin inline-block" />{t("auth.loading")}</span>
+          : mode === "login" ? t("auth.loginToAccount") : t("auth.registerButton")}
       </button>
 
       {/* Разделитель под соцсети */}
       <div className="flex items-center gap-3 -mt-2">
         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
-        <span className="text-white/30 text-xs">или через соцсети</span>
+        <span className="text-white/30 text-xs">{t("auth.orViaSocial")}</span>
         <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.1)" }} />
       </div>
 

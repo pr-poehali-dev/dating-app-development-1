@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { AuthLegalContent } from "@/components/screens/auth/AuthLegalContent";
 
 export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isTerms = tab === "terms";
-  const title = isTerms ? "Условия использования" : "Политика конфиденциальности";
+  const title = isTerms ? t("legal.termsTitle") : t("legal.privacyTitle");
 
   useEffect(() => {
     document.title = `${title} — Полутон`;
@@ -24,7 +26,7 @@ export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
             style={{ border: "1px solid rgba(0,0,0,0.1)" }}>
             <Icon name="ArrowLeft" size={18} className="text-gray-700" />
           </button>
-          <span className="text-gray-500 text-sm font-medium">Назад на главную</span>
+          <span className="text-gray-500 text-sm font-medium">{t("legal.backHome")}</span>
         </div>
       </div>
 
@@ -42,7 +44,7 @@ export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
         </div>
 
         <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(0,0,0,0.08)" }}>
-          <p className="text-gray-400 text-xs">© «Полутон» — сервис знакомств и общения. {new Date().getFullYear()}</p>
+          <p className="text-gray-400 text-xs">{t("legal.copyright")} {new Date().getFullYear()}</p>
         </div>
       </div>
     </div>

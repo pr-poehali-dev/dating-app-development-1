@@ -1,0 +1,98 @@
+{
+  "navbar": {
+    "login": "登录"
+  },
+  "hero": {
+    "title1": "相识。交流。",
+    "title2": "坠入爱河。",
+    "subtitle": "Полутон — 真实故事开始的地方。"
+  },
+  "features": {
+    "join": {
+      "title": "加入我们",
+      "item1Bold": "加入",
+      "item1Text": "全国成千上万的 Полутон 用户",
+      "item2Bold": "结识",
+      "item2Text": "随时随地结识任何人 — 总有人在线",
+      "item3Bold": "聊天",
+      "item3Text": "在便捷的聊天中快速回复和语音消息"
+    },
+    "discover": {
+      "title": "发现",
+      "item1Bold": "浏览",
+      "item1Text": "动态,了解附近的新用户资料",
+      "item2Bold": "筛选",
+      "item2Text": "帮助你找到真正想找的人",
+      "item3Bold": "直播",
+      "item3Text": "实时观看并与他人交流"
+    },
+    "share": {
+      "title": "分享",
+      "item1Bold": "动态",
+      "item1Text": "来自你关注的人和你想认识的人的帖子",
+      "item2Bold": "故事",
+      "item2Text": "展示你和你的兴趣爱好 — 展现真实的自己"
+    },
+    "safety": {
+      "title": "安全",
+      "item1Bold": "隐私",
+      "item1Text": "Полутон 的核心理念 — 不受打扰的交流",
+      "item2Bold": "审核",
+      "item2Text": "确保社区始终安全",
+      "item3Bold": "客服支持",
+      "item3Text": "随时为你提供帮助"
+    }
+  },
+  "footer": {
+    "copyright": "© «Полутон» — 交友与社交服务。",
+    "support": "客服支持",
+    "terms": "使用条款",
+    "privacy": "隐私政策"
+  },
+  "auth": {
+    "downloadFree": "免费下载 Полутон",
+    "orRegisterHere": "或在此注册",
+    "orViaSocial": "或通过社交账号",
+    "login": "登录",
+    "register": "注册",
+    "namePlaceholder": "你的名字",
+    "emailPlaceholder": "邮箱",
+    "passwordPlaceholder": "密码",
+    "forgotPassword": "忘记密码?",
+    "forgotPasswordShort": "忘记密码",
+    "emailTakenTitle": "该邮箱已被注册",
+    "emailTakenText": "该邮箱的账号已存在。请登录或找回密码。",
+    "loginToAccount": "登录账号",
+    "createAccount": "创建账号",
+    "registerButton": "注册",
+    "loading": "加载中...",
+    "agreementPrefix": "注册 Полутон 即表示你同意",
+    "agreementMiddle": "请查看我们的",
+    "tagline": "相识。交流。坠入爱河。",
+    "oauthFailed": "登录失败,请重试。",
+    "oauthError": "登录错误",
+    "genericError": "错误",
+    "enterName": "请输入你的姓名"
+  },
+  "forgotModal": {
+    "title": "找回密码",
+    "description": "输入你的邮箱 — 我们将发送新密码供登录使用",
+    "emailPlaceholder": "你的邮箱",
+    "sendButton": "发送新密码",
+    "sending": "发送中...",
+    "successTitle": "邮件已发送!",
+    "checkEmail": "请查收邮件",
+    "checkSpam": "新密码已发送。别忘了检查垃圾邮件文件夹。",
+    "loginToAccount": "登录账号",
+    "invalidEmail": "请输入有效的邮箱"
+  },
+  "legal": {
+    "termsTitle": "使用条款",
+    "privacyTitle": "隐私政策",
+    "backHome": "返回首页",
+    "copyright": "© «Полутон» — 交友与社交服务。"
+  },
+  "language": {
+    "select": "语言"
+  }
+}

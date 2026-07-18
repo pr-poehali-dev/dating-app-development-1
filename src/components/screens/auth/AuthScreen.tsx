@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi, type User } from "@/lib/api";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
@@ -11,6 +12,7 @@ import { AuthLegalSheet } from "./AuthLegalSheet";
 const OAUTH_REDIRECT = `${window.location.origin}/oauth`;
 
 export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User) => void; variant?: "phone" | "card" }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,14 +39,14 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
     // Чистим URL сразу, возвращаемся на главную
     window.history.replaceState({}, "", "/");
     if (!provider || (savedState && state && savedState !== state)) {
-      setError("Не удалось войти. Попробуй ещё раз.");
+      setError(t("auth.oauthFailed"));
       return;
     }
     setOAuthLoading(provider);
     authApi
       .oauthCallback(provider, code, OAUTH_REDIRECT, { code_verifier: codeVerifier, device_id: deviceId })
       .then((res) => onAuth(res.user))
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Ошибка входа"))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : t("auth.oauthError")))
       .finally(() => {
         setOAuthLoading(null);
         sessionStorage.removeItem("oauth_provider");
@@ -64,7 +66,7 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
       if (code_verifier) sessionStorage.setItem("oauth_verifier", code_verifier);
       window.location.href = url;
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ошибка");
+      setError(e instanceof Error ? e.message : t("auth.genericError"));
       setOAuthLoading(null);
     }
   };
@@ -76,14 +78,14 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
     try {
       let result;
       if (mode === "register") {
-        if (!name.trim()) { setError("Введи своё имя"); setLoading(false); return; }
+        if (!name.trim()) { setError(t("auth.enterName")); setLoading(false); return; }
         result = await authApi.register(email, password, name);
       } else {
         result = await authApi.login(email, password);
       }
       onAuth(result.user);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Ошибка";
+      const msg = e instanceof Error ? e.message : t("auth.genericError");
       if (mode === "register" && msg.toLowerCase().includes("уже занят")) {
         setEmailTaken(true);
       } else {

@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { authApi } from "@/lib/api";
 
 export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
 
   const submit = async () => {
-    if (!email.includes("@")) { setError("Введи корректный email"); return; }
+    if (!email.includes("@")) { setError(t("forgotModal.invalidEmail")); return; }
     setError(""); setLoading(true);
     try {
       await authApi.resetPassword(email);
@@ -32,7 +34,7 @@ export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
 
         {/* Кнопка закрытия */}
         <div className="flex items-center justify-between">
-          <h3 className="text-white font-golos font-bold text-xl">Восстановление пароля</h3>
+          <h3 className="text-white font-golos font-bold text-xl">{t("forgotModal.title")}</h3>
           <button onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
             style={{ background: "rgba(255,255,255,0.08)" }}>
@@ -52,17 +54,17 @@ export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             <div className="text-center flex flex-col gap-1.5">
-              <p className="text-white font-bold text-lg">Письмо отправлено!</p>
+              <p className="text-white font-bold text-lg">{t("forgotModal.successTitle")}</p>
               <p className="text-white/45 text-sm leading-relaxed">
-                Проверь почту<br />
+                {t("forgotModal.checkEmail")}<br />
                 <span className="text-pink-400 font-medium">{email}</span>
               </p>
-              <p className="text-white/30 text-xs mt-1">Там новый пароль для входа. Не забудь проверить папку «Спам».</p>
+              <p className="text-white/30 text-xs mt-1">{t("forgotModal.checkSpam")}</p>
             </div>
             <button onClick={onClose}
               className="w-full py-3.5 rounded-2xl text-white font-bold text-sm mt-1 transition-all active:scale-95"
               style={{ background: "linear-gradient(135deg, #FF2D78 0%, #9B59B6 100%)", boxShadow: "0 4px 20px rgba(255,45,120,0.4)" }}>
-              Войти в аккаунт
+              {t("forgotModal.loginToAccount")}
             </button>
           </div>
         ) : (
@@ -75,7 +77,7 @@ export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
                 <Icon name="KeyRound" size={26} className="text-pink-400" />
               </div>
               <p className="text-white/45 text-sm text-center leading-relaxed">
-                Введи свой email — мы пришлём<br />новый пароль для входа
+                {t("forgotModal.description")}
               </p>
             </div>
 
@@ -84,7 +86,7 @@ export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
                 <Icon name="Mail" size={16} />
               </span>
               <input value={email} onChange={(e) => setEmail(e.target.value)} type="email"
-                placeholder="Твой email" onKeyDown={(e) => e.key === "Enter" && submit()}
+                placeholder={t("forgotModal.emailPlaceholder")} onKeyDown={(e) => e.key === "Enter" && submit()}
                 className="w-full text-white placeholder-white/35 rounded-2xl pl-10 pr-4 py-3.5 text-sm outline-none border font-golos transition-colors focus:border-pink-500/60"
                 style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }} />
             </div>
@@ -103,9 +105,9 @@ export function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
               {loading
                 ? <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin inline-block" />
-                    Отправляем...
+                    {t("forgotModal.sending")}
                   </span>
-                : "Отправить новый пароль"}
+                : t("forgotModal.sendButton")}
             </button>
           </>
         )}

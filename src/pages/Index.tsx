@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi, notificationsApi, matchesApi, messagesApi, type User, type LiveStream } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
@@ -29,6 +30,7 @@ type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" |
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 export default function Index() {
+  const { t } = useTranslation();
   const [screen, setScreen] = useState<Screen>("discover");
   const [chatId, setChatId] = useState<number | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -324,10 +326,10 @@ export default function Index() {
                 <LivePhoneMockup />
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h2 className="font-unbounded text-white text-4xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
-                    Знакомься. Общайся.{" "}
-                    <span className="grad-text">Влюбляйся.</span>
+                    {t("hero.title1")}{" "}
+                    <span className="grad-text">{t("hero.title2")}</span>
                   </h2>
-                  <p className="text-white/50 text-base">Полутон — место, где начинаются настоящие истории.</p>
+                  <p className="text-white/50 text-base">{t("hero.subtitle")}</p>
                 </div>
               </div>
 
