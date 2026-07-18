@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
@@ -20,6 +21,8 @@ function AppInner() {
         <Route path="/" element={<Index />} />
         <Route path="/oauth" element={<Index />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/terms" element={<LegalPage tab="terms" />} />
+        <Route path="/privacy" element={<LegalPage tab="privacy" />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

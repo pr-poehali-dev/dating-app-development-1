@@ -15,7 +15,6 @@ import { AuthNavbar } from "@/components/screens/auth/AuthNavbar";
 import { LivePhoneMockup } from "@/components/screens/auth/LivePhoneMockup";
 import { AuthFeaturesGrid } from "@/components/screens/auth/AuthFeaturesGrid";
 import { AuthSiteFooter } from "@/components/screens/auth/AuthSiteFooter";
-import { AuthLegalSheet } from "@/components/screens/auth/AuthLegalSheet";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { FilterScreen } from "@/components/screens/SwipeScreens";
 import { LiveScreen, RealMatchesScreen, RealLikesScreen, RealChatScreen } from "@/components/screens/SocialScreens";
@@ -142,8 +141,6 @@ export default function Index() {
   const mainScreens: Screen[] = ["discover", "photos", "live", "matches", "likes", "profile"];
   const isMain = mainScreens.includes(screen);
   const isDesktop = useIsDesktop();
-  const [showSiteTerms, setShowSiteTerms] = useState(false);
-  const [showSitePrivacy, setShowSitePrivacy] = useState(false);
 
   // Плавное скрытие/появление нижней панели при скролле ленты (на любом экране)
   const [navVisible, setNavVisible] = useState(true);
@@ -318,9 +315,6 @@ export default function Index() {
         <div className="app-bg app-bg-scrollable">
           <div className="app-hearts-layer" />
 
-          {showSiteTerms && <AuthLegalSheet tab="terms" onClose={() => setShowSiteTerms(false)} />}
-          {showSitePrivacy && <AuthLegalSheet tab="privacy" onClose={() => setShowSitePrivacy(false)} />}
-
           <AuthNavbar onLoginClick={() => document.getElementById("auth-card")?.scrollIntoView({ behavior: "smooth", block: "center" })} />
 
           {/* Hero: телефоны слева, форма регистрации справа */}
@@ -345,7 +339,7 @@ export default function Index() {
 
           <AuthFeaturesGrid />
 
-          <AuthSiteFooter onOpenTerms={() => setShowSiteTerms(true)} onOpenPrivacy={() => setShowSitePrivacy(true)} />
+          <AuthSiteFooter />
         </div>
       );
     }

@@ -1,4 +1,6 @@
-export function AuthSiteFooter({ onOpenTerms, onOpenPrivacy }: { onOpenTerms: () => void; onOpenPrivacy: () => void }) {
+import { Link } from "react-router-dom";
+
+export function AuthSiteFooter() {
   const year = new Date().getFullYear();
 
   return (
@@ -7,9 +9,9 @@ export function AuthSiteFooter({ onOpenTerms, onOpenPrivacy }: { onOpenTerms: ()
         <p className="text-white/70 text-lg font-semibold">© «Полутон» — сервис знакомств и общения. {year}</p>
 
         <div className="flex items-center gap-6 flex-wrap">
-          <a href="https://poehali.dev/help" target="_blank" rel="noreferrer" className="text-white/45 text-sm hover:text-pink-400 transition-colors">Поддержка</a>
-          <button onClick={onOpenTerms} className="text-white/45 text-sm hover:text-pink-400 transition-colors">Условия использования</button>
-          <button onClick={onOpenPrivacy} className="text-white/45 text-sm hover:text-pink-400 transition-colors">Политика конфиденциальности</button>
+          <span className="text-white/45 text-sm cursor-default">Поддержка</span>
+          <Link to="/terms" className="text-white/45 text-sm hover:text-pink-400 transition-colors">Условия использования</Link>
+          <Link to="/privacy" className="text-white/45 text-sm hover:text-pink-400 transition-colors">Политика конфиденциальности</Link>
         </div>
       </div>
     </div>
