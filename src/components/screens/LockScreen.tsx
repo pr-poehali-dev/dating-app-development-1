@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
+import StarField from "@/components/StarField";
 import { haptic } from "@/hooks/useNative";
 import { usePinLock } from "@/hooks/usePinLock";
 import { useBiometrics, isBiometricRegistered } from "@/hooks/useBiometrics";
@@ -78,6 +79,7 @@ export function LockScreen({ userId, onUnlock, onLogout }: LockScreenProps) {
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
       style={{ background: "var(--spark-dark,#0f0a1a)" }}>
       <div className="app-hearts-layer" />
+      <StarField count={90} />
 
       <div className="relative flex flex-col items-center gap-2 mb-8">
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-2"

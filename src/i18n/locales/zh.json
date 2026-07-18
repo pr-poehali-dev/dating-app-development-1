@@ -96,10 +96,21 @@
     "select": "语言"
   },
   "cookieConsent": {
+    "title": "我们尊重您的隐私",
     "text": "我们使用 cookies 来让我们的网站对您更加便捷和个性化。这有助于记住您的设置、加快账号登录速度并展示更相关的内容。详情请查看:",
     "cookiesLink": "cookies 使用政策",
     "and": "和",
     "dataLink": "数据保护",
-    "accept": "接受"
+    "accept": "接受",
+    "settings": "设置",
+    "settingsTitle": "Cookie 设置",
+    "settingsDescription": "请选择允许使用的 cookie 类别。必要 cookie 始终启用 — 没有它们网站将无法正常运行。",
+    "necessaryTitle": "必要",
+    "necessaryText": "确保账号登录、会话及网站基本功能正常运行。无法禁用。",
+    "functionalTitle": "功能性",
+    "functionalText": "记住您的语言、主题等设置,让您更方便地使用网站。",
+    "analyticsTitle": "分析",
+    "analyticsText": "帮助我们了解您如何使用网站,以便不断改进。",
+    "saveSettings": "保存选择"
   }
 }

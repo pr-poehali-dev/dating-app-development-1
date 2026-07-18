@@ -7,12 +7,16 @@ import fa from "./locales/fa.json";
 import zh from "./locales/zh.json";
 
 export const LANGUAGES = [
-  { code: "ru", label: "Русский", country: "Россия", flag: "🇷🇺", rtl: false },
-  { code: "be", label: "Беларуская", country: "Беларусь", flag: "🇧🇾", rtl: false },
-  { code: "ko", label: "한국어", country: "КНДР (Северная Корея)", flag: "🇰🇵", rtl: false },
-  { code: "fa", label: "فارسی", country: "Иран", flag: "🇮🇷", rtl: true },
-  { code: "zh", label: "中文", country: "Китай", flag: "🇨🇳", rtl: false },
+  { code: "ru", label: "Русский", country: "Россия", flagCode: "ru", rtl: false },
+  { code: "be", label: "Беларуская", country: "Беларусь", flagCode: "by", rtl: false },
+  { code: "ko", label: "한국어", country: "КНДР (Северная Корея)", flagCode: "kp", rtl: false },
+  { code: "fa", label: "فارسی", country: "Иран", flagCode: "ir", rtl: true },
+  { code: "zh", label: "中文", country: "Китай", flagCode: "cn", rtl: false },
 ] as const;
+
+export function flagUrl(flagCode: string) {
+  return `https://flagcdn.com/w80/${flagCode}.png`;
+}
 
 export type LanguageCode = typeof LANGUAGES[number]["code"];
 

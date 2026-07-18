@@ -6,6 +6,7 @@ import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import SplashScreen from "@/components/screens/SplashScreen";
 import OfflineBanner from "@/components/OfflineBanner";
 import CookieConsent from "@/components/CookieConsent";
+import StarField from "@/components/StarField";
 import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
 import { setAppBadge } from "@/hooks/useNative";
 
@@ -294,6 +295,7 @@ export default function Index() {
     return (
       <div className="app-bg flex items-center justify-center" style={{ height: "100dvh" }}>
         <div className="app-hearts-layer" />
+        <StarField />
         <div className="flex flex-col items-center gap-3">
           <h1 className="font-unbounded text-white text-2xl font-black grad-text">Полутон</h1>
           <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
@@ -317,6 +319,7 @@ export default function Index() {
       return (
         <div className="app-bg app-bg-scrollable">
           <div className="app-hearts-layer" />
+          <StarField count={160} />
 
           <AuthNavbar onLoginClick={() => document.getElementById("auth-card")?.scrollIntoView({ behavior: "smooth", block: "center" })} />
 
@@ -352,6 +355,7 @@ export default function Index() {
     return (
       <div className="app-bg flex justify-center" style={{ height: "100dvh", minHeight: "100vh" }}>
         <div className="app-hearts-layer" />
+        <StarField count={70} />
         <div className="app-screen-container h-full">
           <AuthScreen onAuth={handleAuth} />
         </div>
@@ -398,6 +402,7 @@ export default function Index() {
     return (
       <div className="app-bg flex justify-center">
         <div className="app-hearts-layer" />
+        <StarField count={140} />
         <OfflineBanner offlineState={offlineState} />
         {showConfetti && <PremiumConfetti />}
         <div className="app-screen-container desktop-mode" style={{ height: "100dvh" }}>
@@ -424,6 +429,7 @@ export default function Index() {
   return (
     <div className="app-bg flex justify-center">
       <div className="app-hearts-layer" />
+      <StarField count={90} />
       <OfflineBanner offlineState={offlineState} />
       {showConfetti && <PremiumConfetti />}
       <div className="app-screen-container flex flex-col" style={{ height: "100dvh" }}>
