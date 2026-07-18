@@ -12,8 +12,6 @@ export function AuthNavbar({ onLoginClick }: { onLoginClick: () => void }) {
 
         <div className="hidden lg:flex items-center gap-9">
           <a href="#features" className="text-white/60 text-sm font-medium hover:text-white transition-colors">О приложении</a>
-          <a href="#stories" className="text-white/60 text-sm font-medium hover:text-white transition-colors">Истории</a>
-          <a href="#download" className="text-white/60 text-sm font-medium hover:text-white transition-colors">Скачать</a>
         </div>
 
         <button onClick={onLoginClick}

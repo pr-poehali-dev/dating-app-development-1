@@ -11,7 +11,6 @@ import { useBackButton } from "@/hooks/useBackButton";
 import { popBackHandler } from "@/hooks/backStack";
 
 import { AuthScreen, PremiumScreen, PremiumScreenDesktop, BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
-import { AuthDownloadSection } from "@/components/screens/auth/AuthDownloadSection";
 import { AuthNavbar } from "@/components/screens/auth/AuthNavbar";
 import { AuthFeaturesGrid } from "@/components/screens/auth/AuthFeaturesGrid";
 import { AuthSiteFooter } from "@/components/screens/auth/AuthSiteFooter";
@@ -328,9 +327,9 @@ export default function Index() {
             <div className="flex items-center gap-16 flex-wrap justify-center">
               <div className="hidden lg:flex flex-col items-center gap-6 max-w-lg">
                 <img
-                  src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/ea0bcec2-23d4-44da-aa15-1e1e43135d4f.jpg"
+                  src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/a0373d7b-43c9-4a80-81af-56525b8815fc.jpg"
                   alt="Полутон в телефоне"
-                  className="w-full max-w-md object-contain"
+                  className="w-full max-w-md object-contain rounded-full"
                   style={{ filter: "drop-shadow(0 20px 60px rgba(255,45,120,0.35))" }}
                 />
                 <div className="flex flex-col items-center gap-2 text-center">
@@ -349,10 +348,6 @@ export default function Index() {
           </div>
 
           <AuthFeaturesGrid />
-
-          <div className="relative">
-            <AuthDownloadSection />
-          </div>
 
           <AuthSiteFooter onOpenTerms={() => setShowSiteTerms(true)} onOpenPrivacy={() => setShowSitePrivacy(true)} />
         </div>

@@ -1,23 +1,6 @@
 import Icon from "@/components/ui/icon";
 import { RuStoreLogo, NashStoreLogo, StoreButton } from "./StoreLogos";
 
-const ANDROID_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/bd79ba47-bac6-4874-8d3b-f42cbc8e79a3.jpg";
-const IOS_ICON = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/f98b371c-e8c1-4aba-922c-519ce66bf462.jpg";
-
-function StorePill({ icon, platform }: { icon: string; platform: string }) {
-  return (
-    <button
-      className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl transition-all hover:-translate-y-0.5 hover:brightness-110 active:scale-95"
-      style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)" }}
-      onClick={(e) => e.preventDefault()}
-    >
-      <img src={icon} alt={platform} className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-        style={{ border: "1.5px solid rgba(255,255,255,0.15)" }} />
-      <span className="text-white text-sm font-bold">{platform}</span>
-    </button>
-  );
-}
-
 export function AuthHeroCard({
   mode,
   name,
@@ -73,15 +56,10 @@ export function AuthHeroCard({
         <h2 className="font-unbounded text-white text-2xl font-black">Скачай Полутон бесплатно</h2>
       </div>
 
-      {/* Кнопки скачивания приложения */}
+      {/* Магазины приложений */}
       <div className="flex items-center gap-3 flex-wrap">
-        <StorePill icon={IOS_ICON} platform="iPhone · iOS" />
-        <StorePill icon={ANDROID_ICON} platform="Android" />
-      </div>
-
-      <div className="flex items-center gap-3 flex-wrap">
-        <StoreButton className="!px-3 !py-2"><RuStoreLogo /></StoreButton>
-        <StoreButton className="!px-3 !py-2"><NashStoreLogo /></StoreButton>
+        <StoreButton><RuStoreLogo /></StoreButton>
+        <StoreButton><NashStoreLogo /></StoreButton>
       </div>
 
       {/* Разделитель */}
