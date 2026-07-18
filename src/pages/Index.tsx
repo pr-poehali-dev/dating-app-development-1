@@ -327,9 +327,10 @@ export default function Index() {
             <div className="flex items-center gap-16 flex-wrap justify-center">
               <div className="hidden lg:flex flex-col items-center gap-6 max-w-lg">
                 <img
-                  src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/054c97dc-b3a6-474f-bdd0-3977b37ac712.jpg"
+                  src="/live-phone/phone.jpg"
                   alt="Полутон Live — прямой эфир"
-                  className="w-full max-w-md object-contain"
+                  className="w-full max-w-[280px] object-contain"
+                  style={{ filter: "drop-shadow(0 20px 60px rgba(255,45,120,0.3))" }}
                 />
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h2 className="font-unbounded text-white text-4xl font-black leading-tight" style={{ textShadow: "0 2px 30px rgba(255,45,120,0.35)" }}>
