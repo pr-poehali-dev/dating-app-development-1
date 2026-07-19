@@ -290,6 +290,18 @@ def handler(event: dict, context) -> dict:
             )
             if not cur.fetchone():
                 return resp(403, {'error': 'Нет доступа'})
+
+            # Просроченные offer-сигналы (никто не открыл чат и не ответил дольше 20 сек)
+            # считаем неактуальными — помечаем потреблёнными, чтобы старый звонок не
+            # «оживал» в виде входящего вызова спустя долгое время после того как
+            # звонивший уже положил трубку.
+            cur.execute(
+                "UPDATE webrtc_signals SET is_consumed = TRUE "
+                "WHERE match_id = %s AND signal_type = 'offer' AND is_consumed = FALSE "
+                "AND created_at <= NOW() - INTERVAL '20 seconds'",
+                (match_id,)
+            )
+
             cur.execute(
                 "SELECT id, from_user_id, signal_type, payload FROM webrtc_signals WHERE match_id = %s AND from_user_id != %s AND is_consumed = FALSE ORDER BY created_at ASC",
                 (match_id, me['id'])
@@ -302,7 +314,12 @@ def handler(event: dict, context) -> dict:
                     "UPDATE webrtc_signals SET is_consumed = TRUE WHERE id = ANY(%s)",
                     (ids,)
                 )
-                conn.commit()
+            # Чистим старые потреблённые сигналы, чтобы таблица не росла бесконечно
+            cur.execute(
+                "DELETE FROM webrtc_signals WHERE match_id = %s AND is_consumed = TRUE AND created_at <= NOW() - INTERVAL '1 hour'",
+                (match_id,)
+            )
+            conn.commit()
             return resp(200, {'signals': signals})
 
         if action == 'delete':

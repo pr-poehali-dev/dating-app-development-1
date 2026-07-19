@@ -322,9 +322,31 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     if (isInitiator) startCall();
     if (!isInitiator) startRingtone();
 
+    // Если собеседник долго не отвечает — сами завершаем звонок, чтобы не
+    // держать микрофон/камеру захваченными бесконечно и не оставлять
+    // «зависший» offer-сигнал висеть в системе.
+    const noAnswerTimer = isInitiator
+      ? setTimeout(() => {
+          if (!connectedRef.current) {
+            messagesApi.signalSend(matchId, "hangup", "no-answer").catch(() => {});
+            stopAll();
+            setCallState("ended");
+            setTimeout(onClose, 1500);
+          }
+        }, 45000)
+      : null;
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (noAnswerTimer) clearTimeout(noAnswerTimer);
       stopRingtone();
+      // Всегда освобождаем микрофон/камеру при размонтировании компонента —
+      // даже если пользователь ушёл с экрана свайпом/навигацией, а не кнопкой
+      // «положить трубку». Иначе устройство остаётся «занятым» и следующий
+      // звонок падает с ошибкой NotReadableError.
+      localStreamRef.current?.getTracks().forEach(t => t.stop());
+      pcRef.current?.close();
+      pcRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, isInitiator]);
