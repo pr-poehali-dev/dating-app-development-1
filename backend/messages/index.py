@@ -8,7 +8,7 @@ import base64
 import uuid
 import psycopg2
 import boto3
-from moderation import moderate_text, score_to_priority, push_to_queue, get_setting
+from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет Web Push всем подпискам пользователя."""
@@ -234,6 +234,27 @@ def handler(event: dict, context) -> dict:
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+            # ── AI-модерация фото в чате ──
+            if get_setting(cur, 'photo_moderation_enabled', 'true') == 'true':
+                mod = moderate_photo(cdn_url, purpose='general')
+                if mod['score'] > 0:
+                    block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                    review_th = float(get_setting(cur, 'review_threshold', '40'))
+                    if mod['score'] >= block_th:
+                        push_to_queue(cur, 'message', None, me['id'], photo_url=cdn_url,
+                                      ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason=mod['reason'] or 'Автоблокировка фото в чате',
+                                      priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                        conn.commit()
+                        return resp(403, {'error': 'Фото не прошло автоматическую модерацию: ' + (mod['reason'] or 'нарушение правил')})
+                    if mod['score'] >= review_th:
+                        push_to_queue(cur, 'message', None, me['id'], photo_url=cdn_url,
+                                      ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason=mod['reason'] or 'На проверку', priority=score_to_priority(mod['score']),
+                                      status='needs_review', reviewed_by='ai')
+
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
         # WebRTC сигналинг: отправить сигнал (offer/answer/ice)

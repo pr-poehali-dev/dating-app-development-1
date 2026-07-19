@@ -654,11 +654,11 @@ def handler(event: dict, context) -> dict:
             decision = body.get('decision', '')  # 'approve' | 'remove' | 'ban'
             if not item_id or decision not in ('approve', 'remove', 'ban'):
                 return resp(400, {'error': 'id и decision (approve|remove|ban) обязательны'})
-            cur.execute("SELECT content_type, content_id, user_id FROM ai_moderation_queue WHERE id = %s", (item_id,))
+            cur.execute("SELECT content_type, content_id, user_id, photo_url FROM ai_moderation_queue WHERE id = %s", (item_id,))
             row = cur.fetchone()
             if not row:
                 return resp(404, {'error': 'Запись не найдена'})
-            content_type, content_id, user_id = row
+            content_type, content_id, user_id, q_photo_url = row
 
             action_map = {'approve': 'admin_approved', 'remove': 'admin_removed', 'ban': 'admin_banned'}
             cur.execute(
@@ -666,16 +666,23 @@ def handler(event: dict, context) -> dict:
                 (action_map[decision], item_id)
             )
 
-            if decision in ('remove', 'ban') and content_id:
-                if content_type == 'post':
+            if decision in ('remove', 'ban'):
+                if content_type == 'post' and content_id:
                     cur.execute("DELETE FROM post_comments WHERE post_id = %s", (content_id,))
                     cur.execute("DELETE FROM post_likes WHERE post_id = %s", (content_id,))
                     cur.execute("DELETE FROM posts WHERE id = %s", (content_id,))
-                elif content_type == 'profile_photo':
+                elif content_type == 'profile_photo' and content_id:
                     cur.execute("UPDATE profile_photos SET is_hidden = TRUE WHERE id = %s", (content_id,))
-                elif content_type == 'message':
+                elif content_type == 'profile_photo' and not content_id and q_photo_url:
+                    # Аватар или обложка (нет строки в profile_photos, сравниваем URL)
+                    cur.execute("UPDATE users SET photo_url = NULL WHERE id = %s AND photo_url = %s", (user_id, q_photo_url))
+                    cur.execute("UPDATE users SET cover_url = NULL WHERE id = %s AND cover_url = %s", (user_id, q_photo_url))
+                elif content_type == 'message' and content_id:
                     cur.execute("UPDATE messages SET text = '[Удалено модератором]' WHERE id = %s", (content_id,))
-                elif content_type == 'comment':
+                elif content_type == 'message' and not content_id and q_photo_url:
+                    # Фото в чате хранится как __VANISH__url в тексте сообщения
+                    cur.execute("UPDATE messages SET text = '[Удалено модератором]' WHERE text = %s", ('__VANISH__' + q_photo_url,))
+                elif content_type == 'comment' and content_id:
                     cur.execute("DELETE FROM post_comments WHERE id = %s", (content_id,))
 
             if decision == 'ban':
@@ -733,17 +740,25 @@ def handler(event: dict, context) -> dict:
             review_th = float(get_setting(cur, 'review_threshold', '40'))
             verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
             ai_flag = score >= review_th
-            cur.execute("UPDATE posts SET ai_flagged = %s WHERE id = %s", (ai_flag, pid))
-            if ai_flag:
+            deleted = False
+            if verdict == 'violation':
+                push_to_queue(cur, 'post', pid, user_id, photo_url=photo_url,
+                              ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'Автоудаление при перепроверке',
+                              priority='high', status='auto_resolved', action_taken='auto_deleted', reviewed_by='ai')
+                cur.execute("DELETE FROM post_comments WHERE post_id = %s", (pid,))
+                cur.execute("DELETE FROM post_likes WHERE post_id = %s", (pid,))
+                cur.execute("DELETE FROM posts WHERE id = %s", (pid,))
+                cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
+                deleted = True
+            elif ai_flag:
+                cur.execute("UPDATE posts SET ai_flagged = %s WHERE id = %s", (ai_flag, pid))
                 push_to_queue(cur, 'post', pid, user_id, photo_url=photo_url,
                               ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
                               ai_reason=mod['reason'] or 'Ручная перепроверка',
-                              priority=score_to_priority(score),
-                              status='needs_review' if verdict != 'violation' else 'auto_resolved',
-                              action_taken='auto_blocked' if verdict == 'violation' else None,
-                              reviewed_by='ai')
+                              priority=score_to_priority(score), status='needs_review', reviewed_by='ai')
             conn.commit()
-            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
+            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag, 'deleted': deleted})
 
         if action == 'ai_recheck_comment':
             comment_id = body.get('comment_id')
@@ -822,6 +837,9 @@ def handler(event: dict, context) -> dict:
                     ai_flag = score >= review_th
                     verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
                     cur.execute("UPDATE profile_photos SET ai_flagged = %s, ai_checked_at = NOW() WHERE id = %s", (ai_flag, pid))
+                    if verdict == 'violation':
+                        cur.execute("UPDATE profile_photos SET is_hidden = TRUE WHERE id = %s", (pid,))
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
                     if ai_flag:
                         flagged_now += 1
                         push_to_queue(cur, 'profile_photo', pid, user_id, photo_url=photo_url,
@@ -829,7 +847,7 @@ def handler(event: dict, context) -> dict:
                                       ai_reason=mod['reason'] or 'Ретро-сканирование',
                                       priority=score_to_priority(score),
                                       status='needs_review' if verdict != 'violation' else 'auto_resolved',
-                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      action_taken='auto_hidden' if verdict == 'violation' else None,
                                       reviewed_by='ai')
                     scanned += 1
 
@@ -849,6 +867,8 @@ def handler(event: dict, context) -> dict:
                     ai_flag = score >= review_th
                     verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
                     cur.execute("UPDATE users SET ai_avatar_flagged = %s, ai_avatar_checked_at = NOW() WHERE id = %s", (ai_flag, user_id))
+                    if verdict == 'violation':
+                        cur.execute("UPDATE users SET photo_url = NULL, ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
                     if ai_flag:
                         flagged_now += 1
                         push_to_queue(cur, 'profile_photo', None, user_id, photo_url=photo_url,
@@ -856,7 +876,7 @@ def handler(event: dict, context) -> dict:
                                       ai_reason=(mod['reason'] or 'Ретро-сканирование аватара'),
                                       priority=score_to_priority(score),
                                       status='needs_review' if verdict != 'violation' else 'auto_resolved',
-                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      action_taken='auto_removed' if verdict == 'violation' else None,
                                       reviewed_by='ai')
                     scanned += 1
 
@@ -876,6 +896,8 @@ def handler(event: dict, context) -> dict:
                     ai_flag = score >= review_th
                     verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
                     cur.execute("UPDATE users SET ai_cover_flagged = %s, ai_cover_checked_at = NOW() WHERE id = %s", (ai_flag, user_id))
+                    if verdict == 'violation':
+                        cur.execute("UPDATE users SET cover_url = NULL, ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
                     if ai_flag:
                         flagged_now += 1
                         push_to_queue(cur, 'profile_photo', None, user_id, photo_url=cover_url,
@@ -883,7 +905,7 @@ def handler(event: dict, context) -> dict:
                                       ai_reason=(mod['reason'] or 'Ретро-сканирование обложки'),
                                       priority=score_to_priority(score),
                                       status='needs_review' if verdict != 'violation' else 'auto_resolved',
-                                      action_taken='auto_blocked' if verdict == 'violation' else None,
+                                      action_taken='auto_removed' if verdict == 'violation' else None,
                                       reviewed_by='ai')
                     scanned += 1
 

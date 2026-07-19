@@ -141,7 +141,7 @@ function QueueCard({ item, onResolve }: { item: QueueItem; onResolve: (id: numbe
 function RecheckPostPanel({ token, onDone }: { token: string; onDone: () => void }) {
   const [postId, setPostId] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ verdict: string; score: number; reason: string; categories: string[]; flagged: boolean } | null>(null);
+  const [result, setResult] = useState<{ verdict: string; score: number; reason: string; categories: string[]; flagged: boolean; deleted?: boolean } | null>(null);
   const [error, setError] = useState("");
 
   const run = async () => {
@@ -168,7 +168,7 @@ function RecheckPostPanel({ token, onDone }: { token: string; onDone: () => void
   const verdictStyle: Record<string, { color: string; label: string }> = {
     safe: { color: "#4ADE80", label: "Всё чисто" },
     suspicious: { color: "#FBBF24", label: "Подозрительно — в очереди" },
-    violation: { color: "#F87171", label: "Нарушение — заблокировано" },
+    violation: { color: "#F87171", label: "Нарушение — удалено" },
   };
 
   return (
