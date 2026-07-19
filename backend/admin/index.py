@@ -745,6 +745,35 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
 
+        if action == 'ai_recheck_comment':
+            comment_id = body.get('comment_id')
+            if not comment_id:
+                return resp(400, {'error': 'comment_id обязателен'})
+            cur.execute("SELECT id, user_id, text FROM post_comments WHERE id = %s", (comment_id,))
+            row = cur.fetchone()
+            if not row:
+                return resp(404, {'error': 'Комментарий не найден'})
+            cid, user_id, text = row
+            mod = moderate_text(text)
+            if mod.get('error'):
+                return resp(200, {'ok': False, 'error': mod['error']})
+            score = mod['score']
+            block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+            review_th = float(get_setting(cur, 'review_threshold', '40'))
+            verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
+            ai_flag = score >= review_th
+            cur.execute("UPDATE post_comments SET ai_flagged = %s WHERE id = %s", (ai_flag, cid))
+            if ai_flag:
+                push_to_queue(cur, 'comment', cid, user_id, text_snippet=text[:500],
+                              ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'Ручная перепроверка',
+                              priority=score_to_priority(score),
+                              status='needs_review' if verdict != 'violation' else 'auto_resolved',
+                              action_taken='auto_blocked' if verdict == 'violation' else None,
+                              reviewed_by='ai')
+            conn.commit()
+            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
+
         # ── Ретроактивное сканирование фото (галерея / аватары / обложки) ────
         if action == 'ai_scan_status':
             cur.execute("SELECT COUNT(*) FROM profile_photos WHERE is_hidden = FALSE AND ai_checked_at IS NULL")

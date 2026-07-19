@@ -204,6 +204,72 @@ function RecheckPostPanel({ token, onDone }: { token: string; onDone: () => void
   );
 }
 
+function RecheckCommentPanel({ token, onDone }: { token: string; onDone: () => void }) {
+  const [commentId, setCommentId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ verdict: string; score: number; reason: string; categories: string[]; flagged: boolean } | null>(null);
+  const [error, setError] = useState("");
+
+  const run = async () => {
+    const id = parseInt(commentId, 10);
+    if (!id) return;
+    setBusy(true);
+    setError("");
+    setResult(null);
+    try {
+      const d = await adminReq(token, "ai_recheck_comment", { comment_id: id });
+      if (d.ok) {
+        setResult(d);
+        onDone();
+      } else {
+        setError(d.error || "Ошибка проверки");
+      }
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verdictStyle: Record<string, { color: string; label: string }> = {
+    safe: { color: "#4ADE80", label: "Всё чисто" },
+    suspicious: { color: "#FBBF24", label: "Подозрительно — в очереди" },
+    violation: { color: "#F87171", label: "Нарушение — заблокировано" },
+  };
+
+  return (
+    <div className="rounded-2xl p-4 flex flex-col gap-3"
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div>
+        <p className="text-white text-sm font-semibold">Перепроверить комментарий по ID</p>
+        <p className="text-white/35 text-xs mt-0.5">Для комментариев, оставленных до подключения ИИ</p>
+      </div>
+      <div className="flex gap-2">
+        <input value={commentId} onChange={e => setCommentId(e.target.value.replace(/\D/g, ""))}
+          placeholder="Например, 13" inputMode="numeric"
+          onKeyDown={e => e.key === "Enter" && run()}
+          className="flex-1 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+        <button onClick={run} disabled={busy || !commentId.trim()}
+          className="px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+          {busy ? <Icon name="Loader2" size={13} className="animate-spin" /> : "Проверить"}
+        </button>
+      </div>
+      {error && <p className="text-xs" style={{ color: "#F87171" }}>{error}</p>}
+      {result && (
+        <div className="rounded-xl p-3 flex flex-col gap-1" style={{ background: "rgba(255,255,255,0.04)" }}>
+          <p className="text-sm font-bold" style={{ color: (verdictStyle[result.verdict] || verdictStyle.safe).color }}>
+            {(verdictStyle[result.verdict] || verdictStyle.safe).label} · {Math.round(result.score)}%
+          </p>
+          {result.reason && <p className="text-white/50 text-xs">{result.reason}</p>}
+          {result.categories?.length > 0 && <p className="text-white/35 text-xs">Категории: {result.categories.join(", ")}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AiModerationQueuePanel({ token }: { token: string }) {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -231,6 +297,7 @@ export function AiModerationQueuePanel({ token }: { token: string }) {
   return (
     <>
       <RecheckPostPanel token={token} onDone={load} />
+      <RecheckCommentPanel token={token} onDone={load} />
       {stats && (
         <div className="flex gap-2 flex-wrap">
           <StatCard icon="Clock" label="На проверке" value={stats.pending_review} color="#FBBF24" />
