@@ -675,6 +675,8 @@ def handler(event: dict, context) -> dict:
                     cur.execute("UPDATE profile_photos SET is_hidden = TRUE WHERE id = %s", (content_id,))
                 elif content_type == 'message':
                     cur.execute("UPDATE messages SET text = '[Удалено модератором]' WHERE id = %s", (content_id,))
+                elif content_type == 'comment':
+                    cur.execute("DELETE FROM post_comments WHERE id = %s", (content_id,))
 
             if decision == 'ban':
                 cur.execute(

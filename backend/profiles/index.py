@@ -11,7 +11,7 @@ import smtplib
 import ssl
 import boto3
 import psycopg2
-from moderation import moderate_photo, compare_faces, get_setting, score_to_priority, push_to_queue
+from moderation import moderate_photo, moderate_text, compare_faces, get_setting, score_to_priority, push_to_queue
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -938,11 +938,37 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'Пустой комментарий'})
             if len(text) > 1000:
                 return resp(400, {'error': 'Комментарий слишком длинный (макс. 1000 символов)'})
+
+            # ── AI-модерация текста комментария ──
+            ai_flag = False
+            mod = None
+            if get_setting(cur, 'text_moderation_enabled', 'true') == 'true':
+                mod = moderate_text(text)
+                if mod['score'] > 0:
+                    block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                    review_th = float(get_setting(cur, 'review_threshold', '40'))
+                    if mod['score'] >= block_th:
+                        push_to_queue(cur, 'comment', None, me['id'], text_snippet=text[:500],
+                                      ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                      ai_reason='Автоблокировка: ' + ', '.join(mod['categories']),
+                                      priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                        cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                        conn.commit()
+                        return resp(403, {'error': 'Комментарий заблокирован автоматической модерацией'})
+                    if mod['score'] >= review_th:
+                        ai_flag = True
+
             cur.execute(
-                "INSERT INTO post_comments (post_id, user_id, text) VALUES (%s, %s, %s) RETURNING id, created_at",
-                (post_id, me['id'], text)
+                "INSERT INTO post_comments (post_id, user_id, text, ai_flagged) VALUES (%s, %s, %s, %s) RETURNING id, created_at",
+                (post_id, me['id'], text, ai_flag)
             )
             row = cur.fetchone()
+
+            if ai_flag and mod:
+                push_to_queue(cur, 'comment', row[0], me['id'], text_snippet=text[:500],
+                              ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                              ai_reason='На проверку: ' + ', '.join(mod['categories']),
+                              priority=score_to_priority(mod['score']), status='needs_review', reviewed_by='ai')
             conn.commit()
             cur.execute("SELECT name, photo_url FROM users WHERE id = %s", (me['id'],))
             u = cur.fetchone()

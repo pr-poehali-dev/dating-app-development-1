@@ -34,6 +34,7 @@ type Stats = {
 const CONTENT_LABEL: Record<string, { label: string; icon: string }> = {
   message: { label: "Сообщение", icon: "MessageCircle" },
   post: { label: "Пост", icon: "Image" },
+  comment: { label: "Комментарий", icon: "MessageSquare" },
   profile_photo: { label: "Фото профиля", icon: "User" },
   selfie: { label: "Селфи (верификация)", icon: "ScanFace" },
   bio: { label: "Описание", icon: "FileText" },
