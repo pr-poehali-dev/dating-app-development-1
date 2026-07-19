@@ -652,6 +652,8 @@ export interface Match {
   last_msg?: string;
   last_msg_time?: string;
   unread_count: number;
+  is_bot?: boolean;
+  verified?: boolean;
 }
 
 export interface Message {

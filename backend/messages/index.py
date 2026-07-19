@@ -131,6 +131,10 @@ def handler(event: dict, context) -> dict:
             if not match_row:
                 return resp(403, {'error': 'Нет доступа'})
             partner_id = match_row[2] if match_row[1] == me['id'] else match_row[1]
+            # Нельзя писать системному боту «Полутон» — это односторонний канал
+            cur.execute("SELECT 1 FROM users WHERE id = %s AND email = 'system@lbloom.ru'", (partner_id,))
+            if cur.fetchone():
+                return resp(403, {'error': 'Это официальный аккаунт Полутон — отвечать нельзя'})
             cur.execute(
                 "SELECT 1 FROM user_blocks WHERE (blocker_id=%s AND blocked_id=%s) OR (blocker_id=%s AND blocked_id=%s)",
                 (me['id'], partner_id, partner_id, me['id'])

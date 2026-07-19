@@ -32,6 +32,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [partnerPhoto, setPartnerPhoto] = useState(FALLBACK_PHOTO);
   const [partnerId, setPartnerId] = useState<number | null>(null);
   const [partnerCity, setPartnerCity] = useState<string | null>(null);
+  const [isBot, setIsBot] = useState(false);
   const [showPartnerProfile, setShowPartnerProfile] = useState(false);
   const [contextMsg, setContextMsg] = useState<Message | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -76,6 +77,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
         setPartnerName(m.name);
         setPartnerPhoto(m.photo_url || FALLBACK_PHOTO);
         setPartnerId(m.partner_id);
+        setIsBot(!!m.is_bot || m.name === 'Полутон');
         profilesApi.subscriptionStatus(m.partner_id)
           .then(r => setSubscribed(r.subscribed))
           .catch(() => {});
@@ -348,7 +350,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
 
   return {
     msgs, input, setInput,
-    partnerName, partnerPhoto, partnerId, partnerCity,
+    partnerName, partnerPhoto, partnerId, partnerCity, isBot,
     showPartnerProfile, setShowPartnerProfile,
     contextMsg, setContextMsg,
     deleting,

@@ -47,9 +47,9 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           partnerName={c.partnerName}
           partnerPhoto={c.partnerPhoto}
           subscribed={c.subscribed}
-          isBot={c.partnerName === 'Полутон'}
+          isBot={c.isBot}
           onBack={onBack}
-          onProfileClick={() => c.setShowPartnerProfile(true)}
+          onProfileClick={() => { if (!c.isBot) c.setShowPartnerProfile(true); }}
           onSubscribeToggle={() => {
             if (!c.partnerId) return;
             const next = !c.subscribed;
@@ -77,7 +77,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           sendSystem={c.sendSystem}
         />
 
-        {c.micError && (
+        {!c.isBot && c.micError && (
           <div className="mx-3 mb-2 px-3.5 py-2.5 rounded-2xl flex items-start gap-2.5"
             style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.22)" }}>
             <Icon name="MicOff" size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
@@ -88,33 +88,43 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           </div>
         )}
 
-        <ChatInputBar
-          input={c.input}
-          recording={c.recording}
-          recordSecs={c.recordSecs}
-          showPlus={c.showPlus}
-          showEmoji={c.showEmoji}
-          showStickers={c.showStickers}
-          geoLoading={c.geoLoading}
-          inputRef={c.inputRef}
-          fileRef={c.fileRef}
-          cameraRef={c.cameraRef}
-          onInputChange={c.setInput}
-          onSend={c.send}
-          onStartRecording={c.startRecording}
-          onStopRecording={c.stopRecording}
-          onTogglePlus={() => { c.setShowPlus(v => !v); c.setShowEmoji(false); c.setShowStickers(false); }}
-          onToggleEmoji={() => { c.setShowEmoji(v => !v); c.setShowPlus(false); c.setShowStickers(false); }}
-          onToggleStickers={() => { c.setShowStickers(v => !v); c.setShowPlus(false); c.setShowEmoji(false); }}
-          onEmojiPick={(em) => { c.setInput(v => v + em); c.inputRef.current?.focus(); }}
-          onSendSticker={(url) => { c.sendSystem(`__STICKER__${url}`); c.setShowStickers(false); }}
-          onFileSelect={c.handleFileSelect}
-          onOpenVanishPicker={c.openVanishPicker}
-          onSendLocation={c.sendLocation}
-          onOpenVideoCall={() => { c.setShowPlus(false); c.setVideoCall({ isInitiator: true }); }}
-          onOpenAwardPicker={() => { c.setShowAwardPicker(true); c.setShowPlus(false); }}
-          onOpenVideoCircle={() => { c.setShowVideoCircle(true); c.setShowPlus(false); }}
-        />
+        {c.isBot ? (
+          <div className="px-4 py-4 flex items-center justify-center gap-2 text-center"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+            <Icon name="Info" size={15} className="text-white/40 flex-shrink-0" />
+            <span className="text-white/45 text-xs leading-relaxed">
+              Это официальный аккаунт Полутон. Отвечать на сообщения нельзя.
+            </span>
+          </div>
+        ) : (
+          <ChatInputBar
+            input={c.input}
+            recording={c.recording}
+            recordSecs={c.recordSecs}
+            showPlus={c.showPlus}
+            showEmoji={c.showEmoji}
+            showStickers={c.showStickers}
+            geoLoading={c.geoLoading}
+            inputRef={c.inputRef}
+            fileRef={c.fileRef}
+            cameraRef={c.cameraRef}
+            onInputChange={c.setInput}
+            onSend={c.send}
+            onStartRecording={c.startRecording}
+            onStopRecording={c.stopRecording}
+            onTogglePlus={() => { c.setShowPlus(v => !v); c.setShowEmoji(false); c.setShowStickers(false); }}
+            onToggleEmoji={() => { c.setShowEmoji(v => !v); c.setShowPlus(false); c.setShowStickers(false); }}
+            onToggleStickers={() => { c.setShowStickers(v => !v); c.setShowPlus(false); c.setShowEmoji(false); }}
+            onEmojiPick={(em) => { c.setInput(v => v + em); c.inputRef.current?.focus(); }}
+            onSendSticker={(url) => { c.sendSystem(`__STICKER__${url}`); c.setShowStickers(false); }}
+            onFileSelect={c.handleFileSelect}
+            onOpenVanishPicker={c.openVanishPicker}
+            onSendLocation={c.sendLocation}
+            onOpenVideoCall={() => { c.setShowPlus(false); c.setVideoCall({ isInitiator: true }); }}
+            onOpenAwardPicker={() => { c.setShowAwardPicker(true); c.setShowPlus(false); }}
+            onOpenVideoCircle={() => { c.setShowVideoCircle(true); c.setShowPlus(false); }}
+          />
+        )}
       </div>
     </>
   );

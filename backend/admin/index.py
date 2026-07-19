@@ -42,6 +42,48 @@ def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str 
     except Exception:
         pass
 
+SYSTEM_BOT_EMAIL = 'system@lbloom.ru'
+SYSTEM_BOT_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
+
+
+def _get_system_bot_id(cur) -> int:
+    """Возвращает id единственного системного бота «Полутон», создаёт при отсутствии."""
+    cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (SYSTEM_BOT_EMAIL,))
+    row = cur.fetchone()
+    if row:
+        return row[0]
+    cur.execute(
+        "INSERT INTO users (name, email, password_hash, photo_url, verified) "
+        "VALUES ('Полутон', %s, 'system_no_login', %s, TRUE) RETURNING id",
+        (SYSTEM_BOT_EMAIL, SYSTEM_BOT_PHOTO)
+    )
+    return cur.fetchone()[0]
+
+
+def _send_bot_message(cur, user_id: int, sys_text: str) -> None:
+    """Отправляет личное системное сообщение от бота «Полутон» пользователю.
+    ВАЖНО: сообщение уходит только в личный чат бота с пользователем, а не в
+    случайный существующий матч с другим человеком."""
+    bot_id = _get_system_bot_id(cur)
+    if bot_id == user_id:
+        return
+    cur.execute(
+        "SELECT id FROM matches WHERE (user1_id = %s AND user2_id = %s) OR (user1_id = %s AND user2_id = %s) LIMIT 1",
+        (bot_id, user_id, user_id, bot_id)
+    )
+    match_row = cur.fetchone()
+    if not match_row:
+        cur.execute(
+            "INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id",
+            (bot_id, user_id)
+        )
+        match_row = cur.fetchone()
+    cur.execute(
+        "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+        (match_row[0], bot_id, sys_text)
+    )
+
+
 CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -369,16 +411,14 @@ def handler(event: dict, context) -> dict:
                 "INSERT INTO notifications (user_id, type, from_user_id, read) VALUES (%s, 'verif_approved', NULL, FALSE)",
                 (user_id,)
             )
-            # Системное сообщение в первый матч пользователя (или просто уведомление)
-            cur.execute("SELECT id FROM matches WHERE user1_id=%s OR user2_id=%s LIMIT 1", (user_id, user_id))
-            match_row = cur.fetchone()
-            if match_row:
-                system_text = "✅ Поздравляем! Ваш профиль прошёл верификацию. Теперь на вашем профиле отображается значок ✓, который подтверждает, что вы реальный человек. Это повышает доверие других пользователей!"
-                cur.execute(
-                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
-                    (match_row[0], user_id, system_text)
-                )
+            # Личное системное сообщение от бота «Полутон» (только в чат бота с юзером)
+            system_text = "✅ Поздравляем! Ваш профиль прошёл верификацию. Теперь на вашем профиле отображается значок ✓, который подтверждает, что вы реальный человек. Это повышает доверие других пользователей!"
+            _send_bot_message(cur, user_id, system_text)
             conn.commit()
+            try:
+                _push_to_user(cur, conn, user_id, '✅ Полутон', 'Ваш профиль прошёл верификацию', '/')
+            except Exception:
+                pass
             return resp(200, {'ok': True})
 
         # ── Отклонить верификацию ─────────────────────────────────────────────
@@ -401,17 +441,15 @@ def handler(event: dict, context) -> dict:
                 "INSERT INTO notifications (user_id, type, from_user_id, read) VALUES (%s, 'verif_rejected', NULL, FALSE)",
                 (user_id,)
             )
-            # Системное сообщение
-            cur.execute("SELECT id FROM matches WHERE user1_id=%s OR user2_id=%s LIMIT 1", (user_id, user_id))
-            match_row = cur.fetchone()
-            if match_row:
-                reject_msg = reason or "Фото не соответствует требованиям"
-                system_text = f"❌ К сожалению, ваша заявка на верификацию была отклонена.\nПричина: {reject_msg}\n\nВы можете подать заявку повторно — сделайте чёткое селфи при хорошем освещении с поднятым большим пальцем."
-                cur.execute(
-                    "INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
-                    (match_row[0], user_id, system_text)
-                )
+            # Личное системное сообщение от бота «Полутон» (только в чат бота с юзером)
+            reject_msg = reason or "Фото не соответствует требованиям"
+            system_text = f"❌ К сожалению, ваша заявка на верификацию была отклонена.\nПричина: {reject_msg}\n\nВы можете подать заявку повторно — сделайте чёткое селфи при хорошем освещении с поднятым большим пальцем."
+            _send_bot_message(cur, user_id, system_text)
             conn.commit()
+            try:
+                _push_to_user(cur, conn, user_id, '❌ Полутон', 'Заявка на верификацию отклонена', '/')
+            except Exception:
+                pass
             return resp(200, {'ok': True})
 
         # ── Тикеты поддержки (список) ──

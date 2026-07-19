@@ -60,7 +60,7 @@ export function ChatScreenModals({
         />
       )}
 
-      {showPartnerProfile && partnerId && (
+      {showPartnerProfile && partnerId && partnerName !== 'Полутон' && (
         <DiscoverProfileModal
           profile={{ id: partnerId, name: partnerName, photo_url: partnerPhoto } as Profile}
           onClose={() => setShowPartnerProfile(false)}

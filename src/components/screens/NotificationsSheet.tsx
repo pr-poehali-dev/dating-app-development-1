@@ -54,10 +54,10 @@ function notifText(n: Notification) {
   if (n.type === "story_view") return "посмотрел(а) твою видеоисторию 🎬";
   if (n.type === "admin_report_resolved") return "✅ Твоя жалоба рассмотрена — меры приняты";
   if (n.type === "admin_report_dismissed") return "⚪ Твоя жалоба рассмотрена — нарушений не выявлено";
-  if (n.type === "admin_post_removed") return "🚫 Администрация удалила твой пост из ленты за нарушение правил";
+  if (n.type === "admin_post_removed") return "🚫 Твой пост удалён из ленты за нарушение правил";
   if (n.type === "admin_post_kept") return "ℹ️ Жалоба на твой пост рассмотрена — пост оставлен в ленте";
   if (n.type === "admin_warning") return n.text || "⚠️ Предупреждение от Полутон";
-  if (n.type === "admin_broadcast") return n.text || "Сообщение от администрации";
+  if (n.type === "admin_broadcast") return n.text || "Сообщение от Полутон";
   if (n.type === "premium_activated") {
     if (n.text) {
       const [planLabel, until] = n.text.split("|");
@@ -182,7 +182,7 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                     <div className="relative flex-shrink-0">
                       {isSystem ? (
                         <img
-                          src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/587a9205-cc85-4487-9fa6-283c2ecfcba0.jpg"
+                          src="https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png"
                           className="w-11 h-11 rounded-full object-cover"
                           style={{ border: "2px solid rgba(255,45,120,0.3)" }}
                         />
@@ -194,8 +194,9 @@ export function NotificationsSheet({ onClose, onOpenChat }: {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">
-                        {isSystem ? "Администрация" : n.name}
+                      <p className="text-white text-sm font-semibold truncate flex items-center gap-1">
+                        {isSystem ? "Полутон" : n.name}
+                        {isSystem && <Icon name="BadgeCheck" size={14} className="text-pink-400 flex-shrink-0" />}
                       </p>
                       <p className="text-white/50 text-xs mt-0.5 truncate">{notifText(n)}</p>
                     </div>

@@ -84,10 +84,12 @@ def handler(event: dict, context) -> dict:
                 item['unread_count'] = int(item['unread_count'])
                 if item.get('last_seen'):
                     item['last_seen'] = str(item['last_seen'])
-                if item.get('partner_id') in bot_ids:
+                item['is_bot'] = item.get('partner_id') in bot_ids
+                if item['is_bot']:
                     item['name'] = 'Полутон'
                     item['age'] = None
                     item['photo_url'] = LOVEBLOOM_ICON
+                    item['verified'] = True
                 matches.append(item)
             return resp(200, {'matches': matches})
 

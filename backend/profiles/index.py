@@ -242,6 +242,7 @@ def handler(event: dict, context) -> dict:
                 "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
                 "u.incognito = FALSE",
                 "u.removed_at IS NULL",
+                "u.email != 'system@lbloom.ru'",
             ]
             q_params = [me['id'], age_min, age_max, me['id'], me['id']]
 
@@ -852,6 +853,10 @@ def handler(event: dict, context) -> dict:
         # Профиль пользователя по id
         if action == 'user_profile':
             uid = int(params.get('user_id', 0))
+            # Нельзя открывать страницу системного бота «Полутон»
+            cur.execute("SELECT 1 FROM users WHERE id = %s AND email = 'system@lbloom.ru'", (uid,))
+            if cur.fetchone():
+                return resp(404, {'error': 'Пользователь не найден'})
             cur.execute("""
                 SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.last_seen, u.created_at,
                        u.username, u.premium, u.premium_tier, u.cover_url, u.gender, u.height, u.weight, u.relationship_status,

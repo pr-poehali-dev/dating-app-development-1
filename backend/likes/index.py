@@ -135,7 +135,7 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 "SELECT u.id, u.name, u.age, u.photo_url, u.verified, l.is_super, l.created_at "
                 "FROM likes l JOIN users u ON u.id = l.from_user_id "
-                "WHERE l.to_user_id = %s ORDER BY l.created_at DESC",
+                "WHERE l.to_user_id = %s AND u.email != 'system@lbloom.ru' ORDER BY l.created_at DESC",
                 (me['id'],)
             )
             rows = cur.fetchall()
