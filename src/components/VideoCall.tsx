@@ -113,11 +113,23 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     pcRef.current = null;
   }, [stopRingtone]);
 
+  const callLoggedRef = useRef(false);
+
+  // Записывает результат звонка в чат («принят» / «пропущен»), чтобы собеседник
+  // увидел его, даже если был не в сети во время вызова. Логирует только
+  // инициатор звонка — иначе оба участника вставили бы дублирующее сообщение.
+  const logCallResult = useCallback((status: "accepted" | "missed") => {
+    if (!isInitiator || callLoggedRef.current) return;
+    callLoggedRef.current = true;
+    messagesApi.send(matchId, `__VCALL__${status}`).catch(() => {});
+  }, [isInitiator, matchId]);
+
   const handleClose = useCallback(() => {
+    if (isInitiator && !connectedRef.current) logCallResult("missed");
     stopAll();
     messagesApi.signalSend(matchId, "hangup", "bye").catch(() => {});
     onClose();
-  }, [stopAll, matchId, onClose]);
+  }, [stopAll, matchId, onClose, isInitiator, logCallResult]);
 
   const buildVideoConstraints = (): MediaTrackConstraints => ({
     width: { ideal: 1280, max: 1920 },
@@ -191,6 +203,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     stopRingtone();
     setCallState("connected");
     startTimer();
+    logCallResult("accepted");
   };
 
   const buildPeer = (stream: MediaStream) => {
@@ -310,6 +323,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
             }
           }
           if (sig.signal_type === "hangup") {
+            if (isInitiator && !connectedRef.current) logCallResult("missed");
             stopAll();
             setCallState("ended");
             setTimeout(onClose, 2000);
@@ -328,6 +342,7 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
     const noAnswerTimer = isInitiator
       ? setTimeout(() => {
           if (!connectedRef.current) {
+            logCallResult("missed");
             messagesApi.signalSend(matchId, "hangup", "no-answer").catch(() => {});
             stopAll();
             setCallState("ended");
@@ -340,6 +355,10 @@ export default function VideoCall({ matchId, partnerName, partnerPhoto, isInitia
       if (pollRef.current) clearInterval(pollRef.current);
       if (noAnswerTimer) clearTimeout(noAnswerTimer);
       stopRingtone();
+      // Если инициатор просто закрыл/свернул экран звонка, не дозвонившись —
+      // тоже фиксируем пропущенный звонок (handleClose делает то же самое, но
+      // на случай ухода без кнопки «положить трубку» логируем и здесь).
+      if (isInitiator && !connectedRef.current) logCallResult("missed");
       // Всегда освобождаем микрофон/камеру при размонтировании компонента —
       // даже если пользователь ушёл с экрана свайпом/навигацией, а не кнопкой
       // «положить трубку». Иначе устройство остаётся «занятым» и следующий

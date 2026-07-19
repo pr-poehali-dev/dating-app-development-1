@@ -170,8 +170,9 @@ def handler(event: dict, context) -> dict:
             cur.execute("SELECT name FROM users WHERE id=%s", (me['id'],))
             sn = cur.fetchone()
             sender_name = sn[0] if sn else 'Новое сообщение'
-            preview = text if not text.startswith('__') else ('🎤 Голосовое' if text.startswith('__AUDIO__') else '📷 Фото' if text.startswith('__VANISH__') else '🎁 Подарок' if text.startswith('__GIFT__') else '📍 Локация' if text.startswith('__LOC__') else '💬 Сообщение')
-            _push_to_user(cur, conn, partner_id, f'💬 {sender_name}', preview[:80], '/')
+            preview = text if not text.startswith('__') else ('🎤 Голосовое' if text.startswith('__AUDIO__') else '📷 Фото' if text.startswith('__VANISH__') else '🎁 Подарок' if text.startswith('__GIFT__') else '📍 Локация' if text.startswith('__LOC__') else '📵 Пропущенный видеозвонок' if text.startswith('__VCALL__missed') else '💬 Сообщение')
+            push_title = f'📵 {sender_name}' if text.startswith('__VCALL__missed') else f'💬 {sender_name}'
+            _push_to_user(cur, conn, partner_id, push_title, preview[:80], '/')
             return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
 
         # Отправить первое сообщение без матча — создаём матч автоматически

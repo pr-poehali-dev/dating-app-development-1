@@ -156,28 +156,31 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
   if (text.startsWith("__VCALL__")) {
     const status = text.slice(9);
     const accepted = status === "accepted";
+    const missed = status === "missed";
     return (
       <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl"
         style={{
           background: accepted
             ? "linear-gradient(135deg, rgba(74,222,128,0.12), rgba(34,197,94,0.08))"
-            : "linear-gradient(135deg, rgba(99,179,237,0.12), rgba(79,134,247,0.08))",
-          border: `1.5px solid ${accepted ? "rgba(74,222,128,0.25)" : "rgba(99,179,237,0.25)"}`,
+            : missed
+              ? "linear-gradient(135deg, rgba(248,113,113,0.12), rgba(239,68,68,0.08))"
+              : "linear-gradient(135deg, rgba(99,179,237,0.12), rgba(79,134,247,0.08))",
+          border: `1.5px solid ${accepted ? "rgba(74,222,128,0.25)" : missed ? "rgba(248,113,113,0.25)" : "rgba(99,179,237,0.25)"}`,
           minWidth: 180,
         }}>
         <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
           style={{
-            background: accepted ? "linear-gradient(135deg,#22c55e,#16a34a)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
-            boxShadow: accepted ? "0 3px 10px rgba(34,197,94,0.4)" : "0 3px 10px rgba(59,130,246,0.4)",
+            background: accepted ? "linear-gradient(135deg,#22c55e,#16a34a)" : missed ? "linear-gradient(135deg,#f87171,#ef4444)" : "linear-gradient(135deg,#3b82f6,#6366f1)",
+            boxShadow: accepted ? "0 3px 10px rgba(34,197,94,0.4)" : missed ? "0 3px 10px rgba(239,68,68,0.4)" : "0 3px 10px rgba(59,130,246,0.4)",
           }}>
-          <Icon name="Video" size={16} className="text-white" />
+          <Icon name={missed ? "PhoneMissed" : "Video"} size={16} className="text-white" />
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-white text-[13px] font-semibold">
-            {accepted ? "Видеозвонок" : "Видеозвонок"}
+            {missed ? (out ? "Пропущенный звонок" : "Пропущенный видеозвонок") : "Видеозвонок"}
           </span>
-          <span className="text-[11px]" style={{ color: accepted ? "rgba(74,222,128,0.8)" : "rgba(99,179,237,0.8)" }}>
-            {accepted ? "Звонок принят ✓" : "Входящий запрос 📹"}
+          <span className="text-[11px]" style={{ color: accepted ? "rgba(74,222,128,0.8)" : missed ? "rgba(248,113,113,0.8)" : "rgba(99,179,237,0.8)" }}>
+            {accepted ? "Звонок принят ✓" : missed ? (out ? "Собеседник не ответил" : "Вы пропустили звонок") : "Входящий запрос 📹"}
           </span>
         </div>
       </div>
