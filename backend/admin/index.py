@@ -762,17 +762,23 @@ def handler(event: dict, context) -> dict:
             review_th = float(get_setting(cur, 'review_threshold', '40'))
             verdict = 'violation' if score >= block_th else ('suspicious' if score >= review_th else 'safe')
             ai_flag = score >= review_th
-            cur.execute("UPDATE post_comments SET ai_flagged = %s WHERE id = %s", (ai_flag, cid))
-            if ai_flag:
+            deleted = False
+            if verdict == 'violation':
+                push_to_queue(cur, 'comment', cid, user_id, text_snippet=text[:500],
+                              ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
+                              ai_reason=mod['reason'] or 'Автоудаление при перепроверке',
+                              priority='high', status='auto_resolved', action_taken='auto_deleted', reviewed_by='ai')
+                cur.execute("DELETE FROM post_comments WHERE id = %s", (cid,))
+                cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user_id,))
+                deleted = True
+            elif ai_flag:
+                cur.execute("UPDATE post_comments SET ai_flagged = %s WHERE id = %s", (ai_flag, cid))
                 push_to_queue(cur, 'comment', cid, user_id, text_snippet=text[:500],
                               ai_verdict=verdict, ai_score=score, ai_categories=mod['categories'],
                               ai_reason=mod['reason'] or 'Ручная перепроверка',
-                              priority=score_to_priority(score),
-                              status='needs_review' if verdict != 'violation' else 'auto_resolved',
-                              action_taken='auto_blocked' if verdict == 'violation' else None,
-                              reviewed_by='ai')
+                              priority=score_to_priority(score), status='needs_review', reviewed_by='ai')
             conn.commit()
-            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag})
+            return resp(200, {'ok': True, 'verdict': verdict, 'score': score, 'reason': mod['reason'], 'categories': mod['categories'], 'flagged': ai_flag, 'deleted': deleted})
 
         # ── Ретроактивное сканирование фото (галерея / аватары / обложки) ────
         if action == 'ai_scan_status':
