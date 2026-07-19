@@ -1055,7 +1055,10 @@ export interface PremiumPlan {
 }
 
 export const postsApi2 = {
-  getPremiumPlans: () => req<{ plans: { plan: string; label: string; price_per_month: number; total_amount: number; duration_months: number; popular: boolean }[] }>('profiles', 'get_premium_plans'),
+  getPremiumPlans: (tier?: "start" | "plus" | "gold") =>
+    req<{ plans: { plan: string; label: string; price_per_month: number; total_amount: number; duration_months: number; popular: boolean }[] }>(
+      'profiles', 'get_premium_plans', {}, tier ? { tier } : {}
+    ),
 };
 
 export interface StreakData {

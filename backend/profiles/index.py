@@ -198,10 +198,13 @@ def handler(event: dict, context) -> dict:
 
         # ── Публичный: тарифы премиума ────────────────────────────────────────
         if action == 'get_premium_plans':
+            tier = params.get('tier', 'plus')
+            if tier not in ('start', 'plus', 'gold'):
+                tier = 'plus'
             cur.execute("""
                 SELECT plan_key, label, price_per_month, total_amount, duration_months, popular
-                FROM premium_plans WHERE active = TRUE ORDER BY sort_order
-            """)
+                FROM premium_plans WHERE active = TRUE AND tier = %s ORDER BY sort_order
+            """, (tier,))
             cols = ['plan', 'label', 'price_per_month', 'total_amount', 'duration_months', 'popular']
             plans = []
             for r in cur.fetchall():

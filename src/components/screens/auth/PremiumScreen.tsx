@@ -5,13 +5,27 @@ import { postsApi2, profilesApi } from "@/lib/api";
 const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png";
 const BG_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/566a84d5-251d-4644-9509-2e4e44d143af.jpg";
 
-const DEFAULT_PLANS = [
-  { plan: "1month",  label: "1 месяц",    price_per_month: 699,  total_amount: 699,  duration_months: 1,  popular: false },
-  { plan: "3month",  label: "3 месяца",   price_per_month: 449,  total_amount: 1347, duration_months: 3,  popular: true  },
-  { plan: "12month", label: "12 месяцев", price_per_month: 249,  total_amount: 2988, duration_months: 12, popular: false },
-];
-
 type TierKey = "start" | "plus" | "gold";
+
+type RawPlan = { plan: string; label: string; price_per_month: number; total_amount: number; duration_months: number; popular: boolean };
+
+const DEFAULT_PLANS_BY_TIER: Record<TierKey, RawPlan[]> = {
+  start: [
+    { plan: "1month",  label: "1 месяц",    price_per_month: 499,  total_amount: 499,  duration_months: 1,  popular: false },
+    { plan: "3month",  label: "3 месяца",   price_per_month: 349,  total_amount: 1047, duration_months: 3,  popular: true  },
+    { plan: "12month", label: "12 месяцев", price_per_month: 179,  total_amount: 2148, duration_months: 12, popular: false },
+  ],
+  plus: [
+    { plan: "1month",  label: "1 месяц",    price_per_month: 699,  total_amount: 699,  duration_months: 1,  popular: false },
+    { plan: "3month",  label: "3 месяца",   price_per_month: 449,  total_amount: 1347, duration_months: 3,  popular: true  },
+    { plan: "12month", label: "12 месяцев", price_per_month: 249,  total_amount: 2988, duration_months: 12, popular: false },
+  ],
+  gold: [
+    { plan: "1month",  label: "1 месяц",    price_per_month: 999,  total_amount: 999,  duration_months: 1,  popular: false },
+    { plan: "3month",  label: "3 месяца",   price_per_month: 649,  total_amount: 1947, duration_months: 3,  popular: true  },
+    { plan: "12month", label: "12 месяцев", price_per_month: 349,  total_amount: 4188, duration_months: 12, popular: false },
+  ],
+};
 
 interface Tier {
   key: TierKey;
@@ -69,14 +83,15 @@ const TIERS: Tier[] = [
 ];
 
 export function PremiumScreen({ onClose, currentUser }: { onClose: () => void; currentUser?: { id: number; email: string; name: string } | null }) {
-  const [rawPlans, setRawPlans] = useState(DEFAULT_PLANS);
   const [tier, setTier] = useState<TierKey>("plus");
+  const [rawPlans, setRawPlans] = useState<RawPlan[]>(DEFAULT_PLANS_BY_TIER.plus);
 
   useEffect(() => {
-    postsApi2.getPremiumPlans()
+    setRawPlans(DEFAULT_PLANS_BY_TIER[tier]);
+    postsApi2.getPremiumPlans(tier)
       .then((d) => { if (d.plans?.length) setRawPlans(d.plans); })
       .catch(() => {});
-  }, []);
+  }, [tier]);
 
   const plans = rawPlans.map((p) => ({
     label:   p.label,
