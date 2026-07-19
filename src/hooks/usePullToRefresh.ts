@@ -1,8 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const THRESHOLD = 200;
-const MAX_PULL = 240;
-const ACTIVATE_AT = 70;
+// Порог активации подобран под комфортный жест одним пальцем (не через весь экран).
+const THRESHOLD = 80;
+const MAX_PULL = 110;
+const ACTIVATE_AT = 24;
 
 export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
   const startY = useRef(0);
@@ -48,6 +49,21 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
     return el;
   }, []);
 
+  // Показывает индикатор в состоянии «идёт обновление» — вращающийся спиннер вместо
+  // стрелки — и держит его на экране, пока реально не придут свежие данные.
+  const showRefreshing = useCallback((el: HTMLDivElement) => {
+    el.style.transform = "translateX(-50%) translateY(14px)";
+    el.style.opacity = "1";
+    const arrow = el.querySelector("#__ptr_arrow__") as SVGElement | null;
+    const text = el.querySelector("#__ptr_text__") as HTMLElement | null;
+    if (arrow) {
+      arrow.innerHTML = `<path d="M21 12a9 9 0 1 1-9-9" />`;
+      arrow.style.transform = "rotate(0deg)";
+      arrow.style.animation = "ptr-spin 0.7s linear infinite";
+    }
+    if (text) text.textContent = "Обновление...";
+  }, []);
+
   const resetIndicator = useCallback((el: HTMLDivElement) => {
     el.style.transform = "translateX(-50%) translateY(-60px)";
     el.style.opacity = "0";
@@ -63,6 +79,13 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
   }, []);
 
   useEffect(() => {
+    if (!document.getElementById("__ptr_keyframes__")) {
+      const style = document.createElement("style");
+      style.id = "__ptr_keyframes__";
+      style.textContent = "@keyframes ptr-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }";
+      document.head.appendChild(style);
+    }
+
     // Проверяем, что ни один скролл-контейнер под пальцем не прокручен вниз.
     // Лента скроллится во вложенном div с overflow, поэтому window.scrollY тут не подходит.
     const isScrolledFromTop = (target: EventTarget | null) => {
@@ -78,7 +101,7 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
 
     const onTouchStart = (e: TouchEvent) => {
       // Запускаем жест только если ничего не прокручено вниз от самого верха
-      if (isScrolledFromTop(e.target)) { pulling.current = false; return; }
+      if (refreshing.current || isScrolledFromTop(e.target)) { pulling.current = false; return; }
       startY.current = e.touches[0].clientY;
       startX.current = e.touches[0].clientX;
       pulling.current = true;
@@ -89,8 +112,9 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       const dy = e.touches[0].clientY - startY.current;
       const dx = e.touches[0].clientX - startX.current;
 
-      // Игнорируем, если жест скорее горизонтальный (свайп) или вверх
-      if (dy <= 0 || Math.abs(dx) > Math.abs(dy)) { pulling.current = false; return; }
+      // Игнорируем, если жест вверх или отчётливо горизонтальный (небольшой дрейф
+      // по X в начале свайпа вниз — это нормально, поэтому сравниваем не «в лоб»)
+      if (dy <= 0 || Math.abs(dx) > Math.abs(dy) + 20) { pulling.current = false; return; }
 
       // Если в процессе контейнер оказался прокручен — отменяем (это обычный скролл)
       if (isScrolledFromTop(e.target)) { pulling.current = false; return; }
@@ -106,7 +130,7 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       const progress = clamped / THRESHOLD;
       const el = getIndicator();
 
-      const translateY = Math.min(clamped * 0.55, 52);
+      const translateY = Math.min(clamped * 0.7, 46);
       el.style.transform = `translateX(-50%) translateY(${translateY}px)`;
       el.style.opacity = `${Math.min(progress, 1)}`;
 
@@ -129,10 +153,12 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
 
       if (dy >= THRESHOLD) {
         refreshing.current = true;
+        // Держим индикатор видимым со спиннером на всё время загрузки — и минимум
+        // 500мс, чтобы обновление было заметно, даже если данные пришли мгновенно.
+        showRefreshing(el);
+        const minDelay = new Promise((r) => setTimeout(r, 500));
+        try { await Promise.all([onRefresh(), minDelay]); } catch { /* ignore */ }
         resetIndicator(el);
-
-        try { await onRefresh(); } catch (_e) { /* ignore */ }
-
         refreshing.current = false;
       } else {
         resetIndicator(el);
@@ -148,5 +174,5 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
     };
-  }, [onRefresh, getIndicator, resetIndicator]);
+  }, [onRefresh, getIndicator, resetIndicator, showRefreshing]);
 }
