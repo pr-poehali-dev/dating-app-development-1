@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
+import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 import { postsApi, type Post, type Profile } from "@/lib/api";
 import { FALLBACK_PHOTO, DeleteConfirm, timeAgo } from "@/components/screens/HomeFeedWidgets";
 
@@ -383,18 +384,9 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
         <div className="pb-3" />
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox с pinch-zoom */}
       {lightbox && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.93)", backdropFilter: "blur(8px)" }}
-          onClick={() => setLightbox(false)}>
-          <img src={post.photo_url} className="max-w-full max-h-full object-contain px-4" />
-          <button className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.1)" }}
-            onClick={() => setLightbox(false)}>
-            <Icon name="X" size={20} className="text-white" />
-          </button>
-        </div>
+        <PhotoZoomViewer src={post.photo_url} onClose={() => setLightbox(false)} />
       )}
 
       <style>{`

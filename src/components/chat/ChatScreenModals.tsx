@@ -1,5 +1,6 @@
 import { type Message, type Profile } from "@/lib/api";
-import { haptic, nativeShare } from "@/hooks/useNative";
+import { haptic } from "@/hooks/useNative";
+import { shareProfile } from "@/lib/shareProfile";
 import { VideoCircleRecorder } from "@/components/chat/VideoCircleRecorder";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import VideoCall from "@/components/VideoCall";
@@ -120,8 +121,9 @@ export function ChatScreenModals({
             profilesApi.subscribeToggle(partnerId).then(r => setSubscribed(r.subscribed)).catch(() => setSubscribed(!next));
           }}
           onShare={async () => {
+            if (!partnerId) return;
             haptic("light");
-            await nativeShare({ title: `${partnerName} — Полутон`, text: `Познакомься с ${partnerName} в Полутон!`, url: "https://полуто-н.рф" });
+            await shareProfile(partnerId, partnerName);
           }}
         />
       )}

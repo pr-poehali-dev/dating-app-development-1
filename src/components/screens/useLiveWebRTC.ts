@@ -1,19 +1,21 @@
 import { useRef, useCallback } from "react";
 import { liveApi } from "@/lib/api";
 
-// Надёжные публичные STUN серверы (без бесплатных TURN — они лагают)
+// STUN + TURN. TURN нужен, чтобы соединение устанавливалось у зрителей за
+// строгим NAT/мобильным оператором — без него трансляция часто «висит»/лагает.
 export const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
   { urls: "stun:stun.cloudflare.com:3478" },
+  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
 ];
 
 // Лимиты битрейта (bps)
-const VIDEO_MAX_BITRATE = 1_200_000;  // 1.2 Mbps — достаточно для 720p
-const AUDIO_MAX_BITRATE = 64_000;     // 64 kbps
+const VIDEO_MAX_BITRATE = 1_500_000;  // 1.5 Mbps — чёткое 720p без перегруза сети
+const AUDIO_MAX_BITRATE = 96_000;     // 96 kbps
 
 async function applyBitrateLimit(pc: RTCPeerConnection) {
   const senders = pc.getSenders();
@@ -27,6 +29,9 @@ async function applyBitrateLimit(pc: RTCPeerConnection) {
       if (sender.track.kind === "video") {
         params.encodings[0].maxBitrate = VIDEO_MAX_BITRATE;
         params.encodings[0].scaleResolutionDownBy = 1.0;
+        // При слабой сети жертвуем разрешением, но сохраняем плавность —
+        // это убирает рывки/лаги в кадре.
+        params.degradationPreference = "maintain-framerate";
       } else if (sender.track.kind === "audio") {
         params.encodings[0].maxBitrate = AUDIO_MAX_BITRATE;
       }

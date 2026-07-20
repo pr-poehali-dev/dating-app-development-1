@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import Icon from "@/components/ui/icon";
+import { isStandaloneApp } from "@/lib/isStandalone";
 
 const STORAGE_KEY = "poluton_cookie_consent_v2";
 
@@ -45,6 +46,9 @@ export function CookieConsent() {
   const [functional, setFunctional] = useState(true);
 
   useEffect(() => {
+    // В установленном приложении (APK/PWA) cookie-баннер не показываем — он нужен
+    // только на сайте в браузере.
+    if (isStandaloneApp()) return;
     const consent = localStorage.getItem(STORAGE_KEY);
     if (!consent) {
       const timer = setTimeout(() => setVisible(true), 900);

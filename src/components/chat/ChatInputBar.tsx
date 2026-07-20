@@ -52,13 +52,15 @@ export function ChatInputBar({
 
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
 
+  // Кнопки «Видеозвонок» и «Награда» скрыты из меню «+» по требованию.
+  void onOpenVideoCall;
+  void onOpenAwardPicker;
+
   const plusItems = [
     { icon: "Image",  label: "Галерея",    action: () => { setShowPhotoMenu(true); setTimeout(onTogglePlus, 300); }, color: "#3B82F6" },
     { icon: "Timer",  label: "Исчезает",   action: onOpenVanishPicker,                                   color: "#9B59B6" },
     { icon: "MapPin", label: "Локация",    action: onSendLocation, loading: geoLoading,                  color: "#10B981" },
     { icon: "Circle", label: "Кружок",     action: onOpenVideoCircle,                                    color: "#FF6B35" },
-    { icon: "Video",  label: "Видеозвонок", action: onOpenVideoCall,                                     color: "#EF4444" },
-    { icon: "Award",  label: "Награда",    action: onOpenAwardPicker,                                    color: "#FCD34D" },
   ] as const;
 
   return (

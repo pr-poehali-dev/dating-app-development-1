@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { authApi, notificationsApi, matchesApi, messagesApi, type User, type LiveStream } from "@/lib/api";
+import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, type User, type LiveStream, type Profile } from "@/lib/api";
+import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import SplashScreen from "@/components/screens/SplashScreen";
@@ -180,6 +181,19 @@ export default function Index() {
   const [animKey, setAnimKey] = useState(0);
   const [joinStream, setJoinStream] = useState<LiveStream | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // Deep-link на профиль по ссылке ?user=ID («Поделиться профилем»)
+  const [deepLinkProfile, setDeepLinkProfile] = useState<Profile | null>(null);
+  useEffect(() => {
+    if (!currentUser) return;
+    const params = new URLSearchParams(window.location.search);
+    const uid = parseInt(params.get("user") || "", 10);
+    if (!uid || uid === currentUser.id) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    postsApi.getUserProfile(uid)
+      .then((d) => { if (d.profile) setDeepLinkProfile(d.profile); })
+      .catch(() => {});
+  }, [currentUser]);
 
   // Обработка редиректа после оплаты Premium
   useEffect(() => {
@@ -428,6 +442,15 @@ export default function Index() {
             </div>
           </div>
         </div>
+        {deepLinkProfile && (
+          <DiscoverProfileModal
+            profile={deepLinkProfile}
+            onClose={() => setDeepLinkProfile(null)}
+            onLike={() => {}}
+            onOpenChat={(id) => { setDeepLinkProfile(null); openChat(id); }}
+            onGoToChats={() => { setDeepLinkProfile(null); goToChats(); }}
+          />
+        )}
       </div>
     );
   }
@@ -455,6 +478,15 @@ export default function Index() {
           </div>
         )}
       </div>
+      {deepLinkProfile && (
+        <DiscoverProfileModal
+          profile={deepLinkProfile}
+          onClose={() => setDeepLinkProfile(null)}
+          onLike={() => {}}
+          onOpenChat={(id) => { setDeepLinkProfile(null); openChat(id); }}
+          onGoToChats={() => { setDeepLinkProfile(null); goToChats(); }}
+        />
+      )}
     </div>
   );
 }

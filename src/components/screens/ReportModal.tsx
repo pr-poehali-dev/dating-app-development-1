@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { authApi, blocksApi, type Profile } from "@/lib/api";
+import { shareProfile } from "@/lib/shareProfile";
 
 const PROFILES_FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
@@ -92,10 +93,9 @@ export function ProfileMenuSheet({ profile, onClose, onReport }: {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
 
-  const shareProfile = () => {
-    const url = `${window.location.origin}/?user=${profile.id}`;
-    if (navigator.share) navigator.share({ title: profile.name, url });
-    else { navigator.clipboard?.writeText(url); showToast("Ссылка скопирована!"); }
+  const doShareProfile = async () => {
+    const res = await shareProfile(profile.id, profile.name);
+    if (res === "copied") showToast("Ссылка скопирована!");
     onClose();
   };
 
@@ -138,7 +138,7 @@ export function ProfileMenuSheet({ profile, onClose, onReport }: {
       icon: "Share2", label: "Поделиться профилем",
       sub: "Отправить ссылку на анкету",
       danger: false,
-      action: shareProfile
+      action: doShareProfile
     },
   ];
 

@@ -268,6 +268,42 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     if (dy < -40 && photoIdx > 0) setPhotoIdx(i => i - 1);
   };
 
+  // ─── Свайп влево/вправо для перехода к другому профилю (только на странице поиска) ───
+  // Работает, когда передан массив profiles. Плавно уводит текущую карточку в сторону,
+  // затем переключает индекс и возвращает контент на место.
+  const swipeNavRef = useRef({ x: 0, y: 0, active: false });
+  const canSwitchProfiles = !!(profiles && profiles.length > 1);
+
+  const goToProfile = (dir: "next" | "prev") => {
+    if (!profiles) return;
+    const target = dir === "next" ? currentIdx + 1 : currentIdx - 1;
+    if (target < 0 || target >= profiles.length) return;
+    setSwipeAnim(dir === "next" ? "left" : "right");
+    setTimeout(() => {
+      setCurrentIdx(target);
+      setPhotoIdx(0);
+      // мгновенно ставим карточку с противоположной стороны и возвращаем на место
+      setSwipeAnim(dir === "next" ? "right" : "left");
+      requestAnimationFrame(() => requestAnimationFrame(() => setSwipeAnim("idle")));
+    }, 240);
+  };
+
+  const navTouchStart = (e: React.TouchEvent) => {
+    if (!canSwitchProfiles) return;
+    swipeNavRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, active: true };
+  };
+  const navTouchEnd = (e: React.TouchEvent) => {
+    if (!canSwitchProfiles || !swipeNavRef.current.active) return;
+    swipeNavRef.current.active = false;
+    const dx = e.changedTouches[0].clientX - swipeNavRef.current.x;
+    const dy = e.changedTouches[0].clientY - swipeNavRef.current.y;
+    // Горизонтальный и достаточно длинный жест
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      if (dx < 0) goToProfile("next");
+      else goToProfile("prev");
+    }
+  };
+
   void onGoToChats;
 
   return (
@@ -303,6 +339,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           opacity: swipeAnim === "idle" ? 1 : 0,
           scrollSnapType: "none",
         }}
+        onTouchStart={navTouchStart}
+        onTouchEnd={navTouchEnd}
       >
         <DiscoverHeartAnim visible={heartAnim} />
 

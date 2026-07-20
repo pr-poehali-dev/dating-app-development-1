@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 
 // ─── VanishPhoto ──────────────────────────────────────────────────────────────
 export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
@@ -72,18 +73,11 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
       </div>
 
       {lightbox && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.93)", backdropFilter: "blur(14px)" }}
-          onClick={() => setLightbox(false)}>
-          <button className="absolute top-5 right-5 glass-card p-2.5"
-            onClick={() => setLightbox(false)}>
-            <Icon name="X" size={20} className="text-white" />
-          </button>
-          <ProtectedImage src={url} className="rounded-2xl"
-            watermark="Полутон · скриншот запрещён"
-            style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
-            onClick={e => e.stopPropagation()} />
-        </div>
+        <PhotoZoomViewer
+          src={url}
+          watermark="Полутон · скриншот запрещён"
+          onClose={() => setLightbox(false)}
+        />
       )}
     </>
   );

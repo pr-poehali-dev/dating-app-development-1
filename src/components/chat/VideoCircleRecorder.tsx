@@ -34,11 +34,13 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
         echoCancellation: true,
         noiseSuppression: true,
       };
-      // Пробуем от лучшего качества к самому простому — жёсткие min/frameRate
-      // на слабых камерах дают OverconstrainedError, поэтому идём с запасом.
+      // Кружок в чате маленький (~260px), поэтому снимаем в 640×640/30fps —
+      // это чётко для кружка, но даёт лёгкий файл, который быстро отправляется
+      // и не лагает при воспроизведении. Слишком высокое разрешение = тяжёлое
+      // видео и подтормаживания.
       const attempts: MediaStreamConstraints[] = [
-        { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 }, frameRate: { ideal: 30 } }, audio },
-        { video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } }, audio },
+        { video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 }, frameRate: { ideal: 30 } }, audio },
+        { video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 480 } }, audio },
         { video: { facingMode: "user" }, audio },
         { video: true, audio: true },
       ];
@@ -84,11 +86,12 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
     setResultMime(mimeType.split(";")[0]);
     chunksRef.current = [];
 
-    // Максимальный битрейт: 8 Мбит/с видео + 192 кбит/с аудио
+    // Умеренный битрейт: 2 Мбит/с видео + 128 кбит/с аудио — достаточно для
+    // чёткого кружка, но файл лёгкий и не лагает при отправке/просмотре.
     const mr = new MediaRecorder(streamRef.current, {
       mimeType,
-      videoBitsPerSecond: 8_000_000,
-      audioBitsPerSecond: 192_000,
+      videoBitsPerSecond: 2_000_000,
+      audioBitsPerSecond: 128_000,
     });
     mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     mr.onstop = () => {

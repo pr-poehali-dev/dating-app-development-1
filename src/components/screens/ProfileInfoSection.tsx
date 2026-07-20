@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { useBackHandler } from "@/hooks/backStack";
 import { type Profile, type MyGift } from "@/lib/api";
 import { GiftsGrid } from "@/components/gifts/GiftsGrid";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 import { ZodiacBadge } from "@/components/screens/profile/ZodiacBanner";
 
@@ -338,22 +338,13 @@ export function ProfileInfoSection({
         </button>
       </div>
 
-      {/* Lightbox просмотр фото — через портал в body, чтобы перекрыть таб-бар */}
-      {lightboxUrl && createPortal(
-        <div className="fixed inset-0 flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)", zIndex: 2147483000 }}
-          onClick={() => setLightboxUrl(null)}>
-          <button className="absolute right-5 glass-card p-2.5 z-10"
-            style={{ top: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
-            onClick={() => setLightboxUrl(null)}>
-            <Icon name="X" size={20} className="text-white" />
-          </button>
-          <ProtectedImage src={lightboxUrl} className="rounded-2xl"
-            watermark="Полутон · скриншот запрещён"
-            style={{ maxWidth: "95vw", maxHeight: "90dvh", objectFit: "contain" }}
-            onClick={e => e.stopPropagation()} />
-        </div>,
-        document.body
+      {/* Lightbox просмотр фото с pinch-zoom */}
+      {lightboxUrl && (
+        <PhotoZoomViewer
+          src={lightboxUrl}
+          watermark="Полутон · скриншот запрещён"
+          onClose={() => setLightboxUrl(null)}
+        />
       )}
     </div>
   );

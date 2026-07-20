@@ -156,8 +156,10 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
       if (t.kind === "video") {
         const params = sender.getParameters();
         if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-        params.encodings[0].maxBitrate = 2_500_000;
+        params.encodings[0].maxBitrate = 2_000_000;
         params.encodings[0].maxFramerate = 30;
+        // При слабой сети снижаем разрешение, но держим плавность — меньше рывков.
+        params.degradationPreference = "maintain-framerate";
         sender.setParameters(params).catch(() => {});
       }
     });

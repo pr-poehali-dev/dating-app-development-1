@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
+import { PinchZoom } from "@/components/ui/PinchZoom";
 import { useBackHandler } from "@/hooks/backStack";
 
 interface ProfileLightboxProps {
@@ -97,17 +98,19 @@ export function ProfileLightbox({ photos, idx, onClose, onSetIdx }: ProfileLight
         {/* Фото */}
         <div className="flex-1 flex items-center justify-center min-h-0" onClick={onClose}>
           <div style={slideStyle} onClick={e => e.stopPropagation()}>
-            <ProtectedImage
-              src={photos[idx]}
-              className="rounded-2xl"
-              hideOnBlur={false}
-              style={{
-                maxHeight: "72dvh",
-                maxWidth: "96vw",
-                objectFit: "contain",
-                boxShadow: "0 16px 60px rgba(0,0,0,0.7)",
-              }}
-            />
+            <PinchZoom className="flex items-center justify-center">
+              <ProtectedImage
+                src={photos[idx]}
+                className="rounded-2xl"
+                hideOnBlur={false}
+                style={{
+                  maxHeight: "72dvh",
+                  maxWidth: "96vw",
+                  objectFit: "contain",
+                  boxShadow: "0 16px 60px rgba(0,0,0,0.7)",
+                }}
+              />
+            </PinchZoom>
           </div>
         </div>
 
