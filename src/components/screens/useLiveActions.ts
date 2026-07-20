@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { liveApi, type LiveStream, type LiveMessage } from "@/lib/api";
+import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 
 interface UseLiveActionsParams {
   isStreamingRef: React.MutableRefObject<boolean>;
@@ -133,7 +134,11 @@ export function useLiveActions({
     if (!streamTitle.trim()) return;
     setStreamError("");
 
+    const prereq = checkMediaPrereqs("микрофону и камере");
+    if (prereq) { setStreamError(prereq); return; }
+
     let mediaStream: MediaStream | null = null;
+    let lastErr: unknown = null;
     const attempts: MediaStreamConstraints[] = [
       {
         // 720p/30fps — оптимально для мобильного стриминга
@@ -159,11 +164,11 @@ export function useLiveActions({
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
         break;
-      } catch (e) { void e; }
+      } catch (e) { lastErr = e; }
     }
 
     if (!mediaStream) {
-      setStreamError("Не удалось открыть камеру. Разреши доступ к камере в браузере (🔒 в адресной строке) и попробуй снова.");
+      setStreamError(await describeMediaError(lastErr, "микрофону и камере", "camera"));
       return;
     }
 

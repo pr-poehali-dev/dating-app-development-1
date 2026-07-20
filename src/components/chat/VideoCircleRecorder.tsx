@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "@/components/ui/icon";
+import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 
 const MAX_SECS = 60;
 
@@ -24,32 +25,44 @@ export function VideoCircleRecorder({ onSend, onClose }: Props) {
 
   // Запускаем камеру сразу
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            width:  { ideal: 1920, min: 720 },
-            height: { ideal: 1920, min: 720 },
-            frameRate: { ideal: 60, min: 30 },
-          },
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            sampleRate: 48000,
-            channelCount: 2,
-          },
-        });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.play();
-        }
-      } catch {
-        setError("Нет доступа к камере или микрофону");
+      const prereq = checkMediaPrereqs("микрофону и камере");
+      if (prereq) { setError(prereq); return; }
+
+      const audio: MediaTrackConstraints = {
+        echoCancellation: true,
+        noiseSuppression: true,
+      };
+      // Пробуем от лучшего качества к самому простому — жёсткие min/frameRate
+      // на слабых камерах дают OverconstrainedError, поэтому идём с запасом.
+      const attempts: MediaStreamConstraints[] = [
+        { video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 1280 }, frameRate: { ideal: 30 } }, audio },
+        { video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } }, audio },
+        { video: { facingMode: "user" }, audio },
+        { video: true, audio: true },
+      ];
+      let stream: MediaStream | null = null;
+      let lastErr: unknown = null;
+      for (const constraints of attempts) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          break;
+        } catch (e) { lastErr = e; }
+      }
+      if (cancelled) { stream?.getTracks().forEach(t => t.stop()); return; }
+      if (!stream) {
+        setError(await describeMediaError(lastErr, "микрофону и камере", "camera"));
+        return;
+      }
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
       }
     })();
     return () => {
+      cancelled = true;
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (timerRef.current) clearInterval(timerRef.current);
     };
