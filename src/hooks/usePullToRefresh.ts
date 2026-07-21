@@ -142,6 +142,9 @@ export function usePullToRefresh(onRefresh: () => void | Promise<void>) {
       if (isScrolledFromTop(e.target)) { pulling.current = false; return; }
       if (dy < ACTIVATE_AT) return;
 
+      // Если браузер уже начал скролл и событие нельзя отменить — не мешаем ему
+      // (иначе консоль ругается «Ignored attempt to cancel a touchmove event»).
+      if (!e.cancelable) { pulling.current = false; clearPull(); return; }
       e.preventDefault();
 
       const adjusted = dy - ACTIVATE_AT;
