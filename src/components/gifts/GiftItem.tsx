@@ -1,7 +1,8 @@
 import AnimatedGift from "./AnimatedGift";
+import MarketGiftIcon from "./MarketGiftIcon";
 import type { GiftSceneCategory } from "./GiftScenes";
 
-type GiftCategory = GiftSceneCategory;
+type GiftCategory = GiftSceneCategory | "market";
 type Rarity = "common" | "rare" | "epic" | "legendary";
 
 interface GiftItemProps {
@@ -11,13 +12,20 @@ interface GiftItemProps {
   size?: number;
   rarity?: Rarity;
   selected?: boolean;
+  /** Эмодзи — для подарков категории "market" (как в Telegram) */
+  emoji?: string;
+  /** Показывать зелёную плашку «Маркет» */
+  marketBadge?: boolean;
 }
 
 /**
- * Универсальный подарок — живой анимированный SVG-персонаж с фоном
- * (в стиле Telegram). Все категории теперь оживлены по частям.
+ * Универсальный подарок. Для обычных категорий — живой анимированный SVG-персонаж
+ * (в стиле Telegram). Для категории "market" — крупное эмодзи на градиентном фоне.
  */
-export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common", selected = false }: GiftItemProps) {
+export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common", selected = false, emoji, marketBadge = true }: GiftItemProps) {
   void animKey; void rarity;
-  return <AnimatedGift size={size} category={category} variant={variant} withBackground burst={selected} />;
+  if (category === "market" && emoji) {
+    return <MarketGiftIcon emoji={emoji} size={size} badge={marketBadge} />;
+  }
+  return <AnimatedGift size={size} category={category as GiftSceneCategory} variant={variant} withBackground burst={selected} />;
 }

@@ -48,9 +48,75 @@ export const GIFTS = [
   { id: 38, name: "Звезда удачи",   emoji: "⭐", price: 6990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 5 },
   { id: 39, name: "Королевская корона", emoji: "👑", price: 14990, anim: "gift-animated",   rarity: "legendary", category: "special", variant: 6 },
   { id: 40, name: "Дракон",         emoji: "🐉", price: 29990, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 7 },
+  /* ─── Маркет (эмодзи-подарки, как в Telegram) ─── */
+  { id: 101, name: "Мишка",          emoji: "🧸", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 102, name: "Сердце с бантом", emoji: "💝", price: 15,   anim: "gift-pulse",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 103, name: "Подарок",        emoji: "🎁", price: 25,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 104, name: "Роза",           emoji: "🌹", price: 25,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 105, name: "Торт",           emoji: "🎂", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 106, name: "Букет",          emoji: "💐", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 107, name: "Ракета",         emoji: "🚀", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 108, name: "Кубок",          emoji: "🏆", price: 100,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 109, name: "Кольцо",         emoji: "💍", price: 100,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 110, name: "Алмаз",          emoji: "💎", price: 100,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 111, name: "Шампанское",     emoji: "🍾", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
+  { id: 112, name: "Факел",          emoji: "🔥", price: 385,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 113, name: "Мороженое",      emoji: "🍦", price: 399,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 114, name: "Статуя Свободы", emoji: "🗽", price: 525,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 115, name: "Пёсик",          emoji: "🐕", price: 650,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 116, name: "Лапша",          emoji: "🍜", price: 379,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 117, name: "Фламинго",       emoji: "🦩", price: 370,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 118, name: "Эскимо",         emoji: "🍫", price: 375,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 119, name: "Леденец",        emoji: "🍭", price: 409,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 120, name: "Рюкзак",         emoji: "🎒", price: 495,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 121, name: "Какашка",        emoji: "💩", price: 500,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 122, name: "Клевер",         emoji: "🍀", price: 555,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 123, name: "8 Марта",        emoji: "🌷", price: 408,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 124, name: "Носок",          emoji: "🧦", price: 369,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 125, name: "Снеговик",       emoji: "⛄", price: 355,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 126, name: "Леденец-трость", emoji: "🍬", price: 375,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 127, name: "Полумесяц",      emoji: "🕌", price: 600,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 128, name: "Торт с вишней",  emoji: "🍰", price: 550,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 129, name: "Пряник-сердце",  emoji: "🫀", price: 500,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 130, name: "С Днём Рождения", emoji: "🎉", price: 600,  anim: "gift-float",  rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 131, name: "Бенгальский огонь", emoji: "🎇", price: 489, anim: "gift-float", rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 132, name: "Змейка",         emoji: "🐍", price: 390,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 133, name: "Колпак шута",    emoji: "🎭", price: 484,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 134, name: "Книга магии",    emoji: "📕", price: 540,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 135, name: "Пасхальная корзина", emoji: "🧺", price: 600, anim: "gift-float", rarity: "epic",  category: "market", variant: 0, market: true },
+  { id: 136, name: "Букет денег",    emoji: "💰", price: 522,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 137, name: "Медаль",         emoji: "🥇", price: 500,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 138, name: "Лайк",           emoji: "❤️", price: 625,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 139, name: "Тортик",         emoji: "🍰", price: 626,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 140, name: "Меч джедая",     emoji: "⚔️", price: 650,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 141, name: "Пряничный человечек", emoji: "🍪", price: 484, anim: "gift-float", rarity: "epic", category: "market", variant: 0, market: true },
+  { id: 142, name: "Ожерелье",       emoji: "📿", price: 666,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 143, name: "Календарь",      emoji: "📅", price: 615,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 144, name: "Банка сердец",   emoji: "🫙", price: 575,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 145, name: "Пионы",          emoji: "🌸", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 146, name: "Обезьянка",      emoji: "🐵", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 147, name: "Тамагочи",       emoji: "🎮", price: 390,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 148, name: "Какао",          emoji: "☕", price: 399,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 149, name: "Мухомор",        emoji: "🍄", price: 625,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 150, name: "Глинтвейн",      emoji: "🍷", price: 460,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 151, name: "Горшок с золотом", emoji: "🪙", price: 485, anim: "gift-float",  rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 152, name: "Глаз",           emoji: "👁️", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 153, name: "Сакура",         emoji: "🌸", price: 817,  anim: "gift-float",   rarity: "legendary", category: "market", variant: 0, market: true },
+  { id: 154, name: "Пасхальное яйцо", emoji: "🥚", price: 427, anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 155, name: "Дневник",        emoji: "📔", price: 487,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 156, name: "Венок",          emoji: "🎄", price: 376,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
+  { id: 157, name: "Шкатулка",       emoji: "🎁", price: 438,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 158, name: "Бабочка",        emoji: "🎀", price: 560,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 159, name: "Шляпа мага",     emoji: "🎩", price: 600,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 160, name: "Клубника в шоколаде", emoji: "🍓", price: 769, anim: "gift-float", rarity: "legendary", category: "market", variant: 0, market: true },
+  { id: 161, name: "Капкейк",        emoji: "🧁", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 162, name: "Конфеты",        emoji: "🍫", price: 956,  anim: "gift-float",   rarity: "legendary", category: "market", variant: 0, market: true },
+  { id: 163, name: "Зелье",          emoji: "🧪", price: 490,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
+  { id: 164, name: "Колпак Санты",   emoji: "🎅", price: 400,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
 ];
 
 const CATEGORIES = [
+  { id: "market",  label: "Маркет",     emoji: "🛍️" },
   { id: "special", label: "Особые",     emoji: "✨" },
   { id: "heart",   label: "Сердца",     emoji: "❤️" },
   { id: "rose",    label: "Розы",       emoji: "🌹" },
@@ -149,7 +215,7 @@ export function ProfileGiftSheet({
                       {rs.label}
                     </span>
                   )}
-                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={sel} />
+                  <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={sel} emoji={gift.emoji} />
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
                   </p>
@@ -169,7 +235,7 @@ export function ProfileGiftSheet({
             return (
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
-                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
+                <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} emoji={gift.emoji} marketBadge={false} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
                   {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}

@@ -30,11 +30,13 @@ function ChatGiftMessage({ text, out }: { text: string; out: boolean }) {
         <div className="flex items-center justify-center" style={{ width: 80, height: 80 }}>
           {giftDef ? (
             <GiftItem
-              category={giftDef.category as "heart" | "rose" | "bear" | "ring" | "special"}
+              category={giftDef.category as "heart" | "rose" | "bear" | "ring" | "special" | "market"}
               variant={giftDef.variant ?? 0}
               animKey={giftDef.anim}
               size={80}
               rarity={rarity}
+              emoji={giftDef.emoji}
+              marketBadge={false}
             />
           ) : (
             <span className="text-5xl">🎁</span>
@@ -56,6 +58,7 @@ function ChatGiftMessage({ text, out }: { text: string; out: boolean }) {
             category: giftDef.category,
             variant: giftDef.variant ?? 0,
             anim: giftDef.anim,
+            emoji: giftDef.emoji,
           }}
           onClose={() => setShowDetail(false)}
         />

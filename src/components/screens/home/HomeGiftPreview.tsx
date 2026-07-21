@@ -67,7 +67,7 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }:
         style={{ background: "var(--spark-card)", border: `1px solid ${rs.border}`, boxShadow: `0 0 40px ${rs.border}` }}
         onClick={e => e.stopPropagation()}>
         <div className="w-36 h-36 flex items-center justify-center">
-          <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"} variant={gift.variant ?? 0} animKey={gift.anim} size={144} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} />
+          <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={144} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} emoji={gift.emoji} marketBadge={false} />
         </div>
         <div className="text-center">
           <p className="text-white font-bold text-xl">{gift.name}</p>

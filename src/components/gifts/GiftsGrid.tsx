@@ -51,10 +51,11 @@ export function GiftsGrid({
         {gifts.map((gift) => {
           const rs = RARITY_COLORS[gift.gift_rarity] || RARITY_COLORS.common;
           const giftDef = GIFTS.find(g => g.id === gift.gift_id);
-          const category = (gift.gift_category || giftDef?.category || "heart") as "heart" | "rose" | "bear" | "ring" | "special";
+          const category = (gift.gift_category || giftDef?.category || "heart") as "heart" | "rose" | "bear" | "ring" | "special" | "market";
           const variant = gift.gift_variant ?? giftDef?.variant ?? 0;
           const rarity = (gift.gift_rarity || "common") as "common" | "rare" | "epic" | "legendary";
           const animKey = giftDef?.anim ?? "gift-float";
+          const emoji = gift.gift_emoji || giftDef?.emoji;
 
           return (
             <button
@@ -68,6 +69,8 @@ export function GiftsGrid({
                 animKey={animKey}
                 size={56}
                 rarity={rarity}
+                emoji={emoji}
+                marketBadge={false}
               />
               <p className="text-white text-xs font-semibold text-center leading-tight">{gift.gift_name}</p>
               {showSender && gift.sender_name && (
@@ -88,6 +91,7 @@ export function GiftsGrid({
             category: selected.gift_category || selectedDef.category,
             variant: selected.gift_variant ?? selectedDef.variant ?? 0,
             anim: selectedDef.anim,
+            emoji: selected.gift_emoji || selectedDef.emoji,
             senderName: selected.sender_name,
             sentAt: selected.created_at,
           }}

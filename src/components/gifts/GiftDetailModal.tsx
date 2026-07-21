@@ -9,6 +9,7 @@ interface GiftDetail {
   category: string;
   variant: number;
   anim: string;
+  emoji?: string;
   senderName?: string;
   sentAt?: string;
 }
@@ -36,11 +37,13 @@ export function GiftDetailModal({ gift, onClose }: Props) {
         {/* Анимированный подарок */}
         <div className="w-36 h-36 flex items-center justify-center">
           <GiftItem
-            category={gift.category as "heart" | "rose" | "bear" | "ring" | "special"}
+            category={gift.category as "heart" | "rose" | "bear" | "ring" | "special" | "market"}
             variant={gift.variant}
             animKey={gift.anim}
             size={144}
             rarity={rarity}
+            emoji={gift.emoji}
+            marketBadge={false}
           />
         </div>
 
