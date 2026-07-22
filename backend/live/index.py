@@ -1,5 +1,6 @@
 import json, os, psycopg2
 from datetime import datetime, timezone
+from moderation import moderate_text, score_to_priority, push_to_queue, get_setting
 
 def get_db():
     schema = os.environ.get("MAIN_DB_SCHEMA", "public")
@@ -175,11 +176,33 @@ def handler(event: dict, context) -> dict:
             text = (body.get("text") or "").strip()
             if not stream_id or not text:
                 return err("stream_id and text required")
+            text = text[:300]
             with conn.cursor() as cur:
+                # ── AI-модерация текста чата эфира ──
+                ai_flag = False
+                if get_setting(cur, 'text_moderation_enabled', 'true') == 'true':
+                    mod = moderate_text(text)
+                    if mod['score'] > 0:
+                        block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                        review_th = float(get_setting(cur, 'review_threshold', '40'))
+                        if mod['score'] >= block_th:
+                            push_to_queue(cur, 'message', None, user["id"], text_snippet=text[:500],
+                                          ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                          ai_reason='Автоблокировка (эфир): ' + ', '.join(mod['categories']),
+                                          priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                            cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user["id"],))
+                            conn.commit()
+                            return err("Сообщение заблокировано автоматической модерацией", 403)
+                        if mod['score'] >= review_th:
+                            ai_flag = True
+                            push_to_queue(cur, 'message', None, user["id"], text_snippet=text[:500],
+                                          ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                                          ai_reason='На проверку (эфир): ' + ', '.join(mod['categories']),
+                                          priority=score_to_priority(mod['score']), status='needs_review', reviewed_by='ai')
                 cur.execute(
-                    """INSERT INTO live_messages (stream_id, user_id, text, author_name, author_photo)
-                       VALUES (%s, %s, %s, %s, %s) RETURNING id, created_at""",
-                    (stream_id, user["id"], text[:300], user["name"] or "", user["photo_url"] or "")
+                    """INSERT INTO live_messages (stream_id, user_id, text, author_name, author_photo, ai_flagged)
+                       VALUES (%s, %s, %s, %s, %s, %s) RETURNING id, created_at""",
+                    (stream_id, user["id"], text, user["name"] or "", user["photo_url"] or "", ai_flag)
                 )
                 mid, created_at = cur.fetchone()
                 conn.commit()

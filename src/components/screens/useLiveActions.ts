@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { liveApi, type LiveStream, type LiveMessage } from "@/lib/api";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 
@@ -212,7 +213,14 @@ export function useLiveActions({
         if (prev.some((m) => m.id === res.message.id)) return prev;
         return [...prev, res.message];
       });
-    } catch (e: unknown) { void e; }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("модерац")) {
+        toast.error("Сообщение отклонено модерацией", {
+          description: "В эфире запрещены мат, оскорбления и спам",
+        });
+      }
+    }
   }, [activeStream, chatInput, setChatInput, setChatMsgs]);
 
   return {
