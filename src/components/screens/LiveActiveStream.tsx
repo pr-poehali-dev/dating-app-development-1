@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { type LiveStream, type LiveMessage } from "@/lib/api";
+import { useStreamFrameModeration } from "./useStreamFrameModeration";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
@@ -98,6 +99,14 @@ export function LiveActiveStream({
   const [viewerMuted, setViewerMuted] = useState(true);
   const [connectTimeout, setConnectTimeout] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // AI-модерация кадров эфира (только для стримера)
+  useStreamFrameModeration({
+    enabled: isStreaming,
+    streamId: isStreaming ? activeStream.id : null,
+    videoRef,
+    onBlocked: onLeave,
+  });
 
   const tapToPlay = () => {
     const el = videoRef.current;

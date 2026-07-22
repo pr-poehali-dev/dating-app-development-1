@@ -849,6 +849,12 @@ export const liveApi = {
       body: JSON.stringify({ stream_id, text }),
     }),
 
+  checkFrame: (stream_id: number, image: string) =>
+    req<{ ok: boolean; action: "ok" | "warn" | "blocked" | "skip"; reason?: string }>("live", "check_frame", {
+      method: "POST",
+      body: JSON.stringify({ stream_id, image }),
+    }),
+
   poll: (stream_id: number, last_msg_id: number) =>
     req<{ stream: { id: number; status: string; viewers_count: number; hearts_count: number }; messages: LiveMessage[] }>(
       "live", "poll", {}, { stream_id: String(stream_id), last_msg_id: String(last_msg_id) }

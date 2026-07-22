@@ -1,6 +1,6 @@
-import json, os, psycopg2
+import json, os, base64, uuid, psycopg2
 from datetime import datetime, timezone
-from moderation import moderate_text, score_to_priority, push_to_queue, get_setting
+from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
 
 def get_db():
     schema = os.environ.get("MAIN_DB_SCHEMA", "public")
@@ -36,7 +36,7 @@ def err(msg, code=400):
     return {"statusCode": code, "headers": CORS, "body": json.dumps({"error": msg})}
 
 def handler(event: dict, context) -> dict:
-    """Live streaming API: list, start, end, join, leave, heart, chat, poll, signal_send, signal_poll"""
+    """Live streaming API: list, start, end, join, leave, heart, check_frame, chat, poll, signal_send, signal_poll"""
     if event.get("httpMethod") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS, "body": ""}
 
@@ -167,6 +167,80 @@ def handler(event: dict, context) -> dict:
                 row = cur.fetchone()
                 conn.commit()
             return ok({"hearts_count": row[0] if row else 0})
+
+        # ── check_frame ───────────────────────────────────────────────────────
+        # Стример периодически шлёт кадр видео на AI-проверку (NSFW/насилие).
+        if action == "check_frame":
+            if not user:
+                return err("Unauthorized", 401)
+            stream_id = int(body.get("stream_id") or 0)
+            image_data = body.get("image") or ""
+            if not stream_id or not image_data:
+                return err("stream_id and image required")
+            with conn.cursor() as cur:
+                # Проверяем, что это активный эфир именно этого пользователя
+                cur.execute(
+                    "SELECT id FROM live_streams WHERE id=%s AND user_id=%s AND status='active'",
+                    (stream_id, user["id"])
+                )
+                if not cur.fetchone():
+                    return err("Stream not found", 404)
+
+                if get_setting(cur, 'photo_moderation_enabled', 'true') != 'true':
+                    return ok({"ok": True, "action": "skip"})
+
+                # Декодируем и грузим кадр в S3
+                try:
+                    if ',' in image_data:
+                        image_data = image_data.split(',', 1)[1]
+                    image_bytes = base64.b64decode(image_data)
+                except Exception:
+                    return err("Bad image")
+                if len(image_bytes) > 5 * 1024 * 1024:
+                    return err("Frame too large")
+
+                import boto3
+                key = f"live_frames/{stream_id}/{uuid.uuid4()}.jpg"
+                s3 = boto3.client('s3',
+                    endpoint_url='https://bucket.poehali.dev',
+                    aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                    aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+                s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType='image/jpeg')
+                cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+                mod = moderate_photo(cdn_url, purpose='general')
+                if mod['score'] <= 0:
+                    return ok({"ok": True, "action": "ok"})
+
+                block_th = float(get_setting(cur, 'stream_block_threshold', get_setting(cur, 'auto_block_threshold', '85')))
+                review_th = float(get_setting(cur, 'review_threshold', '40'))
+
+                if mod['score'] >= block_th:
+                    # Завершаем эфир и фиксируем нарушение
+                    cur.execute(
+                        "UPDATE live_streams SET status='ended', ended_at=NOW() WHERE id=%s",
+                        (stream_id,)
+                    )
+                    push_to_queue(cur, 'stream', stream_id, user["id"], photo_url=cdn_url,
+                                  ai_verdict='violation', ai_score=mod['score'], ai_categories=mod['categories'],
+                                  ai_reason=mod['reason'] or 'Автоблокировка кадра эфира',
+                                  priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                    cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (user["id"],))
+                    conn.commit()
+                    return ok({"ok": True, "action": "blocked",
+                               "reason": mod['reason'] or 'Запрещённый контент в кадре'})
+
+                if mod['score'] >= review_th:
+                    push_to_queue(cur, 'stream', stream_id, user["id"], photo_url=cdn_url,
+                                  ai_verdict='suspicious', ai_score=mod['score'], ai_categories=mod['categories'],
+                                  ai_reason=mod['reason'] or 'Кадр эфира на проверку',
+                                  priority=score_to_priority(mod['score']), status='needs_review', reviewed_by='ai')
+                    conn.commit()
+                    return ok({"ok": True, "action": "warn",
+                               "reason": mod['reason'] or 'Возможно запрещённый контент'})
+
+                conn.commit()
+            return ok({"ok": True, "action": "ok"})
 
         # ── chat ──────────────────────────────────────────────────────────────
         if action == "chat":

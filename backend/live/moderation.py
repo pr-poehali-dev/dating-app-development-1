@@ -63,6 +63,54 @@ def moderate_text(text: str) -> dict:
         return {'flagged': False, 'score': 0.0, 'categories': [], 'error': str(e)}
 
 
+def moderate_photo(image_url: str, purpose: str = 'general') -> dict:
+    """
+    Анализирует кадр/фото через RouterAI Vision (gpt-4o-mini).
+    Возвращает {flagged, score(0-100), categories, reason, has_face, error}.
+    """
+    key = _api_key()
+    if not key or not image_url:
+        return {'flagged': False, 'score': 0.0, 'categories': [], 'reason': '', 'has_face': True, 'error': None}
+    try:
+        prompt = (
+            "Ты модератор кадров из видео-трансляции для приложения знакомств. Проанализируй изображение и верни СТРОГО JSON без пояснений: "
+            '{"nsfw": true/false, "has_face": true/false, "violence": true/false, "score": 0-100, "reason": "краткая причина на русском"}. '
+            "score — это степень уверенности что кадр нарушает правила (0 = точно норм, 100 = точно нарушение: откровенный/порнографический контент, обнажёнка, насилие, шок-контент, оружие, наркотики)."
+        )
+        payload = json.dumps({
+            'model': MODEL,
+            'messages': [{
+                'role': 'user',
+                'content': [
+                    {'type': 'text', 'text': prompt},
+                    {'type': 'image_url', 'image_url': {'url': image_url}},
+                ],
+            }],
+            'max_tokens': 200,
+            'response_format': {'type': 'json_object'},
+        }).encode()
+        req = urllib.request.Request(ROUTERAI_URL, data=payload, method='POST', headers={
+            'Authorization': f'Bearer {key}',
+            'Content-Type': 'application/json',
+        })
+        with urllib.request.urlopen(req, timeout=15) as r:
+            data = json.loads(r.read().decode())
+        content = data['choices'][0]['message']['content']
+        parsed = json.loads(content)
+        score = float(parsed.get('score', 0))
+        cats = []
+        if parsed.get('nsfw'):
+            cats.append('nsfw')
+        if parsed.get('violence'):
+            cats.append('violence')
+        return {
+            'flagged': score >= 40, 'score': score, 'categories': cats,
+            'reason': parsed.get('reason', ''), 'has_face': bool(parsed.get('has_face', True)), 'error': None,
+        }
+    except Exception as e:
+        return {'flagged': False, 'score': 0.0, 'categories': [], 'reason': '', 'has_face': True, 'error': str(e)}
+
+
 def score_to_priority(score: float) -> str:
     if score >= 80:
         return 'high'
