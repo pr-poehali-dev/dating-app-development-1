@@ -38,6 +38,7 @@ const CONTENT_LABEL: Record<string, { label: string; icon: string }> = {
   profile_photo: { label: "Фото профиля", icon: "User" },
   selfie: { label: "Селфи (верификация)", icon: "ScanFace" },
   bio: { label: "Описание", icon: "FileText" },
+  stream: { label: "Кадр эфира", icon: "Radio" },
 };
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string; label: string }> = {
@@ -270,7 +271,21 @@ function RecheckCommentPanel({ token, onDone }: { token: string; onDone: () => v
   );
 }
 
-export function AiModerationQueuePanel({ token }: { token: string }) {
+export function AiModerationQueuePanel({
+  token,
+  contentType,
+  status = "needs_review",
+  hideRecheck = false,
+  hideStats = false,
+  emptyText = "Очередь пуста — всё чисто",
+}: {
+  token: string;
+  contentType?: string;
+  status?: string;
+  hideRecheck?: boolean;
+  hideStats?: boolean;
+  emptyText?: string;
+}) {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -278,10 +293,13 @@ export function AiModerationQueuePanel({ token }: { token: string }) {
 
   const load = () => {
     setLoading(true);
+    const queueParams: Record<string, string> = { status };
+    if (priorityFilter) queueParams.priority = priorityFilter;
+    if (contentType) queueParams.content_type = contentType;
     Promise.all([
-      adminReq(token, "ai_queue", undefined, priorityFilter ? { priority: priorityFilter } : {}),
-      adminReq(token, "ai_stats"),
-    ]).then(([q, s]) => { setItems(q.items || []); setStats(s); })
+      adminReq(token, "ai_queue", undefined, queueParams),
+      hideStats ? Promise.resolve(null) : adminReq(token, "ai_stats"),
+    ]).then(([q, s]) => { setItems(q.items || []); if (s) setStats(s); })
       .catch(() => {}).finally(() => setLoading(false));
   };
 
@@ -296,9 +314,9 @@ export function AiModerationQueuePanel({ token }: { token: string }) {
 
   return (
     <>
-      <RecheckPostPanel token={token} onDone={load} />
-      <RecheckCommentPanel token={token} onDone={load} />
-      {stats && (
+      {!hideRecheck && <RecheckPostPanel token={token} onDone={load} />}
+      {!hideRecheck && <RecheckCommentPanel token={token} onDone={load} />}
+      {!hideStats && stats && (
         <div className="flex gap-2 flex-wrap">
           <StatCard icon="Clock" label="На проверке" value={stats.pending_review} color="#FBBF24" />
           <StatCard icon="ShieldOff" label="Заблокировано ИИ (24ч)" value={stats.auto_blocked_24h} color="#F87171" />
@@ -322,7 +340,7 @@ export function AiModerationQueuePanel({ token }: { token: string }) {
       {loading ? <Spinner /> : items.length === 0 ? (
         <div className="flex flex-col items-center py-16 gap-2">
           <Icon name="ShieldCheck" size={32} className="text-white/15" />
-          <p className="text-white/25 text-sm">Очередь пуста — всё чисто</p>
+          <p className="text-white/25 text-sm">{emptyText}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

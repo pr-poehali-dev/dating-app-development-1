@@ -664,14 +664,23 @@ def handler(event: dict, context) -> dict:
         if action == 'ai_queue':
             status = params.get('status', 'needs_review')
             priority = params.get('priority', '')
+            content_type = params.get('content_type', '')
             q = ("SELECT q.id, q.content_type, q.content_id, q.user_id, q.text_snippet, q.photo_url, "
                  "q.ai_verdict, q.ai_score, q.ai_categories, q.ai_reason, q.priority, q.status, "
                  "q.action_taken, q.reviewed_by, q.created_at, u.name, u.username, u.photo_url as user_photo, u.ai_violation_count "
-                 "FROM ai_moderation_queue q JOIN users u ON u.id = q.user_id WHERE q.status = %s")
-            qparams = [status]
+                 "FROM ai_moderation_queue q JOIN users u ON u.id = q.user_id WHERE 1=1")
+            qparams = []
+            # status может быть списком через запятую (напр. "needs_review,auto_resolved")
+            statuses = [s.strip() for s in status.split(',') if s.strip()] if status else []
+            if statuses:
+                q += " AND q.status IN (" + ",".join(["%s"] * len(statuses)) + ")"
+                qparams.extend(statuses)
             if priority:
                 q += " AND q.priority = %s"
                 qparams.append(priority)
+            if content_type:
+                q += " AND q.content_type = %s"
+                qparams.append(content_type)
             q += " ORDER BY CASE q.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, q.created_at DESC LIMIT 100"
             cur.execute(q, qparams)
             cols = ['id', 'content_type', 'content_id', 'user_id', 'text_snippet', 'photo_url',
@@ -722,6 +731,12 @@ def handler(event: dict, context) -> dict:
                     cur.execute("UPDATE messages SET text = '[Удалено модератором]' WHERE text = %s", ('__VANISH__' + q_photo_url,))
                 elif content_type == 'comment' and content_id:
                     cur.execute("DELETE FROM post_comments WHERE id = %s", (content_id,))
+                elif content_type == 'stream':
+                    # Принудительно завершаем эфир, если он ещё идёт
+                    if content_id:
+                        cur.execute("UPDATE live_streams SET status='ended', ended_at=NOW() WHERE id = %s AND status='active'", (content_id,))
+                    else:
+                        cur.execute("UPDATE live_streams SET status='ended', ended_at=NOW() WHERE user_id = %s AND status='active'", (user_id,))
 
             if decision == 'ban':
                 cur.execute(
