@@ -3,9 +3,11 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
+import { ProfileAppIconSheet } from "@/components/screens/profile/ProfileAppIconSheet";
 import { useBackHandler } from "@/hooks/backStack";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
+import { useAppIcon, APP_ICON_META } from "@/hooks/useAppIcon";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
 
@@ -31,9 +33,12 @@ export function ProfileTopBarMenu({
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const [showTheme, setShowTheme] = useState(false);
+  const [showIcon, setShowIcon] = useState(false);
+  const { icon: appIcon, setIcon: setAppIcon } = useAppIcon();
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
-  useBackHandler(menuOpen || showLegal || showTheme, () => {
+  useBackHandler(menuOpen || showLegal || showTheme || showIcon, () => {
+    if (showIcon) { setShowIcon(false); return; }
     if (showTheme) { setShowTheme(false); return; }
     if (showLegal) { setShowLegal(false); return; }
     onMenuToggle(false);
@@ -121,6 +126,15 @@ export function ProfileTopBarMenu({
       iconColor: "text-pink-400",
       badge: appTheme ? THEME_META[appTheme].label : undefined,
     }] : []),
+    {
+      icon: "Sparkles" as const,
+      label: "Иконка приложения",
+      sub: APP_ICON_META[appIcon].sub,
+      action: () => { setShowIcon(true); },
+      iconBg: "rgba(155,89,182,0.14)",
+      iconColor: "text-purple-400",
+      badge: APP_ICON_META[appIcon].label,
+    },
   ];
 
   return (
@@ -138,6 +152,14 @@ export function ProfileTopBarMenu({
           appTheme={appTheme}
           onSelect={onAppThemeChange}
           onClose={() => setShowTheme(false)}
+        />
+      )}
+
+      {showIcon && (
+        <ProfileAppIconSheet
+          appIcon={appIcon}
+          onSelect={setAppIcon}
+          onClose={() => setShowIcon(false)}
         />
       )}
 

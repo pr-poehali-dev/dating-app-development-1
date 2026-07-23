@@ -2,9 +2,11 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { initAppTheme } from '@/hooks/useAppTheme'
+import { initAppIcon } from '@/hooks/useAppIcon'
 import '@/i18n'
 
 initAppTheme();
+initAppIcon();
 
 createRoot(document.getElementById("root")!).render(<App />);
 
