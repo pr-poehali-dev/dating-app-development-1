@@ -144,6 +144,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
             const lastMsgText = !m.last_msg
               ? "Совпадение! Напиши первым 👋"
               : m.last_msg.startsWith("__AUDIO__") ? "🎤 Голосовое"
+              : m.last_msg.startsWith("__STICKER__") ? "🎨 Стикер"
               : m.last_msg.startsWith("__VANISH__") || m.last_msg.match(/\.(jpg|jpeg|png|gif|webp)/i) ? "📷 Фото"
               : m.last_msg === "__REQUEST_PHOTO__" ? "🔐 Запрос фото"
               : m.last_msg === "__GRANT_PHOTO__" ? "🖼️ Доступ к фото"

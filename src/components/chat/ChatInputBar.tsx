@@ -1,18 +1,6 @@
 import { RefObject, useState } from "react";
 import Icon from "@/components/ui/icon";
-
-const ANIME_STICKERS = [
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/67b035e6-7f16-4d34-9d88-ab0ed2e18b43.jpg", label: "Любовь" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/a7091a63-e89b-4f2b-bbec-891f462322f8.jpg", label: "Смущение" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/9e5ae811-669b-49ee-837a-9e6bc293bc18.jpg", label: "Радость" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/4b23033d-7bdd-4f95-8eff-917be9a87a01.jpg", label: "Злость" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/975d66a4-d787-4915-b2d5-7444020b1339.jpg", label: "Круто" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/e82df3f1-2efc-47ff-9996-5c2338b77655.jpg", label: "Сонный" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/ff7ea746-566e-403e-b50a-82103b7920f2.jpg", label: "Восторг" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/82cfc3f0-6d3b-4304-975c-bad64f3a8249.jpg", label: "Грусть" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/9d36609f-b83e-40cd-a0d3-540b68150758.jpg", label: "Флирт" },
-  { url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/76c8840e-f484-426e-b7db-69c2877a5b97.jpg", label: "Вместе" },
-];
+import { EMOJI_ROWS, getVisiblePacks, markPackUsed, useStickerSettings } from "@/lib/stickers";
 
 interface Props {
   input: string;
@@ -51,6 +39,8 @@ export function ChatInputBar({
 }: Props) {
 
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
+  const { settings } = useStickerSettings();
+  const visiblePacks = getVisiblePacks(settings);
 
   // Кнопки «Видеозвонок» и «Награда» скрыты из меню «+» по требованию.
   void onOpenVideoCall;
@@ -148,16 +138,11 @@ export function ChatInputBar({
       {showEmoji && (
         <div className="px-3 pb-3 pt-3"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(15,10,26,0.6)" }}>
-          {[
-            ["😍","🥰","❤️","🔥","😘","💋","🫦","💕"],
-            ["😂","🤣","😭","🥺","😅","🙈","😏","🤤"],
-            ["👋","🤙","💪","🙏","👅","💦","🥵","🫠"],
-            ["🎉","🏆","💎","🌹","🍓","🦋","✨","💯"],
-          ].map((row, i) => (
+          {EMOJI_ROWS.map((row, i) => (
             <div key={i} className="flex justify-between mb-1">
               {row.map(em => (
                 <button key={em} onClick={() => onEmojiPick(em)}
-                  className="text-2xl w-9 h-9 flex items-center justify-center rounded-xl transition-all active:scale-75 hover:bg-white/10">
+                  className={`${settings.largeEmoji ? "text-3xl w-11 h-11" : "text-2xl w-9 h-9"} flex items-center justify-center rounded-xl transition-all active:scale-75 hover:bg-white/10`}>
                   {em}
                 </button>
               ))}
@@ -166,29 +151,38 @@ export function ChatInputBar({
         </div>
       )}
 
-      {/* Аниме-стикеры */}
+      {/* Стикеры (все включённые наборы) */}
       {showStickers && (
-        <div className="pb-3 pt-3"
+        <div className="pb-3 pt-3 max-h-[46vh] overflow-y-auto"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(15,10,26,0.6)" }}>
-          {/* Заголовок */}
-          <div className="flex items-center gap-2 px-4 mb-3">
-            <span className="text-base">🎌</span>
-            <span className="text-white/60 text-xs font-semibold tracking-wide uppercase">Аниме-стикеры</span>
-          </div>
-          {/* Сетка стикеров */}
-          <div className="grid grid-cols-5 gap-2 px-3">
-            {ANIME_STICKERS.map((s) => (
-              <button
-                key={s.url}
-                onClick={() => { onSendSticker(s.url); }}
-                className="flex flex-col items-center gap-1 rounded-2xl p-1.5 active:scale-90 transition-transform"
-                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <img src={s.url} alt={s.label}
-                  className="w-12 h-12 object-contain rounded-xl" />
-                <span className="text-white/35 text-[9px] font-medium leading-tight text-center">{s.label}</span>
-              </button>
-            ))}
-          </div>
+          {visiblePacks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-1.5 px-6 text-center">
+              <Icon name="Sticker" size={26} className="text-white/25" />
+              <p className="text-white/40 text-xs">Наборы стикеров выключены. Включи их в настройках профиля.</p>
+            </div>
+          ) : (
+            visiblePacks.map((pack) => (
+              <div key={pack.id} className="mb-2">
+                <div className="flex items-center gap-2 px-4 mb-2">
+                  <img src={pack.stickers[0].url} alt="" className="w-4 h-4 object-contain rounded" />
+                  <span className="text-white/55 text-[11px] font-semibold tracking-wide uppercase">{pack.title}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-2 px-3">
+                  {pack.stickers.map((s) => (
+                    <button
+                      key={s.url}
+                      onClick={() => { markPackUsed(pack.id); onSendSticker(s.url); }}
+                      className="flex flex-col items-center gap-1 rounded-2xl p-1.5 active:scale-90 transition-transform"
+                      style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      <img src={s.url} alt={s.label}
+                        className="w-12 h-12 object-contain rounded-xl" />
+                      <span className="text-white/35 text-[9px] font-medium leading-tight text-center truncate w-full">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 

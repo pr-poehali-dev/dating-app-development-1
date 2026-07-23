@@ -9,7 +9,7 @@ import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
 import { useAppIcon, APP_ICON_META } from "@/hooks/useAppIcon";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 
 export function ProfileTopBarMenu({
   menuOpen,
@@ -79,6 +79,15 @@ export function ProfileTopBarMenu({
       action: () => { onSettingsScreen("notifications"); onMenuToggle(false); },
       iconBg: "rgba(255,255,255,0.07)",
       iconColor: "text-white/50",
+      badge: undefined,
+    },
+    {
+      icon: "Sticker" as const,
+      label: "Стикеры и эмодзи",
+      sub: "Наборы стикеров, эмодзи",
+      action: () => { onSettingsScreen("stickers"); onMenuToggle(false); },
+      iconBg: "rgba(255,106,61,0.14)",
+      iconColor: "text-orange-400",
       badge: undefined,
     },
     {

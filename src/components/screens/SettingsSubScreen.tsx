@@ -4,11 +4,12 @@ import { profilesApi, authApi, blocksApi, notifSettingsApi, type User, type Bloc
 import { SettingsScreenContent } from "@/components/screens/SettingsScreenContent";
 import { PasswordModal, DeleteAccountModal } from "@/components/screens/SettingsModals";
 import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
+import { StickersSettingsScreen } from "@/components/screens/settings/StickersSettingsScreen";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { useBackHandler } from "@/hooks/backStack";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
-type SettingsScreenType = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
+type SettingsScreenType = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 
 export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClose, onLogout, onPremium }: {
   screen: SettingsScreenType;
@@ -211,6 +212,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
     help: "Помощь и поддержка",
     security: "Безопасность",
     data_storage: "Данные и память",
+    stickers: "Стикеры и эмодзи",
   };
 
   const saveAccount = async () => {
@@ -273,7 +275,8 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
           <SecurityPanel onLogout={onLogout} currentUser={currentUser} />
         </div>
       )}
-      {screen !== "security" && <SettingsScreenContent
+      {screen === "stickers" && <StickersSettingsScreen />}
+      {screen !== "security" && screen !== "stickers" && <SettingsScreenContent
         screen={screen}
         currentUser={currentUser}
         onPremium={onPremium}

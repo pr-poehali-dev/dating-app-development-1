@@ -18,7 +18,7 @@ import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSectio
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
 import { StreakWidget } from "@/components/screens/profile/StreakWidget";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
 type StatKey = "height" | "weight" | "gender" | "status" | "city";
 

@@ -6,7 +6,7 @@ import { getStreakReward } from "@/lib/streakRewards";
 import { TIER_STYLES, resolveTier } from "@/lib/premiumTiers";
 import { type AppTheme } from "@/hooks/useAppTheme";
 
-type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage";
+type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 
 export function ProfileHeader({
   currentUser,
