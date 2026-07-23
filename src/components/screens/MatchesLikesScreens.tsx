@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Icon from "@/components/ui/icon";
-import { matchesApi, likesApi, type Match, type LikedBy } from "@/lib/api";
+import { matchesApi, likesApi, postsApi, type Match, type LikedBy, type Profile } from "@/lib/api";
 import { isUserOnline } from "@/lib/online";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
+import { DiscoverProfileModal } from "@/components/screens/DiscoverProfileModal";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
@@ -250,9 +251,11 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
 }
 
 // ─── RealLikesScreen ──────────────────────────────────────────────────────────
-export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
+export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats }: { onPremium: () => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void }) {
   const [likedMe, setLikedMe] = useState<LikedBy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openProfile, setOpenProfile] = useState<Profile | null>(null);
+  const [openingId, setOpeningId] = useState<number | null>(null);
 
   const loadLikedMe = useCallback((silent?: boolean) => {
     if (!silent) setLoading(true);
@@ -265,6 +268,16 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
   useEffect(() => { loadLikedMe(); }, [loadLikedMe]);
 
   useAppRefresh(() => loadLikedMe(true));
+
+  const handleOpen = useCallback((p: LikedBy) => {
+    if (p.blurred) { onPremium(); return; }
+    if (openingId) return;
+    setOpeningId(p.id);
+    postsApi.getUserProfile(p.id)
+      .then((d) => setOpenProfile(d.profile))
+      .catch(() => {})
+      .finally(() => setOpeningId(null));
+  }, [onPremium, openingId]);
 
   if (loading) return (
     <div className="flex flex-col h-full items-center justify-center">
@@ -334,32 +347,61 @@ export function RealLikesScreen({ onPremium }: { onPremium: () => void }) {
           </div>
         </div>
       ) : (
-        <div className="px-5 grid grid-cols-2 gap-3">
-          {likedMe.map((p, i) => (
-            <div key={p.id} className="relative rounded-2xl overflow-hidden aspect-[3/4] transition-transform active:scale-[0.97]"
-              style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
-              <img src={p.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover"
-                style={{ filter: p.blurred ? "blur(20px) brightness(0.7)" : "none" }} />
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
-              <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,45,120,0.9)", boxShadow: "0 0 8px rgba(255,45,120,0.6)" }}>
-                <Icon name="Heart" size={12} className="text-white" style={{ fill: "white" }} />
+        <div className="px-4 grid grid-cols-3 gap-2.5 pb-4">
+          {likedMe.map((p) => (
+            <button key={p.id} onClick={() => handleOpen(p)}
+              className="group relative rounded-2xl overflow-hidden aspect-[3/4] transition-all duration-200 active:scale-[0.96] text-left"
+              style={{ border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 6px 18px rgba(0,0,0,0.35)" }}>
+              <img src={p.photo_url || FALLBACK_PHOTO} className="w-full h-full object-cover transition-transform duration-300 group-active:scale-105"
+                style={{ filter: p.blurred ? "blur(16px) brightness(0.65)" : "none" }} />
+
+              {/* Затемнение снизу */}
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)" }} />
+
+              {/* Бейдж лайка */}
+              <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                style={{ background: p.is_super ? "rgba(59,130,246,0.95)" : "rgba(255,45,120,0.95)", boxShadow: `0 0 10px ${p.is_super ? "rgba(59,130,246,0.7)" : "rgba(255,45,120,0.7)"}` }}>
+                <Icon name={p.is_super ? "Star" : "Heart"} size={11} className="text-white" style={{ fill: "white" }} />
               </div>
-              {p.blurred && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button onClick={onPremium} className="glass-card p-3 flex flex-col items-center gap-1">
-                    <Icon name="Lock" size={18} className="text-white" />
-                    <span className="text-white text-xs">Premium</span>
-                  </button>
+
+              {/* Онлайн-загрузка при клике */}
+              {openingId === p.id && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.45)" }}>
+                  <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent animate-spin" />
                 </div>
               )}
-              <div className="absolute bottom-3 left-3">
-                <p className="text-white font-semibold text-sm">{p.name}{p.age ? `, ${p.age}` : ""}</p>
+
+              {/* Premium-замок для размытых */}
+              {p.blurred && openingId !== p.id && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center"
+                    style={{ background: "rgba(255,255,255,0.16)", backdropFilter: "blur(4px)", border: "1px solid rgba(255,255,255,0.25)" }}>
+                    <Icon name="Lock" size={15} className="text-white" />
+                  </div>
+                  <span className="text-white/90 text-[10px] font-semibold">Premium</span>
+                </div>
+              )}
+
+              {/* Имя, возраст, верификация */}
+              <div className="absolute bottom-2 left-2 right-2">
+                <div className="flex items-center gap-1 min-w-0">
+                  <p className="text-white font-semibold text-[13px] leading-tight truncate drop-shadow">{p.name}{p.age ? `, ${p.age}` : ""}</p>
+                  {p.verified && <Icon name="BadgeCheck" size={12} className="text-sky-400 flex-shrink-0" style={{ fill: "rgba(56,189,248,0.2)" }} />}
+                </div>
               </div>
-              <div style={{ display: "none" }}>{i}</div>
-            </div>
+            </button>
           ))}
         </div>
+      )}
+
+      {openProfile && (
+        <DiscoverProfileModal
+          profile={openProfile}
+          onClose={() => setOpenProfile(null)}
+          onLike={() => {}}
+          onOpenChat={onOpenChat}
+          onGoToChats={onGoToChats}
+        />
       )}
     </div>
   );
