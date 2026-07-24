@@ -9,6 +9,7 @@ const URLS = {
   push: "https://functions.poehali.dev/282c24e0-ca25-4712-ad58-26c7742c2653",
   live: "https://functions.poehali.dev/f113fa74-fe31-48da-ae7d-362a933b5294",
   feedback: "https://functions.poehali.dev/2a5b54bc-ebf4-4dd3-b9e1-8cac88e504c3",
+  support: "https://functions.poehali.dev/6507255f-25b4-4796-89eb-769f332f415a",
   streaks: "https://functions.poehali.dev/3ce9087c-7bc0-41d7-9ed9-81ef6b7272dd",
   compatibility: "https://functions.poehali.dev/3c47a214-b397-4193-9c25-8db3eb79b2d9",
   config: "https://functions.poehali.dev/6ceb1501-cae9-4306-9855-f9195741490c",
@@ -911,6 +912,15 @@ export const feedbackApi = {
     req<{ ok: boolean; id: number }>("feedback", "", {
       method: "POST",
       body: JSON.stringify({ text, rating, category: category || "general" }),
+    }),
+};
+
+// ─── Support (обращение в поддержку) ──────────────────────────────────────────
+export const supportApi = {
+  send: (data: { name?: string; login?: string; email?: string; message: string; image?: string }) =>
+    req<{ ok: boolean; id: number }>("support", "", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };
 

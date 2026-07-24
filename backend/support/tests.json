@@ -1,0 +1,26 @@
+{
+  "tests": [
+    {
+      "name": "OPTIONS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Send support ticket as guest",
+      "method": "POST",
+      "path": "/",
+      "body": {"name": "Иван", "login": "ivan", "email": "ivan@example.com", "message": "Не приходит письмо с кодом"},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": true},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Reject empty message",
+      "method": "POST",
+      "path": "/",
+      "body": {"name": "Иван", "message": ""},
+      "expectedStatus": 400
+    }
+  ]
+}

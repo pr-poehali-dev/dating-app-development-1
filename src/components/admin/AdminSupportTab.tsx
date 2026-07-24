@@ -8,6 +8,8 @@ type Ticket = {
   id: number; user_id: number; message: string; reply: string | null;
   status: string; created_at: string; replied_at: string | null;
   user_name: string; user_photo: string | null;
+  guest_name?: string | null; guest_login?: string | null;
+  guest_email?: string | null; image_url?: string | null; source?: string | null;
 };
 
 const FALLBACK = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
@@ -65,9 +67,13 @@ export function SupportTab({ token }: { token: string }) {
               <img src={t.user_photo || FALLBACK} className="w-9 h-9 rounded-xl object-cover flex-shrink-0"
                 style={{ border: "1px solid rgba(255,255,255,0.1)" }} />
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-white font-semibold text-sm">{t.user_name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-white font-semibold text-sm">{t.user_name || t.guest_name || "Гость"}</p>
                   <span className="text-white/20 text-xs">#{t.id}</span>
+                  {t.source === "site" && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: "rgba(255,140,0,0.14)", color: "#FF9F45" }}>САЙТ</span>
+                  )}
                 </div>
                 <p className="text-white/25 text-[10px]">{new Date(t.created_at).toLocaleString("ru")}</p>
               </div>
@@ -80,11 +86,39 @@ export function SupportTab({ token }: { token: string }) {
             </div>
 
             <div className="px-4 py-3 flex flex-col gap-3">
+              {/* Контакты гостя */}
+              {(t.guest_email || t.guest_login) && (
+                <div className="flex flex-wrap gap-2">
+                  {t.guest_login && (
+                    <span className="flex items-center gap-1 text-[11px] text-white/50 px-2 py-1 rounded-lg"
+                      style={{ background: "rgba(255,255,255,0.05)" }}>
+                      <Icon name="AtSign" size={11} />{t.guest_login}
+                    </span>
+                  )}
+                  {t.guest_email && (
+                    <a href={`mailto:${t.guest_email}`}
+                      className="flex items-center gap-1 text-[11px] text-pink-300 px-2 py-1 rounded-lg hover:underline"
+                      style={{ background: "rgba(255,45,120,0.08)" }}>
+                      <Icon name="Mail" size={11} />{t.guest_email}
+                    </a>
+                  )}
+                </div>
+              )}
+
               {/* Сообщение пользователя */}
               <div className="rounded-xl px-4 py-3"
                 style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                <p className="text-white/75 text-sm leading-relaxed">{t.message}</p>
+                <p className="text-white/75 text-sm leading-relaxed whitespace-pre-wrap">{t.message}</p>
               </div>
+
+              {/* Прикреплённое изображение */}
+              {t.image_url && (
+                <a href={t.image_url} target="_blank" rel="noreferrer" className="block">
+                  <img src={t.image_url} alt="Вложение"
+                    className="w-full max-h-64 object-contain rounded-xl"
+                    style={{ background: "rgba(0,0,0,0.25)", border: "1px solid rgba(255,255,255,0.08)" }} />
+                </a>
+              )}
 
               {/* Ответ поддержки */}
               {t.reply && (

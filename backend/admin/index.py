@@ -458,15 +458,17 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 SELECT t.id, t.user_id, t.message, t.reply, t.status,
                        t.created_at, t.replied_at,
-                       u.name, u.photo_url
+                       COALESCE(u.name, t.guest_name), u.photo_url,
+                       t.guest_name, t.guest_login, t.guest_email, t.image_url, t.source
                 FROM support_tickets t
-                JOIN users u ON u.id = t.user_id
+                LEFT JOIN users u ON u.id = t.user_id
                 WHERE t.status = %s
                 ORDER BY t.created_at DESC
                 LIMIT 100
             """, (status_filter,))
             rows = cur.fetchall()
-            cols = ['id','user_id','message','reply','status','created_at','replied_at','user_name','user_photo']
+            cols = ['id','user_id','message','reply','status','created_at','replied_at','user_name','user_photo',
+                    'guest_name','guest_login','guest_email','image_url','source']
             tickets = [dict(zip(cols, r)) for r in rows]
             return resp(200, {'tickets': tickets})
 
