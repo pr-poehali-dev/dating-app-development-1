@@ -23,11 +23,12 @@ def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/')
             'contents': {'en': body_text, 'ru': body_text},
             'url': url,
         }
+        scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
         req = urllib.request.Request(
             'https://onesignal.com/api/v1/notifications',
             data=json.dumps(payload).encode('utf-8'),
             headers={'Content-Type': 'application/json; charset=utf-8',
-                     'Authorization': f'Basic {api_key}'},
+                     'Authorization': f'{scheme} {api_key}'},
             method='POST',
         )
         urllib.request.urlopen(req, timeout=8).read()
