@@ -118,11 +118,12 @@ export const GIFTS = [
 const CATEGORIES = [
   { id: "market",  label: "Маркет",     emoji: "🛍️" },
   { id: "special", label: "Особые",     emoji: "✨" },
-  { id: "heart",   label: "Сердца",     emoji: "❤️" },
-  { id: "rose",    label: "Розы",       emoji: "🌹" },
-  { id: "bear",    label: "Мишки",      emoji: "🧸" },
-  { id: "ring",    label: "Кольца",     emoji: "💍" },
 ];
+
+/** Раздел (вкладка) подарка: маркет — отдельно, всё остальное — в «Особые». */
+export function giftSection(category: string): "market" | "special" {
+  return category === "market" ? "market" : "special";
+}
 
 export const RARITY_STYLE: Record<string, { label: string; border: string; bg: string; text: string; glow: string }> = {
   common:    { label: "",            border: "rgba(255,255,255,0.08)", bg: "rgba(255,255,255,0.04)", text: "",         glow: "none" },
@@ -158,7 +159,7 @@ export function ProfileGiftSheet({
   onPayGift,
 }: ProfileGiftSheetProps) {
   const [activeCategory, setActiveCategory] = useState("special");
-  const filtered = GIFTS.filter(g => g.category === activeCategory);
+  const filtered = GIFTS.filter(g => giftSection(g.category) === activeCategory);
 
   useBackHandler(true, onClose);
 

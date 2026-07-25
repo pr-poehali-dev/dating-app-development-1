@@ -18,18 +18,32 @@ const BG: [string, string][] = [
   ["#442a5c", "#221430"],
 ];
 
-function pick(emoji: string): [string, string] {
+// Набор анимаций — у каждого подарка своя (стабильно по эмодзи).
+const ANIMS = [
+  "gift-float",
+  "gift-pulse",
+  "gift-shake",
+  "gift-spin",
+  "gift-sparkle",
+  "gift-glow",
+  "gift-orbit",
+  "gift-rainbow",
+];
+
+function hash(emoji: string): number {
   let h = 0;
   for (let i = 0; i < emoji.length; i++) h = (h * 31 + emoji.charCodeAt(i)) >>> 0;
-  return BG[h % BG.length];
+  return h;
 }
 
 /**
- * Иконка маркет-подарка: крупное эмодзи на мягком градиентном фоне —
- * визуально как эмодзи-подарки в Telegram.
+ * Иконка маркет-подарка: крупное анимированное эмодзи на мягком градиентном фоне —
+ * визуально как эмодзи-подарки в Telegram. Анимация у каждого подарка своя.
  */
-export default function MarketGiftIcon({ emoji, size = 56, badge = true }: Props) {
-  const [from, to] = pick(emoji);
+export default function MarketGiftIcon({ emoji, size = 56, badge = false }: Props) {
+  const h = hash(emoji);
+  const [from, to] = BG[h % BG.length];
+  const anim = ANIMS[h % ANIMS.length];
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <div
@@ -39,7 +53,7 @@ export default function MarketGiftIcon({ emoji, size = 56, badge = true }: Props
           boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
       >
-        <span style={{ fontSize: size * 0.52, lineHeight: 1 }}>{emoji}</span>
+        <span className={anim} style={{ fontSize: size * 0.52, lineHeight: 1, display: "inline-block" }}>{emoji}</span>
       </div>
       {badge && (
         <div

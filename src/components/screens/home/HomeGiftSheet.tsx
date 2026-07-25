@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { GIFTS, RARITY_STYLE } from "@/components/screens/ProfileGiftSheet";
+import { GIFTS, RARITY_STYLE, giftSection } from "@/components/screens/ProfileGiftSheet";
 import GiftItem from "@/components/gifts/GiftItem";
 import { useBackHandler } from "@/hooks/backStack";
 
@@ -34,7 +34,7 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
 
         {/* Категории */}
         <div className="flex gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto no-scrollbar">
-          {([{ id: "market", label: "Маркет", emoji: "🛍️" }, { id: "special", label: "Особые", emoji: "✨" }, { id: "heart", label: "Сердца", emoji: "❤️" }, { id: "rose", label: "Розы", emoji: "🌹" }, { id: "bear", label: "Мишки", emoji: "🧸" }, { id: "ring", label: "Кольца", emoji: "💍" }] as const).map(cat => (
+          {([{ id: "market", label: "Маркет", emoji: "🛍️" }, { id: "special", label: "Особые", emoji: "✨" }] as const).map(cat => (
             <button key={cat.id}
               onClick={() => onCategoryChange(cat.id)}
               className={`flex items-center gap-1.5 flex-shrink-0 px-3.5 py-1.5 rounded-2xl transition-all active:scale-95 text-sm font-semibold ${giftCategory === cat.id ? "text-white" : "text-white/50"}`}
@@ -51,7 +51,7 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
         <div className="flex-1 overflow-y-auto px-4 py-4"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
           <div className="grid grid-cols-3 gap-3">
-            {GIFTS.filter(g => g.category === giftCategory).map((gift) => {
+            {GIFTS.filter(g => giftSection(g.category) === giftCategory).map((gift) => {
               const rs = RARITY_STYLE[gift.rarity];
               const selected = giftBuying === gift.id;
               return (

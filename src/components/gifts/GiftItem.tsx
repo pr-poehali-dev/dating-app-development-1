@@ -22,7 +22,7 @@ interface GiftItemProps {
  * Универсальный подарок. Для обычных категорий — живой анимированный SVG-персонаж
  * (в стиле Telegram). Для категории "market" — крупное эмодзи на градиентном фоне.
  */
-export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common", selected = false, emoji, marketBadge = true }: GiftItemProps) {
+export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common", selected = false, emoji, marketBadge = false }: GiftItemProps) {
   void animKey; void rarity;
   if (category === "market" && emoji) {
     return <MarketGiftIcon emoji={emoji} size={size} badge={marketBadge} />;
