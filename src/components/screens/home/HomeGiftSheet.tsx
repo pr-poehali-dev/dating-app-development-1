@@ -36,7 +36,7 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
         <div className="px-4 py-3 flex-shrink-0">
           <div className="flex gap-1 p-1 rounded-2xl"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            {([{ id: "market", label: "Маркет", emoji: "🛍️" }, { id: "special", label: "Особые", emoji: "✨" }] as const).map(cat => {
+            {([{ id: "market", label: "Маркет", icon: "Store" }, { id: "special", label: "Особые", icon: "Sparkles" }] as const).map(cat => {
               const active = giftCategory === cat.id;
               return (
                 <button key={cat.id}
@@ -45,7 +45,7 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
                   style={active
                     ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 18px rgba(255,45,120,0.35)" }
                     : { background: "transparent" }}>
-                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <Icon name={cat.icon} size={16} className={active ? "text-white" : "text-white/45"} />
                   <span className="leading-none">{cat.label}</span>
                 </button>
               );

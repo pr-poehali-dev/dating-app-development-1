@@ -112,8 +112,8 @@ export const GIFTS = [
 ];
 
 const CATEGORIES = [
-  { id: "market",  label: "Маркет",     emoji: "🛍️" },
-  { id: "special", label: "Особые",     emoji: "✨" },
+  { id: "market",  label: "Маркет", icon: "Store" as const },
+  { id: "special", label: "Особые", icon: "Sparkles" as const },
 ];
 
 /** Раздел (вкладка) подарка: маркет — отдельно, всё остальное — в «Особые». */
@@ -189,7 +189,7 @@ export function ProfileGiftSheet({
                   style={active
                     ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 18px rgba(255,45,120,0.35)" }
                     : { background: "transparent" }}>
-                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <Icon name={cat.icon} size={16} className={active ? "text-white" : "text-white/45"} />
                   <span>{cat.label}</span>
                 </button>
               );
