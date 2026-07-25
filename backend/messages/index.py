@@ -263,6 +263,55 @@ def handler(event: dict, context) -> dict:
 
             return resp(200, {'ok': True, 'photo_url': cdn_url})
 
+        # Глобальный поллинг входящих видеозвонков (на любой вкладке приложения).
+        # Ищем свежий непотреблённый offer в любом матче пользователя, где offer
+        # пришёл НЕ от него самого. Offer НЕ помечаем consumed — этим займётся
+        # обычный signal_poll уже внутри экрана звонка.
+        if action == 'incoming_call':
+            cur.execute(
+                """
+                SELECT s.match_id, s.from_user_id, s.payload
+                FROM webrtc_signals s
+                JOIN matches ma ON ma.id = s.match_id
+                WHERE s.signal_type = 'offer'
+                  AND s.is_consumed = FALSE
+                  AND s.from_user_id != %s
+                  AND (ma.user1_id = %s OR ma.user2_id = %s)
+                  AND s.created_at >= NOW() - INTERVAL '30 seconds'
+                ORDER BY s.created_at DESC
+                LIMIT 1
+                """,
+                (me['id'], me['id'], me['id'])
+            )
+            row = cur.fetchone()
+            if not row:
+                return resp(200, {'call': None})
+            match_id, from_user_id, payload = row[0], row[1], row[2]
+            # Имя и фото звонящего для экрана входящего звонка
+            cur.execute("SELECT name, photo_url FROM users WHERE id = %s", (from_user_id,))
+            u = cur.fetchone()
+            caller_name = u[0] if u else 'Собеседник'
+            caller_photo = u[1] if u else ''
+            # Ранние ICE-кандидаты, пришедшие вместе с offer
+            cur.execute(
+                """
+                SELECT payload FROM webrtc_signals
+                WHERE match_id = %s AND from_user_id = %s AND signal_type = 'ice'
+                  AND is_consumed = FALSE
+                ORDER BY created_at ASC
+                """,
+                (match_id, from_user_id)
+            )
+            early_ice = [r[0] for r in cur.fetchall()]
+            return resp(200, {'call': {
+                'match_id': match_id,
+                'from_user_id': from_user_id,
+                'offer': payload,
+                'early_ice': early_ice,
+                'caller_name': caller_name,
+                'caller_photo': caller_photo,
+            }})
+
         # WebRTC сигналинг: отправить сигнал (offer/answer/ice)
         if action == 'signal_send':
             body = json.loads(event.get('body') or '{}')
@@ -282,6 +331,26 @@ def handler(event: dict, context) -> dict:
                 (match_id, me['id'], signal_type, payload)
             )
             conn.commit()
+
+            # При начале звонка (offer) шлём получателю push «Входящий видеозвонок»,
+            # чтобы он увидел вызов даже если приложение свёрнуто или закрыто.
+            if signal_type == 'offer':
+                cur.execute(
+                    "SELECT user1_id, user2_id FROM matches WHERE id = %s",
+                    (match_id,)
+                )
+                mrow = cur.fetchone()
+                if mrow:
+                    callee_id = mrow[1] if mrow[0] == me['id'] else mrow[0]
+                    cur.execute("SELECT name FROM users WHERE id = %s", (me['id'],))
+                    cn = cur.fetchone()
+                    caller_name = cn[0] if cn else 'Кто-то'
+                    _push_to_user(
+                        cur, conn, callee_id,
+                        '📹 Входящий видеозвонок',
+                        f'{caller_name} звонит вам',
+                        f'/?call={match_id}'
+                    )
             return resp(200, {'ok': True})
 
         # WebRTC сигналинг: получить новые сигналы (polling)

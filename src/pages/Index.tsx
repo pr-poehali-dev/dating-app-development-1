@@ -28,6 +28,8 @@ import { HomeScreen } from "@/components/screens/HomeScreen";
 import { LockScreen } from "@/components/screens/LockScreen";
 import { isPinEnabled, getPinUserId } from "@/hooks/usePinLock";
 import { isBiometricRegistered } from "@/hooks/useBiometrics";
+import { useIncomingCall } from "@/hooks/useIncomingCall";
+import VideoCall from "@/components/VideoCall";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
@@ -77,6 +79,13 @@ export default function Index() {
 
   // Подключаем push-уведомления сразу после авторизации
   usePushNotifications(!!currentUser);
+
+  // Глобальный входящий видеозвонок — виден на любой вкладке приложения.
+  // Открытый вручную звонок (activeCall) подавляет глобальный поллинг.
+  const [activeCall, setActiveCall] = useState<null | {
+    matchId: number; isInitiator: boolean; offer?: string; earlyIce?: string[]; name: string; photo: string;
+  }>(null);
+  const { incoming, dismiss: dismissIncoming } = useIncomingCall(!!currentUser, !!activeCall);
 
   // Офлайн-режим
   const offlineState = useOffline();
@@ -193,6 +202,17 @@ export default function Index() {
     postsApi.getUserProfile(uid)
       .then((d) => { if (d.profile) setDeepLinkProfile(d.profile); })
       .catch(() => {});
+  }, [currentUser]);
+
+  // Deep-link ?call=matchId (клик по push «Входящий видеозвонок») — просто
+  // очищаем URL; сам входящий звонок подхватит глобальный поллинг useIncomingCall.
+  useEffect(() => {
+    if (!currentUser) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("call")) {
+      const clean = window.location.pathname + window.location.search.replace(/[?&]call=\d+/, "").replace(/^&/, "?");
+      window.history.replaceState({}, "", clean.endsWith("?") ? window.location.pathname : clean);
+    }
   }, [currentUser]);
 
   // Обработка редиректа после оплаты Premium
@@ -485,6 +505,30 @@ export default function Index() {
           onLike={() => {}}
           onOpenChat={(id) => { setDeepLinkProfile(null); openChat(id); }}
           onGoToChats={() => { setDeepLinkProfile(null); goToChats(); }}
+        />
+      )}
+
+      {/* Глобальный входящий видеозвонок — поверх любой вкладки */}
+      {activeCall && (
+        <VideoCall
+          matchId={activeCall.matchId}
+          partnerName={activeCall.name}
+          partnerPhoto={activeCall.photo}
+          isInitiator={activeCall.isInitiator}
+          initialOffer={activeCall.offer}
+          earlyIce={activeCall.earlyIce}
+          onClose={() => setActiveCall(null)}
+        />
+      )}
+      {!activeCall && incoming && (
+        <VideoCall
+          matchId={incoming.matchId}
+          partnerName={incoming.callerName}
+          partnerPhoto={incoming.callerPhoto}
+          isInitiator={false}
+          initialOffer={incoming.offer}
+          earlyIce={incoming.earlyIce}
+          onClose={dismissIncoming}
         />
       )}
     </div>

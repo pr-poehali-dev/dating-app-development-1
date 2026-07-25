@@ -116,25 +116,9 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     return () => { stopped = true; clearInterval(interval); };
   }, [matchId, isBot]);
 
-  useEffect(() => {
-    if (videoCall) return;
-    let stopped = false;
-    const interval = setInterval(async () => {
-      if (stopped) return;
-      try {
-        const { signals } = await messagesApi.signalPoll(matchId);
-        const offerSig = signals.find(s => s.signal_type === "offer");
-        if (offerSig) {
-          // буферизуем ICE, пришедшие вместе с offer, чтобы не потерять их
-          const earlyIce = signals.filter(s => s.signal_type === "ice").map(s => s.payload);
-          stopped = true;
-          clearInterval(interval);
-          setVideoCall({ isInitiator: false, offerPayload: offerSig.payload, earlyIce });
-        }
-      } catch { /* ignore */ }
-    }, 1200);
-    return () => { stopped = true; clearInterval(interval); };
-  }, [matchId, videoCall]);
+  // Входящие звонки теперь обрабатываются глобально (на уровне всего приложения,
+  // см. useIncomingCall в Index), чтобы вызов был виден на любой вкладке, а не
+  // только в открытом чате. Здесь остаётся только исходящий звонок (инициатор).
 
   const startRecording = async () => {
     setMicError(null);

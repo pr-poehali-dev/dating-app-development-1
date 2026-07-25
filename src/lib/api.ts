@@ -567,6 +567,12 @@ export const messagesApi = {
     req<{ signals: { id: number; from_user_id: number; signal_type: string; payload: string }[] }>(
       "messages", "signal_poll", {}, { match_id: String(match_id) }
     ),
+
+  // Глобальный поллинг входящих видеозвонков (на любой вкладке)
+  incomingCall: () =>
+    req<{ call: null | { match_id: number; from_user_id: number; offer: string; early_ice: string[]; caller_name: string; caller_photo: string } }>(
+      "messages", "incoming_call"
+    ),
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────

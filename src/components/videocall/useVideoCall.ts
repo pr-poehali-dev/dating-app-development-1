@@ -91,8 +91,10 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   }, [stopAll, matchId, onClose, isInitiator, logCallResult]);
 
   const buildVideoConstraints = (): MediaTrackConstraints => ({
-    width: { ideal: 1280, max: 1920 },
-    height: { ideal: 720, max: 1080 },
+    // Просим Full HD как идеал — камера отдаст максимум, что умеет,
+    // а адаптация битрейта/разрешения происходит уже в WebRTC при слабой сети.
+    width: { ideal: 1920, max: 1920 },
+    height: { ideal: 1080, max: 1080 },
     frameRate: { ideal: 30, max: 30 },
     facingMode: facingModeRef.current,
   });
@@ -152,17 +154,39 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
     const pc = new RTCPeerConnection(ICE_SERVERS);
     pcRef.current = pc;
     stream.getTracks().forEach(t => {
+      // contentHint="motion" — подсказка кодеку сохранять плавность и детализацию
+      // движущегося лица в разговоре (важно для чёткости видео).
+      if (t.kind === "video") { try { t.contentHint = "motion"; } catch { /* ignore */ } }
       const sender = pc.addTrack(t, stream);
       if (t.kind === "video") {
         const params = sender.getParameters();
         if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-        params.encodings[0].maxBitrate = 2_000_000;
+        // Full HD требует более высокого потолка битрейта для чёткой картинки.
+        params.encodings[0].maxBitrate = 4_000_000;
         params.encodings[0].maxFramerate = 30;
-        // При слабой сети снижаем разрешение, но держим плавность — меньше рывков.
-        params.degradationPreference = "maintain-framerate";
+        // Не масштабируем разрешение вниз без необходимости — отдаём максимум.
+        params.encodings[0].scaleResolutionDownBy = 1;
+        // При слабой сети сохраняем чёткость картинки (жертвуя плавностью),
+        // чтобы лицо оставалось детализированным.
+        params.degradationPreference = "maintain-resolution";
         sender.setParameters(params).catch(() => {});
       }
     });
+
+    // Предпочитаем современные кодеки (VP9 / H264) — заметно лучше картинка
+    // при том же битрейте, чем у устаревшего VP8.
+    try {
+      const caps = RTCRtpReceiver.getCapabilities?.("video");
+      const tr = pc.getTransceivers().find(x => x.sender.track?.kind === "video");
+      if (caps && tr && tr.setCodecPreferences) {
+        const preferred = ["video/VP9", "video/H264", "video/VP8"];
+        const sorted = [...caps.codecs].sort((a, b) => {
+          const ia = preferred.indexOf(a.mimeType); const ib = preferred.indexOf(b.mimeType);
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        });
+        tr.setCodecPreferences(sorted);
+      }
+    } catch { /* ignore — не все браузеры поддерживают */ }
 
     const remoteStream = new MediaStream();
     remoteStreamRef.current = remoteStream;

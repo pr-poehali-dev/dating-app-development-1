@@ -1,6 +1,6 @@
-/* Полутон Service Worker v2 — офлайн, кеш, push, фоновая синхронизация */
+/* Полутон Service Worker v3 — офлайн, кеш, push, видеозвонки, фоновая синхронизация */
 
-const APP_VERSION = "polyuton-v2";
+const APP_VERSION = "polyuton-v3";
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const DYNAMIC_CACHE = `${APP_VERSION}-dynamic`;
 const IMAGE_CACHE = `${APP_VERSION}-images`;
@@ -197,20 +197,29 @@ self.addEventListener("push", (e) => {
     if (e.data) data = { ...data, ...JSON.parse(e.data.text()) };
   } catch {}
 
+  // Входящий видеозвонок — распознаём по url ?call= и показываем как «звонок»:
+  // держим уведомление на экране (requireInteraction) и даём ритм вибрации звонка.
+  const isCall = typeof data.url === "string" && data.url.indexOf("call=") !== -1;
+
   e.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
       icon: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png",
       badge: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png",
-      tag: data.tag || "lovebloom-push",
+      tag: isCall ? "lovebloom-call" : (data.tag || "lovebloom-push"),
       renotify: true,
-      requireInteraction: false,
+      requireInteraction: isCall,
       data: { url: data.url || "/" },
-      vibrate: [200, 100, 200],
-      actions: [
-        { action: "open", title: "Открыть" },
-        { action: "close", title: "Закрыть" },
-      ],
+      vibrate: isCall ? [400, 200, 400, 200, 400] : [200, 100, 200],
+      actions: isCall
+        ? [
+            { action: "open", title: "Ответить" },
+            { action: "close", title: "Отклонить" },
+          ]
+        : [
+            { action: "open", title: "Открыть" },
+            { action: "close", title: "Закрыть" },
+          ],
     })
   );
 });
