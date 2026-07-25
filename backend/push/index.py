@@ -3,6 +3,8 @@ Push-уведомления: сохранение подписок и отпра
 """
 import json
 import os
+import urllib.request
+import urllib.error
 import psycopg2
 from pywebpush import webpush, WebPushException
 
@@ -66,6 +68,36 @@ def send_push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: 
         cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad_ids,))
         conn.commit()
 
+def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscribed Users') -> dict:
+    """Отправляет push через OneSignal REST API всем подписчикам сегмента."""
+    app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+    api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+    if not app_id or not api_key:
+        return {'ok': False, 'error': 'Не заданы ключи OneSignal'}
+    payload = {
+        'app_id': app_id,
+        'included_segments': [segment],
+        'headings': {'en': title, 'ru': title},
+        'contents': {'en': body_text, 'ru': body_text},
+        'url': url,
+    }
+    req = urllib.request.Request(
+        'https://onesignal.com/api/v1/notifications',
+        data=json.dumps(payload).encode('utf-8'),
+        headers={
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': f'Basic {api_key}',
+        },
+        method='POST',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=25) as r:
+            data = json.loads(r.read().decode('utf-8'))
+        return {'ok': True, 'result': data}
+    except urllib.error.HTTPError as e:
+        return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
+
+
 def handler(event: dict, context) -> dict:
     """Управление push-подписками."""
     if event.get('httpMethod') == 'OPTIONS':
@@ -73,6 +105,21 @@ def handler(event: dict, context) -> dict:
 
     params = event.get('queryStringParameters') or {}
     action = params.get('action', '')
+
+    # Отправка уведомления через OneSignal (только с админ-токеном)
+    if action == 'onesignal_send':
+        admin = (event.get('headers') or {}).get('X-Admin-Token', '') or \
+                (event.get('headers') or {}).get('x-admin-token', '')
+        if not admin or admin != os.environ.get('ADMIN_TOKEN', ''):
+            return resp(403, {'error': 'Нет доступа'})
+        b = json.loads(event.get('body') or '{}')
+        title = (b.get('title') or 'Полутон 💕').strip()
+        text = (b.get('body') or '').strip()
+        link = (b.get('url') or '/').strip()
+        if not text:
+            return resp(400, {'error': 'Пустой текст уведомления'})
+        result = onesignal_send(title, text, link)
+        return resp(200 if result['ok'] else 502, result)
 
     # Публичный VAPID-ключ — без авторизации
     if action == 'vapid_public_key':
