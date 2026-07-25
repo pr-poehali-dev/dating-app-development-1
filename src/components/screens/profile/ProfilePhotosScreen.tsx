@@ -204,7 +204,7 @@ export function ProfilePhotosScreen({
                   <Icon name="Loader2" size={20} className="text-white/30 animate-spin" />
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-4 gap-1.5">
                   {galleryPhotos.map((photo, idx) => (
                     <div key={photo.id} className="relative rounded-xl overflow-hidden"
                       style={{ aspectRatio: "1/1", cursor: onOpenLightbox ? "pointer" : "default" }}

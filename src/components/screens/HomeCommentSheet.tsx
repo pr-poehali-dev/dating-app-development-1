@@ -53,7 +53,7 @@ export function CommentSheet({ post, onClose }: { post: Post; onClose: () => voi
 
         {/* Фото поста */}
         <div className="px-3">
-          <img src={post.photo_url} className="w-full rounded-2xl object-cover" style={{ maxHeight: 420 }} />
+          <img src={post.photo_url} className="w-full rounded-2xl object-cover" style={{ maxHeight: 300 }} />
         </div>
 
         {/* Лайки/комментарии */}

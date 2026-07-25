@@ -103,13 +103,13 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
               <div
                 key={user.id}
                 className="flex-shrink-0 flex flex-col gap-2"
-                style={{ width: 88, scrollSnapAlign: "start" }}>
+                style={{ width: 72, scrollSnapAlign: "start" }}>
 
                 {/* Карточка-фото */}
                 <button
                   onClick={() => isLocked ? onPremium() : onProfile(user)}
                   className="relative rounded-2xl overflow-hidden active:scale-95 transition-transform"
-                  style={{ width: 88, height: 116 }}>
+                  style={{ width: 72, height: 96 }}>
                   <UserAvatar
                     src={user.photo_url}
                     className="absolute inset-0 w-full h-full"
@@ -176,12 +176,12 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
 
           {/* Кнопка "Смотреть всех" — только без премиума */}
           {!isPremium && (
-            <div className="flex-shrink-0 flex flex-col gap-2" style={{ width: 88, scrollSnapAlign: "start" }}>
+            <div className="flex-shrink-0 flex flex-col gap-2" style={{ width: 72, scrollSnapAlign: "start" }}>
               <button
                 onClick={onPremium}
                 className="rounded-2xl flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
                 style={{
-                  width: 88, height: 116,
+                  width: 72, height: 96,
                   background: "linear-gradient(160deg, rgba(255,45,120,0.12), rgba(155,89,182,0.12))",
                   border: "1px solid rgba(255,45,120,0.25)",
                 }}>

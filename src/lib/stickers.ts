@@ -68,6 +68,8 @@ export interface StickerSettings {
   largeEmoji: boolean;   // Крупные эмодзи
   recentFirst: boolean;  // Сначала недавно использованные наборы
   enabledPacks: string[]; // id включённых наборов
+  quickReaction: boolean; // Двойной тап по сообщению ставит реакцию
+  quickReactionEmoji: string; // Эмодзи быстрой реакции
 }
 
 const SETTINGS_KEY = "sticker_settings_v1";
@@ -77,6 +79,8 @@ const DEFAULT_SETTINGS: StickerSettings = {
   largeEmoji: true,
   recentFirst: true,
   enabledPacks: STICKER_PACKS.map(p => p.id),
+  quickReaction: true,
+  quickReactionEmoji: "❤️",
 };
 
 function readSettings(): StickerSettings {
@@ -88,10 +92,22 @@ function readSettings(): StickerSettings {
       largeEmoji: parsed.largeEmoji ?? DEFAULT_SETTINGS.largeEmoji,
       recentFirst: parsed.recentFirst ?? DEFAULT_SETTINGS.recentFirst,
       enabledPacks: Array.isArray(parsed.enabledPacks) ? parsed.enabledPacks : DEFAULT_SETTINGS.enabledPacks,
+      quickReaction: parsed.quickReaction ?? DEFAULT_SETTINGS.quickReaction,
+      quickReactionEmoji: parsed.quickReactionEmoji ?? DEFAULT_SETTINGS.quickReactionEmoji,
     };
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+/** Быстрая реакция включена? (двойной тап по сообщению) */
+export function isQuickReactionOn(): boolean {
+  return readSettings().quickReaction;
+}
+
+/** Эмодзи быстрой реакции. */
+export function getQuickReactionEmoji(): string {
+  return readSettings().quickReactionEmoji;
 }
 
 /** Хук настроек стикеров и эмодзи. */

@@ -47,7 +47,7 @@ export function GiftsGrid({
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         {gifts.map((gift) => {
           const rs = RARITY_COLORS[gift.gift_rarity] || RARITY_COLORS.common;
           const giftDef = GIFTS.find(g => g.id === gift.gift_id);
@@ -61,13 +61,13 @@ export function GiftsGrid({
             <button
               key={gift.id}
               onClick={() => setSelected(gift)}
-              className="flex flex-col items-center gap-1.5 pt-3 pb-2.5 px-1 rounded-2xl active:scale-95 transition-transform"
+              className="flex flex-col items-center gap-1 pt-2.5 pb-2 px-1 rounded-2xl active:scale-95 transition-transform"
               style={{ background: rs.bg, border: `1.5px solid ${rs.border}`, boxShadow: rs.glow }}>
               <GiftItem
                 category={category}
                 variant={variant}
                 animKey={animKey}
-                size={56}
+                size={44}
                 rarity={rarity}
                 emoji={emoji}
                 marketBadge={false}

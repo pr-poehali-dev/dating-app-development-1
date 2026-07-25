@@ -16,6 +16,9 @@ interface ChatMessagesListProps {
   onMsgTouchMove: (e: React.TouchEvent, msg: Message) => void;
   onMsgTouchEnd: (msg: Message) => void;
   sendSystem: (text: string) => Promise<void>;
+  reactions?: Record<number, string>;
+  popReactionId?: number | null;
+  onReact?: (msg: Message) => void;
 }
 
 // ─── ChatMessagesList ────────────────────────────────────────────────────────
@@ -24,6 +27,7 @@ export function ChatMessagesList({
   timeAgoRu, startHold, cancelHold,
   onMsgTouchStart, onMsgTouchMove, onMsgTouchEnd,
   sendSystem,
+  reactions = {}, popReactionId = null, onReact,
 }: ChatMessagesListProps) {
   return (
     <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5"
@@ -104,13 +108,28 @@ export function ChatMessagesList({
               <div className={`flex flex-col gap-0.5 ${msg.out ? "items-end" : "items-start"}`} style={{ maxWidth: "80%" }}>
                 <div className="relative">
                   <div className={`${msg.out ? "msg-bubble-out" : "msg-bubble-in"} select-none`}
-                    style={{ cursor: "pointer" }}>
+                    style={{ cursor: "pointer" }}
+                    onDoubleClick={() => onReact?.(msg)}>
                     {renderMsgContent(msg.text, msg.out, partnerId ?? undefined, msg.out ? undefined : () => sendSystem("__GRANT_PHOTO__"))}
                   </div>
                   {isLastOut && (
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
                       style={{ background: "#FF6A3D", border: "2px solid #0f0a1a" }}>
                       <Icon name="Check" size={9} className="text-white" />
+                    </div>
+                  )}
+                  {/* Всплывающая анимация реакции при двойном тапе */}
+                  {popReactionId === msg.id && (
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 pointer-events-none text-2xl"
+                      style={{ animation: "reactionPop 0.7s ease forwards" }}>
+                      {reactions[msg.id]}
+                    </div>
+                  )}
+                  {/* Постоянный бейдж реакции на сообщении */}
+                  {reactions[msg.id] && (
+                    <div className={`absolute -bottom-2.5 ${msg.out ? "left-1" : "right-1"} flex items-center justify-center rounded-full text-sm`}
+                      style={{ width: 22, height: 22, background: "#1a1030", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+                      {reactions[msg.id]}
                     </div>
                   )}
                 </div>

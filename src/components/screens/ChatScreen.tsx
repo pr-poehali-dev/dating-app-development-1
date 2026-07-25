@@ -75,6 +75,9 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
           onMsgTouchMove={c.onMsgTouchMove}
           onMsgTouchEnd={c.onMsgTouchEnd}
           sendSystem={c.sendSystem}
+          reactions={c.reactions}
+          popReactionId={c.popReactionId}
+          onReact={c.react}
         />
 
         {!c.isBot && c.micError && (

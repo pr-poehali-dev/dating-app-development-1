@@ -4,6 +4,7 @@ import { haptic } from "@/hooks/useNative";
 import { queueAction } from "@/hooks/useOffline";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
+import { isQuickReactionOn, getQuickReactionEmoji } from "@/lib/stickers";
 
 const FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
@@ -51,6 +52,9 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
   const [micError, setMicError] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Record<number, string>>({});
+  const [popReactionId, setPopReactionId] = useState<number | null>(null);
+  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -348,7 +352,27 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     if (reached) handleDelete(msg);
   };
 
+  // Быстрая реакция: двойной тап по сообщению ставит эмодзи (как в Telegram)
+  const react = (msg: Message) => {
+    if (!isQuickReactionOn()) return;
+    const emoji = getQuickReactionEmoji();
+    haptic("light");
+    setReactions(prev => {
+      // Повторный двойной тап тем же эмодзи — снимаем реакцию
+      if (prev[msg.id] === emoji) {
+        const next = { ...prev };
+        delete next[msg.id];
+        return next;
+      }
+      return { ...prev, [msg.id]: emoji };
+    });
+    setPopReactionId(msg.id);
+    if (popTimer.current) clearTimeout(popTimer.current);
+    popTimer.current = setTimeout(() => setPopReactionId(null), 700);
+  };
+
   return {
+    reactions, popReactionId, react,
     msgs, input, setInput,
     partnerName, partnerPhoto, partnerId, partnerCity, isBot,
     showPartnerProfile, setShowPartnerProfile,
