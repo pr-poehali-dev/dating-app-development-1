@@ -545,6 +545,12 @@ export const messagesApi = {
       body: JSON.stringify({ message_id }),
     }),
 
+  react: (message_id: number, reaction: string) =>
+    req<{ ok: boolean; message_id: number; reaction: string | null }>("messages", "react", {
+      method: "POST",
+      body: JSON.stringify({ message_id, reaction }),
+    }),
+
   uploadChatPhoto: (match_id: number, image: string, content_type: string) =>
     req<{ ok: boolean; photo_url: string }>("messages", "upload_chat_photo", {
       method: "POST",
@@ -664,6 +670,7 @@ export interface Message {
   created_at: string;
   out: boolean;
   read?: boolean;
+  reaction?: string | null;
 }
 
 export interface Post {

@@ -52,7 +52,6 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
   const [micError, setMicError] = useState<string | null>(null);
-  const [reactions, setReactions] = useState<Record<number, string>>({});
   const [popReactionId, setPopReactionId] = useState<number | null>(null);
   const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -95,6 +94,27 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   useAppRefresh(() => {
     messagesApi.getByMatch(matchId).then((d) => setMsgs(d.messages)).catch(() => {});
   });
+
+  // Лёгкий поллинг: подтягиваем новые сообщения и реакции собеседника,
+  // сохраняя ещё не отправленные (офлайн) сообщения из очереди.
+  useEffect(() => {
+    if (isBot) return;
+    let stopped = false;
+    const interval = setInterval(async () => {
+      if (stopped || !navigator.onLine || document.hidden) return;
+      try {
+        const d = await messagesApi.getByMatch(matchId);
+        if (stopped) return;
+        setMsgs((prev) => {
+          const serverIds = new Set(d.messages.map((m) => m.id));
+          // локальные сообщения, которых ещё нет на сервере (офлайн-очередь)
+          const pending = prev.filter((m) => !serverIds.has(m.id) && m.sender_id === 0);
+          return [...d.messages, ...pending];
+        });
+      } catch { /* ignore */ }
+    }, 4000);
+    return () => { stopped = true; clearInterval(interval); };
+  }, [matchId, isBot]);
 
   useEffect(() => {
     if (videoCall) return;
@@ -352,23 +372,32 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     if (reached) handleDelete(msg);
   };
 
-  // Быстрая реакция: двойной тап по сообщению ставит эмодзи (как в Telegram)
+  // Реакции собеседника/мои — берём прямо из сообщений (приходят с сервера)
+  const reactions: Record<number, string> = {};
+  for (const m of msgs) {
+    if (m.reaction) reactions[m.id] = m.reaction;
+  }
+
+  // Быстрая реакция: двойной тап по сообщению ставит эмодзи (как в Telegram).
+  // Сохраняем на сервере, чтобы её видел собеседник.
   const react = (msg: Message) => {
     if (!isQuickReactionOn()) return;
+    if (msg.sender_id === 0) return; // ещё не отправленное офлайн-сообщение
     const emoji = getQuickReactionEmoji();
+    // Повторный двойной тап тем же эмодзи — снимаем реакцию
+    const next = msg.reaction === emoji ? "" : emoji;
     haptic("light");
-    setReactions(prev => {
-      // Повторный двойной тап тем же эмодзи — снимаем реакцию
-      if (prev[msg.id] === emoji) {
-        const next = { ...prev };
-        delete next[msg.id];
-        return next;
-      }
-      return { ...prev, [msg.id]: emoji };
+    // Оптимистично обновляем локально
+    setMsgs(prev => prev.map(m => m.id === msg.id ? { ...m, reaction: next || null } : m));
+    if (next) {
+      setPopReactionId(msg.id);
+      if (popTimer.current) clearTimeout(popTimer.current);
+      popTimer.current = setTimeout(() => setPopReactionId(null), 700);
+    }
+    messagesApi.react(msg.id, next).catch(() => {
+      // откат при ошибке
+      setMsgs(prev => prev.map(m => m.id === msg.id ? { ...m, reaction: msg.reaction ?? null } : m));
     });
-    setPopReactionId(msg.id);
-    if (popTimer.current) clearTimeout(popTimer.current);
-    popTimer.current = setTimeout(() => setPopReactionId(null), 700);
   };
 
   return {

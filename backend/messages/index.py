@@ -96,14 +96,15 @@ def handler(event: dict, context) -> dict:
                 return resp(403, {'error': 'Нет доступа'})
 
             cur.execute(
-                "SELECT id, sender_id, text, created_at, read_at FROM messages WHERE match_id = %s ORDER BY created_at ASC",
+                "SELECT id, sender_id, text, created_at, read_at, reaction FROM messages WHERE match_id = %s ORDER BY created_at ASC",
                 (match_id,)
             )
             msgs = []
             for r in cur.fetchall():
                 msgs.append({
                     'id': r[0], 'sender_id': r[1], 'text': r[2],
-                    'created_at': str(r[3]), 'out': r[1] == me['id'], 'read': r[4] is not None
+                    'created_at': str(r[3]), 'out': r[1] == me['id'], 'read': r[4] is not None,
+                    'reaction': r[5]
                 })
             cur.execute(
                 "UPDATE messages SET read_at = NOW() WHERE match_id = %s AND sender_id != %s AND read_at IS NULL",
@@ -326,6 +327,29 @@ def handler(event: dict, context) -> dict:
             )
             conn.commit()
             return resp(200, {'signals': signals})
+
+        # Поставить/снять реакцию (эмодзи) на сообщение
+        if action == 'react':
+            body = json.loads(event.get('body') or '{}')
+            try:
+                msg_id = int(body.get('message_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный message_id'})
+            reaction = (body.get('reaction') or '').strip()
+            if len(reaction) > 16:
+                return resp(400, {'error': 'Некорректная реакция'})
+            # Проверяем доступ: сообщение из матча текущего пользователя
+            cur.execute("""
+                SELECT m.id FROM messages m
+                JOIN matches ma ON ma.id = m.match_id
+                WHERE m.id = %s AND (ma.user1_id = %s OR ma.user2_id = %s)
+            """, (msg_id, me['id'], me['id']))
+            if not cur.fetchone():
+                return resp(403, {'error': 'Нет доступа к этому сообщению'})
+            new_val = reaction if reaction else None
+            cur.execute("UPDATE messages SET reaction = %s WHERE id = %s", (new_val, msg_id))
+            conn.commit()
+            return resp(200, {'ok': True, 'message_id': msg_id, 'reaction': new_val})
 
         if action == 'delete':
             body = json.loads(event.get('body') or '{}')
