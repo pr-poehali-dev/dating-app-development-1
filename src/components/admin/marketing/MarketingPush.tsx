@@ -3,19 +3,30 @@ import Icon from "@/components/ui/icon";
 import { adminApi } from "@/lib/api";
 
 export function MarketingPush({ token }: { token: string }) {
+  const [channel, setChannel] = useState<"internal" | "onesignal">("internal");
   const [pushTitle, setPushTitle] = useState("");
   const [pushMsg, setPushMsg] = useState("");
+  const [pushUrl, setPushUrl] = useState("");
   const [pushSegment, setPushSegment] = useState("all");
   const [pushing, setPushing] = useState(false);
   const [pushResult, setPushResult] = useState<{ sent_to: number } | null>(null);
+  const [pushError, setPushError] = useState("");
 
   const handlePush = async () => {
     if (!pushTitle.trim() || !pushMsg.trim()) return;
-    setPushing(true); setPushResult(null);
+    setPushing(true); setPushResult(null); setPushError("");
     try {
-      const r = await adminApi.pushBroadcast(token, pushTitle.trim(), pushMsg.trim(), pushSegment);
-      setPushResult(r); setPushTitle(""); setPushMsg("");
-    } catch { void 0; } finally { setPushing(false); }
+      if (channel === "onesignal") {
+        const r = await adminApi.oneSignalSend(token, pushTitle.trim(), pushMsg.trim(), pushUrl.trim());
+        setPushResult({ sent_to: r.result?.recipients ?? 0 });
+      } else {
+        const r = await adminApi.pushBroadcast(token, pushTitle.trim(), pushMsg.trim(), pushSegment);
+        setPushResult(r);
+      }
+      setPushTitle(""); setPushMsg(""); setPushUrl("");
+    } catch (e) {
+      setPushError(e instanceof Error ? e.message : "Не удалось отправить");
+    } finally { setPushing(false); }
   };
 
   const segments = [
@@ -24,9 +35,32 @@ export function MarketingPush({ token }: { token: string }) {
     { id: "new_week", label: "Новые 7 дней", icon: "Sparkles" },
   ];
 
+  const channels = [
+    { id: "internal",  label: "Свои пуши",  icon: "Bell" },
+    { id: "onesignal", label: "OneSignal",  icon: "Send" },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Сегмент */}
+      {/* Канал отправки */}
+      <div className="flex flex-col gap-2">
+        <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest px-1">Канал</p>
+        <div className="grid grid-cols-2 gap-2">
+          {channels.map(c => (
+            <button key={c.id} onClick={() => setChannel(c.id as "internal" | "onesignal")}
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-semibold transition-all"
+              style={channel === c.id
+                ? { background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.18))", color: "white", border: "1px solid rgba(255,45,120,0.3)" }
+                : { background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.4)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <Icon name={c.icon as "Bell"} size={16} style={{ color: channel === c.id ? "#FF2D78" : undefined }} />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Сегмент — только для своих пушей */}
+      {channel === "internal" && (
       <div className="flex flex-col gap-2">
         <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest px-1">Аудитория</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -42,6 +76,13 @@ export function MarketingPush({ token }: { token: string }) {
           ))}
         </div>
       </div>
+      )}
+
+      {channel === "onesignal" && (
+        <p className="text-white/40 text-xs px-1 leading-relaxed">
+          Уведомление уйдёт всем подписчикам OneSignal (сегмент «Subscribed Users»).
+        </p>
+      )}
 
       {/* Форма */}
       <div className="rounded-2xl p-4 flex flex-col gap-3"
@@ -62,6 +103,13 @@ export function MarketingPush({ token }: { token: string }) {
             <span className="text-white/20 text-xs">{pushMsg.length}/200</span>
           </div>
         </div>
+
+        {channel === "onesignal" && (
+          <input value={pushUrl} onChange={e => setPushUrl(e.target.value)}
+            placeholder="Ссылка при клике (необязательно), напр. /premium"
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+        )}
 
         {/* Превью */}
         {(pushTitle || pushMsg) && (
@@ -98,6 +146,20 @@ export function MarketingPush({ token }: { token: string }) {
           <div>
             <p className="text-green-300 font-bold text-sm">Рассылка отправлена</p>
             <p className="text-green-400/60 text-xs">{pushResult.sent_to} пользователей получили уведомление</p>
+          </div>
+        </div>
+      )}
+
+      {pushError && (
+        <div className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
+          style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(248,113,113,0.15)" }}>
+            <Icon name="AlertCircle" size={16} style={{ color: "#F87171" }} />
+          </div>
+          <div>
+            <p className="text-red-300 font-bold text-sm">Не отправлено</p>
+            <p className="text-red-400/60 text-xs break-all">{pushError}</p>
           </div>
         </div>
       )}

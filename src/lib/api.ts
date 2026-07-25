@@ -1019,6 +1019,17 @@ export const adminApi = {
   pushBroadcast: (token: string, title: string, message: string, segment: string) =>
     adminReq<{ ok: boolean; sent_to: number }>('push_broadcast', { method: 'POST', body: JSON.stringify({ title, message, segment }) }, token),
 
+  oneSignalSend: (token: string, title: string, message: string, url: string) =>
+    fetch(`${URLS.push}?action=onesignal_send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+      body: JSON.stringify({ title, body: message, url: url || '/' }),
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Ошибка отправки OneSignal');
+      return data as { ok: boolean; result?: { recipients?: number; id?: string } };
+    }),
+
   banners: (token: string) =>
     adminReq<{ banners: { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string }[] }>('banners', {}, token),
   bannerSave: (token: string, data: Record<string, unknown>) =>
