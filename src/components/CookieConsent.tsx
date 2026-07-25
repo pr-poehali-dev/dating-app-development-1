@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import { isStandaloneApp } from "@/lib/isStandalone";
+import { openLegalExternally } from "@/lib/openLegal";
 
 const STORAGE_KEY = "poluton_cookie_consent_v2";
 
@@ -39,6 +40,8 @@ function MiniToggle({ checked, onChange, disabled }: { checked: boolean; onChang
 
 export function CookieConsent() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const openPrivacy = () => { if (!openLegalExternally("privacy")) navigate("/privacy"); };
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -109,13 +112,13 @@ export function CookieConsent() {
                 <h3 className="text-white font-unbounded font-black text-lg">{t("cookieConsent.title")}</h3>
                 <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
                   {t("cookieConsent.text")}{" "}
-                  <Link to="/privacy" className="text-pink-400 font-semibold hover:text-pink-300 transition-colors underline underline-offset-2">
+                  <button onClick={openPrivacy} className="text-pink-400 font-semibold hover:text-pink-300 transition-colors underline underline-offset-2">
                     {t("cookieConsent.cookiesLink")}
-                  </Link>
+                  </button>
                   {" "}{t("cookieConsent.and")}{" "}
-                  <Link to="/privacy" className="text-pink-400 font-semibold hover:text-pink-300 transition-colors underline underline-offset-2">
+                  <button onClick={openPrivacy} className="text-pink-400 font-semibold hover:text-pink-300 transition-colors underline underline-offset-2">
                     {t("cookieConsent.dataLink")}
-                  </Link>
+                  </button>
                   .
                 </p>
               </div>

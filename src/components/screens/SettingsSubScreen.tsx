@@ -6,6 +6,7 @@ import { PasswordModal, DeleteAccountModal } from "@/components/screens/Settings
 import { SecurityPanel } from "@/components/screens/settings/SecurityPanel";
 import { StickersSettingsScreen } from "@/components/screens/settings/StickersSettingsScreen";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
+import { openLegalExternally } from "@/lib/openLegal";
 import { useBackHandler } from "@/hooks/backStack";
 
 // ─── SettingsSubScreen ────────────────────────────────────────────────────────
@@ -310,7 +311,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         incognito={incognito}
         incognitoLoading={incognitoLoading}
         onIncognitoToggle={handleIncognitoToggle}
-        onOpenLegal={() => setShowLegal(true)}
+        onOpenLegal={() => { if (!openLegalExternally("terms")) setShowLegal(true); }}
       />}
 
       {/* Правовые документы */}

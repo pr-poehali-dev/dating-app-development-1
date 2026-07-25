@@ -5,6 +5,7 @@ import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
 import { AuthHeroCard } from "./AuthHeroCard";
 import { AuthLegalSheet } from "./AuthLegalSheet";
+import { openLegalExternally } from "@/lib/openLegal";
 
 // Redirect URI для OAuth берём из реального адреса браузера — так он всегда
 // совпадает сам с собой. В настройках ВК/Mail.ru нужно указать ровно этот адрес.
@@ -71,6 +72,9 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
     }
   };
 
+  const openTerms = () => { if (!openLegalExternally("terms")) setShowTerms(true); };
+  const openPrivacy = () => { if (!openLegalExternally("privacy")) setShowPrivacy(true); };
+
   const submit = async () => {
     setError("");
     setEmailTaken(false);
@@ -124,8 +128,8 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
           onShowPasswordToggle={() => setShowPassword(v => !v)}
           onSubmit={submit}
           onShowForgot={() => setShowForgot(true)}
-          onOpenTerms={() => setShowTerms(true)}
-          onOpenPrivacy={() => setShowPrivacy(true)}
+          onOpenTerms={openTerms}
+          onOpenPrivacy={openPrivacy}
           onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
           onOAuth={startOAuth}
           oauthLoading={oauthLoading}
@@ -147,8 +151,8 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
           onShowPasswordToggle={() => setShowPassword(v => !v)}
           onSubmit={submit}
           onShowForgot={() => setShowForgot(true)}
-          onOpenTerms={() => setShowTerms(true)}
-          onOpenPrivacy={() => setShowPrivacy(true)}
+          onOpenTerms={openTerms}
+          onOpenPrivacy={openPrivacy}
           onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
           onOAuth={startOAuth}
           oauthLoading={oauthLoading}

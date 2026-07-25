@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { SupportModal } from "@/components/screens/auth/SupportModal";
+import { openLegalExternally } from "@/lib/openLegal";
 
 export function AuthSiteFooter() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const year = new Date().getFullYear();
   const [showSupport, setShowSupport] = useState(false);
+
+  const openLegal = (tab: "terms" | "privacy") => {
+    if (!openLegalExternally(tab)) navigate(`/${tab}`);
+  };
 
   return (
     <div className="w-full" style={{ background: "#161022", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
@@ -16,8 +22,10 @@ export function AuthSiteFooter() {
         <div className="flex items-center gap-6 flex-wrap">
           <button onClick={() => setShowSupport(true)}
             className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.support")}</button>
-          <Link to="/terms" className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.terms")}</Link>
-          <Link to="/privacy" className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.privacy")}</Link>
+          <button onClick={() => openLegal("terms")}
+            className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.terms")}</button>
+          <button onClick={() => openLegal("privacy")}
+            className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.privacy")}</button>
         </div>
       </div>
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}

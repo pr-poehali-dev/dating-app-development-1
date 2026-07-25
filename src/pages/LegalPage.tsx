@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { AuthLegalContent } from "@/components/screens/auth/AuthLegalContent";
+import { openLegalExternally } from "@/lib/openLegal";
 
 export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
   const { t } = useTranslation();
@@ -11,9 +12,15 @@ export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
   const title = isTerms ? t("legal.termsTitle") : t("legal.privacyTitle");
 
   useEffect(() => {
+    // В установленном приложении (APK/standalone) правовые документы открываем
+    // во внешнем браузере, а внутри приложения возвращаемся назад.
+    if (openLegalExternally(tab)) {
+      navigate(-1);
+      return;
+    }
     document.title = `${title} — Полутон`;
     window.scrollTo(0, 0);
-  }, [title]);
+  }, [title, tab, navigate]);
 
   return (
     <div className="min-h-screen w-full" style={{ background: "#ffffff" }}>
