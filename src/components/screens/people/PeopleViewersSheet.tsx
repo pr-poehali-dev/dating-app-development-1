@@ -32,7 +32,10 @@ export function PeopleViewersSheet({ isPremium, onClose, onPremium, onOpenProfil
     setLikedIds(prev => new Set([...prev, userId]));
     try {
       const res = await likesApi.send(userId);
-      if (res.match) setMatchedIds(prev => new Set([...prev, userId]));
+      if (res.match) {
+        setMatchedIds(prev => new Set([...prev, userId]));
+        window.dispatchEvent(new CustomEvent("app:match"));
+      }
     } catch {
       setLikedIds(prev => { const n = new Set(prev); n.delete(userId); return n; });
     }

@@ -11,6 +11,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useGeoGate } from "@/hooks/useGeoGate";
 import { useOneSignal } from "@/hooks/useOneSignal";
 import { GeoBlockScreen } from "@/components/GeoBlockScreen";
+import { PushPromptToast } from "@/components/PushPromptToast";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function AppInner() {
 
   return (
     <BrowserRouter>
+      <PushPromptToast />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/oauth" element={<Index />} />

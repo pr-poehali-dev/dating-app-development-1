@@ -140,6 +140,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       if (res.match && res.match_id) {
         mid = res.match_id;
         setMatchId(res.match_id);
+        window.dispatchEvent(new CustomEvent("app:match"));
       }
       onLike(currentProfile);
       try {
