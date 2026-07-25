@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;900&family=Unbounded:wght@700;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -233,8 +235,6 @@
     opacity: 0.75;
   }
 }
-
-@import url("https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700;900&family=Unbounded:wght@700;900&display=swap");
 
 @layer base {
   :root {
