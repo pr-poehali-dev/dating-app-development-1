@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, type User, type LiveStream, type Profile } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { loginOneSignal, logoutOneSignal } from "@/hooks/useOneSignal";
 import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
 import { setAppBadge } from "@/hooks/useNative";
 import { useBackButton } from "@/hooks/useBackButton";
@@ -44,6 +45,7 @@ export function useIndexController() {
 
   const handleLogout = async () => {
     await authApi.logout();
+    logoutOneSignal();
     setCurrentUser(null);
     setScreen("discover");
   };
@@ -58,6 +60,11 @@ export function useIndexController() {
 
   // Подключаем push-уведомления сразу после авторизации
   usePushNotifications(!!currentUser);
+
+  // Связываем пользователя с OneSignal для адресных пушей
+  useEffect(() => {
+    if (currentUser?.id) void loginOneSignal(currentUser.id);
+  }, [currentUser?.id]);
 
   // Глобальный входящий видеозвонок — виден на любой вкладке приложения.
   // Открытый вручную звонок (activeCall) подавляет глобальный поллинг.

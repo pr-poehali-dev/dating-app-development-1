@@ -6,9 +6,36 @@ import json
 import os
 import base64
 import uuid
+import urllib.request
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'Basic {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет Web Push всем подпискам пользователя."""
@@ -190,6 +217,7 @@ def handler(event: dict, context) -> dict:
             preview = text if not text.startswith('__') else ('🎤 Голосовое' if text.startswith('__AUDIO__') else '📷 Фото' if text.startswith('__VANISH__') else '🎁 Подарок' if text.startswith('__GIFT__') else '📍 Локация' if text.startswith('__LOC__') else '🎨 Стикер' if text.startswith('__STICKER__') else '📵 Пропущенный видеозвонок' if text.startswith('__VCALL__missed') else '💬 Сообщение')
             push_title = f'📵 {sender_name}' if text.startswith('__VCALL__missed') else f'💬 {sender_name}'
             _push_to_user(cur, conn, partner_id, push_title, preview[:80], '/')
+            _onesignal_to_user(partner_id, push_title, preview[:80], '/')
             return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
 
         # Отправить первое сообщение без матча — создаём матч автоматически
@@ -223,6 +251,12 @@ def handler(event: dict, context) -> dict:
             )
             row = cur.fetchone()
             conn.commit()
+            cur.execute("SELECT name FROM users WHERE id=%s", (me['id'],))
+            sd = cur.fetchone()
+            sd_name = sd[0] if sd else 'Новое сообщение'
+            sd_preview = text if not text.startswith('__') else '💬 Сообщение'
+            _push_to_user(cur, conn, to_user_id, f'💬 {sd_name}', sd_preview[:80], '/')
+            _onesignal_to_user(to_user_id, f'💬 {sd_name}', sd_preview[:80], '/')
             return resp(200, {'ok': True, 'match_id': match_id, 'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1])})
 
         # Загрузить фото для чата (vanish или обычное)

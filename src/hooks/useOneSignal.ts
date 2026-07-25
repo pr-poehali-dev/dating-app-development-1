@@ -10,6 +10,8 @@ declare global {
 
 interface OneSignalApi {
   init: (config: Record<string, unknown>) => Promise<void>;
+  login: (externalId: string) => Promise<void>;
+  logout: () => Promise<void>;
   Slidedown: { promptPush: () => Promise<void> };
   Notifications: {
     permission: boolean;
@@ -69,6 +71,24 @@ export async function promptOneSignal(): Promise<boolean> {
         resolve(false);
       }
     });
+  });
+}
+
+/** Связать текущего пользователя с OneSignal (External ID = наш user id). */
+export async function loginOneSignal(userId: number): Promise<void> {
+  await initOneSignal();
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async (OneSignal) => {
+    try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
+  });
+}
+
+/** Отвязать пользователя (при выходе). */
+export function logoutOneSignal(): void {
+  if (!window.__oneSignalInited) return;
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async (OneSignal) => {
+    try { await OneSignal.logout(); } catch { /* ignore */ }
   });
 }
 

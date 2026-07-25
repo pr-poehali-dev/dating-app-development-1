@@ -4,7 +4,35 @@
 """
 import json
 import os
+import urllib.request
+import urllib.error
 import psycopg2
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'Basic {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет Web Push всем подпискам пользователя (без зависимостей через try/except)."""
@@ -126,9 +154,11 @@ def handler(event: dict, context) -> dict:
             sender_name = sender_row[0] if sender_row else 'Кто-то'
             if mutual:
                 _push_to_user(cur, conn, to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
+                _onesignal_to_user(to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
             else:
                 label = '⭐ Суперлайк' if is_super else '❤️ Лайк'
                 _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/')
+                _onesignal_to_user(to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/')
             return resp(200, {'ok': True, 'match': bool(mutual), 'match_id': match_id})
 
         if action == 'liked_me':
