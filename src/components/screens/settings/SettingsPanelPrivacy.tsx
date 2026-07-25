@@ -1,6 +1,56 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
+import { promptOneSignal } from "@/hooks/useOneSignal";
+
+function PushSubscribeButton() {
+  const initial = typeof Notification !== "undefined" ? Notification.permission : "default";
+  const [state, setState] = useState<"idle" | "loading" | "granted" | "denied">(
+    initial === "granted" ? "granted" : "idle",
+  );
+
+  const handleClick = async () => {
+    if (state === "granted") return;
+    setState("loading");
+    const ok = await promptOneSignal();
+    setState(ok ? "granted" : "denied");
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={state === "loading" || state === "granted"}
+      className="w-full mb-3 rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all active:scale-[0.99] disabled:opacity-100"
+      style={{
+        background: state === "granted"
+          ? "rgba(74,222,128,0.1)"
+          : "linear-gradient(135deg,rgba(255,45,120,0.16),rgba(155,89,182,0.16))",
+        border: `1px solid ${state === "granted" ? "rgba(74,222,128,0.3)" : "rgba(255,45,120,0.3)"}`,
+      }}
+    >
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: state === "granted" ? "rgba(74,222,128,0.18)" : "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+        <Icon name={state === "granted" ? "BellRing" : "Bell"} size={17}
+          style={{ color: state === "granted" ? "#4ADE80" : "#fff" }} />
+      </div>
+      <div className="flex-1 text-left">
+        <p className="text-white font-semibold text-sm">
+          {state === "granted" ? "Push-уведомления включены" : "Включить push-уведомления"}
+        </p>
+        <p className="text-white/45 text-xs mt-0.5">
+          {state === "loading" ? "Ожидаем разрешение..."
+            : state === "denied" ? "Разрешение отклонено — включите в настройках браузера"
+            : state === "granted" ? "Вы будете получать важные уведомления"
+            : "Не пропускай новые совпадения и сообщения"}
+        </p>
+      </div>
+      {state === "loading"
+        ? <Icon name="Loader2" size={16} className="animate-spin text-white/50" />
+        : state !== "granted" && <Icon name="ChevronRight" size={16} className="text-white/30" />}
+    </button>
+  );
+}
 
 interface Props {
   screen: string;
@@ -137,7 +187,9 @@ export function SettingsPanelPrivacy({
 
       {/* ── Уведомления ── */}
       {screen === "notifications" && (
-        <div className="mx-5 glass-card overflow-hidden">
+        <div className="mx-5">
+        <PushSubscribeButton />
+        <div className="glass-card overflow-hidden">
           <Row label="Новые совпадения" sub="Когда кто-то ответил взаимностью">
             <Toggle value={notif.matches} onChange={() => onNotifToggle("matches")} />
           </Row>
@@ -150,6 +202,7 @@ export function SettingsPanelPrivacy({
           <Row label="Акции и новости" sub="Промо и обновления приложения">
             <Toggle value={notif.promo} onChange={() => onNotifToggle("promo")} />
           </Row>
+        </div>
         </div>
       )}
 

@@ -9,12 +9,14 @@ import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useGeoGate } from "@/hooks/useGeoGate";
+import { useOneSignal } from "@/hooks/useOneSignal";
 import { GeoBlockScreen } from "@/components/GeoBlockScreen";
 
 const queryClient = new QueryClient();
 
 function AppInner() {
   const geoStatus = useGeoGate();
+  useOneSignal();
   usePullToRefresh(() => {
     window.dispatchEvent(new CustomEvent("app:refresh"));
   });

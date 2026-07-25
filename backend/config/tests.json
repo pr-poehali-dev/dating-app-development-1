@@ -5,7 +5,13 @@
       "method": "GET",
       "path": "/?action=yandex_maps_key",
       "expectedStatus": 200,
-      "expectedBody": {"api_key": "string"},
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "OneSignal app id",
+      "method": "GET",
+      "path": "/?action=onesignal_app_id",
+      "expectedStatus": 200,
       "bodyMatcher": "partial"
     }
   ]

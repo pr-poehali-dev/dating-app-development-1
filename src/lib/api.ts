@@ -506,6 +506,7 @@ export const notifSettingsApi = {
 // ─── Config ───────────────────────────────────────────────────────────────────
 export const configApi = {
   yandexMapsKey: () => req<{ api_key: string }>("config", "yandex_maps_key"),
+  oneSignalAppId: () => req<{ app_id: string }>("config", "onesignal_app_id"),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────
