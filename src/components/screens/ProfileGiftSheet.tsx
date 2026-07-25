@@ -62,7 +62,6 @@ export const GIFTS = [
   { id: 111, name: "Шампанское",     emoji: "🍾", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
   { id: 112, name: "Факел",          emoji: "🔥", price: 385,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
   { id: 113, name: "Мороженое",      emoji: "🍦", price: 399,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
-  { id: 114, name: "Статуя Свободы", emoji: "🗽", price: 525,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 115, name: "Пёсик",          emoji: "🐕", price: 650,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 116, name: "Лапша",          emoji: "🍜", price: 379,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
   { id: 117, name: "Фламинго",       emoji: "🦩", price: 370,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
@@ -77,7 +76,6 @@ export const GIFTS = [
   { id: 126, name: "Леденец-трость", emoji: "🍬", price: 375,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
   { id: 127, name: "Полумесяц",      emoji: "🕌", price: 600,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 128, name: "Торт с вишней",  emoji: "🍰", price: 550,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
-  { id: 129, name: "Пряник-сердце",  emoji: "🫀", price: 500,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 130, name: "С Днём Рождения", emoji: "🎉", price: 600,  anim: "gift-float",  rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 131, name: "Бенгальский огонь", emoji: "🎇", price: 489, anim: "gift-float", rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 132, name: "Змейка",         emoji: "🐍", price: 390,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
@@ -92,14 +90,12 @@ export const GIFTS = [
   { id: 141, name: "Пряничный человечек", emoji: "🍪", price: 484, anim: "gift-float", rarity: "epic", category: "market", variant: 0, market: true },
   { id: 142, name: "Ожерелье",       emoji: "📿", price: 666,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 143, name: "Календарь",      emoji: "📅", price: 615,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
-  { id: 144, name: "Банка сердец",   emoji: "🫙", price: 575,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 145, name: "Пионы",          emoji: "🌸", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 146, name: "Обезьянка",      emoji: "🐵", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 147, name: "Тамагочи",       emoji: "🎮", price: 390,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
   { id: 148, name: "Какао",          emoji: "☕", price: 399,  anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
   { id: 149, name: "Мухомор",        emoji: "🍄", price: 625,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 150, name: "Глинтвейн",      emoji: "🍷", price: 460,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
-  { id: 151, name: "Горшок с золотом", emoji: "🪙", price: 485, anim: "gift-float",  rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 152, name: "Глаз",           emoji: "👁️", price: 674,  anim: "gift-float",   rarity: "epic",   category: "market", variant: 0, market: true },
   { id: 153, name: "Сакура",         emoji: "🌸", price: 817,  anim: "gift-float",   rarity: "legendary", category: "market", variant: 0, market: true },
   { id: 154, name: "Пасхальное яйцо", emoji: "🥚", price: 427, anim: "gift-float",   rarity: "rare",   category: "market", variant: 0, market: true },
@@ -180,19 +176,25 @@ export function ProfileGiftSheet({
           </div>
         </div>
 
-        {/* Category tabs */}
-        <div className="flex gap-2 px-4 py-3 overflow-x-auto no-scrollbar flex-shrink-0">
-          {CATEGORIES.map(cat => (
-            <button key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl flex-shrink-0 transition-all text-sm font-semibold active:scale-95 ${activeCategory === cat.id ? "text-white" : "text-white/50"}`}
-              style={activeCategory === cat.id
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
-                : { background: "rgba(255,255,255,0.07)" }}>
-              <span>{cat.emoji}</span>
-              <span>{cat.label}</span>
-            </button>
-          ))}
+        {/* Category tabs — сегментированный переключатель */}
+        <div className="px-4 py-3 flex-shrink-0">
+          <div className="flex gap-1 p-1 rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            {CATEGORIES.map(cat => {
+              const active = activeCategory === cat.id;
+              return (
+                <button key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all text-sm font-bold active:scale-[0.98] ${active ? "text-white" : "text-white/45"}`}
+                  style={active
+                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 18px rgba(255,45,120,0.35)" }
+                    : { background: "transparent" }}>
+                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="overflow-y-auto flex-1 px-4"

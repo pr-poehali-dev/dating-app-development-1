@@ -32,19 +32,25 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
           </div>
         </div>
 
-        {/* Категории */}
-        <div className="flex gap-2 px-3 py-2 flex-shrink-0 overflow-x-auto no-scrollbar">
-          {([{ id: "market", label: "Маркет", emoji: "🛍️" }, { id: "special", label: "Особые", emoji: "✨" }] as const).map(cat => (
-            <button key={cat.id}
-              onClick={() => onCategoryChange(cat.id)}
-              className={`flex items-center gap-1.5 flex-shrink-0 px-3.5 py-1.5 rounded-2xl transition-all active:scale-95 text-sm font-semibold ${giftCategory === cat.id ? "text-white" : "text-white/50"}`}
-              style={giftCategory === cat.id
-                ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
-                : { background: "rgba(255,255,255,0.06)" }}>
-              <span className="leading-none">{cat.emoji}</span>
-              <span className="leading-none">{cat.label}</span>
-            </button>
-          ))}
+        {/* Категории — сегментированный переключатель */}
+        <div className="px-4 py-3 flex-shrink-0">
+          <div className="flex gap-1 p-1 rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            {([{ id: "market", label: "Маркет", emoji: "🛍️" }, { id: "special", label: "Особые", emoji: "✨" }] as const).map(cat => {
+              const active = giftCategory === cat.id;
+              return (
+                <button key={cat.id}
+                  onClick={() => onCategoryChange(cat.id)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all active:scale-[0.98] text-sm font-bold ${active ? "text-white" : "text-white/45"}`}
+                  style={active
+                    ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 18px rgba(255,45,120,0.35)" }
+                    : { background: "transparent" }}>
+                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <span className="leading-none">{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Сетка подарков */}
