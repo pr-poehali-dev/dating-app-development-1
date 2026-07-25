@@ -136,6 +136,18 @@ def handler(event: dict, context) -> dict:
             cur.execute("SELECT 1 FROM users WHERE id = %s AND email = 'system@lbloom.ru'", (partner_id,))
             if cur.fetchone():
                 return resp(403, {'error': 'Это официальный аккаунт Полутон — отвечать нельзя'})
+
+            # Результат видеозвонка (__VCALL__accepted/missed): обе стороны могут
+            # попытаться записать его. Защищаемся от дублей — если в этом матче за
+            # последнюю минуту уже есть запись о звонке, новую не создаём.
+            if text.startswith('__VCALL__'):
+                cur.execute(
+                    "SELECT 1 FROM messages WHERE match_id = %s AND text LIKE '__VCALL__%%' "
+                    "AND created_at >= NOW() - INTERVAL '60 seconds' LIMIT 1",
+                    (match_id,)
+                )
+                if cur.fetchone():
+                    return resp(200, {'ok': True, 'deduped': True})
             cur.execute(
                 "SELECT 1 FROM user_blocks WHERE (blocker_id=%s AND blocked_id=%s) OR (blocker_id=%s AND blocked_id=%s)",
                 (me['id'], partner_id, partner_id, me['id'])

@@ -74,21 +74,26 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
 
   const callLoggedRef = useRef(false);
 
-  // Записывает результат звонка в чат («принят» / «пропущен»), чтобы собеседник
-  // увидел его, даже если был не в сети во время вызова. Логирует только
-  // инициатор звонка — иначе оба участника вставили бы дублирующее сообщение.
+  // Записывает результат звонка в чат («принят» / «пропущен»), чтобы обе стороны
+  // видели его даже если были не в сети во время вызова.
+  //  • «accepted» пишет только инициатор — иначе была бы дублирующая запись.
+  //  • «missed» может записать любая из сторон (инициатор не дозвонился ИЛИ
+  //    получатель отклонил/не успел ответить). От дублей защищает бэкенд:
+  //    он не вставляет повторный __VCALL__ в том же матче в течение минуты.
   const logCallResult = useCallback((status: "accepted" | "missed") => {
-    if (!isInitiator || callLoggedRef.current) return;
+    if (callLoggedRef.current) return;
+    if (status === "accepted" && !isInitiator) return;
     callLoggedRef.current = true;
     messagesApi.send(matchId, `__VCALL__${status}`).catch(() => {});
   }, [isInitiator, matchId]);
 
   const handleClose = useCallback(() => {
-    if (isInitiator && !connectedRef.current) logCallResult("missed");
+    // Звонок закрыт без соединения — фиксируем пропущенный (от любой стороны).
+    if (!connectedRef.current) logCallResult("missed");
     stopAll();
     messagesApi.signalSend(matchId, "hangup", "bye").catch(() => {});
     onClose();
-  }, [stopAll, matchId, onClose, isInitiator, logCallResult]);
+  }, [stopAll, matchId, onClose, logCallResult]);
 
   const buildVideoConstraints = (): MediaTrackConstraints => ({
     // Просим Full HD как идеал — камера отдаст максимум, что умеет,
@@ -323,10 +328,10 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
       if (pollRef.current) clearInterval(pollRef.current);
       if (noAnswerTimer) clearTimeout(noAnswerTimer);
       stopRingtone();
-      // Если инициатор просто закрыл/свернул экран звонка, не дозвонившись —
-      // тоже фиксируем пропущенный звонок (handleClose делает то же самое, но
-      // на случай ухода без кнопки «положить трубку» логируем и здесь).
-      if (isInitiator && !connectedRef.current) logCallResult("missed");
+      // Если экран звонка закрыт/свёрнут без соединения — фиксируем пропущенный
+      // (для любой стороны: инициатор не дозвонился или получатель не ответил).
+      // handleClose делает то же самое; здесь — на случай ухода свайпом/навигацией.
+      if (!connectedRef.current) logCallResult("missed");
       // Всегда освобождаем микрофон/камеру при размонтировании компонента —
       // даже если пользователь ушёл с экрана свайпом/навигацией, а не кнопкой
       // «положить трубку». Иначе устройство остаётся «занятым» и следующий
