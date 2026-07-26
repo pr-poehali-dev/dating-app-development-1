@@ -235,11 +235,16 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         }),
       });
       const data = await res.json();
-      if (data?.payment_url) {
+      const url = data?.payment_url || data?.paymentUrl;
+      if (url) {
         setGiftDone(giftId);
-        window.open(data.payment_url, "_blank");
+        window.location.href = url;
+      } else {
+        alert(data?.error || "Не удалось создать платёж. Попробуйте ещё раз.");
       }
-    } catch (e) { void e; }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Ошибка оплаты. Проверьте интернет.");
+    }
     finally { setGiftPaying(false); }
   };
 
