@@ -1,7 +1,9 @@
+import { useEffect, useRef } from "react";
 import { TrendingBadge } from "@/components/screens/HomeFeedWidgets";
 import { PostCard } from "@/components/screens/HomePostCard";
 import { NearbyUsersBanner } from "@/components/screens/home/NearbyUsersBanner";
 import { StoriesBar } from "@/components/screens/StoriesBar";
+import Icon from "@/components/ui/icon";
 import { type Post, type LiveStream, type Profile } from "@/lib/api";
 
 const BANNER_AFTER = 2; // показывать баннер после N-го поста
@@ -22,12 +24,28 @@ interface Props {
   onOpenNewUsers: () => void;
   onAddStory?: () => void;
   storiesRefreshKey?: number;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function HomeFeedContent({
   loading, posts, streams, currentUserId, currentUserPhoto, isPremium,
   onJoinLive, onLike, onComment, onDelete, onProfileClick, onPremium, onOpenNewUsers, onAddStory, storiesRefreshKey,
+  hasMore, loadingMore, onLoadMore,
 }: Props) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || loadingMore || !onLoadMore) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) onLoadMore();
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, loadingMore, onLoadMore, posts.length]);
+
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Сторис — всегда вверху */}
@@ -86,6 +104,20 @@ export function HomeFeedContent({
                 )}
               </div>
             ))
+          )}
+
+          {posts.length > 0 && (
+            <>
+              <div ref={sentinelRef} className="h-1" />
+              {loadingMore && (
+                <div className="flex items-center justify-center py-6">
+                  <Icon name="Loader2" size={22} className="animate-spin text-pink-500" />
+                </div>
+              )}
+              {!hasMore && !loadingMore && (
+                <p className="text-center text-white/25 text-xs py-6">Это все посты 🎉</p>
+              )}
+            </>
           )}
         </>
       )}

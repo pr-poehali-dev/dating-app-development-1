@@ -11,9 +11,10 @@ interface Props {
   giftDone: number | null;
   setGiftDone: (id: number | null) => void;
   onClose: () => void;
+  currentUserId: number;
 }
 
-export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }: Props) {
+export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, currentUserId }: Props) {
   const { pay: payGift, loading: giftPaying } = useYookassa(PAY_CREATE_URL);
   const [giftRecipient, setGiftRecipient] = useState<"self" | "user">("self");
   const [chatMatches, setChatMatches] = useState<Match[]>([]);
@@ -191,19 +192,17 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose }:
                   ? `Подарок «${gift.name}» для ${selectedRecipient!.name}`
                   : `Подарок себе «${gift.name}»`,
                 returnUrl: window.location.origin + "/?payment=success",
-                metadata: isUser
-                  ? {
-                      kind: "gift",
-                      gift_id: String(gift.id),
-                      gift_name: gift.name,
-                      gift_emoji: gift.emoji,
-                      gift_category: gift.category,
-                      gift_variant: String(gift.variant),
-                      gift_rarity: gift.rarity,
-                      recipient_id: String(selectedRecipient!.id),
-                      sender_token: senderToken,
-                    }
-                  : { gift_id: String(gift.id), gift_name: gift.name, recipient: "self" },
+                metadata: {
+                  kind: "gift",
+                  gift_id: String(gift.id),
+                  gift_name: gift.name,
+                  gift_emoji: gift.emoji,
+                  gift_category: gift.category,
+                  gift_variant: String(gift.variant),
+                  gift_rarity: gift.rarity,
+                  recipient_id: String(isUser ? selectedRecipient!.id : currentUserId),
+                  sender_token: senderToken,
+                },
               });
               if (r?.paymentUrl) {
                 setGiftDone(giftPreview);

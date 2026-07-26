@@ -941,6 +941,14 @@ def handler(event: dict, context) -> dict:
 
         # Лента постов всех пользователей
         if action == 'posts_feed':
+            try:
+                limit = min(max(int(params.get('limit', 30)), 1), 50)
+            except (ValueError, TypeError):
+                limit = 30
+            try:
+                offset = max(int(params.get('offset', 0)), 0)
+            except (ValueError, TypeError):
+                offset = 0
             cur.execute("""
                 SELECT p.id, p.user_id, p.photo_url, p.caption, p.created_at,
                        u.name, u.photo_url as author_photo, u.zodiac as author_zodiac,
@@ -950,8 +958,8 @@ def handler(event: dict, context) -> dict:
                 FROM posts p
                 JOIN users u ON u.id = p.user_id
                 ORDER BY p.created_at DESC
-                LIMIT 30
-            """, (me['id'],))
+                LIMIT %s OFFSET %s
+            """, (me['id'], limit, offset))
             rows = cur.fetchall()
             cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'author_zodiac', 'likes_count', 'liked_by_me', 'comments_count']
             posts = []
@@ -961,7 +969,7 @@ def handler(event: dict, context) -> dict:
                 item['likes_count'] = int(item['likes_count'])
                 item['comments_count'] = int(item['comments_count'])
                 posts.append(item)
-            return resp(200, {'posts': posts})
+            return resp(200, {'posts': posts, 'has_more': len(posts) == limit})
 
         # Лайк/анлайк поста
         if action == 'post_like':

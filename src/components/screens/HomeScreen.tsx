@@ -25,6 +25,8 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const [posts, setPosts] = useState<Post[]>([]);
   const [streams, setStreams] = useState<LiveStream[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [commentPost, setCommentPost] = useState<Post | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -48,10 +50,27 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const loadFeed = useCallback((silent?: boolean) => {
     if (!silent) setLoading(true);
     Promise.all([
-      postsApi.getFeed().then((d) => setPosts(d.posts)).catch(() => {}),
+      postsApi.getFeed(0, 30).then((d) => { setPosts(d.posts); setHasMore(d.has_more); }).catch(() => {}),
       liveApi.list().then((d) => setStreams(d.streams)).catch(() => {}),
     ]).finally(() => setLoading(false));
     notificationsApi.unreadCount().then(d => setUnreadCount(d.unread_count)).catch(() => {});
+  }, []);
+
+  const loadMore = useCallback(() => {
+    setLoadingMore(true);
+    setPosts((prev) => {
+      postsApi.getFeed(prev.length, 30)
+        .then((d) => {
+          setPosts((cur) => {
+            const seen = new Set(cur.map((p) => p.id));
+            return [...cur, ...d.posts.filter((p) => !seen.has(p.id))];
+          });
+          setHasMore(d.has_more);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingMore(false));
+      return prev;
+    });
   }, []);
 
   useEffect(() => { loadFeed(); }, [loadFeed]);
@@ -183,6 +202,9 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           onOpenNewUsers={() => setShowNewUsers(true)}
           onAddStory={() => setShowStoryUpload(true)}
           storiesRefreshKey={storiesRefreshKey}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={loadMore}
         />
       </div>
 
@@ -203,6 +225,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           giftDone={giftDone}
           setGiftDone={setGiftDone}
           onClose={() => setGiftPreview(null)}
+          currentUserId={currentUser.id}
         />
       )}
 

@@ -81,17 +81,17 @@ export function GiftsGrid({
         })}
       </div>
 
-      {selected && selectedDef && (
+      {selected && (
         <GiftDetailModal
           gift={{
             id: selected.gift_id,
             name: selected.gift_name,
-            price: selectedDef.price,
+            price: selectedDef?.price ?? (Number(selected.amount) || 0),
             rarity: selected.gift_rarity,
-            category: selected.gift_category || selectedDef.category,
-            variant: selected.gift_variant ?? selectedDef.variant ?? 0,
-            anim: selectedDef.anim,
-            emoji: selected.gift_emoji || selectedDef.emoji,
+            category: selected.gift_category || selectedDef?.category || "heart",
+            variant: selected.gift_variant ?? selectedDef?.variant ?? 0,
+            anim: selectedDef?.anim ?? "gift-float",
+            emoji: selected.gift_emoji || selectedDef?.emoji,
             senderName: selected.sender_name,
             sentAt: selected.created_at,
           }}

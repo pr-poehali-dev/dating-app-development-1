@@ -397,7 +397,11 @@ export interface AdminVerifyRequest {
 
 // ─── Posts ────────────────────────────────────────────────────────────────────
 export const postsApi = {
-  getFeed: () => req<{ posts: Post[] }>("profiles", "posts_feed"),
+  getFeed: (offset = 0, limit = 30) =>
+    req<{ posts: Post[]; has_more: boolean }>("profiles", "posts_feed", {}, {
+      offset: String(offset),
+      limit: String(limit),
+    }),
 
   create: (image: string, content_type: string, caption: string) =>
     req<{ ok: boolean; post: Post }>("profiles", "post_create", {
