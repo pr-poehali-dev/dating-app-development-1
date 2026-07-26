@@ -3,11 +3,10 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
-import { ProfileAppIconSheet } from "@/components/screens/profile/ProfileAppIconSheet";
 import { useBackHandler } from "@/hooks/backStack";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
-import { useAppIcon, APP_ICON_META } from "@/hooks/useAppIcon";
+import { useAppIcon } from "@/hooks/useAppIcon";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 
@@ -33,12 +32,10 @@ export function ProfileTopBarMenu({
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const [showTheme, setShowTheme] = useState(false);
-  const [showIcon, setShowIcon] = useState(false);
   const { icon: appIcon, setIcon: setAppIcon, native: iconNative } = useAppIcon();
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
-  useBackHandler(menuOpen || showLegal || showTheme || showIcon, () => {
-    if (showIcon) { setShowIcon(false); return; }
+  useBackHandler(menuOpen || showLegal || showTheme, () => {
     if (showTheme) { setShowTheme(false); return; }
     if (showLegal) { setShowLegal(false); return; }
     onMenuToggle(false);
@@ -117,6 +114,15 @@ export function ProfileTopBarMenu({
       iconColor: "text-orange-400",
       badge: undefined,
     },
+    ...(onAppThemeChange ? [{
+      icon: "Palette" as const,
+      label: "Тема оформления",
+      sub: appTheme ? THEME_META[appTheme].sub : "Тема и иконка приложения",
+      action: () => { setShowTheme(true); },
+      iconBg: "rgba(255,45,120,0.12)",
+      iconColor: "text-pink-400",
+      badge: appTheme ? THEME_META[appTheme].label : undefined,
+    }] : []),
     {
       icon: "HelpCircle" as const,
       label: "Помощь",
@@ -125,24 +131,6 @@ export function ProfileTopBarMenu({
       iconBg: "rgba(255,255,255,0.07)",
       iconColor: "text-white/50",
       badge: undefined,
-    },
-    ...(onAppThemeChange ? [{
-      icon: "Palette" as const,
-      label: "Тема оформления",
-      sub: appTheme ? THEME_META[appTheme].sub : "Выбери настроение приложения",
-      action: () => { setShowTheme(true); },
-      iconBg: "rgba(255,45,120,0.12)",
-      iconColor: "text-pink-400",
-      badge: appTheme ? THEME_META[appTheme].label : undefined,
-    }] : []),
-    {
-      icon: "Sparkles" as const,
-      label: "Иконка приложения",
-      sub: APP_ICON_META[appIcon].sub,
-      action: () => { setShowIcon(true); },
-      iconBg: "rgba(155,89,182,0.14)",
-      iconColor: "text-purple-400",
-      badge: APP_ICON_META[appIcon].label,
     },
   ];
 
@@ -160,40 +148,29 @@ export function ProfileTopBarMenu({
         <ProfileThemeSheet
           appTheme={appTheme}
           onSelect={onAppThemeChange}
+          appIcon={appIcon}
+          iconNative={iconNative}
+          onSelectIcon={setAppIcon}
           onClose={() => setShowTheme(false)}
         />
       )}
 
-      {showIcon && (
-        <ProfileAppIconSheet
-          appIcon={appIcon}
-          native={iconNative}
-          onSelect={setAppIcon}
-          onClose={() => setShowIcon(false)}
-        />
-      )}
-
       {menuOpen && (
-        <div className="fixed inset-0 z-[80] flex flex-col justify-end"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
-          onClick={() => onMenuToggle(false)}>
-        <div className="w-full flex flex-col overflow-y-auto"
-          style={{
-            background: "linear-gradient(180deg, #1a0a2e 0%, #120818 100%)",
-            borderRadius: "24px 24px 0 0",
-            boxShadow: "0 -4px 40px rgba(0,0,0,0.5)",
-            maxHeight: "90dvh",
-          }}
-          onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[80] flex flex-col"
+          style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #120818 100%)" }}>
 
-          {/* Handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full" style={{ background: "rgba(255,255,255,0.15)" }} />
-          </div>
-
-          {/* Шапка — аватар + имя */}
-          <div className="flex items-center gap-3 px-4 py-3.5"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
+          {/* Шапка — назад + аватар + имя */}
+          <div className="flex items-center gap-3 px-4 py-3.5 flex-shrink-0"
+            style={{
+              paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)",
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+              background: "rgba(255,255,255,0.02)",
+            }}>
+            <button onClick={() => onMenuToggle(false)}
+              className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+              style={{ background: "rgba(255,255,255,0.06)" }}>
+              <Icon name="ChevronLeft" size={20} className="text-white/80" />
+            </button>
             <img
               src={currentUser.photo_url || DEFAULT_AVATAR}
               className="w-9 h-9 rounded-full object-cover flex-shrink-0"
@@ -205,6 +182,7 @@ export function ProfileTopBarMenu({
             </div>
           </div>
 
+          <div className="flex-1 overflow-y-auto flex flex-col">
           {/* Пункты меню */}
           <div className="px-2 py-2 flex flex-col gap-0.5">
             {menuItems.map((item) => (
@@ -230,7 +208,11 @@ export function ProfileTopBarMenu({
           </div>
 
           {/* Выйти */}
-          <div className="px-2 pb-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="px-2 pb-2 mt-auto"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+            }}>
             <button onClick={() => { onLogout(); onMenuToggle(false); }}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
               style={{ background: "transparent" }}
@@ -247,7 +229,7 @@ export function ProfileTopBarMenu({
             </button>
           </div>
 
-        </div>
+          </div>
         </div>
       )}
     </>
