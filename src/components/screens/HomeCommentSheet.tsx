@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { postsApi, type Post, type PostComment } from "@/lib/api";
 import { FALLBACK_PHOTO, timeAgo } from "@/components/screens/HomeFeedWidgets";
+import { EMOJI_ROWS } from "@/lib/stickers";
 
 // ─── CommentSheet ─────────────────────────────────────────────────────────────
 // Полноэкранное окно поста с комментариями и кнопкой "Назад"
@@ -9,7 +10,13 @@ export function CommentSheet({ post, onClose }: { post: Post; onClose: () => voi
   const [comments, setComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const addEmoji = (emoji: string) => {
+    setText((t) => t + emoji);
+    inputRef.current?.focus();
+  };
 
   useEffect(() => {
     postsApi.getComments(post.id)
@@ -100,11 +107,34 @@ export function CommentSheet({ post, onClose }: { post: Post; onClose: () => voi
         </div>
       </div>
 
+      {/* Панель эмодзи */}
+      {showEmoji && (
+        <div className="px-4 pt-3 pb-1 flex-shrink-0 flex flex-col gap-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+          {EMOJI_ROWS.map((row, i) => (
+            <div key={i} className="flex justify-between">
+              {row.map((emoji) => (
+                <button key={emoji} onClick={() => addEmoji(emoji)}
+                  className="text-2xl leading-none p-1 rounded-lg transition-transform active:scale-90">
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Поле ввода комментария */}
-      <div className="px-4 py-3 flex gap-2 flex-shrink-0"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 12px)" }}>
+      <div className="px-4 py-3 flex items-center gap-2 flex-shrink-0"
+        style={{ borderTop: showEmoji ? "none" : "1px solid rgba(255,255,255,0.08)", paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 12px)" }}>
+        <button onClick={() => setShowEmoji((v) => !v)}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+          style={{ background: showEmoji ? "rgba(255,45,120,0.18)" : "rgba(255,255,255,0.08)" }}>
+          <Icon name={showEmoji ? "X" : "Smile"} size={19} className={showEmoji ? "text-pink-400" : "text-white/70"} />
+        </button>
         <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}
+          onFocus={() => setShowEmoji(false)}
           placeholder="Написать комментарий..."
           className="flex-1 bg-white/10 text-white placeholder-white/30 rounded-full px-4 py-2.5 text-sm outline-none border border-white/10 focus:border-pink-500/50 font-golos" />
         <button onClick={send} className="w-10 h-10 rounded-full flex items-center justify-center btn-grad flex-shrink-0">
