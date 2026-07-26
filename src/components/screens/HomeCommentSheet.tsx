@@ -11,11 +11,13 @@ export function CommentSheet({ post, onClose }: { post: Post; onClose: () => voi
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [tappedEmoji, setTappedEmoji] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addEmoji = (emoji: string) => {
     setText((t) => t + emoji);
-    inputRef.current?.focus();
+    setTappedEmoji(emoji);
+    window.setTimeout(() => setTappedEmoji((e) => (e === emoji ? null : e)), 400);
   };
 
   useEffect(() => {
@@ -109,16 +111,29 @@ export function CommentSheet({ post, onClose }: { post: Post; onClose: () => voi
 
       {/* Панель эмодзи */}
       {showEmoji && (
-        <div className="px-4 pt-3 pb-1 flex-shrink-0 flex flex-col gap-2"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+        <div className="px-3 pt-3 pb-2 flex-shrink-0 flex flex-col gap-1 animate-fade-in overflow-hidden"
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.08)",
+            background: "linear-gradient(180deg, rgba(255,45,120,0.06), rgba(155,89,182,0.04))",
+          }}>
           {EMOJI_ROWS.map((row, i) => (
             <div key={i} className="flex justify-between">
-              {row.map((emoji) => (
-                <button key={emoji} onClick={() => addEmoji(emoji)}
-                  className="text-2xl leading-none p-1 rounded-lg transition-transform active:scale-90">
-                  {emoji}
-                </button>
-              ))}
+              {row.map((emoji, j) => {
+                const tapped = tappedEmoji === emoji;
+                return (
+                  <button key={emoji} onClick={() => addEmoji(emoji)}
+                    className="text-[26px] leading-none w-10 h-10 flex items-center justify-center rounded-xl transition-colors duration-150 hover:bg-white/10 active:bg-white/15"
+                    style={{
+                      opacity: tapped ? 1 : 0,
+                      animation: tapped
+                        ? "emoji-tap 0.4s cubic-bezier(0.34,1.56,0.64,1)"
+                        : "scale-in 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards",
+                      animationDelay: tapped ? "0ms" : `${(i * 8 + j) * 22}ms`,
+                    }}>
+                    {emoji}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
