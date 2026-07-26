@@ -46,15 +46,19 @@ export async function initOneSignal(): Promise<void> {
   if (!appId) return;
   window.__oneSignalInited = true;
 
-  await loadSdk();
+  try {
+    await loadSdk();
+  } catch { window.__oneSignalInited = false; return; }
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal) => {
-    await OneSignal.init({
-      appId,
-      serviceWorkerPath: "OneSignalSDKWorker.js",
-      serviceWorkerParam: { scope: "/onesignal/" },
-      allowLocalhostAsSecureOrigin: true,
-    });
+    try {
+      await OneSignal.init({
+        appId,
+        serviceWorkerPath: "OneSignalSDKWorker.js",
+        serviceWorkerParam: { scope: "/onesignal/" },
+        allowLocalhostAsSecureOrigin: true,
+      });
+    } catch { /* OneSignal init failed — не мешаем приложению */ }
   });
 }
 
