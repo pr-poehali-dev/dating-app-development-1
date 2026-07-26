@@ -13,6 +13,13 @@ interface OneSignalApi {
   login: (externalId: string) => Promise<void>;
   logout: () => Promise<void>;
   Slidedown: { promptPush: () => Promise<void> };
+  User?: {
+    PushSubscription?: {
+      optIn?: () => Promise<void>;
+      optOut?: () => Promise<void>;
+      optedIn?: boolean;
+    };
+  };
   Notifications: {
     permission: boolean;
     requestPermission: () => Promise<void>;
@@ -112,10 +119,64 @@ export async function promptOneSignal(): Promise<boolean> {
     window.OneSignalDeferred.push(async (OneSignal) => {
       try {
         await OneSignal.Notifications.requestPermission();
+        // Заново подписываем, если ранее отписывался тумблером
+        try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch { /* ignore */ }
         done(!!OneSignal.Notifications.permission);
       } catch {
         done(false);
       }
+    });
+  });
+}
+
+export type PushStatus = "default" | "granted" | "denied" | "unsupported";
+
+/** Текущий статус системного разрешения на push-уведомления. */
+export function getPushStatus(): PushStatus {
+  if (isNativeApp()) {
+    // В нативной обёртке точный статус недоступен из JS — считаем "по умолчанию"
+    return "default";
+  }
+  if (typeof Notification === "undefined") return "unsupported";
+  const p = Notification.permission;
+  if (p === "granted") return "granted";
+  if (p === "denied") return "denied";
+  return "default";
+}
+
+/** Открыть системные настройки приложения (чтобы вручную включить уведомления). */
+export function openNativeAppSettings(): boolean {
+  try {
+    const w = window as unknown as {
+      median?: { run?: (cmd: string) => void };
+      gonative?: { run?: (cmd: string) => void };
+    };
+    const scheme = w.gonative && !w.median ? "gonative" : "median";
+    const frame = document.createElement("iframe");
+    frame.style.display = "none";
+    frame.src = `${scheme}://run/nativeBridge/settings`;
+    document.body.appendChild(frame);
+    setTimeout(() => frame.remove(), 300);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Отписаться от push-уведомлений (выключение тумблера). */
+export async function disableOneSignal(): Promise<boolean> {
+  if (isNativeApp()) {
+    // В нативной обёртке системное разрешение отзывается только в настройках телефона
+    return false;
+  }
+  if (!window.__oneSignalInited) return true;
+  return new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(true), 8000);
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (OneSignal) => {
+      try { await OneSignal.User?.PushSubscription?.optOut?.(); } catch { /* ignore */ }
+      clearTimeout(timer);
+      resolve(true);
     });
   });
 }

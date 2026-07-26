@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
-import { promptOneSignal } from "@/hooks/useOneSignal";
+import {
+  promptOneSignal,
+  disableOneSignal,
+  getPushStatus,
+  openNativeAppSettings,
+} from "@/hooks/useOneSignal";
 
 function isNativeApp() {
   const w = window as unknown as { median?: unknown; gonative?: unknown };
@@ -11,60 +16,122 @@ function isNativeApp() {
 }
 
 function PushSubscribeButton() {
-  const initial = typeof Notification !== "undefined" ? Notification.permission : "default";
-  const [state, setState] = useState<"idle" | "loading" | "granted" | "denied" | "asked">(
-    initial === "granted" ? "granted" : "idle",
+  // on — уведомления включены, off — выключены, denied — заблокированы в настройках телефона
+  const [state, setState] = useState<"off" | "on" | "denied" | "asked">(() =>
+    getPushStatus() === "granted" ? "on" : getPushStatus() === "denied" ? "denied" : "off",
   );
+  const [loading, setLoading] = useState(false);
 
-  const handleClick = async () => {
-    if (state === "granted") return;
-    setState("loading");
+  // При возврате на экран (свернул/развернул приложение) пересчитываем реальный статус
+  useEffect(() => {
+    const sync = () => {
+      if (document.visibilityState !== "visible") return;
+      const s = getPushStatus();
+      if (s === "granted") setState("on");
+      else if (s === "denied") setState((prev) => (prev === "asked" ? prev : "denied"));
+    };
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
+
+  const enabled = state === "on";
+
+  const handleToggle = async () => {
+    if (loading) return;
     const native = isNativeApp();
+
+    // Выключаем
+    if (enabled) {
+      setLoading(true);
+      await disableOneSignal();
+      setLoading(false);
+      if (native) {
+        // В приложении отписка идёт через настройки телефона
+        openNativeAppSettings();
+        setState("denied");
+      } else {
+        setState("off");
+      }
+      return;
+    }
+
+    // Уже заблокировано в системе — сразу ведём в настройки телефона
+    if (state === "denied" && native) {
+      openNativeAppSettings();
+      return;
+    }
+
+    // Включаем — запрашиваем системное разрешение
+    setLoading(true);
     const ok = await promptOneSignal();
+    setLoading(false);
+
     if (native) {
-      // В приложении системный диалог показывается поверх — мгновенного ответа моста нет
       setState(ok ? "asked" : "denied");
     } else {
-      setState(ok ? "granted" : "denied");
+      const s = getPushStatus();
+      setState(s === "granted" ? "on" : "denied");
     }
   };
 
+  const title = enabled
+    ? "Push-уведомления включены"
+    : state === "asked"
+    ? "Подтвердите в окне телефона"
+    : state === "denied"
+    ? "Уведомления заблокированы"
+    : "Push-уведомления выключены";
+
+  const sub = loading
+    ? "Секундочку..."
+    : state === "asked"
+    ? "Разрешите уведомления в системном окне"
+    : state === "denied"
+    ? "Нажми, чтобы открыть настройки телефона"
+    : enabled
+    ? "Вы получаете важные уведомления"
+    : "Не пропускай новые совпадения и сообщения";
+
   return (
-    <button
-      onClick={handleClick}
-      disabled={state === "loading" || state === "granted"}
-      className="w-full mb-3 rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all active:scale-[0.99] disabled:opacity-100"
+    <div
+      className="w-full mb-3 rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all"
       style={{
-        background: state === "granted"
+        background: enabled
           ? "rgba(74,222,128,0.1)"
+          : state === "denied"
+          ? "rgba(248,113,113,0.1)"
           : "linear-gradient(135deg,rgba(255,45,120,0.16),rgba(155,89,182,0.16))",
-        border: `1px solid ${state === "granted" ? "rgba(74,222,128,0.3)" : "rgba(255,45,120,0.3)"}`,
+        border: `1px solid ${enabled ? "rgba(74,222,128,0.3)" : state === "denied" ? "rgba(248,113,113,0.3)" : "rgba(255,45,120,0.3)"}`,
       }}
     >
       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ background: state === "granted" ? "rgba(74,222,128,0.18)" : "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
-        <Icon name={state === "granted" ? "BellRing" : "Bell"} size={17}
-          style={{ color: state === "granted" ? "#4ADE80" : "#fff" }} />
+        style={{ background: enabled ? "rgba(74,222,128,0.18)" : state === "denied" ? "rgba(248,113,113,0.18)" : "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+        <Icon name={enabled ? "BellRing" : state === "denied" ? "BellOff" : "Bell"} size={17}
+          style={{ color: enabled ? "#4ADE80" : state === "denied" ? "#F87171" : "#fff" }} />
       </div>
-      <div className="flex-1 text-left">
-        <p className="text-white font-semibold text-sm">
-          {state === "granted" ? "Push-уведомления включены"
-            : state === "asked" ? "Подтвердите в окне телефона"
-            : "Включить push-уведомления"}
-        </p>
-        <p className="text-white/45 text-xs mt-0.5">
-          {state === "loading" ? "Открываем запрос..."
-            : state === "asked" ? "Разрешите уведомления в системном окне"
-            : state === "denied" ? "Разрешение отклонено — включите в настройках телефона"
-            : state === "granted" ? "Вы будете получать важные уведомления"
-            : "Не пропускай новые совпадения и сообщения"}
-        </p>
+      <div className="flex-1 text-left min-w-0">
+        <p className="text-white font-semibold text-sm">{title}</p>
+        <p className="text-white/45 text-xs mt-0.5">{sub}</p>
       </div>
-      {state === "loading"
-        ? <Icon name="Loader2" size={16} className="animate-spin text-white/50" />
-        : state === "asked" ? <Icon name="BellRing" size={16} className="text-pink-400" />
-        : state !== "granted" && <Icon name="ChevronRight" size={16} className="text-white/30" />}
-    </button>
+
+      {state === "denied" ? (
+        <button onClick={handleToggle}
+          className="flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-xl active:scale-95 transition-transform"
+          style={{ background: "rgba(248,113,113,0.15)", color: "#F87171" }}>
+          Настройки
+        </button>
+      ) : loading ? (
+        <Icon name="Loader2" size={18} className="animate-spin text-white/50 flex-shrink-0" />
+      ) : (
+        <button onClick={handleToggle}
+          className="flex-shrink-0 w-12 h-6 rounded-full relative transition-all duration-300"
+          style={{ background: enabled ? "linear-gradient(90deg,#4ADE80,#22C55E)" : "rgba(255,255,255,0.12)" }}
+          aria-label="Переключить push-уведомления">
+          <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-300"
+            style={{ left: enabled ? "26px" : "2px" }} />
+        </button>
+      )}
+    </div>
   );
 }
 
