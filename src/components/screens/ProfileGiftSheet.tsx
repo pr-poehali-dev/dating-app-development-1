@@ -198,7 +198,7 @@ export function ProfileGiftSheet({
         </div>
 
         <div className="overflow-y-auto flex-1 px-4"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+          style={{ paddingBottom: giftSelected !== null ? "160px" : "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
           {/* Gift grid */}
           <div className="grid grid-cols-4 gap-2.5 mb-4">
             {filtered.map((gift) => {
@@ -230,12 +230,19 @@ export function ProfileGiftSheet({
               );
             })}
           </div>
+        </div>
 
-          {/* Selected gift detail */}
-          {giftSelected !== null && (() => {
-            const gift = GIFTS.find(g => g.id === giftSelected)!;
-            const rs = RARITY_STYLE[gift.rarity];
-            return (
+        {/* Закреплённая панель выбранного подарка — всегда видна снизу */}
+        {giftSelected !== null && (() => {
+          const gift = GIFTS.find(g => g.id === giftSelected)!;
+          const rs = RARITY_STYLE[gift.rarity];
+          return (
+            <div className="absolute left-0 right-0 bottom-0 px-4 pt-3 flex-shrink-0 animate-slide-up"
+              style={{
+                paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)",
+                background: "linear-gradient(to top, var(--spark-dark,#0f0a1a) 70%, transparent)",
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+              }}>
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
                 <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} emoji={gift.emoji} marketBadge={false} />
@@ -245,7 +252,7 @@ export function ProfileGiftSheet({
                   <p className="text-white/40 text-xs">{gift.price.toLocaleString("ru")} ₽ для {recipientName}</p>
                 </div>
                 {giftDone === giftSelected ? (
-                  <div className="flex items-center gap-1 px-3 py-2 rounded-xl" style={{ background: "rgba(74,222,128,0.15)" }}>
+                  <div className="flex items-center gap-1 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: "rgba(74,222,128,0.15)" }}>
                     <Icon name="Check" size={14} className="text-green-400" />
                     <span className="text-green-400 text-xs font-semibold">Отправлен!</span>
                   </div>
@@ -255,13 +262,13 @@ export function ProfileGiftSheet({
                     className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-60 flex items-center gap-1.5">
                     {giftPaying
                       ? <><Icon name="Loader2" size={13} className="animate-spin" />...</>
-                      : <><Icon name="Gift" size={13} />Купить</>}
+                      : <><Icon name="Gift" size={13} />Подарить</>}
                   </button>
                 )}
               </div>
-            );
-          })()}
-        </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }
