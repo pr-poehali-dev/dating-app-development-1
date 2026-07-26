@@ -13,12 +13,12 @@ const POPULAR_CITIES = [
   { name: "Екатеринбург", country: "Россия", emoji: "🏔️", grad: ["#06b6d4", "#3b82f6"] },
   { name: "Казань", country: "Россия", emoji: "🕌", grad: ["#10b981", "#06b6d4"] },
   { name: "Минск", country: "Беларусь", emoji: "🇧🇾", grad: ["#ec4899", "#f43f5e"] },
-  { name: "Алматы", country: "Казахстан", emoji: "🇰🇿", grad: ["#14b8a6", "#22c55e"] },
-  { name: "Ташкент", country: "Узбекистан", emoji: "🇺🇿", grad: ["#0ea5e9", "#6366f1"] },
-  { name: "Тбилиси", country: "Грузия", emoji: "🇬🇪", grad: ["#ef4444", "#f97316"] },
-  { name: "Баку", country: "Азербайджан", emoji: "🇦🇿", grad: ["#06b6d4", "#10b981"] },
-  { name: "Ереван", country: "Армения", emoji: "🇦🇲", grad: ["#f59e0b", "#ec4899"] },
-  { name: "Берлин", country: "Германия", emoji: "🇩🇪", grad: ["#8b5cf6", "#6366f1"] },
+  { name: "Гомель", country: "Беларусь", emoji: "🏰", grad: ["#f43f5e", "#f59e0b"] },
+  { name: "Пхеньян", country: "КНДР", emoji: "🇰🇵", grad: ["#ef4444", "#3b82f6"] },
+  { name: "Тегеран", country: "Иран", emoji: "🇮🇷", grad: ["#10b981", "#f59e0b"] },
+  { name: "Исфахан", country: "Иран", emoji: "🕌", grad: ["#06b6d4", "#10b981"] },
+  { name: "Пекин", country: "Китай", emoji: "🇨🇳", grad: ["#ef4444", "#f59e0b"] },
+  { name: "Шанхай", country: "Китай", emoji: "🌃", grad: ["#8b5cf6", "#6366f1"] },
 ];
 
 export function PeopleExploreWorld({ onClose, onSelectCity }: Props) {
