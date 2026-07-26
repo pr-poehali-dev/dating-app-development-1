@@ -182,9 +182,9 @@ export function ProfileTopBarMenu({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto flex flex-col">
-          {/* Пункты меню */}
-          <div className="px-2 py-2 flex flex-col gap-0.5">
+          {/* Пункты меню — равномерно на всю высоту */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 flex flex-col justify-evenly gap-0.5"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)" }}>
             {menuItems.map((item) => (
               <button key={item.label} onClick={item.action}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all active:scale-[0.98]"
@@ -205,17 +205,11 @@ export function ProfileTopBarMenu({
                 <Icon name="ChevronRight" size={13} className="text-white/20 flex-shrink-0" />
               </button>
             ))}
-          </div>
 
-          {/* Выйти */}
-          <div className="px-2 pb-2 mt-auto"
-            style={{
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
-            }}>
+            {/* Выйти */}
             <button onClick={() => { onLogout(); onMenuToggle(false); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-2"
-              style={{ background: "transparent" }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all active:scale-[0.98] mt-1"
+              style={{ background: "transparent", borderTop: "1px solid rgba(255,255,255,0.06)", borderRadius: 0, paddingTop: "14px" }}
               onMouseEnter={e => (e.currentTarget.style.background = "rgba(239,68,68,0.07)")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
               <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -227,8 +221,6 @@ export function ProfileTopBarMenu({
                 <p className="text-red-400/40 text-[11px] leading-tight mt-0.5">Завершить сессию</p>
               </div>
             </button>
-          </div>
-
           </div>
         </div>
       )}
