@@ -159,7 +159,7 @@ export function NearbyUsersBanner({ isPremium, onProfile, onPremium, onOpenGrid 
                   <button
                     onClick={(e) => toggleSub(e, user)}
                     disabled={isSubLoading}
-                    className={`w-full py-1.5 rounded-xl text-[10px] font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 ${isSub ? "text-white/40" : "text-white"}`}
+                    className={`w-full py-1 rounded-lg text-[9px] font-bold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1 ${isSub ? "text-white/40" : "text-white"}`}
                     style={isSub
                       ? { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }
                       : { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
