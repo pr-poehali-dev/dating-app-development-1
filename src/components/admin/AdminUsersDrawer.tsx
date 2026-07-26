@@ -18,6 +18,60 @@ export function timeAgo(iso: string) {
   return months === 1 ? "1 мес. назад" : `${months} мес. назад`;
 }
 
+function PushToggleButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button onClick={onToggle}
+      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all active:scale-90"
+      style={open
+        ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }
+        : { background: "rgba(255,45,120,0.12)", border: "1px solid rgba(255,45,120,0.25)" }}
+      title="Отправить push">
+      <Icon name={open ? "X" : "Bell"} size={14} style={{ color: open ? "#fff" : "#FF2D78" }} />
+    </button>
+  );
+}
+
+function PushForm({ token, userId, userName, onDone }: { token: string; userId: number; userName: string; onDone: () => void }) {
+  const [text, setText] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
+
+  const send = async () => {
+    if (!text.trim()) return;
+    setStatus("sending"); setErrMsg("");
+    try {
+      await adminApi.oneSignalSendToUser(token, userId, "Полутон 💕", text.trim());
+      setStatus("sent");
+      setTimeout(onDone, 1500);
+    } catch (e) {
+      setStatus("error");
+      setErrMsg(e instanceof Error ? e.message : "Ошибка");
+    }
+  };
+
+  return (
+    <div className="w-full mt-2.5 flex flex-col gap-2 p-2.5 rounded-xl"
+      style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)" }}>
+      <p className="text-white/50 text-[11px] font-semibold">Push для {userName}</p>
+      <textarea value={text} onChange={e => setText(e.target.value)} rows={2} maxLength={180}
+        placeholder="Текст уведомления..."
+        className="w-full rounded-lg px-3 py-2 text-xs text-white placeholder-white/25 outline-none resize-none"
+        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }} />
+      {status === "error" && <p className="text-red-400/80 text-[10px] break-all">{errMsg}</p>}
+      {status === "sent" && <p className="text-green-400/80 text-[10px]">Отправлено ✓</p>}
+      <button onClick={send} disabled={status === "sending" || status === "sent" || !text.trim()}
+        className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1.5"
+        style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+        {status === "sending"
+          ? <Icon name="Loader2" size={13} className="animate-spin" />
+          : status === "sent"
+            ? <>Отправлено ✓</>
+            : <><Icon name="Send" size={12} />Отправить</>}
+      </button>
+    </div>
+  );
+}
+
 export function UsersDrawer({ token, filter, title, onClose }: {
   token: string;
   filter: UserFilter;
@@ -30,6 +84,7 @@ export function UsersDrawer({ token, filter, title, onClose }: {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [pushOpenId, setPushOpenId] = useState<number | null>(null);
 
   const filterUsers = useCallback((list: AdminUser[]) => {
     const now = new Date();
@@ -119,8 +174,9 @@ export function UsersDrawer({ token, filter, title, onClose }: {
           ) : (
             <div className="flex flex-col gap-2">
               {users.map(u => (
-                <div key={u.id} className="flex items-center gap-3 p-3 rounded-2xl"
+                <div key={u.id} className="flex flex-col p-3 rounded-2xl"
                   style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                 <div className="flex items-center gap-3">
 
                   <div className="relative flex-shrink-0">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
@@ -151,6 +207,14 @@ export function UsersDrawer({ token, filter, title, onClose }: {
                     <p className="text-white/25 text-[10px]">{timeAgo(u.created_at)}</p>
                     <p className="text-white/15 text-[9px] mt-0.5">#{u.id}</p>
                   </div>
+
+                  <PushToggleButton open={pushOpenId === u.id}
+                    onToggle={() => setPushOpenId(prev => prev === u.id ? null : u.id)} />
+                 </div>
+                 {pushOpenId === u.id && (
+                   <PushForm token={token} userId={u.id} userName={u.name}
+                     onDone={() => setPushOpenId(null)} />
+                 )}
                 </div>
               ))}
 

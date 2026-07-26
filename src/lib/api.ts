@@ -1031,6 +1031,17 @@ export const adminApi = {
       return data as { ok: boolean; result?: { recipients?: number; id?: string } };
     }),
 
+  oneSignalSendToUser: (token: string, user_id: number, title: string, message: string) =>
+    fetch(`${URLS.push}?action=onesignal_test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+      body: JSON.stringify({ user_id, title, body: message }),
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Ошибка отправки OneSignal');
+      return data as { ok: boolean; result?: { recipients?: number } };
+    }),
+
   banners: (token: string) =>
     adminReq<{ banners: { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string }[] }>('banners', {}, token),
   bannerSave: (token: string, data: Record<string, unknown>) =>
