@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export type AppIcon = "default" | "gradient" | "dark" | "ocean" | "gold" | "minimal";
 
@@ -20,64 +20,71 @@ function getSaved(): AppIcon {
   return v && APP_ICON_META[v] ? v : "default";
 }
 
-/** Меняет favicon и apple-touch-icon в <head> на выбранную иконку. */
-function applyFavicon(icon: AppIcon) {
-  const url = APP_ICON_META[icon].url;
-  const selectors = ['link[rel="icon"]', 'link[rel="apple-touch-icon"]'];
-  selectors.forEach((sel) => {
-    document.querySelectorAll<HTMLLinkElement>(sel).forEach((link) => {
-      link.href = url;
-    });
-  });
+type MedianBridge = {
+  median?: { appIcon?: { select?: (o: { icon: string }) => void }; run?: (cmd: string) => void };
+  gonative?: { appIcon?: { select?: (o: { icon: string }) => void }; run?: (cmd: string) => void };
+};
+
+/**
+ * Определяет, запущено ли приложение внутри нативной APK/iOS-обёртки Median (GoNative).
+ * Иконку на рабочем столе телефона можно менять ТОЛЬКО здесь — в обычном браузере
+ * и в PWA это технически невозможно.
+ */
+export function isNativeApp(): boolean {
+  const w = window as unknown as MedianBridge;
+  if (w.median || w.gonative) return true;
+  const ua = navigator.userAgent || "";
+  return /median|gonative/i.test(ua);
 }
 
 /**
- * Пытается сменить иконку нативно, если приложение запущено внутри APK-обёртки Median (GoNative).
- * Если моста нет (обычный браузер) — тихо ничего не делает.
+ * Меняет иконку приложения на домашнем экране телефона через нативный мост Median.
+ * Алиасы (default/gradient/dark/ocean/gold/minimal) должны быть заранее заведены
+ * в сборке APK/iOS (плагин Alternate App Icons). Возвращает true, если команда отправлена.
  */
-function applyNativeIcon(icon: AppIcon) {
+function applyNativeIcon(icon: AppIcon): boolean {
   const alias = APP_ICON_META[icon].medianAlias;
   try {
-    const w = window as unknown as {
-      median?: { appIcon?: { select?: (o: { icon: string }) => void } };
-      gonative?: { appIcon?: { select?: (o: { icon: string }) => void } };
-    };
+    const w = window as unknown as MedianBridge;
     const bridge = w.median?.appIcon || w.gonative?.appIcon;
     if (bridge?.select) {
       bridge.select({ icon: alias });
-      return;
+      return true;
     }
-    // Резервный способ Median — навигация по спец-ссылке JS Bridge
+    // Резервный способ — прямой вызов по протоколу JS Bridge (median:// или gonative://)
     if (w.median || w.gonative) {
+      const scheme = w.gonative && !w.median ? "gonative" : "median";
       const frame = document.createElement("iframe");
       frame.style.display = "none";
-      frame.src = `median://appIcon/select?icon=${encodeURIComponent(alias)}`;
+      frame.src = `${scheme}://appIcon/select?icon=${encodeURIComponent(alias)}`;
       document.body.appendChild(frame);
       setTimeout(() => frame.remove(), 300);
+      return true;
     }
   } catch {
-    /* нет нативной обёртки — работаем как обычный сайт */
+    /* нет нативной обёртки */
   }
-}
-
-/** Применяется один раз при загрузке приложения. */
-export function initAppIcon() {
-  applyFavicon(getSaved());
+  return false;
 }
 
 /**
- * Хук управления иконкой приложения.
- * Меняет favicon/PWA-иконку сразу и пытается применить нативную иконку в APK (Median).
+ * Хук управления иконкой приложения на домашнем экране (только внутри APK/iOS-обёртки Median).
+ * В обычном браузере смена невозможна — native = false, выбор не применяется.
  */
 export function useAppIcon() {
   const [icon, setIconState] = useState<AppIcon>(getSaved);
+  const [native, setNative] = useState(false);
 
-  const setIcon = useCallback((next: AppIcon) => {
-    setIconState(next);
-    localStorage.setItem(STORAGE_KEY, next);
-    applyFavicon(next);
-    applyNativeIcon(next);
+  useEffect(() => {
+    setNative(isNativeApp());
   }, []);
 
-  return { icon, setIcon };
+  const setIcon = useCallback((next: AppIcon) => {
+    const ok = applyNativeIcon(next);
+    if (!ok) return; // в браузере/PWA ничего не меняем
+    setIconState(next);
+    localStorage.setItem(STORAGE_KEY, next);
+  }, []);
+
+  return { icon, setIcon, native };
 }

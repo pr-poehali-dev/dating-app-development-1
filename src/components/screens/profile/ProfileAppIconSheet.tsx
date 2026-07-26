@@ -4,11 +4,12 @@ import { APP_ICON_META, APP_ICON_ORDER, type AppIcon } from "@/hooks/useAppIcon"
 
 interface ProfileAppIconSheetProps {
   appIcon: AppIcon;
+  native: boolean;
   onSelect: (i: AppIcon) => void;
   onClose: () => void;
 }
 
-export function ProfileAppIconSheet({ appIcon, onSelect, onClose }: ProfileAppIconSheetProps) {
+export function ProfileAppIconSheet({ appIcon, native, onSelect, onClose }: ProfileAppIconSheetProps) {
   useBackHandler(true, onClose);
 
   return (
@@ -33,7 +34,7 @@ export function ProfileAppIconSheet({ appIcon, onSelect, onClose }: ProfileAppIc
         <div className="flex items-center justify-between px-5 pb-3 pt-1">
           <div>
             <p className="text-white font-bold text-lg">Иконка приложения</p>
-            <p className="text-white/40 text-xs mt-0.5">Выбери, как приложение выглядит на экране</p>
+            <p className="text-white/40 text-xs mt-0.5">Как приложение выглядит на экране телефона</p>
           </div>
           <button onClick={onClose} className="text-white/40">
             <Icon name="X" size={20} />
@@ -47,8 +48,9 @@ export function ProfileAppIconSheet({ appIcon, onSelect, onClose }: ProfileAppIc
               const meta = APP_ICON_META[key];
               const active = appIcon === key;
               return (
-                <button key={key} onClick={() => onSelect(key)}
-                  className="flex flex-col items-center gap-2 transition-all active:scale-95 flex-shrink-0"
+                <button key={key} onClick={() => native && onSelect(key)}
+                  disabled={!native}
+                  className="flex flex-col items-center gap-2 transition-all active:scale-95 flex-shrink-0 disabled:opacity-45"
                   style={{ width: 78 }}>
                   <div className="relative rounded-[20px] p-[3px] transition-all"
                     style={{
@@ -78,13 +80,23 @@ export function ProfileAppIconSheet({ appIcon, onSelect, onClose }: ProfileAppIc
 
         {/* Подсказка про APK */}
         <div className="px-5 pb-7">
-          <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            <Icon name="Info" size={15} className="text-white/40 flex-shrink-0 mt-0.5" />
-            <p className="text-white/45 text-[11px] leading-snug">
-              Иконка меняется на вкладке и при установке приложения. На домашнем экране обновление может занять до минуты.
-            </p>
-          </div>
+          {native ? (
+            <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <Icon name="Info" size={15} className="text-white/40 flex-shrink-0 mt-0.5" />
+              <p className="text-white/45 text-[11px] leading-snug">
+                Иконка сменится на домашнем экране телефона. Обновление может занять до минуты — иногда нужно свернуть и снова открыть приложение.
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3"
+              style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)" }}>
+              <Icon name="Smartphone" size={15} className="text-pink-400 flex-shrink-0 mt-0.5" />
+              <p className="text-white/60 text-[11px] leading-snug">
+                Смена иконки на рабочем столе доступна только в установленном приложении для телефона. Открой Полутон через приложение, чтобы выбрать иконку.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,11 +2,9 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { initAppTheme } from '@/hooks/useAppTheme'
-import { initAppIcon } from '@/hooks/useAppIcon'
 import '@/i18n'
 
 initAppTheme();
-initAppIcon();
 
 // Гасим необработанные ошибки OneSignal SDK, чтобы они не всплывали в интерфейсе
 window.addEventListener("unhandledrejection", (e) => {

@@ -34,7 +34,7 @@ export function ProfileTopBarMenu({
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const [showTheme, setShowTheme] = useState(false);
   const [showIcon, setShowIcon] = useState(false);
-  const { icon: appIcon, setIcon: setAppIcon } = useAppIcon();
+  const { icon: appIcon, setIcon: setAppIcon, native: iconNative } = useAppIcon();
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
   useBackHandler(menuOpen || showLegal || showTheme || showIcon, () => {
@@ -167,6 +167,7 @@ export function ProfileTopBarMenu({
       {showIcon && (
         <ProfileAppIconSheet
           appIcon={appIcon}
+          native={iconNative}
           onSelect={setAppIcon}
           onClose={() => setShowIcon(false)}
         />
