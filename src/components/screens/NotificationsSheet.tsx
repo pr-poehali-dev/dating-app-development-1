@@ -44,6 +44,13 @@ function notifText(n: Notification) {
     if (n.text === "__REQUEST_PHOTO__") return "🔐 Запрашивает доступ к фото";
     if (n.text === "__GRANT_PHOTO__") return "🖼️ Открыл(а) доступ к фото";
     if (n.text.startsWith("__LOC__")) return "📍 Геолокация";
+    if (n.text.startsWith("__VCALL__")) {
+      const status = n.text.slice(9);
+      if (status === "missed") return "📞 Пропущенный видеозвонок";
+      if (status === "accepted") return "📹 Видеозвонок";
+      return "📹 Видеозвонок";
+    }
+    if (n.text.startsWith("__AWARD__")) return "🎁 Отправил(а) подарок";
     return `написал(а): ${n.text.slice(0, 40)}${n.text.length > 40 ? "…" : ""}`;
   }
   if (n.type === "new_photo") return "добавил(а) новое фото 📷";
