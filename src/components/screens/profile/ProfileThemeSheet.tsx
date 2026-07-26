@@ -80,61 +80,37 @@ export function ProfileThemeSheet({ appTheme, onSelect, appIcon, iconNative, onS
           <p className="text-white/30 text-[11px] mt-1">Как приложение выглядит на экране телефона</p>
         </div>
 
-        <div className="px-4 pt-3 overflow-x-auto">
-          <div className="flex gap-3 min-w-max pb-1">
+        <div className="px-4 pt-3">
+          <div className="grid grid-cols-3 gap-3">
             {APP_ICON_ORDER.map((key) => {
               const meta = APP_ICON_META[key];
               const active = appIcon === key;
               return (
                 <button key={key} onClick={() => iconNative && onSelectIcon(key)}
                   disabled={!iconNative}
-                  className="flex flex-col items-center gap-2 transition-all active:scale-95 flex-shrink-0 disabled:opacity-45"
-                  style={{ width: 78 }}>
-                  <div className="relative rounded-[20px] p-[3px] transition-all"
+                  className="flex flex-col items-center gap-2 transition-all active:scale-95 disabled:opacity-45">
+                  <div className="relative w-full rounded-2xl flex items-center justify-center py-4 transition-all"
                     style={{
-                      background: active
-                        ? "linear-gradient(135deg, #FF2D78, #9B59B6)"
-                        : "rgba(255,255,255,0.08)",
+                      background: "#151515",
+                      border: active ? "1.5px solid #FF2D5A" : "1.5px solid rgba(255,255,255,0.06)",
                     }}>
                     <img src={meta.url} alt={meta.label}
-                      className="w-[68px] h-[68px] rounded-[17px] object-cover block"
-                      style={{ background: "#120818" }} />
+                      className="w-[62px] h-[62px] rounded-[16px] object-cover block" />
                     {active && (
-                      <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg, #FF2D78, #9B59B6)", border: "2px solid #120818" }}>
-                        <Icon name="Check" size={12} className="text-white" />
+                      <div className="absolute top-1.5 right-1.5 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                        style={{ background: "#FF2D5A" }}>
+                        <Icon name="Check" size={11} className="text-white" strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                  <p className="text-center text-[11px] font-semibold leading-tight"
-                    style={{ color: active ? "#FF2D78" : "rgba(255,255,255,0.55)" }}>
+                  <p className="text-center text-[11px] font-medium leading-tight"
+                    style={{ color: active ? "#FF2D5A" : "rgba(255,255,255,0.55)" }}>
                     {meta.label}
                   </p>
                 </button>
               );
             })}
           </div>
-        </div>
-
-        {/* Подсказка про APK */}
-        <div className="px-4 pt-4">
-          {iconNative ? (
-            <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <Icon name="Info" size={15} className="text-white/40 flex-shrink-0 mt-0.5" />
-              <p className="text-white/45 text-[11px] leading-snug">
-                Иконка сменится на домашнем экране телефона. Обновление может занять до минуты — иногда нужно свернуть и снова открыть приложение.
-              </p>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3"
-              style={{ background: "rgba(255,45,120,0.08)", border: "1px solid rgba(255,45,120,0.2)" }}>
-              <Icon name="Smartphone" size={15} className="text-pink-400 flex-shrink-0 mt-0.5" />
-              <p className="text-white/60 text-[11px] leading-snug">
-                Смена иконки на рабочем столе доступна только в установленном приложении для телефона. Открой Полутон через приложение, чтобы выбрать иконку.
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

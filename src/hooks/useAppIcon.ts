@@ -11,7 +11,7 @@ export const APP_ICON_META: Record<AppIcon, { label: string; sub: string; url: s
   minimal:  { label: "Минимал",  sub: "Контурное сердце",          url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/545544ca-d8bb-40d1-b61a-6f490268781a.jpg", medianAlias: "minimal" },
 };
 
-export const APP_ICON_ORDER: AppIcon[] = ["default", "gradient", "dark", "ocean", "gold", "minimal"];
+export const APP_ICON_ORDER: AppIcon[] = ["default", "gradient", "dark"];
 
 const STORAGE_KEY = "app_icon";
 
