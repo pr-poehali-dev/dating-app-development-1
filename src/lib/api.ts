@@ -1027,10 +1027,7 @@ export const adminApi = {
       body: JSON.stringify({ title, body: message, url: url || '/' }),
     }).then(async (res) => {
       const data = await res.json();
-      if (!res.ok || data.ok === false) {
-        const dbg = data.debug ? ` [${JSON.stringify(data.debug)}]` : '';
-        throw new Error((data.error || 'Ошибка отправки OneSignal') + dbg);
-      }
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Ошибка отправки OneSignal');
       return data as { ok: boolean; result?: { recipients?: number; id?: string } };
     }),
 

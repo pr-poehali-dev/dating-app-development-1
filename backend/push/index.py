@@ -82,13 +82,6 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         'url': url,
     }
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
-    debug = {
-        'scheme': scheme,
-        'key_prefix': api_key[:7],
-        'key_len': len(api_key),
-        'app_id_tail': app_id[-6:] if len(app_id) >= 6 else app_id,
-        'app_id_len': len(app_id),
-    }
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
         data=json.dumps(payload).encode('utf-8'),
@@ -101,9 +94,9 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             data = json.loads(r.read().decode('utf-8'))
-        return {'ok': True, 'result': data, 'debug': debug}
+        return {'ok': True, 'result': data}
     except urllib.error.HTTPError as e:
-        return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code, 'debug': debug}
+        return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
 
 
 def handler(event: dict, context) -> dict:
