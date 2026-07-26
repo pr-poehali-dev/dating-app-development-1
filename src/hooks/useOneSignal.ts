@@ -144,7 +144,12 @@ export function getPushStatus(): PushStatus {
   return "default";
 }
 
-/** Открыть системные настройки приложения (чтобы вручную включить уведомления). */
+/**
+ * Открыть системные настройки приложения (чтобы вручную включить уведомления).
+ * Возвращает true ТОЛЬКО если реально удалось вызвать нативный мост.
+ * Если моста нет — возвращаем false, чтобы показать инструкцию, а не открывать
+ * левую ссылку (иначе телефон предложит «установить приложение банка» и т.п.).
+ */
 export function openNativeAppSettings(): boolean {
   try {
     const w = window as unknown as {
@@ -152,18 +157,13 @@ export function openNativeAppSettings(): boolean {
       gonative?: { open?: { appSettings?: () => void } };
     };
 
-    // 1) Прямой вызов функции JS-моста Median/GoNative, если библиотека внедрена
+    // Прямой вызов функции JS-моста Median/GoNative, если библиотека внедрена
     const bridgeOpen = w.median?.open?.appSettings || w.gonative?.open?.appSettings;
-    if (bridgeOpen) { bridgeOpen(); return true; }
+    if (typeof bridgeOpen === "function") { bridgeOpen(); return true; }
 
-    // 2) Резерв — Median-протокол median://open/appSettings (работает без внедрённой библиотеки)
-    const scheme = w.gonative && !w.median ? "gonative" : "median";
-    const frame = document.createElement("iframe");
-    frame.style.display = "none";
-    frame.src = `${scheme}://open/appSettings`;
-    document.body.appendChild(frame);
-    setTimeout(() => frame.remove(), 400);
-    return true;
+    // Моста нет — НЕ пытаемся открыть через iframe-протокол (это и даёт ложное
+    // окно «установите приложение банка»). Просто сообщаем, что не удалось.
+    return false;
   } catch {
     return false;
   }

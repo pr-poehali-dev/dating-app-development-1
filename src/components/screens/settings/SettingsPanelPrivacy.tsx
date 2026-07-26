@@ -22,6 +22,7 @@ function PushSubscribeButton() {
   );
   const [loading, setLoading] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [settingsFailed, setSettingsFailed] = useState(false);
 
   // При возврате на экран (свернул/развернул приложение) пересчитываем реальный статус
   useEffect(() => {
@@ -59,7 +60,7 @@ function PushSubscribeButton() {
     // Уже заблокировано в системе — открываем настройки приложения и показываем инструкцию
     if (state === "denied") {
       setShowHint(true);
-      openNativeAppSettings();
+      if (!openNativeAppSettings()) setSettingsFailed(true);
       return;
     }
 
@@ -145,16 +146,21 @@ function PushSubscribeButton() {
           Как включить уведомления вручную
         </p>
         <ol className="text-white/55 text-xs leading-relaxed space-y-1 list-none">
-          <li>1. Открылись настройки приложения на телефоне</li>
-          <li>2. Найди пункт «Уведомления» (Notifications)</li>
-          <li>3. Включи «Разрешить уведомления»</li>
+          <li>1. Открой Настройки телефона</li>
+          <li>2. Приложения → Полутон</li>
+          <li>3. Пункт «Уведомления» → включи «Разрешить уведомления»</li>
           <li>4. Вернись сюда — статус обновится сам</li>
         </ol>
-        <button onClick={() => { openNativeAppSettings(); }}
+        <button onClick={() => { if (!openNativeAppSettings()) setSettingsFailed(true); }}
           className="mt-3 w-full text-xs font-semibold py-2 rounded-xl active:scale-[0.98] transition-transform"
           style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "#fff" }}>
-          Открыть настройки ещё раз
+          Открыть настройки телефона
         </button>
+        {settingsFailed && (
+          <p className="text-white/40 text-[11px] mt-2 text-center">
+            Не удалось открыть автоматически — открой настройки телефона вручную по шагам выше
+          </p>
+        )}
       </div>
     )}
     <div className="mb-3" />
