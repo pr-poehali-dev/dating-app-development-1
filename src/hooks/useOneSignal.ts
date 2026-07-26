@@ -148,15 +148,21 @@ export function getPushStatus(): PushStatus {
 export function openNativeAppSettings(): boolean {
   try {
     const w = window as unknown as {
-      median?: { run?: (cmd: string) => void };
-      gonative?: { run?: (cmd: string) => void };
+      median?: { open?: { appSettings?: () => void } };
+      gonative?: { open?: { appSettings?: () => void } };
     };
+
+    // 1) Прямой вызов функции JS-моста Median/GoNative, если библиотека внедрена
+    const bridgeOpen = w.median?.open?.appSettings || w.gonative?.open?.appSettings;
+    if (bridgeOpen) { bridgeOpen(); return true; }
+
+    // 2) Резерв — Median-протокол median://open/appSettings (работает без внедрённой библиотеки)
     const scheme = w.gonative && !w.median ? "gonative" : "median";
     const frame = document.createElement("iframe");
     frame.style.display = "none";
-    frame.src = `${scheme}://run/nativeBridge/settings`;
+    frame.src = `${scheme}://open/appSettings`;
     document.body.appendChild(frame);
-    setTimeout(() => frame.remove(), 300);
+    setTimeout(() => frame.remove(), 400);
     return true;
   } catch {
     return false;

@@ -21,13 +21,14 @@ function PushSubscribeButton() {
     getPushStatus() === "granted" ? "on" : getPushStatus() === "denied" ? "denied" : "off",
   );
   const [loading, setLoading] = useState(false);
+  const [showHint, setShowHint] = useState(false);
 
   // При возврате на экран (свернул/развернул приложение) пересчитываем реальный статус
   useEffect(() => {
     const sync = () => {
       if (document.visibilityState !== "visible") return;
       const s = getPushStatus();
-      if (s === "granted") setState("on");
+      if (s === "granted") { setState("on"); setShowHint(false); }
       else if (s === "denied") setState((prev) => (prev === "asked" ? prev : "denied"));
     };
     document.addEventListener("visibilitychange", sync);
@@ -55,8 +56,9 @@ function PushSubscribeButton() {
       return;
     }
 
-    // Уже заблокировано в системе — сразу ведём в настройки телефона
-    if (state === "denied" && native) {
+    // Уже заблокировано в системе — открываем настройки приложения и показываем инструкцию
+    if (state === "denied") {
+      setShowHint(true);
       openNativeAppSettings();
       return;
     }
@@ -87,14 +89,15 @@ function PushSubscribeButton() {
     : state === "asked"
     ? "Разрешите уведомления в системном окне"
     : state === "denied"
-    ? "Нажми, чтобы открыть настройки телефона"
+    ? "Открой настройки и включи «Уведомления»"
     : enabled
     ? "Вы получаете важные уведомления"
     : "Не пропускай новые совпадения и сообщения";
 
   return (
+    <>
     <div
-      className="w-full mb-3 rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all"
+      className="w-full rounded-2xl px-4 py-3.5 flex items-center gap-3 transition-all"
       style={{
         background: enabled
           ? "rgba(74,222,128,0.1)"
@@ -132,6 +135,30 @@ function PushSubscribeButton() {
         </button>
       )}
     </div>
+
+    {/* Пошаговая инструкция, когда уведомления заблокированы */}
+    {state === "denied" && showHint && (
+      <div className="mt-2 rounded-2xl px-4 py-3.5"
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <p className="text-white/80 text-xs font-semibold mb-2 flex items-center gap-1.5">
+          <Icon name="Info" size={14} className="text-pink-400" />
+          Как включить уведомления вручную
+        </p>
+        <ol className="text-white/55 text-xs leading-relaxed space-y-1 list-none">
+          <li>1. Открылись настройки приложения на телефоне</li>
+          <li>2. Найди пункт «Уведомления» (Notifications)</li>
+          <li>3. Включи «Разрешить уведомления»</li>
+          <li>4. Вернись сюда — статус обновится сам</li>
+        </ol>
+        <button onClick={() => { openNativeAppSettings(); }}
+          className="mt-3 w-full text-xs font-semibold py-2 rounded-xl active:scale-[0.98] transition-transform"
+          style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "#fff" }}>
+          Открыть настройки ещё раз
+        </button>
+      </div>
+    )}
+    <div className="mb-3" />
+    </>
   );
 }
 
