@@ -62,17 +62,59 @@ export async function initOneSignal(): Promise<void> {
   });
 }
 
+/** Запущено ли приложение внутри нативной APK/iOS-обёртки Median (GoNative). */
+function isNativeApp(): boolean {
+  const w = window as unknown as { median?: unknown; gonative?: unknown };
+  if (w.median || w.gonative) return true;
+  return /median|gonative/i.test(navigator.userAgent || "");
+}
+
+/**
+ * Запрос разрешения на пуши внутри APK-обёртки Median.
+ * В нативном приложении OneSignal Web SDK не работает — используем нативный мост Median,
+ * который управляет системным разрешением на push. Возвращает true, если команда отправлена.
+ */
+function promptNativePush(): boolean {
+  try {
+    const w = window as unknown as {
+      median?: { onesignal?: { promptForPushNotifications?: () => void; register?: () => void } };
+      gonative?: { onesignal?: { promptForPushNotifications?: () => void; register?: () => void } };
+    };
+    const bridge = w.median?.onesignal || w.gonative?.onesignal;
+    if (bridge?.promptForPushNotifications) { bridge.promptForPushNotifications(); return true; }
+    if (bridge?.register) { bridge.register(); return true; }
+    // Резервный способ — вызов по протоколу JS Bridge
+    const scheme = (w as { gonative?: unknown; median?: unknown }).gonative && !(w as { median?: unknown }).median ? "gonative" : "median";
+    const frame = document.createElement("iframe");
+    frame.style.display = "none";
+    frame.src = `${scheme}://onesignal/promptForPushNotifications`;
+    document.body.appendChild(frame);
+    setTimeout(() => frame.remove(), 300);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Показать запрос подписки на пуши. Возвращает true, если разрешение получено. */
 export async function promptOneSignal(): Promise<boolean> {
+  // В APK OneSignal Web SDK не отвечает — идём через нативный мост Median
+  if (isNativeApp()) {
+    return promptNativePush();
+  }
+
   await initOneSignal();
   return new Promise<boolean>((resolve) => {
+    // Страховочный таймаут: если OneSignal SDK не ответил за 12 секунд — не зависаем
+    const timer = setTimeout(() => resolve(false), 12000);
+    const done = (v: boolean) => { clearTimeout(timer); resolve(v); };
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     window.OneSignalDeferred.push(async (OneSignal) => {
       try {
         await OneSignal.Notifications.requestPermission();
-        resolve(!!OneSignal.Notifications.permission);
+        done(!!OneSignal.Notifications.permission);
       } catch {
-        resolve(false);
+        done(false);
       }
     });
   });

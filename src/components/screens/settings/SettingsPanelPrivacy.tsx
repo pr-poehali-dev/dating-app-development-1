@@ -4,17 +4,29 @@ import { type User } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
 import { promptOneSignal } from "@/hooks/useOneSignal";
 
+function isNativeApp() {
+  const w = window as unknown as { median?: unknown; gonative?: unknown };
+  if (w.median || w.gonative) return true;
+  return /median|gonative/i.test(navigator.userAgent || "");
+}
+
 function PushSubscribeButton() {
   const initial = typeof Notification !== "undefined" ? Notification.permission : "default";
-  const [state, setState] = useState<"idle" | "loading" | "granted" | "denied">(
+  const [state, setState] = useState<"idle" | "loading" | "granted" | "denied" | "asked">(
     initial === "granted" ? "granted" : "idle",
   );
 
   const handleClick = async () => {
     if (state === "granted") return;
     setState("loading");
+    const native = isNativeApp();
     const ok = await promptOneSignal();
-    setState(ok ? "granted" : "denied");
+    if (native) {
+      // В приложении системный диалог показывается поверх — мгновенного ответа моста нет
+      setState(ok ? "asked" : "denied");
+    } else {
+      setState(ok ? "granted" : "denied");
+    }
   };
 
   return (
@@ -36,17 +48,21 @@ function PushSubscribeButton() {
       </div>
       <div className="flex-1 text-left">
         <p className="text-white font-semibold text-sm">
-          {state === "granted" ? "Push-уведомления включены" : "Включить push-уведомления"}
+          {state === "granted" ? "Push-уведомления включены"
+            : state === "asked" ? "Подтвердите в окне телефона"
+            : "Включить push-уведомления"}
         </p>
         <p className="text-white/45 text-xs mt-0.5">
-          {state === "loading" ? "Ожидаем разрешение..."
-            : state === "denied" ? "Разрешение отклонено — включите в настройках браузера"
+          {state === "loading" ? "Открываем запрос..."
+            : state === "asked" ? "Разрешите уведомления в системном окне"
+            : state === "denied" ? "Разрешение отклонено — включите в настройках телефона"
             : state === "granted" ? "Вы будете получать важные уведомления"
             : "Не пропускай новые совпадения и сообщения"}
         </p>
       </div>
       {state === "loading"
         ? <Icon name="Loader2" size={16} className="animate-spin text-white/50" />
+        : state === "asked" ? <Icon name="BellRing" size={16} className="text-pink-400" />
         : state !== "granted" && <Icon name="ChevronRight" size={16} className="text-white/30" />}
     </button>
   );
