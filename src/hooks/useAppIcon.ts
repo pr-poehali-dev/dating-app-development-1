@@ -6,9 +6,9 @@ export const APP_ICON_META: Record<AppIcon, { label: string; sub: string; url: s
   default:  { label: "Основная", sub: "Розово-фиолетовое сердце", url: "/appicon-default.png", medianAlias: "default" },
   gradient: { label: "Градиент", sub: "Сердце на градиенте",      url: "/appicon-gradient.png", medianAlias: "gradient" },
   dark:     { label: "Тёмная",   sub: "Неоновое сердце",           url: "/appicon-dark.png", medianAlias: "dark" },
-  ocean:    { label: "Океан",    sub: "Сине-голубые тона",         url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/012d7f80-cfb8-4f86-bad5-5c98228bf889.jpg", medianAlias: "ocean" },
-  gold:     { label: "Золото",   sub: "Янтарно-золотое сердце",    url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/305d50f7-3b66-4b0a-af38-3ee4abf503a3.jpg", medianAlias: "gold" },
-  minimal:  { label: "Минимал",  sub: "Контурное сердце",          url: "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/545544ca-d8bb-40d1-b61a-6f490268781a.jpg", medianAlias: "minimal" },
+  ocean:    { label: "Океан",    sub: "Сине-голубые тона",         url: "/appicon-ocean.png", medianAlias: "ocean" },
+  gold:     { label: "Золото",   sub: "Янтарно-золотое сердце",    url: "/appicon-gold.png", medianAlias: "gold" },
+  minimal:  { label: "Минимал",  sub: "Контурное сердце",          url: "/appicon-minimal.png", medianAlias: "minimal" },
 };
 
 export const APP_ICON_ORDER: AppIcon[] = ["default", "gradient", "dark"];
