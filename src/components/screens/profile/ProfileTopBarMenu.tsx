@@ -3,10 +3,13 @@ import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
+import { ProfileLanguageSheet } from "@/components/screens/profile/ProfileLanguageSheet";
 import { useBackHandler } from "@/hooks/backStack";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
 import { useAppIcon } from "@/hooks/useAppIcon";
+import { useTranslation } from "react-i18next";
+import { LANGUAGES } from "@/i18n";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 
@@ -32,10 +35,14 @@ export function ProfileTopBarMenu({
   const [showLegal, setShowLegal] = useState(false);
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const [showTheme, setShowTheme] = useState(false);
+  const [showLanguage, setShowLanguage] = useState(false);
   const { icon: appIcon, setIcon: setAppIcon, native: iconNative } = useAppIcon();
+  const { i18n } = useTranslation();
+  const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
-  useBackHandler(menuOpen || showLegal || showTheme, () => {
+  useBackHandler(menuOpen || showLegal || showTheme || showLanguage, () => {
+    if (showLanguage) { setShowLanguage(false); return; }
     if (showTheme) { setShowTheme(false); return; }
     if (showLegal) { setShowLegal(false); return; }
     onMenuToggle(false);
@@ -124,6 +131,15 @@ export function ProfileTopBarMenu({
       badge: appTheme ? THEME_META[appTheme].label : undefined,
     }] : []),
     {
+      icon: "Languages" as const,
+      label: "Выбор языка",
+      sub: "Язык интерфейса приложения",
+      action: () => { setShowLanguage(true); },
+      iconBg: "rgba(59,130,246,0.14)",
+      iconColor: "text-blue-400",
+      badge: currentLang.label,
+    },
+    {
       icon: "HelpCircle" as const,
       label: "Помощь",
       sub: "Поддержка и FAQ",
@@ -153,6 +169,10 @@ export function ProfileTopBarMenu({
           onSelectIcon={setAppIcon}
           onClose={() => setShowTheme(false)}
         />
+      )}
+
+      {showLanguage && (
+        <ProfileLanguageSheet onClose={() => setShowLanguage(false)} />
       )}
 
       {menuOpen && (
