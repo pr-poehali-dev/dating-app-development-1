@@ -39,11 +39,31 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
 
   const isSeen = (g: StoryGroup) => g.stories.every(s => seen.has(s.id));
 
+  // Зацикливаем ленту историй, когда их достаточно (иначе обычный список)
+  const loop = groups.length >= 4;
+  const loopGroups = loop ? [...groups, ...groups, ...groups] : groups;
+
+  // Ставим скролл в середину при первой отрисовке зацикленной ленты
+  useEffect(() => {
+    if (!loop) return;
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth / 3;
+  }, [loop, groups.length]);
+
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el || !loop) return;
+    const third = el.scrollWidth / 3;
+    if (el.scrollLeft < third * 0.5) el.scrollLeft += third;
+    else if (el.scrollLeft > third * 1.8) el.scrollLeft -= third;
+  };
+
   if (groups.length === 0 && !onAddStory) return null;
 
   return (
     <>
       <div ref={scrollRef}
+        onScroll={onScroll}
         className="flex gap-3 px-4 pt-4 pb-3 overflow-x-auto scrollbar-hide"
         style={{ scrollSnapType: "x mandatory" }}>
 
@@ -70,11 +90,12 @@ export function StoriesBar({ currentUserId, currentUserPhoto, onAddStory, refres
         )}
 
         {/* Истории пользователей */}
-        {groups.map((g, i) => {
+        {loopGroups.map((g, idx) => {
+          const i = idx % groups.length;
           const wasSeen = isSeen(g);
           return (
             <button
-              key={g.user_id}
+              key={`${g.user_id}-${idx}`}
               onClick={() => { setViewIdx(i); markSeen(i); }}
               className="relative flex-shrink-0 rounded-2xl overflow-hidden active:scale-95 transition-transform"
               style={{ width: CARD_W, height: CARD_H, scrollSnapAlign: "start" }}>

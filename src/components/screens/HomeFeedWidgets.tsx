@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useRef, useState } from "react";
+import { useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import { type Post, type LiveStream } from "@/lib/api";
 
@@ -93,17 +93,37 @@ export function TrendingBadge({ posts, streams = [], onJoinLive }: {
 }) {
   const topPosts = posts.slice().sort((a, b) => b.likes_count - a.likes_count).slice(0, 15);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [canLeft, setCanLeft] = useState(false);
-  const [canRight, setCanRight] = useState(true);
   const totalItems = streams.length + topPosts.length;
+
+  // Единый список карточек тренда (live + топ-посты)
+  const baseItems = [
+    ...streams.map((s) => ({ kind: "live" as const, data: s })),
+    ...topPosts.map((p) => ({ kind: "post" as const, data: p })),
+  ];
+  // Зацикливаем только когда карточек достаточно, чтобы был смысл (иначе обычная лента)
+  const loop = baseItems.length >= 4;
+  // Тройной набор: [копия][оригинал][копия] — старт по центру, бесшовный переход через край
+  const items = loop ? [...baseItems, ...baseItems, ...baseItems] : baseItems;
+
+  // Ставим скролл в середину при первой отрисовке
+  useEffect(() => {
+    if (!loop) return;
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth / 3;
+  }, [loop, baseItems.length]);
 
   if (totalItems === 0) return null;
 
   const onScroll = () => {
     const el = scrollRef.current;
-    if (!el) return;
-    setCanLeft(el.scrollLeft > 8);
-    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+    if (!el || !loop) return;
+    const third = el.scrollWidth / 3;
+    // При выходе за пределы центральной копии — мгновенно возвращаем на эквивалентную позицию
+    if (el.scrollLeft < third * 0.5) {
+      el.scrollLeft += third;
+    } else if (el.scrollLeft > third * 1.8) {
+      el.scrollLeft -= third;
+    }
   };
 
   const scroll = (dir: "left" | "right") => {
@@ -126,13 +146,13 @@ export function TrendingBadge({ posts, streams = [], onJoinLive }: {
         </div>
         {/* Кнопки листания (на планшетах/десктопе) */}
         <div className="flex items-center gap-1">
-          <button onClick={() => scroll("left")} disabled={!canLeft}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-20"
+          <button onClick={() => scroll("left")}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.08)" }}>
             <Icon name="ChevronLeft" size={15} className="text-white" />
           </button>
-          <button onClick={() => scroll("right")} disabled={!canRight}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 disabled:opacity-20"
+          <button onClick={() => scroll("right")}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.08)" }}>
             <Icon name="ChevronRight" size={15} className="text-white" />
           </button>
@@ -146,12 +166,11 @@ export function TrendingBadge({ posts, streams = [], onJoinLive }: {
         className="flex gap-2.5 overflow-x-auto pb-1 px-4"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}>
 
-        {/* Live-стримеры */}
-        {streams.map((s) => (
-          <button key={`live-${s.id}`} onClick={() => onJoinLive?.(s)}
+        {items.map((item, idx) => item.kind === "live" ? (
+          <button key={`live-${item.data.id}-${idx}`} onClick={() => onJoinLive?.(item.data)}
             className="relative rounded-2xl overflow-hidden flex-shrink-0 active:scale-95 transition-transform"
             style={{ width: 82, height: 110, boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
-            <img src={s.author_photo || FALLBACK_PHOTO} className="w-full h-full object-cover" />
+            <img src={item.data.author_photo || FALLBACK_PHOTO} className="w-full h-full object-cover" />
             <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: "inset 0 0 0 2px #EF4444" }} />
             <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
             <div className="absolute top-2 left-2">
@@ -160,25 +179,22 @@ export function TrendingBadge({ posts, streams = [], onJoinLive }: {
               </span>
             </div>
             <div className="absolute bottom-0 left-0 right-0 px-2 pb-2">
-              <p className="text-white text-[10px] font-semibold truncate">{s.author_name}</p>
+              <p className="text-white text-[10px] font-semibold truncate">{item.data.author_name}</p>
             </div>
           </button>
-        ))}
-
-        {/* Топ-15 постов */}
-        {topPosts.map((p) => (
-          <div key={p.id} className="relative rounded-2xl overflow-hidden flex-shrink-0"
+        ) : (
+          <div key={`post-${item.data.id}-${idx}`} className="relative rounded-2xl overflow-hidden flex-shrink-0"
             style={{ width: 82, height: 110 }}>
-            <img src={p.photo_url} className="w-full h-full object-cover" />
+            <img src={item.data.photo_url} className="w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 55%)" }} />
             {/* Лайки */}
             <div className="absolute bottom-2 left-2 flex items-center gap-1">
               <Icon name="Heart" size={10} style={{ color: "#FF2D78" }} />
-              <span className="text-white text-[10px] font-bold">{p.likes_count}</span>
+              <span className="text-white text-[10px] font-bold">{item.data.likes_count}</span>
             </div>
             {/* Имя автора */}
             <div className="absolute top-2 left-2 right-2">
-              <p className="text-white/80 text-[9px] font-semibold truncate">{p.author_name}</p>
+              <p className="text-white/80 text-[9px] font-semibold truncate">{item.data.author_name}</p>
             </div>
           </div>
         ))}
