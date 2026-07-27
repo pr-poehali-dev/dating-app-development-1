@@ -5,10 +5,20 @@ import { ChatInputBar } from "@/components/chat/ChatInputBar";
 import { ChatMessagesList } from "@/components/chat/ChatMessagesList";
 import { ChatScreenModals } from "@/components/chat/ChatScreenModals";
 import { useChatScreenLogic } from "@/components/chat/useChatScreenLogic";
+import { isVideoBlocked } from "@/lib/videoBlocks";
+import { toast } from "@/hooks/use-toast";
 
 // ─── RealChatScreen ────────────────────────────────────────────────────────────
 export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: number; currentUserId: number; onBack: () => void }) {
   const c = useChatScreenLogic(matchId, currentUserId);
+
+  const startVideoCall = () => {
+    if (isVideoBlocked(c.partnerId)) {
+      toast({ title: "Видеозвонки заблокированы", description: `Вы запретили видеочаты с ${c.partnerName || "этим пользователем"}. Разрешите их в меню чата.` });
+      return;
+    }
+    c.setVideoCall({ isInitiator: true });
+  };
 
   return (
     <>
@@ -56,7 +66,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             c.setSubscribed(next);
             profilesApi.subscribeToggle(c.partnerId).then(r => c.setSubscribed(r.subscribed)).catch(() => c.setSubscribed(!next));
           }}
-          onVideoCall={() => c.setVideoCall({ isInitiator: true })}
+          onVideoCall={startVideoCall}
           onMenuOpen={() => c.setShowChatMenu(true)}
           onCompatibility={() => c.setShowCompatibility(true)}
         />
@@ -123,7 +133,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             onFileSelect={c.handleFileSelect}
             onOpenVanishPicker={c.openVanishPicker}
             onSendLocation={c.sendLocation}
-            onOpenVideoCall={() => { c.setShowPlus(false); c.setVideoCall({ isInitiator: true }); }}
+            onOpenVideoCall={() => { c.setShowPlus(false); startVideoCall(); }}
             onOpenAwardPicker={() => { c.setShowAwardPicker(true); c.setShowPlus(false); }}
             onOpenVideoCircle={() => { c.setShowVideoCircle(true); c.setShowPlus(false); }}
           />

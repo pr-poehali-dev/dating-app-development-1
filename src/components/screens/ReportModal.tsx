@@ -2,6 +2,7 @@ import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { authApi, blocksApi, type Profile } from "@/lib/api";
 import { shareProfile } from "@/lib/shareProfile";
+import { isVideoBlocked, toggleVideoBlock } from "@/lib/videoBlocks";
 
 const PROFILES_FALLBACK_PHOTO = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/files/1ce048c9-36f3-4eb8-a0bc-4117b2b48365.jpg";
 
@@ -88,7 +89,7 @@ export function ProfileMenuSheet({ profile, onClose, onReport }: {
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [blocked, setBlocked] = useState(false);
-  const [videoBlocked, setVideoBlocked] = useState(false);
+  const [videoBlocked, setVideoBlocked] = useState(() => isVideoBlocked(profile.id));
   const [toast, setToast] = useState("");
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
@@ -120,7 +121,7 @@ export function ProfileMenuSheet({ profile, onClose, onReport }: {
       icon: "VideoOff", label: videoBlocked ? "Разрешить видеочаты" : "Блокировать видеочаты",
       sub: videoBlocked ? "Видеозвонки снова доступны" : "Запретить входящие видеозвонки",
       danger: false,
-      action: () => { setVideoBlocked(v => !v); showToast(videoBlocked ? "Видеочаты разрешены" : "Видеочаты заблокированы"); }
+      action: () => { const nowBlocked = toggleVideoBlock(profile.id); setVideoBlocked(nowBlocked); showToast(nowBlocked ? "Видеочаты заблокированы" : "Видеочаты разрешены"); }
     },
     {
       icon: "Flag", label: "Пожаловаться",
