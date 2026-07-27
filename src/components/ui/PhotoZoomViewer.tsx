@@ -28,22 +28,15 @@ export function PhotoZoomViewer({ src, onClose, watermark }: Props) {
         <Icon name="X" size={20} className="text-white" />
       </button>
 
-      <PinchZoom
-        className="w-full flex items-center justify-center"
-        style={{ maxHeight: "100dvh" }}
-      >
+      <PinchZoom>
         <ProtectedImage
           src={src}
           watermark={watermark}
           className="rounded-2xl"
-          style={{ maxWidth: "100vw", maxHeight: "92dvh", objectFit: "contain" }}
+          style={{ maxWidth: "100vw", maxHeight: "100dvh", objectFit: "contain", display: "block" }}
           onClick={(e) => e.stopPropagation()}
         />
       </PinchZoom>
-
-      <p className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/30 text-xs pointer-events-none">
-        Двумя пальцами — увеличить
-      </p>
     </div>,
     document.body
   );

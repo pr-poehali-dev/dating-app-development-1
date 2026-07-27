@@ -43,17 +43,25 @@ export function PinchZoom({ children, className, style, maxScale = 4 }: Props) {
   });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const clamp = useCallback((s: number, x: number, y: number) => {
+  // Базовые (немасштабированные) размеры фото — rect уже включает текущий scale
+  const baseSize = useCallback(() => {
     const el = containerRef.current;
-    if (!el) return { x, y };
+    if (!el) return { w: 0, h: 0, rect: null as DOMRect | null };
     const rect = el.getBoundingClientRect();
-    const maxX = (rect.width * (s - 1)) / 2;
-    const maxY = (rect.height * (s - 1)) / 2;
+    const cur = stateRef.current.scale || 1;
+    return { w: rect.width / cur, h: rect.height / cur, rect };
+  }, []);
+
+  const clamp = useCallback((s: number, x: number, y: number) => {
+    const { w, h } = baseSize();
+    if (!w) return { x, y };
+    const maxX = (w * (s - 1)) / 2;
+    const maxY = (h * (s - 1)) / 2;
     return {
       x: Math.max(-maxX, Math.min(maxX, x)),
       y: Math.max(-maxY, Math.min(maxY, y)),
     };
-  }, []);
+  }, [baseSize]);
 
   const reset = useCallback(() => {
     setAnimating(true);
@@ -103,9 +111,10 @@ export function PinchZoom({ children, className, style, maxScale = 4 }: Props) {
       if (el) {
         const rect = el.getBoundingClientRect();
         const m = mid(e.touches[0], e.touches[1]);
-        // масштабируем вокруг точки между пальцами
-        const cx = m.x - rect.left - rect.width / 2;
-        const cy = m.y - rect.top - rect.height / 2;
+        // Экранное смещение точки между пальцами от центра фото, приведённое
+        // к базовым координатам (rect уже учитывает текущий масштаб startScale)
+        const cx = (m.x - rect.left - rect.width / 2) / g.startScale;
+        const cy = (m.y - rect.top - rect.height / 2) / g.startScale;
         nx = g.startTx - cx * (next / g.startScale - 1);
         ny = g.startTy - cy * (next / g.startScale - 1);
       }
@@ -141,25 +150,19 @@ export function PinchZoom({ children, className, style, maxScale = 4 }: Props) {
     <div
       ref={containerRef}
       className={className}
-      style={{ touchAction: zoomed ? "none" : "pan-y", overflow: "hidden", ...style }}
+      style={{
+        touchAction: zoomed ? "none" : "pan-y",
+        display: "inline-flex",
+        transform: `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`,
+        transition: animating ? "transform 0.22s cubic-bezier(0.22,1,0.36,1)" : "none",
+        transformOrigin: "center center",
+        ...style,
+      }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
-      <div
-        style={{
-          transform: `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`,
-          transition: animating ? "transform 0.22s cubic-bezier(0.22,1,0.36,1)" : "none",
-          transformOrigin: "center center",
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
