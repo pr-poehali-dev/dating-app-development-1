@@ -134,9 +134,15 @@ export function ProfileTopBar({
       <div className="flex items-center gap-2">
         {/* Изменить */}
         <button onClick={onEditOpen}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-white/75 text-sm font-medium transition-all active:scale-95"
-          style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}>
-          <Icon name="Pencil" size={14} />
+          className="group flex items-center gap-1.5 pl-3 pr-3.5 py-2 rounded-2xl text-white text-sm font-semibold transition-all active:scale-95 hover:brightness-110"
+          style={{
+            background: "linear-gradient(135deg,#FF2D78,#9B59B6)",
+            boxShadow: "0 4px 16px rgba(255,45,120,0.35), inset 0 1px 0 rgba(255,255,255,0.25)",
+          }}>
+          <span className="flex items-center justify-center w-5 h-5 rounded-full"
+            style={{ background: "rgba(255,255,255,0.22)" }}>
+            <Icon name="Pencil" size={12} className="transition-transform group-active:rotate-12" />
+          </span>
           <span>Изменить</span>
         </button>
 
