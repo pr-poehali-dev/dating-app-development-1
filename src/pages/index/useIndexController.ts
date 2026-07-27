@@ -10,6 +10,7 @@ import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPinEnabled, getPinUserId } from "@/hooks/usePinLock";
 import { isBiometricRegistered } from "@/hooks/useBiometrics";
 import { useIncomingCall } from "@/hooks/useIncomingCall";
+import { syncVideoBlocks } from "@/lib/videoBlocks";
 import type { Screen } from "./types";
 
 // ─── useIndexController ─────────────────────────────────────────────────────────
@@ -64,6 +65,11 @@ export function useIndexController() {
   // Связываем пользователя с OneSignal для адресных пушей
   useEffect(() => {
     if (currentUser?.id) void loginOneSignal(currentUser.id);
+  }, [currentUser?.id]);
+
+  // Подтягиваем блокировки видеозвонков с сервера (чтобы работали на любом устройстве)
+  useEffect(() => {
+    if (currentUser?.id) void syncVideoBlocks();
   }, [currentUser?.id]);
 
   // Глобальный входящий видеозвонок — виден на любой вкладке приложения.

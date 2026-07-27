@@ -1249,6 +1249,39 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # ── БЛОКИРОВКА ВИДЕОЗВОНКОВ ─────────────────────────────────────────────
+
+        # Список ID пользователей, которым я запретил видеозвонки
+        if action == 'video_blocks_list':
+            cur.execute("SELECT blocked_id FROM video_blocks WHERE blocker_id = %s", (me['id'],))
+            return resp(200, {'blocked_ids': [r[0] for r in cur.fetchall()]})
+
+        # Запретить видеозвонки с пользователем
+        if action == 'video_block':
+            body = json.loads(event.get('body') or '{}')
+            target_id = int(body.get('user_id', 0))
+            if not target_id or target_id == me['id']:
+                return resp(400, {'error': 'Неверный user_id'})
+            cur.execute(
+                "INSERT INTO video_blocks (blocker_id, blocked_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                (me['id'], target_id)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
+        # Разрешить видеозвонки с пользователем
+        if action == 'video_unblock':
+            body = json.loads(event.get('body') or '{}')
+            target_id = int(body.get('user_id', 0))
+            if not target_id:
+                return resp(400, {'error': 'Неверный user_id'})
+            cur.execute(
+                "DELETE FROM video_blocks WHERE blocker_id = %s AND blocked_id = %s",
+                (me['id'], target_id)
+            )
+            conn.commit()
+            return resp(200, {'ok': True})
+
         # ── ПОДАРКИ ─────────────────────────────────────────────────────────────
 
         # Мои полученные подарки

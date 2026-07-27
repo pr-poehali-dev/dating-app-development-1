@@ -826,6 +826,13 @@ export const blocksApi = {
   unblock: (user_id: number) => req<{ ok: boolean }>("profiles", "unblock_user", { method: "POST", body: JSON.stringify({ user_id }) }),
 };
 
+// ─── Video call blocks ────────────────────────────────────────────────────────
+export const videoBlocksApi = {
+  list: () => req<{ blocked_ids: number[] }>("profiles", "video_blocks_list"),
+  block: (user_id: number) => req<{ ok: boolean }>("profiles", "video_block", { method: "POST", body: JSON.stringify({ user_id }) }),
+  unblock: (user_id: number) => req<{ ok: boolean }>("profiles", "video_unblock", { method: "POST", body: JSON.stringify({ user_id }) }),
+};
+
 // ─── Subscriptions ────────────────────────────────────────────────────────────
 export const subscriptionsApi = {
   toggle: (target_id: number) => req<{ ok: boolean; subscribed: boolean }>("profiles", "subscribe_toggle", { method: "POST", body: JSON.stringify({ target_id }) }),
