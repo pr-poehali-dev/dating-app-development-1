@@ -123,15 +123,17 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
         <AuthLegalSheet tab="privacy" onClose={() => setShowPrivacy(false)} />
       )}
 
-      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
-
       {banned && (
-        <div className="px-4 pt-4">
-          <BannedNotice
-            reason={banned}
-            onContactSupport={() => setShowSupport(true)}
-            onDismiss={dismissBan}
-          />
+        <BannedNotice
+          reason={banned}
+          onContactSupport={() => setShowSupport(true)}
+          onDismiss={dismissBan}
+        />
+      )}
+
+      {showSupport && (
+        <div className="fixed inset-0 z-[10000]">
+          <SupportModal onClose={() => setShowSupport(false)} />
         </div>
       )}
 
