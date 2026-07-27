@@ -2,6 +2,89 @@ import { useState, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { adminApi, type AdminUser } from "@/lib/api";
 import { Spinner } from "./AdminLogin";
+import { BAN_REASON_GROUPS } from "@/lib/banReasons";
+
+// ─── Диалог выбора причины блокировки ─────────────────────────────────────────
+function BanReasonDialog({ user, onClose, onConfirm, busy }: {
+  user: AdminUser; onClose: () => void; onConfirm: (reason: string) => void; busy: boolean;
+}) {
+  const [selected, setSelected] = useState<string>("");
+  const [custom, setCustom] = useState("");
+  const reason = custom.trim() || selected;
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-3 sm:p-6"
+      style={{ background: "rgba(10,6,18,0.75)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}>
+      <div className="w-full max-w-lg rounded-3xl overflow-hidden max-h-[90vh] flex flex-col"
+        style={{ background: "linear-gradient(180deg,#1c1030,#150b22)", border: "1px solid rgba(255,255,255,0.1)" }}
+        onClick={(e) => e.stopPropagation()}>
+
+        {/* Шапка */}
+        <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "rgba(239,68,68,0.14)", border: "1px solid rgba(239,68,68,0.25)" }}>
+            <Icon name="ShieldAlert" size={17} className="text-red-400" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-white font-bold text-sm leading-tight">Блокировка пользователя</p>
+            <p className="text-white/35 text-xs truncate">{user.name} · {user.email}</p>
+          </div>
+          <button onClick={onClose} className="ml-auto p-1 text-white/40 hover:text-white transition-colors">
+            <Icon name="X" size={20} />
+          </button>
+        </div>
+
+        {/* Список причин */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+          {BAN_REASON_GROUPS.map((g) => (
+            <div key={g.group}>
+              <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wide mb-2">{g.group}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {g.reasons.map((r) => {
+                  const active = selected === r && !custom.trim();
+                  return (
+                    <button key={r} onClick={() => { setSelected(r); setCustom(""); }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95"
+                      style={active
+                        ? { background: "linear-gradient(135deg,#FF2D78,#9B59B6)", color: "#fff" }
+                        : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* Своя причина */}
+          <div>
+            <p className="text-white/40 text-[11px] font-semibold uppercase tracking-wide mb-2">Своя причина</p>
+            <input value={custom} onChange={(e) => { setCustom(e.target.value); if (e.target.value.trim()) setSelected(""); }}
+              placeholder="Введите свой текст причины..."
+              className="w-full text-white placeholder-white/25 rounded-xl px-4 py-2.5 text-sm outline-none"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }} />
+          </div>
+        </div>
+
+        {/* Подвал */}
+        <div className="px-5 py-4 flex-shrink-0 flex items-center gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <button onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white/60 transition-all active:scale-95"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+            Отмена
+          </button>
+          <button onClick={() => onConfirm(reason)} disabled={!reason || busy}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
+            style={{ background: "linear-gradient(135deg,#EF4444,#B91C1C)" }}>
+            {busy ? <Icon name="Loader2" size={15} className="animate-spin" /> : <Icon name="Ban" size={15} />}
+            Заблокировать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Activity = {
   likes_sent: number; likes_received: number; matches: number; messages: number;
@@ -173,6 +256,7 @@ export function UsersTab({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<number | null>(null);
   const [editUser, setEditUser] = useState<AdminUser | null>(null);
+  const [banTarget, setBanTarget] = useState<AdminUser | null>(null);
   const searchTimer = { current: null as ReturnType<typeof setTimeout> | null };
 
   const load = useCallback((p: number, q: string) => {
@@ -190,11 +274,24 @@ export function UsersTab({ token }: { token: string }) {
     searchTimer.current = setTimeout(() => { setPage(1); load(1, val); }, 400);
   };
 
-  const handleBan = async (u: AdminUser) => {
-    setActionId(u.id);
+  const handleBanClick = async (u: AdminUser) => {
+    if (u.banned) {
+      setActionId(u.id);
+      try {
+        await adminApi.unbanUser(token, u.id);
+        load(page, search);
+      } catch (e) { void e; } finally { setActionId(null); }
+    } else {
+      setBanTarget(u);
+    }
+  };
+
+  const confirmBan = async (reason: string) => {
+    if (!banTarget) return;
+    setActionId(banTarget.id);
     try {
-      if (u.banned) await adminApi.unbanUser(token, u.id);
-      else await adminApi.banUser(token, u.id, "Нарушение правил");
+      await adminApi.banUser(token, banTarget.id, reason);
+      setBanTarget(null);
       load(page, search);
     } catch (e) { void e; } finally { setActionId(null); }
   };
@@ -207,6 +304,13 @@ export function UsersTab({ token }: { token: string }) {
         <EditUserDialog user={editUser} token={token}
           onClose={() => setEditUser(null)}
           onSaved={() => load(page, search)} />
+      )}
+
+      {banTarget && (
+        <BanReasonDialog user={banTarget}
+          busy={actionId === banTarget.id}
+          onClose={() => setBanTarget(null)}
+          onConfirm={confirmBan} />
       )}
 
       <div className="flex flex-col gap-4">
@@ -265,7 +369,7 @@ export function UsersTab({ token }: { token: string }) {
                     style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <Icon name="Pencil" size={13} className="text-white/40" />
                   </button>
-                  <button onClick={() => handleBan(u)} disabled={actionId === u.id}
+                  <button onClick={() => handleBanClick(u)} disabled={actionId === u.id}
                     className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-40 active:scale-95"
                     style={u.banned
                       ? { background: "rgba(74,222,128,0.12)", color: "#4ADE80", border: "1px solid rgba(74,222,128,0.25)" }
