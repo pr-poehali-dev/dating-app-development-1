@@ -17,7 +17,7 @@ import type { IndexController } from "./useIndexController";
 // рендерит children (основной каркас приложения).
 export function IndexAuthView({ c, children }: { c: IndexController; children: React.ReactNode }): JSX.Element {
   const { t } = useTranslation();
-  const { showSplash, setShowSplash, authLoading, currentUser, locked, setLocked, isDesktop, handleAuth, handleLogout } = c;
+  const { showSplash, setShowSplash, authLoading, currentUser, locked, setLocked, isDesktop, handleAuth, handleLogout, banMessage, setBanMessage } = c;
 
   if (showSplash) {
     return <SplashScreen onDone={() => setShowSplash(false)} />;
@@ -70,7 +70,7 @@ export function IndexAuthView({ c, children }: { c: IndexController; children: R
               </div>
 
               <div id="auth-card">
-                <AuthScreen onAuth={handleAuth} variant="card" />
+                <AuthScreen onAuth={handleAuth} variant="card" initialBanMessage={banMessage} onBanSeen={() => setBanMessage(null)} />
               </div>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function IndexAuthView({ c, children }: { c: IndexController; children: R
         <div className="app-hearts-layer" />
         <StarField count={70} />
         <div className="app-screen-container h-full">
-          <AuthScreen onAuth={handleAuth} />
+          <AuthScreen onAuth={handleAuth} initialBanMessage={banMessage} onBanSeen={() => setBanMessage(null)} />
         </div>
         <CookieConsent />
       </div>

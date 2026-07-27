@@ -26,6 +26,11 @@ function clearToken() {
   localStorage.removeItem("spark_viewer");
 }
 
+// Полная очистка авторизации на клиенте (используется при принудительном выходе, напр. бан)
+export function clearAllAuth() {
+  clearToken();
+}
+
 // Кэш данных смотрящего для водяного знака на фото
 export function cacheViewer(user: { id: number; name?: string }) {
   try {
@@ -87,8 +92,22 @@ async function req<T>(
   } catch {
     throw new Error("Некорректный ответ сервера");
   }
-  if (!res.ok) throw new Error((data.error as string) || "Ошибка сервера");
+  if (!res.ok) {
+    if (data.banned === true) {
+      const err = new Error((data.reason as string) || "Нарушение правил сообщества") as BanError;
+      err.banned = true;
+      throw err;
+    }
+    throw new Error((data.error as string) || "Ошибка сервера");
+  }
   return data as T;
+}
+
+export interface BanError extends Error {
+  banned?: boolean;
+}
+export function isBanError(e: unknown): e is BanError {
+  return e instanceof Error && (e as BanError).banned === true;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, type User, type LiveStream, type Profile } from "@/lib/api";
+import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, isBanError, clearAllAuth, type User, type LiveStream, type Profile } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { loginOneSignal, logoutOneSignal } from "@/hooks/useOneSignal";
 import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
@@ -25,6 +25,18 @@ export function useIndexController() {
   // Экран блокировки (PIN/биометрия) при запуске приложения — только если
   // для этого пользователя на этом устройстве включён хотя бы один способ
   const [locked, setLocked] = useState(false);
+  // Сообщение о бане: показывается на экране входа, если аккаунт заблокирован
+  const [banMessage, setBanMessage] = useState<string | null>(null);
+
+  // Принудительный выход при бане (во время активной сессии)
+  const forceBanLogout = useCallback((reason: string) => {
+    clearAllAuth();
+    logoutOneSignal();
+    setCurrentUser(null);
+    setLocked(false);
+    setScreen("discover");
+    setBanMessage(reason);
+  }, []);
 
   useEffect(() => {
     if (authApi.isLoggedIn()) {
@@ -35,14 +47,14 @@ export function useIndexController() {
           const hasBio = isBiometricRegistered(d.user.id);
           if (hasPin || hasBio) setLocked(true);
         })
-        .catch(() => {})
+        .catch((e) => { if (isBanError(e)) forceBanLogout(e.message); })
         .finally(() => setAuthLoading(false));
     } else {
       setAuthLoading(false);
     }
-  }, []);
+  }, [forceBanLogout]);
 
-  const handleAuth = (user: User) => setCurrentUser(user);
+  const handleAuth = (user: User) => { setBanMessage(null); setCurrentUser(user); };
 
   const handleLogout = async () => {
     await authApi.logout();
@@ -137,10 +149,9 @@ export function useIndexController() {
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (!currentUser) return;
-    authApi.heartbeat().catch(() => {});
-    heartbeatRef.current = setInterval(() => {
-      authApi.heartbeat().catch(() => {});
-    }, 60_000);
+    const beat = () => authApi.heartbeat().catch((e) => { if (isBanError(e)) forceBanLogout(e.message); });
+    beat();
+    heartbeatRef.current = setInterval(beat, 60_000);
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       // При закрытии вкладки ставим офлайн
@@ -326,6 +337,7 @@ export function useIndexController() {
     authLoading,
     showSplash, setShowSplash,
     locked, setLocked,
+    banMessage, setBanMessage,
     activeCall, setActiveCall,
     incoming, dismissIncoming,
     offlineState,

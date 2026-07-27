@@ -299,6 +299,14 @@ def handler(event: dict, context) -> dict:
                 conn.commit()
                 return resp(401, {'error': 'Неверный email или пароль'})
             user_id = row[0]
+            # Проверка бана: забаненный пользователь не может войти
+            cur.execute("SELECT reason FROM banned_users WHERE user_id = %s", (user_id,))
+            ban = cur.fetchone()
+            if ban:
+                ban_reason = ban[0] or 'Нарушение правил сообщества'
+                audit(cur, 'login_banned', 'warning', ip=ip, user_id=user_id, email=email)
+                conn.commit()
+                return resp(403, {'error': 'banned', 'banned': True, 'reason': ban_reason})
             # Миграция хеша: если хранился legacy — обновляем на основной
             if stored_hash == legacy_hash and stored_hash != new_hash:
                 cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, user_id))
@@ -334,6 +342,14 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             if not row:
                 return resp(401, {'error': 'Не авторизован'})
+            # Принудительный выход, если пользователь забанен во время активной сессии
+            cur.execute("SELECT reason FROM banned_users WHERE user_id = %s", (row[0],))
+            ban = cur.fetchone()
+            if ban:
+                cur.execute("UPDATE sessions SET expires_at = NOW() WHERE token = %s", (token,))
+                cur.execute("UPDATE users SET online = FALSE WHERE id = %s", (row[0],))
+                conn.commit()
+                return resp(403, {'error': 'banned', 'banned': True, 'reason': ban[0] or 'Нарушение правил сообщества'})
             cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
             user = dict(zip(cols, row))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
@@ -505,6 +521,17 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'heartbeat':
+            # Принудительный выход, если пользователь забанен во время активной сессии
+            cur.execute(
+                "SELECT b.reason FROM banned_users b "
+                "JOIN sessions s ON s.user_id = b.user_id "
+                "WHERE s.token = %s", (token,)
+            )
+            ban = cur.fetchone()
+            if ban:
+                cur.execute("UPDATE sessions SET expires_at = NOW() WHERE token = %s", (token,))
+                conn.commit()
+                return resp(403, {'error': 'banned', 'banned': True, 'reason': ban[0] or 'Нарушение правил сообщества'})
             cur.execute(
                 "UPDATE users SET online = TRUE, last_seen = NOW() "
                 "WHERE id = (SELECT user_id FROM sessions WHERE token = %s AND expires_at > NOW())",

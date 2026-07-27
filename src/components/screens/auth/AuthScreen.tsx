@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { authApi, type User } from "@/lib/api";
+import { authApi, isBanError, type User } from "@/lib/api";
 import { ForgotPasswordModal } from "./ForgotPasswordModal";
 import { AuthForm } from "./AuthForm";
 import { AuthHeroCard } from "./AuthHeroCard";
 import { AuthLegalSheet } from "./AuthLegalSheet";
+import { BannedNotice } from "./BannedNotice";
+import { SupportModal } from "./SupportModal";
 import { openLegalExternally } from "@/lib/openLegal";
 
 // Redirect URI для OAuth берём из реального адреса браузера — так он всегда
@@ -12,9 +14,11 @@ import { openLegalExternally } from "@/lib/openLegal";
 // window.location.origin для кириллического домена браузер сам отдаёт в punycode.
 const OAUTH_REDIRECT = `${window.location.origin}/oauth`;
 
-export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User) => void; variant?: "phone" | "card" }) {
+export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null, onBanSeen }: { onAuth: (user: User) => void; variant?: "phone" | "card"; initialBanMessage?: string | null; onBanSeen?: () => void }) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [banned, setBanned] = useState<string | null>(initialBanMessage);
+  const [showSupport, setShowSupport] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -78,6 +82,7 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
   const submit = async () => {
     setError("");
     setEmailTaken(false);
+    setBanned(null);
     setLoading(true);
     try {
       let result;
@@ -89,6 +94,11 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
       }
       onAuth(result.user);
     } catch (e: unknown) {
+      if (isBanError(e)) {
+        setBanned(e.message);
+        setLoading(false);
+        return;
+      }
       const msg = e instanceof Error ? e.message : t("auth.genericError");
       if (mode === "register" && msg.toLowerCase().includes("уже занят")) {
         setEmailTaken(true);
@@ -100,6 +110,8 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
     }
   };
 
+  const dismissBan = () => { setBanned(null); onBanSeen?.(); };
+
   return (
     <>
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
@@ -109,6 +121,18 @@ export function AuthScreen({ onAuth, variant = "phone" }: { onAuth: (user: User)
       )}
       {showPrivacy && (
         <AuthLegalSheet tab="privacy" onClose={() => setShowPrivacy(false)} />
+      )}
+
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
+
+      {banned && (
+        <div className="px-4 pt-4">
+          <BannedNotice
+            reason={banned}
+            onContactSupport={() => setShowSupport(true)}
+            onDismiss={dismissBan}
+          />
+        </div>
       )}
 
       {variant === "card" ? (

@@ -54,6 +54,21 @@
       "body": {},
       "expectedStatus": 401,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "login — неверные данные возвращают 401",
+      "method": "POST",
+      "path": "/?action=login",
+      "body": {"email": "nonexistent_test_user_xyz@example.com", "password": "wrongpass123"},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "me — без токена возвращает 401",
+      "method": "GET",
+      "path": "/?action=me",
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }
