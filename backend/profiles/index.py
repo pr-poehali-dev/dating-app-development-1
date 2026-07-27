@@ -353,6 +353,14 @@ def handler(event: dict, context) -> dict:
 
         if action == 'update_me':
             body = json.loads(event.get('body') or '{}')
+            # AI-проверка имени на рекламу: рекламное имя заменяем на «ПОЛЬЗОВАТЕЛЬ»
+            if 'name' in body and isinstance(body['name'], str):
+                try:
+                    from moderation import moderate_name
+                    if moderate_name(body['name']).get('is_ad'):
+                        body['name'] = 'ПОЛЬЗОВАТЕЛЬ'
+                except Exception:
+                    pass
             scalar = ['name', 'age', 'city', 'country', 'bio', 'photo_url', 'gender', 'looking_for', 'height', 'weight', 'relationship_status', 'zodiac']
             fields, values = [], []
             for key in scalar:
@@ -907,6 +915,20 @@ def handler(event: dict, context) -> dict:
                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
             s3.put_object(Bucket='files', Key=key, Body=image_bytes, ContentType=content_type)
             cdn_url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
+
+            # ── AI-модерация ТЕКСТА поста (реклама/спам → пост не публикуется) ──
+            if caption and get_setting(cur, 'text_moderation_enabled', 'true') == 'true':
+                tmod = moderate_text(caption)
+                is_ad = 'spam' in tmod.get('categories', []) or 'scam' in tmod.get('categories', [])
+                block_th = float(get_setting(cur, 'auto_block_threshold', '85'))
+                if is_ad or tmod['score'] >= block_th:
+                    push_to_queue(cur, 'post', None, me['id'], text_snippet=caption[:300],
+                                  ai_verdict='violation', ai_score=tmod['score'], ai_categories=tmod.get('categories', []),
+                                  ai_reason=tmod.get('reason') or 'Реклама/спам в тексте поста',
+                                  priority='high', status='auto_resolved', action_taken='auto_blocked', reviewed_by='ai')
+                    cur.execute("UPDATE users SET ai_violation_count = ai_violation_count + 1 WHERE id = %s", (me['id'],))
+                    conn.commit()
+                    return resp(403, {'error': 'Пост не опубликован: обнаружена реклама или спам в тексте'})
 
             # ── AI-модерация фото поста ──
             ai_flag = False

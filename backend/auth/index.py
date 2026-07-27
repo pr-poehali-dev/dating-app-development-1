@@ -233,6 +233,13 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'Имя слишком длинное'})
             if len(email) > 255 or '@' not in email:
                 return resp(400, {'error': 'Некорректный email'})
+            # AI-проверка имени на рекламу: рекламное имя заменяем на «ПОЛЬЗОВАТЕЛЬ»
+            try:
+                from moderation import moderate_name
+                if moderate_name(name).get('is_ad'):
+                    name = 'ПОЛЬЗОВАТЕЛЬ'
+            except Exception:
+                pass
             # Проверка чёрного списка IP
             block_reason = is_ip_blocked(cur, ip)
             if block_reason:

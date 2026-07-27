@@ -19,14 +19,37 @@ export function AiModerationScanPanel({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [nameStatus, setNameStatus] = useState<{ names_left: number; names_flagged: number } | null>(null);
+  const [nameScanning, setNameScanning] = useState(false);
 
   const load = () => {
     setLoading(true);
     adminReq(token, "ai_scan_status").then(setStatus).catch(() => {}).finally(() => setLoading(false));
+    adminReq(token, "ai_name_scan_status").then(setNameStatus).catch(() => {});
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
+
+  const runNameScan = async () => {
+    setNameScanning(true);
+    try {
+      let hasMore = true;
+      let totalRenamed = 0;
+      while (hasMore) {
+        const d = await adminReq(token, "ai_name_scan_batch");
+        if (!d.scanned) { hasMore = false; break; }
+        totalRenamed += d.renamed || 0;
+        setNameStatus(s => s ? { ...s, names_left: d.names_left } : s);
+        setLog(prev => [`Имена: проверено ${d.scanned}, переименовано ${d.renamed}`, ...prev].slice(0, 5));
+        if (d.names_left <= 0) hasMore = false;
+      }
+      if (totalRenamed > 0) setLog(prev => [`Готово: всего переименовано ${totalRenamed} рекламных имён`, ...prev].slice(0, 5));
+    } finally {
+      setNameScanning(false);
+      adminReq(token, "ai_name_scan_status").then(setNameStatus).catch(() => {});
+    }
+  };
 
   const scanOneBatch = async (type: "gallery" | "avatars" | "covers") => {
     const d = await adminReq(token, "ai_scan_batch", { type });
@@ -63,7 +86,7 @@ export function AiModerationScanPanel({ token }: { token: string }) {
           <Icon name="ScanSearch" size={14} /> Ретроактивное сканирование
         </p>
         <p className="text-white/40 text-xs mt-1">
-          Проверит ИИ фото, загруженные ДО подключения модерации. Может занять время — идёт пакетами по 5 фото.
+          Проверит ИИ фото и имена, добавленные ДО подключения модерации. Может занять время — идёт пакетами. Рекламные имена заменяются на «ПОЛЬЗОВАТЕЛЬ».
         </p>
       </div>
 
@@ -97,6 +120,29 @@ export function AiModerationScanPanel({ token }: { token: string }) {
           </div>
         );
       })}
+
+      {/* Проверка имён пользователей на рекламу */}
+      <div className="rounded-2xl p-4 flex items-center justify-between gap-3"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <Icon name="Tag" size={14} className="text-white/50" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-white text-sm font-semibold">Имена пользователей</p>
+            <p className="text-white/35 text-xs">
+              {(nameStatus?.names_left ?? 0) > 0 ? `Осталось проверить: ${nameStatus?.names_left}` : "Всё проверено"}
+              {(nameStatus?.names_flagged ?? 0) > 0 && <span style={{ color: "#F87171" }}> · переименовано: {nameStatus?.names_flagged}</span>}
+            </p>
+          </div>
+        </div>
+        <button onClick={runNameScan} disabled={nameScanning || (nameStatus?.names_left ?? 0) === 0}
+          className="px-3.5 py-2 rounded-xl text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1.5 flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
+          {nameScanning ? <Icon name="Loader2" size={13} className="animate-spin" /> : <Icon name="Play" size={13} />}
+          {(nameStatus?.names_left ?? 0) === 0 ? "Готово" : "Проверить"}
+        </button>
+      </div>
 
       {log.length > 0 && (
         <div className="rounded-2xl p-3 flex flex-col gap-1" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>

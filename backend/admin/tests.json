@@ -13,6 +13,13 @@
       "path": "/?action=stats",
       "expectedStatus": 401,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "ai_name_scan_status без токена — 401",
+      "method": "GET",
+      "path": "/?action=ai_name_scan_status",
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }

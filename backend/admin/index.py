@@ -10,7 +10,7 @@ import uuid
 import base64
 import psycopg2
 import boto3
-from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
+from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting, moderate_name, looks_like_ad_name
 
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
@@ -868,6 +868,40 @@ def handler(event: dict, context) -> dict:
                 'gallery_left': gallery_left, 'avatars_left': avatars_left, 'covers_left': covers_left,
                 'gallery_flagged': gallery_flagged, 'avatars_flagged': avatars_flagged, 'covers_flagged': covers_flagged,
             })
+
+        if action == 'ai_name_scan_status':
+            cur.execute("SELECT COUNT(*) FROM users WHERE ai_name_checked_at IS NULL AND name IS NOT NULL AND name != '' AND name != 'ПОЛЬЗОВАТЕЛЬ'")
+            names_left = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM users WHERE ai_name_flagged = TRUE")
+            names_flagged = cur.fetchone()[0]
+            return resp(200, {'names_left': names_left, 'names_flagged': names_flagged})
+
+        if action == 'ai_name_scan_batch':
+            batch_size = 15
+            cur.execute(
+                "SELECT id, name FROM users "
+                "WHERE ai_name_checked_at IS NULL AND name IS NOT NULL AND name != '' AND name != 'ПОЛЬЗОВАТЕЛЬ' "
+                "ORDER BY id LIMIT %s", (batch_size,)
+            )
+            rows = cur.fetchall()
+            scanned, renamed, renamed_list = 0, 0, []
+            for uid, uname in rows:
+                scanned += 1
+                is_ad = False
+                try:
+                    is_ad = bool(moderate_name(uname).get('is_ad'))
+                except Exception:
+                    is_ad = looks_like_ad_name(uname)
+                if is_ad:
+                    cur.execute("UPDATE users SET name = 'ПОЛЬЗОВАТЕЛЬ', ai_name_flagged = TRUE, ai_name_checked_at = NOW() WHERE id = %s", (uid,))
+                    renamed += 1
+                    renamed_list.append({'id': uid, 'old_name': uname})
+                else:
+                    cur.execute("UPDATE users SET ai_name_checked_at = NOW() WHERE id = %s", (uid,))
+            conn.commit()
+            cur.execute("SELECT COUNT(*) FROM users WHERE ai_name_checked_at IS NULL AND name IS NOT NULL AND name != '' AND name != 'ПОЛЬЗОВАТЕЛЬ'")
+            names_left = cur.fetchone()[0]
+            return resp(200, {'scanned': scanned, 'renamed': renamed, 'renamed_list': renamed_list, 'names_left': names_left})
 
         if action == 'ai_scan_batch':
             scan_type = body.get('type', 'gallery')  # 'gallery' | 'avatars' | 'covers'
