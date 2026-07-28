@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { likesApi, profilesApi, notificationsApi, type Profile, type MyGift } from "@/lib/api";
+import { trackTask } from "@/lib/trackTask";
 import { ReportModal, ProfileMenuSheet } from "@/components/screens/ReportModal";
 import { ProfileGiftSheet, GIFTS, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
 import { ProfileSendMessageSheet } from "@/components/screens/ProfileSendMessageSheet";
@@ -98,6 +99,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         .then(d => { if (d?.current_streak) setProfileStreakDays(d.current_streak); })
         .catch(() => {});
       notificationsApi.trackView(currentProfile.id).catch(() => {});
+      trackTask("view_profiles");
       const profileReq = postsApi.getUserProfile(currentProfile.id)
         .then(d => {
           const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
@@ -135,6 +137,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     setTimeout(() => setHeartAnim(false), 1000);
     try {
       const res = await likesApi.send(currentProfile.id);
+      trackTask("send_likes");
       setLikedSet(prev => new Set([...prev, currentProfile.id]));
       let mid = matchId;
       if (res.match && res.match_id) {

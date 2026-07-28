@@ -237,6 +237,20 @@
     opacity: 1;
   }
 }
+@keyframes coin-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -26px) scale(1);
+  }
+}
 @keyframes streak-glow-ring {
   0%,
   100% {

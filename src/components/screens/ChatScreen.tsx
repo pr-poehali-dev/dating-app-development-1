@@ -3,6 +3,7 @@ import Icon from "@/components/ui/icon";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInputBar } from "@/components/chat/ChatInputBar";
 import { ChatMessagesList } from "@/components/chat/ChatMessagesList";
+import { ChatIcebreakers } from "@/components/chat/ChatIcebreakers";
 import { ChatScreenModals } from "@/components/chat/ChatScreenModals";
 import { useChatScreenLogic } from "@/components/chat/useChatScreenLogic";
 import { isVideoBlocked } from "@/lib/videoBlocks";
@@ -110,6 +111,10 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             </span>
           </div>
         ) : (
+          <>
+          {c.msgs.filter(m => !(m.text || "").startsWith("__")).length === 0 && (
+            <ChatIcebreakers matchId={matchId} onPick={(t) => { c.setInput(t); c.inputRef.current?.focus(); }} />
+          )}
           <ChatInputBar
             input={c.input}
             recording={c.recording}
@@ -137,6 +142,7 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             onOpenAwardPicker={() => { c.setShowAwardPicker(true); c.setShowPlus(false); }}
             onOpenVideoCircle={() => { c.setShowVideoCircle(true); c.setShowPlus(false); }}
           />
+          </>
         )}
       </div>
     </>

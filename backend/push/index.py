@@ -167,6 +167,40 @@ def handler(event: dict, context) -> dict:
         result = onesignal_send(title, text, link)
         return resp(200 if result['ok'] else 502, result)
 
+    # Утренняя рассылка «Знакомство дня» — вызывается по расписанию (cron).
+    # Защита: секрет ADMIN_TOKEN в query (?key=) или заголовке X-Admin-Token.
+    if action == 'daily_match_broadcast':
+        key = params.get('key', '') or \
+              (event.get('headers') or {}).get('X-Admin-Token', '') or \
+              (event.get('headers') or {}).get('x-admin-token', '')
+        if not key or key != os.environ.get('ADMIN_TOKEN', ''):
+            return resp(403, {'error': 'Нет доступа'})
+
+        title = 'Полутон 💜'
+        text = 'Твоё «Знакомство дня» готово — посмотри, кого подобрал ИИ!'
+        link = '/?daily_match=1'
+
+        conn = get_conn()
+        try:
+            cur = conn.cursor()
+            # Все пользователи с активной подпиской на пуши (не удалённые)
+            cur.execute(
+                "SELECT DISTINCT ps.user_id FROM push_subscriptions ps "
+                "JOIN users u ON u.id = ps.user_id "
+                "WHERE u.removed_at IS NULL"
+            )
+            user_ids = [r[0] for r in cur.fetchall()]
+            sent = 0
+            for uid in user_ids:
+                try:
+                    send_push_to_user(cur, conn, uid, title, text, link)
+                    sent += 1
+                except Exception:
+                    pass
+            return resp(200, {'ok': True, 'recipients': len(user_ids), 'sent': sent})
+        finally:
+            conn.close()
+
     # Публичный VAPID-ключ — без авторизации
     if action == 'vapid_public_key':
         return resp(200, {'public_key': os.environ.get('VAPID_PUBLIC_KEY', '')})

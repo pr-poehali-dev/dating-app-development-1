@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { matchesApi, messagesApi, postsApi, profilesApi, type Message } from "@/lib/api";
+import { trackTask } from "@/lib/trackTask";
 import { haptic } from "@/hooks/useNative";
 import { queueAction } from "@/hooks/useOffline";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
@@ -220,6 +221,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     }
     try {
       const msg = await messagesApi.send(matchId, text);
+      trackTask("send_message");
       setMsgs((m) => [...m, msg]);
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (e) { void e; }

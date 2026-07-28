@@ -7,6 +7,13 @@
       "body": {"title": "Тест", "body": "Привет"},
       "expectedStatus": 403,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "daily_match_broadcast без ключа — 403",
+      "method": "GET",
+      "path": "/?action=daily_match_broadcast",
+      "expectedStatus": 403,
+      "bodyMatcher": "partial"
     }
   ]
 }

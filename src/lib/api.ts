@@ -13,6 +13,7 @@ const URLS = {
   streaks: "https://functions.poehali.dev/3ce9087c-7bc0-41d7-9ed9-81ef6b7272dd",
   compatibility: "https://functions.poehali.dev/3c47a214-b397-4193-9c25-8db3eb79b2d9",
   config: "https://functions.poehali.dev/6ceb1501-cae9-4306-9855-f9195741490c",
+  gamification: "https://functions.poehali.dev/4c11e2bf-c585-4a89-8cab-1eeef40f5f6f",
 };
 
 function getToken(): string {
@@ -239,6 +240,9 @@ export const profilesApi = {
     }
     return req<{ profiles: Profile[] }>("profiles", "discover", {}, p);
   },
+
+  dailyMatch: () =>
+    req<{ matches: DailyMatch[]; date: string }>("profiles", "daily_match", {}),
 
   updateMe: (data: Partial<Profile>) =>
     req<{ ok: boolean }>("profiles", "update_me", {
@@ -557,6 +561,9 @@ export const messagesApi = {
       body: JSON.stringify({ match_id: matchId, text }),
     }),
 
+  icebreakers: (matchId: number) =>
+    req<{ icebreakers: string[] }>("messages", "icebreakers", {}, { match_id: String(matchId) }),
+
   sendDirect: (to_user_id: number, text: string) =>
     req<{ ok: boolean; match_id: number }>("messages", "send_direct", {
       method: "POST",
@@ -666,6 +673,21 @@ export interface Profile {
   boosted?: boolean;
   username?: string;
   zodiac?: string;
+}
+
+export interface DailyMatch {
+  id: number;
+  name: string;
+  age?: number | null;
+  city?: string;
+  bio?: string;
+  photo_url?: string;
+  tags?: string[];
+  verified?: boolean;
+  zodiac?: string;
+  score: number;
+  reason: string;
+  seen: boolean;
 }
 
 export interface LikedBy {
@@ -1176,6 +1198,47 @@ export const streaksApi = {
       headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
     }).then(r => r.json()) as Promise<StreakData>;
   },
+};
+
+// ─── Геймификация: монеты и ежедневные задания ──────────────────────────────
+export interface DailyTask {
+  key: string;
+  title: string;
+  icon: string;
+  reward: number;
+  progress: number;
+  goal: number;
+  done: boolean;
+  claimed: boolean;
+}
+export interface GamificationState {
+  coins: number;
+  tasks: DailyTask[];
+  reward?: number;
+}
+
+function gamePost(action: string, extra: Record<string, unknown> = {}) {
+  const token = getToken();
+  return fetch(URLS.gamification, {
+    method: "POST",
+    headers: { "X-Auth-Token": token, "Content-Type": "application/json" },
+    body: JSON.stringify({ action, ...extra }),
+  }).then(r => r.json());
+}
+
+export const gamificationApi = {
+  state: () => {
+    const token = getToken();
+    return fetch(`${URLS.gamification}?action=state`, {
+      headers: { "X-Auth-Token": token },
+    }).then(r => r.json()) as Promise<GamificationState>;
+  },
+  progress: (taskKey: string, step = 1) =>
+    gamePost("progress", { task_key: taskKey, step }).catch(() => null) as Promise<GamificationState | null>,
+  claim: (taskKey: string) =>
+    gamePost("claim", { task_key: taskKey }) as Promise<GamificationState>,
+  spend: (amount: number, reason: string) =>
+    gamePost("spend", { amount, reason }) as Promise<{ coins: number; ok?: boolean; error?: string }>,
 };
 
 export interface CompatQuestion {

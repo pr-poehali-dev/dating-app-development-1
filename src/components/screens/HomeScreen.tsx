@@ -11,6 +11,8 @@ import { HomeGiftSheet } from "@/components/screens/home/HomeGiftSheet";
 import { HomeGiftPreview } from "@/components/screens/home/HomeGiftPreview";
 import { NewUsersGridScreen } from "@/components/screens/home/NewUsersGridScreen";
 import { StoryUploadSheet } from "@/components/screens/StoryUploadSheet";
+import { DailyMatchScreen } from "@/components/screens/DailyMatchScreen";
+import { DailyMatchBanner } from "@/components/screens/home/DailyMatchBanner";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGoToChats, onPremium }: {
@@ -41,6 +43,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   const [showNewUsers, setShowNewUsers] = useState(false);
   const [showStoryUpload, setShowStoryUpload] = useState(false);
   const [storiesRefreshKey, setStoriesRefreshKey] = useState(0);
+  const [showDailyMatch, setShowDailyMatch] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [captionFor, setCaptionFor] = useState<string | null>(null);
@@ -74,6 +77,19 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
   }, []);
 
   useEffect(() => { loadFeed(); }, [loadFeed]);
+
+  // Открыть «Знакомство дня» по переходу из пуша (/?daily_match=1)
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("daily_match") === "1") {
+        setShowDailyMatch(true);
+        p.delete("daily_match");
+        const q = p.toString();
+        window.history.replaceState({}, "", window.location.pathname + (q ? `?${q}` : ""));
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   useAppRefresh(() => loadFeed(true));
 
@@ -186,6 +202,8 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           onNotifsClick={() => { setShowNotifs(true); setUnreadCount(0); }}
         />
 
+        <DailyMatchBanner onClick={() => setShowDailyMatch(true)} />
+
         <HomeFeedContent
           loading={loading}
           posts={posts}
@@ -207,6 +225,11 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
           onLoadMore={loadMore}
         />
       </div>
+
+      {/* Знакомство дня */}
+      {showDailyMatch && (
+        <DailyMatchScreen onClose={() => setShowDailyMatch(false)} onOpenChat={onOpenChat} />
+      )}
 
       {/* Сетка новых пользователей */}
       {showNewUsers && (

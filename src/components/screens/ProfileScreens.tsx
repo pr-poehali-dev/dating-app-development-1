@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Icon from "@/components/ui/icon";
 import { profilesApi, streaksApi, type User, type MyGift } from "@/lib/api";
+import { trackTask } from "@/lib/trackTask";
 import { useAppRefresh } from "@/hooks/useAppRefresh";
 import { useAppTheme } from "@/hooks/useAppTheme";
 
@@ -17,6 +18,7 @@ import { ProfileLightbox } from "@/components/screens/profile/ProfileLightbox";
 import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSection";
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
 import { StreakWidget } from "@/components/screens/profile/StreakWidget";
+import { DailyTasksWidget } from "@/components/screens/profile/DailyTasksWidget";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
@@ -53,6 +55,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     streaksApi.checkin()
       .then(d => { if (d?.current_streak) setStreakDays(d.current_streak); })
       .catch(() => {});
+    trackTask("checkin");
   }, []);
 
   useEffect(() => {
@@ -349,6 +352,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
           {/* Стрик активности */}
           <StreakWidget />
+
+          {/* Монеты и ежедневные задания */}
+          <DailyTasksWidget />
 
           {/* 2. Premium баннер */}
           {!currentUser.premium && (
