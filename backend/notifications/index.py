@@ -3,6 +3,8 @@
 """
 import json
 import os
+import urllib.request
+import urllib.error
 import psycopg2
 
 CORS = {
@@ -10,6 +12,60 @@ CORS = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Auth-Token, X-Authorization',
 }
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID.
+    Работает при закрытом приложении и на заблокированном экране."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'{scheme} {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
+
+def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет Web Push всем подпискам пользователя (дополняет OneSignal)."""
+    try:
+        from pywebpush import webpush, WebPushException
+        vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
+        vapid_email   = os.environ.get('VAPID_EMAIL', 'mailto:push@polyuton.app')
+        if not vapid_private:
+            return
+        cur.execute("SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE user_id=%s", (user_id,))
+        rows = cur.fetchall()
+        payload = json.dumps({'title': title, 'body': body_text, 'url': url})
+        bad = []
+        for rid, ep, p256, auth in rows:
+            try:
+                webpush(subscription_info={'endpoint': ep, 'keys': {'p256dh': p256, 'auth': auth}},
+                        data=payload, vapid_private_key=vapid_private, vapid_claims={'sub': vapid_email})
+            except WebPushException as e:
+                st = getattr(e.response, 'status_code', 0) if e.response else 0
+                if st in (404, 410):
+                    bad.append(rid)
+        if bad:
+            cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad,))
+            conn.commit()
+    except Exception:
+        pass
 
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'], options=f"-c search_path={os.environ.get('MAIN_DB_SCHEMA', 'public')}")
@@ -205,11 +261,25 @@ def handler(event: dict, context) -> dict:
             body = json.loads(event.get('body') or '{}')
             target_id = body.get('user_id')
             if target_id and target_id != me['id']:
+                # Был ли уже просмотр от этого же человека за последние 6 часов?
+                cur.execute(
+                    "SELECT 1 FROM notifications WHERE user_id=%s AND from_user_id=%s "
+                    "AND type='view' AND created_at > NOW() - INTERVAL '6 hours' LIMIT 1",
+                    (target_id, me['id'])
+                )
+                recently_viewed = cur.fetchone() is not None
                 cur.execute(
                     "INSERT INTO notifications (user_id, type, from_user_id) VALUES (%s, 'view', %s)",
                     (target_id, me['id'])
                 )
                 conn.commit()
+                # Пуш только если это не повторный просмотр за 6ч (чтобы не спамить)
+                if not recently_viewed:
+                    cur.execute("SELECT name FROM users WHERE id=%s", (me['id'],))
+                    r = cur.fetchone()
+                    viewer_name = (r[0] if r and r[0] else 'Кто-то')
+                    _onesignal_to_user(target_id, '👀 Новый просмотр', f'{viewer_name} посмотрел(а) вашу анкету', '/')
+                    _push_to_user(cur, conn, target_id, '👀 Новый просмотр', f'{viewer_name} посмотрел(а) вашу анкету', '/')
             return resp(200, {'ok': True})
 
         if action == 'mark_read':

@@ -9,9 +9,39 @@ import uuid
 import random
 import smtplib
 import ssl
+import urllib.request
+import urllib.error
 import boto3
 import psycopg2
 from moderation import moderate_photo, moderate_text, compare_faces, get_setting, score_to_priority, push_to_queue
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID.
+    Работает при закрытом приложении и на заблокированном экране."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'{scheme} {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -646,6 +676,10 @@ def handler(event: dict, context) -> dict:
                     (sub_id, 'new_photo', me['id'], row[0])
                 )
             conn.commit()
+            # Пуш подписчикам о новом фото
+            author_name = me.get('name') or 'Кто-то'
+            for sub_id in subs:
+                _onesignal_to_user(sub_id, f'📸 Новое фото от {author_name}', 'Загляните в профиль!', '/')
             return resp(200, {'ok': True, 'photo': {'id': row[0], 'photo_url': cdn_url, 'created_at': str(row[1])}})
 
         # Удалить фото из галереи профиля (мягкое удаление)
@@ -829,6 +863,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             # Push о подписке
             if subscribed:
+                _onesignal_to_user(target_id, f'⭐ {me["name"] or "Кто-то"} подписался на вас', 'Новый подписчик в Полутон', '/')
                 try:
                     from pywebpush import webpush, WebPushException
                     vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')

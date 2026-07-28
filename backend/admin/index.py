@@ -8,9 +8,39 @@ import os
 import time
 import uuid
 import base64
+import urllib.request
+import urllib.error
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting, moderate_name, looks_like_ad_name
+
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'{scheme} {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
 
 
 def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
@@ -417,6 +447,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             try:
                 _push_to_user(cur, conn, user_id, '✅ Полутон', 'Ваш профиль прошёл верификацию', '/')
+                _onesignal_to_user(user_id, '✅ Полутон', 'Ваш профиль прошёл верификацию', '/')
             except Exception:
                 pass
             return resp(200, {'ok': True})
@@ -448,6 +479,7 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             try:
                 _push_to_user(cur, conn, user_id, '❌ Полутон', 'Заявка на верификацию отклонена', '/')
+                _onesignal_to_user(user_id, '❌ Полутон', 'Заявка на верификацию отклонена', '/')
             except Exception:
                 pass
             return resp(200, {'ok': True})
@@ -1021,7 +1053,13 @@ def handler(event: dict, context) -> dict:
                     (uid,)
                 )
             conn.commit()
-            return resp(200, {'ok': True, 'sent_to': len(user_ids)})
+            # Реальная рассылка пушей (OneSignal + Web Push) — приходят на заблокированный экран
+            pushed = 0
+            for uid in user_ids:
+                _onesignal_to_user(uid, title, message, '/')
+                _push_to_user(cur, conn, uid, title, message, '/')
+                pushed += 1
+            return resp(200, {'ok': True, 'sent_to': len(user_ids), 'pushed': pushed})
 
         # ── Маркетинг: баннеры ────────────────────────────────────────────────
         if action == 'banners':
@@ -1537,6 +1575,7 @@ def handler(event: dict, context) -> dict:
 
             try:
                 _push_to_user(cur, conn, user_id, '⚠️ Предупреждение от Полутон', warning_text[:100], '/')
+                _onesignal_to_user(user_id, '⚠️ Предупреждение от Полутон', warning_text[:100], '/')
             except Exception:
                 pass
 

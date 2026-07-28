@@ -2,6 +2,34 @@
 Видеоистории: загрузка, получение и удаление сторис (24 часа).
 """
 import json, os, uuid, boto3, psycopg2, base64, re
+import urllib.request, urllib.error
+
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
+    """Отправляет push конкретному пользователю через OneSignal по External ID."""
+    try:
+        app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+        api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+        if not app_id or not api_key:
+            return
+        payload = {
+            'app_id': app_id,
+            'include_aliases': {'external_id': [str(user_id)]},
+            'target_channel': 'push',
+            'headings': {'en': title, 'ru': title},
+            'contents': {'en': body_text, 'ru': body_text},
+            'url': url,
+        }
+        scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+        req = urllib.request.Request(
+            'https://onesignal.com/api/v1/notifications',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json; charset=utf-8',
+                     'Authorization': f'{scheme} {api_key}'},
+            method='POST',
+        )
+        urllib.request.urlopen(req, timeout=8).read()
+    except Exception:
+        pass
 
 ALLOWED_CONTENT_TYPES = {"video/mp4", "video/webm", "video/quicktime"}
 MAX_FILE_SIZE = 200 * 1024 * 1024   # 200 МБ
@@ -205,6 +233,10 @@ def handler(event: dict, context) -> dict:
                         "INSERT INTO notifications (user_id, type, from_user_id, ref_id) VALUES (%s, 'story_view', %s, %s)",
                         (story_owner[0], viewer[0], view_id)
                     )
+                    cur.execute("SELECT name FROM users WHERE id=%s", (viewer[0],))
+                    _vr = cur.fetchone()
+                    _vname = (_vr[0] if _vr and _vr[0] else 'Кто-то')
+                    _onesignal_to_user(story_owner[0], '🎬 Просмотр истории', f'{_vname} посмотрел(а) вашу историю', '/')
         conn.commit()
 
     cur.execute("""
