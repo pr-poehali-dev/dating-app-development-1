@@ -2,6 +2,7 @@ import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
 import OfflineBanner from "@/components/OfflineBanner";
 import StarField from "@/components/StarField";
+import { EnableNotificationsBanner } from "@/components/EnableNotificationsBanner";
 import { BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import VideoCall from "@/components/VideoCall";
 import type { User } from "@/lib/api";
@@ -38,6 +39,7 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
         <div className="app-hearts-layer" />
         <StarField count={140} />
         <OfflineBanner offlineState={offlineState} />
+        <EnableNotificationsBanner />
         {showConfetti && <PremiumConfetti />}
         <div className="app-screen-container desktop-mode" style={{ height: "100dvh" }}>
           {showSidebar && (
@@ -74,6 +76,7 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
       <div className="app-hearts-layer" />
       <StarField count={90} />
       <OfflineBanner offlineState={offlineState} />
+      <EnableNotificationsBanner />
       {showConfetti && <PremiumConfetti />}
       <div className="app-screen-container flex flex-col" style={{ height: "100dvh" }}>
         <div className="flex-1 overflow-hidden relative">
