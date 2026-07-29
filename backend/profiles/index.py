@@ -1011,14 +1011,16 @@ def handler(event: dict, context) -> dict:
                        u.name, u.photo_url as author_photo, u.zodiac as author_zodiac,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
                        (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = %s) as liked_by_me,
-                       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count
+                       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
+                       (SELECT c.text FROM post_comments c WHERE c.post_id = p.id ORDER BY c.created_at DESC LIMIT 1) as last_comment_text,
+                       (SELECT cu.name FROM post_comments c JOIN users cu ON cu.id = c.user_id WHERE c.post_id = p.id ORDER BY c.created_at DESC LIMIT 1) as last_comment_author
                 FROM posts p
                 JOIN users u ON u.id = p.user_id
                 ORDER BY p.created_at DESC
                 LIMIT %s OFFSET %s
             """, (me['id'], limit, offset))
             rows = cur.fetchall()
-            cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'author_zodiac', 'likes_count', 'liked_by_me', 'comments_count']
+            cols = ['id', 'user_id', 'photo_url', 'caption', 'created_at', 'author_name', 'author_photo', 'author_zodiac', 'likes_count', 'liked_by_me', 'comments_count', 'last_comment_text', 'last_comment_author']
             posts = []
             for r in rows:
                 item = dict(zip(cols, r))

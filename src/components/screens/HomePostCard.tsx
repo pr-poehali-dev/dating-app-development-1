@@ -367,19 +367,39 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
               style={{ color: liked ? "#FF2D78" : "rgba(255,255,255,0.55)" }}>{count}</span>
           </button>
 
-          {/* Комментарий — прячем текст подписи внутрь этой кнопки */}
+          {/* Комментарий — компактная кнопка, как лайк */}
           <button onClick={() => onComment(post)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-90 flex-1 min-w-0"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full transition-all active:scale-90"
             style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <Icon name="MessageCircle" size={14} className="text-white/55 flex-shrink-0" />
-            <span className="text-white/55 text-xs font-semibold flex-shrink-0">{post.comments_count}</span>
-            {caption && (
-              <span className="text-white/40 text-xs truncate min-w-0 ml-1">
-                <span className="text-white/60 font-semibold">{post.author_name}</span> {caption}
-              </span>
-            )}
+            <Icon name="MessageCircle" size={14} className="text-white/55" />
+            <span className="text-white/55 text-xs font-semibold">{post.comments_count}</span>
           </button>
         </div>
+
+        {/* Подпись автора */}
+        {caption && (
+          <div className="px-4 pb-1">
+            <p className="text-white/70 text-sm leading-snug">
+              <span className="text-white font-semibold">{post.author_name}</span> {caption}
+            </p>
+          </div>
+        )}
+
+        {/* Последний комментарий */}
+        {post.last_comment_text && (
+          <button onClick={() => onComment(post)} className="px-4 pb-1 w-full text-left active:opacity-70 transition-opacity">
+            <p className="text-white/45 text-xs leading-snug truncate">
+              <span className="text-white/65 font-semibold">{post.last_comment_author}</span> {post.last_comment_text}
+            </p>
+          </button>
+        )}
+
+        {/* Все комментарии */}
+        {post.comments_count > 1 && (
+          <button onClick={() => onComment(post)} className="px-4 pb-1 text-white/35 text-xs active:opacity-70 transition-opacity">
+            Смотреть все комментарии ({post.comments_count})
+          </button>
+        )}
 
         <div className="pb-3" />
       </div>

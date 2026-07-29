@@ -742,6 +742,8 @@ export interface Post {
   likes_count: number;
   liked_by_me: boolean;
   comments_count: number;
+  last_comment_text?: string | null;
+  last_comment_author?: string | null;
 }
 
 export interface PostComment {
