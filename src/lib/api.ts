@@ -542,6 +542,11 @@ export const pushApi = {
   subscribe: (sub: PushSubscriptionJSON) =>
     req<{ ok: boolean }>("push", "subscribe", { method: "POST", body: JSON.stringify(sub) }),
   test: () => req<{ ok: boolean }>("push", "test"),
+  link: (ids: { subscription_id?: string; onesignal_id?: string }) =>
+    req<{ ok: boolean; linked?: string }>("push", "onesignal_link", {
+      method: "POST",
+      body: JSON.stringify(ids),
+    }),
 };
 
 // ─── Matches ─────────────────────────────────────────────────────────────────

@@ -143,6 +143,56 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
 
 
+def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: str = '') -> dict:
+    """Связывает устройство OneSignal с аккаунтом (external_id = наш user_id).
+
+    Резервная серверная привязка: работает даже на старых сборках APK, где
+    нативный мост не вызывает login(). Использует v2 API OneSignal.
+    """
+    app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+    api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+    if not app_id or not api_key:
+        return {'ok': False, 'error': 'Не заданы ключи OneSignal'}
+    scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+    headers = {'Content-Type': 'application/json; charset=utf-8',
+               'Authorization': f'{scheme} {api_key}'}
+    base = f'https://api.onesignal.com/apps/{app_id}'
+
+    def _req(method, url, payload=None):
+        data = json.dumps(payload).encode('utf-8') if payload is not None else None
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return r.status, json.loads(r.read().decode('utf-8') or '{}')
+        except urllib.error.HTTPError as e:
+            body = e.read().decode('utf-8', 'ignore')
+            try:
+                return e.code, json.loads(body)
+            except Exception:
+                return e.code, {'raw': body}
+
+    ext = str(user_id)
+
+    # Способ 1: если знаем onesignal_id устройства — добавляем ему alias external_id
+    if onesignal_id:
+        st, body = _req('PATCH', f'{base}/users/by/onesignal_id/{onesignal_id}/identity',
+                        {'identity': {'external_id': ext}})
+        if st in (200, 201):
+            return {'ok': True, 'linked': 'onesignal_id'}
+
+    # Способ 2: создаём/обновляем пользователя external_id и подключаем subscription
+    if subscription_id:
+        st, body = _req('POST', f'{base}/users', {
+            'identity': {'external_id': ext},
+            'subscriptions': [{'id': subscription_id, 'type': 'AndroidPush'}],
+        })
+        if st in (200, 201):
+            return {'ok': True, 'linked': 'subscription'}
+        return {'ok': False, 'error': body}
+
+    return {'ok': False, 'error': 'Нужен subscription_id или onesignal_id'}
+
+
 def handler(event: dict, context) -> dict:
     """Управление push-подписками."""
     if event.get('httpMethod') == 'OPTIONS':
@@ -263,6 +313,16 @@ def handler(event: dict, context) -> dict:
             )
             conn.commit()
             return resp(200, {'ok': True})
+
+        # Резервная серверная привязка устройства OneSignal к аккаунту
+        if action == 'onesignal_link':
+            body_raw = json.loads(event.get('body') or '{}')
+            sub_id = (body_raw.get('subscription_id') or '').strip()
+            os_id = (body_raw.get('onesignal_id') or '').strip()
+            if not sub_id and not os_id:
+                return resp(400, {'error': 'Нужен subscription_id или onesignal_id'})
+            result = onesignal_link_user(me['id'], sub_id, os_id)
+            return resp(200 if result['ok'] else 502, result)
 
         # Тестовый push
         if action == 'test':

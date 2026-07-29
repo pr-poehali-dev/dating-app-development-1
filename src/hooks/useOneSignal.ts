@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { configApi } from "@/lib/api";
+import { configApi, pushApi } from "@/lib/api";
 
 declare global {
   interface Window {
@@ -242,12 +242,41 @@ function nativeSetExternalId(userId: string): void {
   } catch { /* нет нативной обёртки */ }
 }
 
+/**
+ * Читает идентификаторы устройства из нативного моста Median и просит сервер
+ * привязать их к аккаунту. Резервный канал: работает даже на старых сборках APK,
+ * где нативный login() не срабатывает.
+ */
+async function serverLinkNative(): Promise<void> {
+  try {
+    type Info = {
+      oneSignalUserId?: string;   // subscription id
+      oneSignalId?: string;
+      onesignalId?: string;
+      oneSignalPushToken?: string;
+    };
+    const w = window as unknown as {
+      median?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+      gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+    };
+    const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
+    if (typeof infoFn !== "function") return;
+    const info = await infoFn();
+    const subscription_id = info.oneSignalUserId || "";
+    const onesignal_id = info.oneSignalId || info.onesignalId || "";
+    if (!subscription_id && !onesignal_id) return;
+    await pushApi.link({ subscription_id, onesignal_id });
+  } catch { /* нет данных — ничего страшно */ }
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
   // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
   if (isNativeApp()) {
     nativeSetExternalId(String(userId));
+    // Резервно просим сервер связать устройство (для старых сборок APK)
+    void serverLinkNative();
     return;
   }
   await initOneSignal();

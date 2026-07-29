@@ -14,6 +14,14 @@
       "path": "/?action=daily_match_broadcast",
       "expectedStatus": 403,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "onesignal_link без авторизации — 401",
+      "method": "POST",
+      "path": "/?action=onesignal_link",
+      "body": {"subscription_id": "test"},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }
