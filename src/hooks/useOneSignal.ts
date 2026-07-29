@@ -80,6 +80,25 @@ function isNativeApp(): boolean {
 }
 
 /**
+ * Есть ли в обёртке РАБОЧИЙ нативный мост OneSignal.
+ * Если приложение — Median/GoNative, но плагин OneSignal в сборку не включён
+ * (моста нет), нужно использовать обычный веб-SDK OneSignal — он работает
+ * внутри WebView так же, как в браузере.
+ */
+function hasNativeOneSignal(): boolean {
+  try {
+    const w = window as unknown as {
+      median?: { onesignal?: Record<string, unknown> };
+      gonative?: { onesignal?: Record<string, unknown> };
+    };
+    const bridge = w.median?.onesignal || w.gonative?.onesignal;
+    return !!bridge && Object.keys(bridge).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Запрос разрешения на пуши внутри APK-обёртки Median.
  * В нативном приложении OneSignal Web SDK не работает — используем нативный мост Median,
  * который управляет системным разрешением на push. Возвращает true, если команда отправлена.
@@ -105,8 +124,9 @@ function promptNativePush(): boolean {
 
 /** Показать запрос подписки на пуши. Возвращает true, если разрешение получено. */
 export async function promptOneSignal(): Promise<boolean> {
-  // В APK OneSignal Web SDK не отвечает — идём через нативный мост Median
-  if (isNativeApp()) {
+  // Только если в обёртке есть рабочий нативный мост OneSignal — идём через него.
+  // Иначе (в т.ч. APK без плагина OneSignal) используем веб-SDK.
+  if (hasNativeOneSignal()) {
     return promptNativePush();
   }
 
@@ -153,7 +173,7 @@ function getNativePushState(): "granted" | "denied" | null {
 
 /** Текущий статус системного разрешения на push-уведомления. */
 export function getPushStatus(): PushStatus {
-  if (isNativeApp()) {
+  if (hasNativeOneSignal()) {
     // В нативной обёртке точный статус из JS недоступен — берём запомненный выбор
     const saved = getNativePushState();
     if (saved === "granted") return "granted";
@@ -194,8 +214,8 @@ export function openNativeAppSettings(): boolean {
 
 /** Отписаться от push-уведомлений (выключение тумблера). */
 export async function disableOneSignal(): Promise<boolean> {
-  if (isNativeApp()) {
-    // В нативной обёртке системное разрешение отзывается только в настройках телефона
+  if (hasNativeOneSignal()) {
+    // С нативным мостом системное разрешение отзывается только в настройках телефона
     return false;
   }
   if (!window.__oneSignalInited) return true;
@@ -332,13 +352,13 @@ function reportOneSignalDiag(): void {
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
   reportOneSignalDiag();
-  // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
-  if (isNativeApp()) {
+  // Если в обёртке есть рабочий нативный мост OneSignal — привязываем через него.
+  if (hasNativeOneSignal()) {
     nativeSetExternalId(String(userId));
-    // Резервно просим сервер связать устройство (для старых сборок APK)
     void serverLinkNative(String(userId));
     return;
   }
+  // Иначе (браузер / PWA / APK без плагина OneSignal) — веб-SDK OneSignal.
   await initOneSignal();
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal) => {
