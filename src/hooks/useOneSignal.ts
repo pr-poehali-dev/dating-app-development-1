@@ -14,10 +14,12 @@ interface OneSignalApi {
   logout: () => Promise<void>;
   Slidedown: { promptPush: () => Promise<void> };
   User?: {
+    onesignalId?: string;
     PushSubscription?: {
       optIn?: () => Promise<void>;
       optOut?: () => Promise<void>;
       optedIn?: boolean;
+      id?: string;
     };
   };
   Notifications: {
@@ -123,6 +125,8 @@ export async function promptOneSignal(): Promise<boolean> {
         try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch { /* ignore */ }
         // Привязываем свежую подписку к аккаунту, чтобы адресные пуши доходили
         try { if (lastUserId) await OneSignal.login(lastUserId); } catch { /* ignore */ }
+        // Резервно связываем через сервер по onesignalId
+        try { if (lastUserId) void webServerLink(); } catch { /* ignore */ }
         done(!!OneSignal.Notifications.permission);
       } catch {
         done(false);
@@ -269,6 +273,29 @@ async function serverLinkNative(): Promise<void> {
   } catch { /* нет данных — ничего страшно */ }
 }
 
+/**
+ * Резервная серверная привязка через веб-SDK OneSignal.
+ * Читает onesignalId и subscription id прямо из SDK и просит сервер связать
+ * их с аккаунтом через OneSignal REST API v2. Нужно, потому что нативный
+ * OneSignal.login() не всегда проставляет external_id в APK-обёртке Median.
+ */
+async function webServerLink(): Promise<void> {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  window.OneSignalDeferred.push(async (OneSignal) => {
+    try {
+      // Даём SDK время получить onesignalId после подписки
+      let osId = OneSignal.User?.onesignalId || "";
+      const subId = OneSignal.User?.PushSubscription?.id || "";
+      for (let i = 0; i < 6 && !osId; i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        osId = OneSignal.User?.onesignalId || "";
+      }
+      if (!osId && !subId) return;
+      await pushApi.link({ subscription_id: subId, onesignal_id: osId });
+    } catch { /* нет данных — ничего страшного */ }
+  });
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
@@ -277,6 +304,7 @@ export async function loginOneSignal(userId: number): Promise<void> {
     nativeSetExternalId(String(userId));
     // Резервно просим сервер связать устройство (для старых сборок APK)
     void serverLinkNative();
+    void webServerLink();
     return;
   }
   await initOneSignal();
@@ -284,6 +312,8 @@ export async function loginOneSignal(userId: number): Promise<void> {
   window.OneSignalDeferred.push(async (OneSignal) => {
     try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
   });
+  // Резервно — серверная привязка по onesignalId (на случай, если login не проставил external_id)
+  void webServerLink();
 }
 
 /** Отвязать пользователя (при выходе). */

@@ -192,6 +192,13 @@ def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: s
         print(f"[onesignal_link] method=onesignal_id status={st} body={json.dumps(body)[:300]}")
         if st in (200, 201):
             return {'ok': True, 'linked': 'onesignal_id'}
+        # Резерв: создаём пользователя с external_id и alias onesignal_id
+        st2, body2 = _req('POST', f'{base}/users', {
+            'identity': {'external_id': ext, 'onesignal_id': onesignal_id},
+        })
+        print(f"[onesignal_link] method=onesignal_id_create status={st2} body={json.dumps(body2)[:300]}")
+        if st2 in (200, 201):
+            return {'ok': True, 'linked': 'onesignal_id_create'}
 
     # Способ 2: создаём/обновляем пользователя external_id и подключаем subscription
     if subscription_id:
