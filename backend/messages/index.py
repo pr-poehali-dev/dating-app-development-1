@@ -33,11 +33,11 @@ def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/',
         }
         if urgent:
             payload['priority'] = 10
-            payload['android_channel_id'] = os.environ.get('ONESIGNAL_CALL_CHANNEL_ID', '')
             payload['ttl'] = 45
             payload['android_visibility'] = 1
-        if urgent and not payload.get('android_channel_id'):
-            payload.pop('android_channel_id', None)
+            call_channel = os.environ.get('ONESIGNAL_CALL_CHANNEL_ID', '').strip()
+            if call_channel:
+                payload['android_channel_id'] = call_channel
         scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
         req = urllib.request.Request(
             'https://onesignal.com/api/v1/notifications',
