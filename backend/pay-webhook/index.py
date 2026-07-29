@@ -1,6 +1,10 @@
 import json
 import os
 import datetime
+import base64
+import urllib.request
+import urllib.error
+import urllib.parse
 import psycopg2
 
 
@@ -17,6 +21,42 @@ def _int(v, default=0):
         return int(v)
     except (TypeError, ValueError):
         return default
+
+
+def _verify_payment_with_yookassa(payment_id: str):
+    """
+    Запрашивает реальный статус платежа напрямую у ЮKassa по его id.
+    Возвращает (status, amount, metadata) при успехе либо None, если платёж
+    не подтверждён/не найден/учётные данные недоступны.
+
+    Это защищает от поддельных вебхуков: злоумышленник не сможет подделать
+    ответ официального API ЮKassa, так как для запроса нужны наши секретные
+    ключи магазина.
+    """
+    shop_id = os.environ.get('YOOKASSA_SHOP_ID')
+    secret_key = os.environ.get('YOOKASSA_SECRET_KEY')
+    if not shop_id or not secret_key or not payment_id:
+        return None
+
+    credentials = base64.b64encode(f'{shop_id}:{secret_key}'.encode()).decode()
+    req = urllib.request.Request(
+        f'https://api.yookassa.ru/v3/payments/{urllib.parse.quote(payment_id)}',
+        headers={'Authorization': f'Basic {credentials}'},
+        method='GET'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, TimeoutError):
+        return None
+
+    status = data.get('status', '')
+    try:
+        amount = float((data.get('amount') or {}).get('value') or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+    metadata = data.get('metadata') or {}
+    return status, amount, metadata
 
 
 def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
@@ -85,8 +125,10 @@ def _add_coins_from_metadata(cur, payment_id: str, metadata: dict, amount: float
     if not user_id:
         return
 
-    # Кол-во монет = сумма в рублях (или явно переданное coins), минимум 500
-    coins = _int(metadata.get('coins')) or int(round(amount))
+    # Кол-во монет = РЕАЛЬНО оплаченная сумма в рублях (курс 1 ₽ = 1 монета).
+    # Берём сумму платежа, а не значение из metadata, чтобы нельзя было
+    # оплатить мало, а получить много монет. Минимум пополнения — 500.
+    coins = int(round(amount))
     if coins < 500:
         return
 
@@ -310,27 +352,58 @@ def handler(event: dict, context) -> dict:
 
     try:
         if event_type == 'payment.succeeded' and status == 'succeeded':
+            # ── Шаг 1. Проверка подлинности платежа напрямую у ЮKassa ──
+            # Не доверяем телу вебхука: запрашиваем реальный статус по нашим
+            # секретным ключам. Подделать этот ответ злоумышленник не может.
+            verified = _verify_payment_with_yookassa(payment_id)
+            has_creds = bool(os.environ.get('YOOKASSA_SHOP_ID') and os.environ.get('YOOKASSA_SECRET_KEY'))
+
+            if has_creds:
+                # Ключи есть — платёж ОБЯЗАН подтвердиться реальным API.
+                if not verified or verified[0] != 'succeeded':
+                    return {
+                        'statusCode': 200, 'headers': HEADERS,
+                        'body': json.dumps({'ok': False, 'error': 'payment not verified'}),
+                        'isBase64Encoded': False
+                    }
+                v_status, v_amount, v_metadata = verified
+            else:
+                # Ключей нет (тестовое окружение) — работаем по данным из тела,
+                # но начисляем ТОЛЬКО если заказ реально существует в нашей БД.
+                v_status, v_amount, v_metadata = status, amount_value, metadata
+
+            # ── Шаг 2. Заказ должен существовать в нашей БД и ещё не быть оплачен ──
+            # Условие status <> 'paid' защищает от повторного начисления (replay).
             cur.execute(
                 "UPDATE orders SET status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP "
-                "WHERE order_number = %s "
+                "WHERE order_number = %s AND status <> 'paid' "
                 "RETURNING metadata, amount",
                 (payment_id,)
             )
             row = cur.fetchone()
 
-            # Берём metadata в первую очередь из БД (она достовернее, заполнена при создании),
-            # иначе — то, что прислала Yookassa в webhook.
-            db_metadata = None
-            db_amount = amount_value
-            if row:
-                db_metadata = row[0]
-                if row[1] is not None:
-                    try:
-                        db_amount = float(row[1])
-                    except (TypeError, ValueError):
-                        pass
+            if not row:
+                # Заказ не найден (подделка) или уже был обработан ранее —
+                # никаких начислений не производим.
+                conn.commit()
+                return {
+                    'statusCode': 200, 'headers': HEADERS,
+                    'body': json.dumps({'ok': True, 'skipped': 'unknown or already processed order'}),
+                    'isBase64Encoded': False
+                }
 
-            effective_metadata = db_metadata if db_metadata else metadata
+            # ── Шаг 3. Используем ТОЛЬКО серверные данные заказа ──
+            # metadata берём из БД (заполнена при создании платежа), сумму —
+            # из подтверждённой ЮKassa (или из заказа как запасной вариант).
+            db_metadata = row[0]
+            db_amount = v_amount
+            if not db_amount and row[1] is not None:
+                try:
+                    db_amount = float(row[1])
+                except (TypeError, ValueError):
+                    db_amount = 0.0
+
+            effective_metadata = db_metadata if db_metadata else v_metadata
 
             _create_gift_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _add_coins_from_metadata(cur, payment_id, effective_metadata, db_amount)

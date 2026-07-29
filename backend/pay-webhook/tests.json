@@ -19,6 +19,15 @@
       "path": "/",
       "body": {"event": "payment.succeeded", "object": {"id": "test-payment-id", "status": "succeeded"}},
       "expectedStatus": 200
+    },
+    {
+      "name": "Forged succeeded payment is rejected (not verified by YooKassa)",
+      "method": "POST",
+      "path": "/",
+      "body": {"event": "payment.succeeded", "object": {"id": "forged-nonexistent-id", "status": "succeeded", "amount": {"value": "9999.00", "currency": "RUB"}, "metadata": {"kind": "coins", "user_id": "1", "coins": "999999"}}},
+      "expectedStatus": 200,
+      "expectedBody": {"ok": false},
+      "bodyMatcher": "partial"
     }
   ]
 }
