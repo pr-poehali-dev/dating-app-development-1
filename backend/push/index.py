@@ -354,10 +354,11 @@ def handler(event: dict, context) -> dict:
             result = onesignal_link_user(me['id'], sub_id, os_id)
             return resp(200 if result['ok'] else 502, result)
 
-        # Тестовый push
+        # Тестовый push (и Web Push, и OneSignal — что доступно)
         if action == 'test':
             send_push_to_user(cur, conn, me['id'], 'Полутон 💕', 'Push-уведомления работают! 🎉', '/')
-            return resp(200, {'ok': True})
+            os_res = onesignal_send_to_user(me['id'], 'Полутон 💕', 'Push-уведомления работают! 🎉', '/')
+            return resp(200, {'ok': True, 'onesignal': os_res})
 
         return resp(400, {'error': f'Неизвестное действие: {action}'})
     finally:
