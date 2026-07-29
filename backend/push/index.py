@@ -131,16 +131,27 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             data = json.loads(r.read().decode('utf-8'))
+        print(f"[onesignal_send_to_user] user_id={user_id} response={json.dumps(data)[:300]}")
         errs = data.get('errors')
+        # OneSignal может вернуть errors как list ["..."] либо как dict
+        # {'invalid_aliases': {'external_id': ['77']}} — значит устройство не
+        # привязано к этому аккаунту.
         if errs:
+            if isinstance(errs, dict) and 'invalid_aliases' in errs:
+                return {'ok': False, 'error': 'Устройство пользователя не связано с аккаунтом (нет привязки в OneSignal). Нужно, чтобы он зашёл в приложение с включёнными уведомлениями.', 'code': 'not_linked'}
             msg = errs[0] if isinstance(errs, list) and errs else str(errs)
             low = str(msg).lower()
-            if 'not subscribed' in low or "doesn't match" in low or 'no subscribers' in low:
+            if 'not subscribed' in low or "doesn't match" in low or 'no subscribers' in low or 'invalid_aliases' in low:
                 msg = 'Устройство пользователя не подписано на уведомления или не связано с аккаунтом'
             return {'ok': False, 'error': msg}
+        # Успешный ответ, но 0 получателей — тоже значит «некому доставить»
+        if data.get('recipients', 1) == 0:
+            return {'ok': False, 'error': 'Нет получателей: устройство не подписано или не привязано к аккаунту', 'code': 'no_recipients'}
         return {'ok': True, 'result': data}
     except urllib.error.HTTPError as e:
-        return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
+        err_body = e.read().decode('utf-8', 'ignore')
+        print(f"[onesignal_send_to_user] user_id={user_id} HTTP {e.code}: {err_body[:300]}")
+        return {'ok': False, 'error': err_body, 'status': e.code}
 
 
 def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: str = '') -> dict:
@@ -172,11 +183,13 @@ def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: s
                 return e.code, {'raw': body}
 
     ext = str(user_id)
+    print(f"[onesignal_link] user_id={ext} onesignal_id={'yes' if onesignal_id else 'no'} subscription_id={'yes' if subscription_id else 'no'}")
 
     # Способ 1: если знаем onesignal_id устройства — добавляем ему alias external_id
     if onesignal_id:
         st, body = _req('PATCH', f'{base}/users/by/onesignal_id/{onesignal_id}/identity',
                         {'identity': {'external_id': ext}})
+        print(f"[onesignal_link] method=onesignal_id status={st} body={json.dumps(body)[:300]}")
         if st in (200, 201):
             return {'ok': True, 'linked': 'onesignal_id'}
 
@@ -186,10 +199,12 @@ def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: s
             'identity': {'external_id': ext},
             'subscriptions': [{'id': subscription_id, 'type': 'AndroidPush'}],
         })
+        print(f"[onesignal_link] method=subscription status={st} body={json.dumps(body)[:300]}")
         if st in (200, 201):
             return {'ok': True, 'linked': 'subscription'}
         return {'ok': False, 'error': body}
 
+    print(f"[onesignal_link] user_id={ext} — нет идентификаторов устройства")
     return {'ok': False, 'error': 'Нужен subscription_id или onesignal_id'}
 
 
