@@ -59,13 +59,31 @@ export function DailyMatchScreen({ onClose, onOpenChat }: { onClose: () => void;
           <Icon name="Loader2" size={30} className="animate-spin text-white/40" />
         </div>
       ) : !current ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <Icon name="Sparkles" size={28} className="text-white/40" />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5 animate-in fade-in duration-500">
+          <div className="relative">
+            {/* Мягкое свечение */}
+            <div className="absolute inset-0 rounded-full blur-2xl opacity-60"
+              style={{ background: "radial-gradient(circle,#FF2D78,transparent 70%)" }} />
+            {/* Пульсирующее кольцо */}
+            <div className="absolute inset-0 rounded-full animate-ping opacity-20"
+              style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }} />
+            <div className="relative w-24 h-24 rounded-full flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.18))",
+                border: "1px solid rgba(255,45,120,0.35)",
+                boxShadow: "0 8px 32px rgba(255,45,120,0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
+              }}>
+              <Icon name="Sparkles" size={38} style={{ color: "#fff" }} />
+            </div>
+            {/* Искорки */}
+            <Icon name="Star" size={16} className="absolute -top-1 -right-1 text-pink-400 animate-pulse" />
+            <Icon name="Heart" size={12} className="absolute bottom-1 -left-2 text-purple-400 animate-pulse" style={{ animationDelay: "0.4s" }} />
           </div>
-          <p className="text-white font-bold">На сегодня всё</p>
-          <p className="text-white/45 text-sm">Возвращайся завтра — ИИ подберёт новых людей специально для тебя.</p>
-          <button onClick={onClose} className="mt-2 px-5 py-2.5 rounded-2xl text-white text-sm font-bold"
+          <div className="text-center">
+            <p className="text-white font-bold text-base">На сегодня всё</p>
+            <p className="text-white/40 text-sm mt-1">Возвращайся завтра — ИИ подберёт<br />новых людей специально для тебя</p>
+          </div>
+          <button onClick={onClose} className="px-6 py-2.5 rounded-2xl text-white text-sm font-bold active:scale-95 transition-transform"
             style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>Хорошо</button>
         </div>
       ) : (
