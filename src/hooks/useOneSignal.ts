@@ -27,6 +27,9 @@ interface OneSignalApi {
 }
 
 let sdkPromise: Promise<void> | null = null;
+// ID текущего пользователя — чтобы привязать подписку сразу после того,
+// как человек разрешил уведомления (даже если вход был раньше).
+let lastUserId: string | null = null;
 
 function loadSdk(): Promise<void> {
   if (sdkPromise) return sdkPromise;
@@ -118,6 +121,8 @@ export async function promptOneSignal(): Promise<boolean> {
         await OneSignal.Notifications.requestPermission();
         // Заново подписываем, если ранее отписывался тумблером
         try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch { /* ignore */ }
+        // Привязываем свежую подписку к аккаунту, чтобы адресные пуши доходили
+        try { if (lastUserId) await OneSignal.login(lastUserId); } catch { /* ignore */ }
         done(!!OneSignal.Notifications.permission);
       } catch {
         done(false);
@@ -205,8 +210,43 @@ export async function disableOneSignal(): Promise<boolean> {
   });
 }
 
+/**
+ * Привязка External ID в нативной APK-обёртке Median/GoNative.
+ * Без этого адресные пуши («кто смотрел вашу анкету») не находят устройство,
+ * потому что оно не связано с аккаунтом. Пробуем все известные варианты моста.
+ */
+function nativeSetExternalId(userId: string): void {
+  try {
+    const w = window as unknown as {
+      median?: { onesignal?: Record<string, unknown> };
+      gonative?: { onesignal?: Record<string, unknown> };
+    };
+    const os = (w.median?.onesignal || w.gonative?.onesignal) as
+      | Record<string, (arg: unknown) => void>
+      | undefined;
+    if (os) {
+      // Разные версии Median используют разные имена метода
+      const fn =
+        os.setExternalUserId || os.externalUserId || os.login || os.setExternalId;
+      if (typeof fn === "function") { fn({ externalId: userId, externalUserId: userId }); return; }
+    }
+    // Мост как функция недоступен — используем JS-Bridge команду Median
+    const runner = (w.median as { run?: (u: string) => void } | undefined)?.run
+      || (w.gonative as { run?: (u: string) => void } | undefined)?.run;
+    if (typeof runner === "function") {
+      runner(`median://onesignal/externalUserId?externalId=${encodeURIComponent(userId)}`);
+    }
+  } catch { /* нет нативной обёртки */ }
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
+  lastUserId = String(userId);
+  // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
+  if (isNativeApp()) {
+    nativeSetExternalId(String(userId));
+    return;
+  }
   await initOneSignal();
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal) => {
