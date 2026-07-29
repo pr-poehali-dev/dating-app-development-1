@@ -191,6 +191,11 @@ export function ProfileGiftSheet({
     gamificationApi.state().then(s => setCoinBalance(s?.coins ?? 0)).catch(() => setCoinBalance(0));
   }, []);
 
+  const goEarnCoins = () => {
+    onClose();
+    window.dispatchEvent(new Event("app:navigate-tasks"));
+  };
+
   const handleGiftPay = async (giftId: number) => {
     const gift = GIFTS.find(g => g.id === giftId);
     if (!gift) return;
@@ -242,14 +247,16 @@ export function ProfileGiftSheet({
             <p className="text-white font-bold text-lg leading-tight truncate">Подарить {recipientName}</p>
             <p className="text-white/40 text-xs mt-0.5">Выберите подарок</p>
           </div>
-          {/* Баланс монет */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0"
+          {/* Баланс монет — тап ведёт к заданиям */}
+          <button onClick={goEarnCoins}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
             style={{ background: "rgba(255,200,0,0.12)", border: "1px solid rgba(255,200,0,0.3)" }}>
             <Icon name="Coins" size={15} style={{ color: "#FFC800" }} />
             <span className="text-sm font-bold" style={{ color: "#FFC800" }}>
               {coinBalance === null ? "…" : coinBalance.toLocaleString("ru")}
             </span>
-          </div>
+            <Icon name="Plus" size={13} style={{ color: "#FFC800" }} />
+          </button>
         </div>
 
         {/* Category tabs — сегментированный переключатель */}
@@ -355,14 +362,18 @@ export function ProfileGiftSheet({
                     <Icon name="Check" size={14} className="text-green-400" />
                     <span className="text-green-400 text-xs font-semibold">Отправлен!</span>
                   </div>
+                ) : notEnough ? (
+                  <button onClick={goEarnCoins}
+                    className="px-4 py-2.5 text-xs font-bold rounded-xl flex-shrink-0 flex items-center gap-1.5 active:scale-95 transition-transform"
+                    style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.4)" }}>
+                    <Icon name="Sparkles" size={13} style={{ color: "#FFC800" }} />Как заработать
+                  </button>
                 ) : (
-                  <button disabled={busy || notEnough}
+                  <button disabled={busy}
                     onClick={() => handleGiftPay(giftSelected)}
                     className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-40 flex items-center gap-1.5">
                     {busy
                       ? <><Icon name="Loader2" size={13} className="animate-spin" />...</>
-                      : notEnough
-                      ? <><Icon name="Coins" size={13} />Мало монет</>
                       : <><Icon name="Gift" size={13} />Подарить</>}
                   </button>
                 )}

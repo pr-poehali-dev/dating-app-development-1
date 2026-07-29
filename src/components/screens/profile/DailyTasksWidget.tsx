@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Icon from "@/components/ui/icon";
 import { gamificationApi, type DailyTask } from "@/lib/api";
 
@@ -9,6 +9,7 @@ export function DailyTasksWidget() {
   const [open, setOpen] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [pop, setPop] = useState<number | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(() => {
     gamificationApi.state()
@@ -22,11 +23,17 @@ export function DailyTasksWidget() {
   useEffect(() => {
     load();
     const onRefresh = () => load();
+    const onOpenTasks = () => {
+      setOpen(true);
+      setTimeout(() => rootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+    };
     window.addEventListener("app:refresh", onRefresh);
     window.addEventListener("gamification:update", onRefresh);
+    window.addEventListener("profile:open-tasks", onOpenTasks);
     return () => {
       window.removeEventListener("app:refresh", onRefresh);
       window.removeEventListener("gamification:update", onRefresh);
+      window.removeEventListener("profile:open-tasks", onOpenTasks);
     };
   }, [load]);
 
@@ -49,7 +56,7 @@ export function DailyTasksWidget() {
   const doneCount = tasks.filter(t => t.claimed).length;
 
   return (
-    <div className="w-full mt-3 rounded-2xl overflow-hidden"
+    <div ref={rootRef} className="w-full mt-3 rounded-2xl overflow-hidden scroll-mt-24"
       style={{
         background: "linear-gradient(135deg, rgba(255,193,7,0.16) 0%, rgba(255,45,120,0.12) 60%, rgba(155,89,182,0.12) 100%)",
         border: "1px solid rgba(255,193,7,0.4)",

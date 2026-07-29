@@ -56,6 +56,13 @@ export function useIndexController() {
 
   const handleAuth = (user: User) => { setBanMessage(null); setCurrentUser(user); };
 
+  // Переход к заданиям (виджет монет на профиле) по глобальному событию
+  useEffect(() => {
+    const goTasks = () => { setScreen("profile"); window.dispatchEvent(new Event("profile:open-tasks")); };
+    window.addEventListener("app:navigate-tasks", goTasks);
+    return () => window.removeEventListener("app:navigate-tasks", goTasks);
+  }, []);
+
   const handleLogout = async () => {
     await authApi.logout();
     logoutOneSignal();

@@ -130,7 +130,12 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
             <p className="text-white/40 text-sm mt-1">{gift.price.toLocaleString("ru")} ₽</p>
           )}
           {coinGift && coinBalance !== null && (
-            <p className="text-white/30 text-xs mt-0.5">У тебя {coinBalance.toLocaleString("ru")} монет</p>
+            <button
+              onClick={() => { onClose(); window.dispatchEvent(new Event("app:navigate-tasks")); }}
+              className="text-white/30 text-xs mt-0.5 inline-flex items-center gap-1 active:scale-95 transition-transform">
+              У тебя {coinBalance.toLocaleString("ru")} монет
+              <span className="font-semibold" style={{ color: "#FFC800" }}>· заработать</span>
+            </button>
           )}
         </div>
 
@@ -240,18 +245,23 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
             <Icon name="Check" size={16} className="text-green-400" />
             <span className="text-green-400 font-semibold">Подарок отправлен!</span>
           </div>
+        ) : coinGift && notEnough ? (
+          <button
+            onClick={() => { onClose(); window.dispatchEvent(new Event("app:navigate-tasks")); }}
+            className="w-full py-3.5 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.4)" }}>
+            <Icon name="Sparkles" size={16} style={{ color: "#FFC800" }} />Как заработать монеты
+          </button>
         ) : coinGift ? (
           <button
-            disabled={coinBuying || notEnough || (giftRecipient === "user" && !selectedRecipient)}
+            disabled={coinBuying || (giftRecipient === "user" && !selectedRecipient)}
             onClick={handleCoinBuy}
             className="w-full btn-grad py-3.5 font-bold text-white rounded-2xl disabled:opacity-50 flex items-center justify-center gap-2">
             {coinBuying
               ? <><Icon name="Loader2" size={16} className="animate-spin" />Отправляю...</>
               : giftRecipient === "user" && !selectedRecipient
                 ? <><Icon name="UserPlus" size={16} />Выберите получателя</>
-                : notEnough
-                  ? <><Icon name="Coins" size={16} />Не хватает монет</>
-                  : <><Icon name="Coins" size={16} />Подарить за {coinCost.toLocaleString("ru")}</>}
+                : <><Icon name="Coins" size={16} />Подарить за {coinCost.toLocaleString("ru")}</>}
           </button>
         ) : (
           <button
