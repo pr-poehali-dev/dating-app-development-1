@@ -7,6 +7,7 @@ import {
   disableOneSignal,
   getPushStatus,
   openNativeAppSettings,
+  setNativePushState,
 } from "@/hooks/useOneSignal";
 
 function isNativeApp() {
@@ -49,6 +50,7 @@ function PushSubscribeButton() {
       setLoading(false);
       if (native) {
         // В приложении отписка идёт через настройки телефона
+        setNativePushState("denied");
         openNativeAppSettings();
         setState("denied");
       } else {
@@ -70,7 +72,9 @@ function PushSubscribeButton() {
     setLoading(false);
 
     if (native) {
-      setState(ok ? "asked" : "denied");
+      // В APK факт разрешения из JS не виден — запоминаем выбор пользователя
+      if (ok) { setNativePushState("granted"); setState("on"); }
+      else setState("denied");
     } else {
       const s = getPushStatus();
       setState(s === "granted" ? "on" : "denied");

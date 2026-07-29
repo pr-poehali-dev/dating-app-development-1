@@ -128,10 +128,31 @@ export async function promptOneSignal(): Promise<boolean> {
 
 export type PushStatus = "default" | "granted" | "denied" | "unsupported";
 
+// В APK точный статус разрешения из JS недоступен, поэтому запоминаем выбор
+// пользователя локально: "granted" после включения, "denied" после выключения.
+const NATIVE_PUSH_KEY = "native_push_state";
+
+/** Запомнить выбор пользователя по пушам внутри APK-обёртки. */
+export function setNativePushState(state: "granted" | "denied"): void {
+  try { localStorage.setItem(NATIVE_PUSH_KEY, state); } catch { /* ignore */ }
+}
+
+function getNativePushState(): "granted" | "denied" | null {
+  try {
+    const v = localStorage.getItem(NATIVE_PUSH_KEY);
+    return v === "granted" || v === "denied" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Текущий статус системного разрешения на push-уведомления. */
 export function getPushStatus(): PushStatus {
   if (isNativeApp()) {
-    // В нативной обёртке точный статус недоступен из JS — считаем "по умолчанию"
+    // В нативной обёртке точный статус из JS недоступен — берём запомненный выбор
+    const saved = getNativePushState();
+    if (saved === "granted") return "granted";
+    if (saved === "denied") return "denied";
     return "default";
   }
   if (typeof Notification === "undefined") return "unsupported";
