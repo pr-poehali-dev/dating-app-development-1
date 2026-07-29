@@ -22,6 +22,7 @@ const EVENT_LABEL: Record<string, string> = {
   admin_ban_user:      "Пользователь заблокирован",
   admin_unban_user:    "Пользователь разблокирован",
   admin_auth_failed:   "Взлом админки",
+  admin_bruteforce_blocked: "Блок админки (перебор)",
   admin_post_deleted:  "Пост удалён",
   gov_request_created: "Запрос от органов власти",
   gov_data_exported:   "Данные выгружены (гос. запрос)",

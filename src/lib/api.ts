@@ -1068,6 +1068,8 @@ export const adminApi = {
     adminReq<{ ok: boolean }>('block_ip', { method: 'POST', body: JSON.stringify({ ip_address, reason }) }, token),
   unblockIp: (token: string, id: number) =>
     adminReq<{ ok: boolean }>('unblock_ip', { method: 'POST', body: JSON.stringify({ id }) }, token),
+  suspiciousIps: (token: string) =>
+    adminReq<{ ips: { ip: string; failed: number; total: number; last_seen: string; actions: string[]; blocked: boolean }[] }>('suspicious_ips', {}, token),
 
   stopwords: (token: string) =>
     adminReq<{ words: { id: number; word: string; created_at: string }[] }>('stopwords', {}, token),

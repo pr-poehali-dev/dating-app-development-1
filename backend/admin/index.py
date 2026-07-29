@@ -1389,6 +1389,26 @@ def handler(event: dict, context) -> dict:
             suspicious_ips = cur.fetchone()[0]
             return resp(200, {'events': events, 'stats': {'total_24h': total_24h, 'alerts_24h': alerts_24h, 'suspicious_ips': suspicious_ips}})
 
+        # ── Подозрительные IP: топ адресов по неудачным попыткам за 24ч ──────
+        if action == 'suspicious_ips':
+            cur.execute("""
+                SELECT a.ip,
+                       COUNT(*) FILTER (WHERE a.success = FALSE) AS failed,
+                       COUNT(*) AS total,
+                       MAX(a.created_at) AS last_seen,
+                       ARRAY_AGG(DISTINCT a.action) AS actions,
+                       EXISTS(SELECT 1 FROM blocked_ips b WHERE b.ip_address = a.ip) AS blocked
+                FROM auth_attempts a
+                WHERE a.created_at > NOW() - INTERVAL '24 hours'
+                GROUP BY a.ip
+                HAVING COUNT(*) FILTER (WHERE a.success = FALSE) > 0
+                ORDER BY failed DESC, total DESC
+                LIMIT 50
+            """)
+            cols = ['ip', 'failed', 'total', 'last_seen', 'actions', 'blocked']
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+            return resp(200, {'ips': rows})
+
         # ── Запросы от органов власти: список ────────────────────────────────
         if action == 'gov_requests':
             cur.execute("""
