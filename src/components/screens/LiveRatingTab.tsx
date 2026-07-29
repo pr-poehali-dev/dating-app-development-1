@@ -66,9 +66,30 @@ export function LiveRatingTab({ onJoin, streams }: { onJoin: (s: LiveStream) => 
         )}
 
         {!loading && entries.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="text-5xl">🏆</div>
-            <p className="text-white/40 text-sm text-center">Пока нет данных<br />для этого периода</p>
+          <div className="flex flex-col items-center justify-center py-16 gap-5 animate-in fade-in duration-500">
+            <div className="relative">
+              {/* Мягкое свечение */}
+              <div className="absolute inset-0 rounded-full blur-2xl opacity-60"
+                style={{ background: "radial-gradient(circle,#FF2D78,transparent 70%)" }} />
+              {/* Пульсирующие кольца */}
+              <div className="absolute inset-0 rounded-full animate-ping opacity-20"
+                style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }} />
+              <div className="relative w-24 h-24 rounded-full flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.18))",
+                  border: "1px solid rgba(255,45,120,0.35)",
+                  boxShadow: "0 8px 32px rgba(255,45,120,0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
+                }}>
+                <Icon name="Trophy" size={40} style={{ color: "#FFD84A" }} />
+              </div>
+              {/* Искорки вокруг */}
+              <Icon name="Sparkles" size={16} className="absolute -top-1 -right-1 text-pink-400 animate-pulse" />
+              <Icon name="Star" size={12} className="absolute bottom-1 -left-2 text-purple-400 animate-pulse" style={{ animationDelay: "0.4s" }} />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-base">Рейтинг ещё пуст</p>
+              <p className="text-white/40 text-sm mt-1">Здесь появятся лидеры<br />этого периода</p>
+            </div>
           </div>
         )}
 
