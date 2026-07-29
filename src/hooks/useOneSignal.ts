@@ -80,25 +80,6 @@ function isNativeApp(): boolean {
 }
 
 /**
- * Есть ли в обёртке РАБОЧИЙ нативный мост OneSignal.
- * Если приложение — Median/GoNative, но плагин OneSignal в сборку не включён
- * (моста нет), нужно использовать обычный веб-SDK OneSignal — он работает
- * внутри WebView так же, как в браузере.
- */
-function hasNativeOneSignal(): boolean {
-  try {
-    const w = window as unknown as {
-      median?: { onesignal?: Record<string, unknown> };
-      gonative?: { onesignal?: Record<string, unknown> };
-    };
-    const bridge = w.median?.onesignal || w.gonative?.onesignal;
-    return !!bridge && Object.keys(bridge).length > 0;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Запрос разрешения на пуши внутри APK-обёртки Median.
  * В нативном приложении OneSignal Web SDK не работает — используем нативный мост Median,
  * который управляет системным разрешением на push. Возвращает true, если команда отправлена.
@@ -124,9 +105,8 @@ function promptNativePush(): boolean {
 
 /** Показать запрос подписки на пуши. Возвращает true, если разрешение получено. */
 export async function promptOneSignal(): Promise<boolean> {
-  // Только если в обёртке есть рабочий нативный мост OneSignal — идём через него.
-  // Иначе (в т.ч. APK без плагина OneSignal) используем веб-SDK.
-  if (hasNativeOneSignal()) {
+  // В APK OneSignal Web SDK не отвечает — идём через нативный мост Median
+  if (isNativeApp()) {
     return promptNativePush();
   }
 
@@ -173,7 +153,7 @@ function getNativePushState(): "granted" | "denied" | null {
 
 /** Текущий статус системного разрешения на push-уведомления. */
 export function getPushStatus(): PushStatus {
-  if (hasNativeOneSignal()) {
+  if (isNativeApp()) {
     // В нативной обёртке точный статус из JS недоступен — берём запомненный выбор
     const saved = getNativePushState();
     if (saved === "granted") return "granted";
@@ -214,8 +194,8 @@ export function openNativeAppSettings(): boolean {
 
 /** Отписаться от push-уведомлений (выключение тумблера). */
 export async function disableOneSignal(): Promise<boolean> {
-  if (hasNativeOneSignal()) {
-    // С нативным мостом системное разрешение отзывается только в настройках телефона
+  if (isNativeApp()) {
+    // В нативной обёртке системное разрешение отзывается только в настройках телефона
     return false;
   }
   if (!window.__oneSignalInited) return true;
@@ -267,105 +247,43 @@ function nativeSetExternalId(userId: string): void {
  * привязать их к аккаунту. Резервный канал: работает даже на старых сборках APK,
  * где нативный login() не срабатывает.
  */
-async function serverLinkNative(userId: string): Promise<void> {
-  type Info = {
-    oneSignalUserId?: string;   // subscription id
-    oneSignalId?: string;
-    onesignalId?: string;
-    oneSignalPushToken?: string;
-  };
-  const w = window as unknown as {
-    median?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
-    gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
-  };
-  const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
-  if (typeof infoFn !== "function") return;
-  // Данные устройства у Median готовы не сразу после старта — пробуем с повторами
-  for (let attempt = 0; attempt < 8; attempt++) {
-    if (lastUserId !== userId) return;
-    try {
-      const info = await infoFn();
-      const subscription_id = info.oneSignalUserId || "";
-      const onesignal_id = info.oneSignalId || info.onesignalId || "";
-      if (subscription_id || onesignal_id) {
-        await pushApi.link({ subscription_id, onesignal_id });
-        return;
-      }
-    } catch { /* мост ещё не готов — повторим */ }
-    await new Promise((r) => setTimeout(r, 3000));
-  }
-}
-
-/**
- * Резервная серверная привязка для браузера/PWA.
- * Берёт ТОЛЬКО onesignal_id устройства (идентификатор устройства в OneSignal)
- * и просит сервер добавить ему alias external_id. Этот путь безопасен: он не
- * трогает тип подписки устройства (в отличие от передачи subscription_id),
- * поэтому не может сломать доставку уже работающих пушей.
- * Ждёт появления onesignal_id с повторами — на свежей сессии он готов не сразу.
- */
-async function serverLinkWebById(userId: string): Promise<void> {
-  for (let attempt = 0; attempt < 6; attempt++) {
-    if (lastUserId !== userId) return;
-    const oneSignalId = await new Promise<string>((resolve) => {
-      const timer = setTimeout(() => resolve(""), 5000);
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      window.OneSignalDeferred.push((OneSignal: unknown) => {
-        clearTimeout(timer);
-        try {
-          const os = OneSignal as { User?: { onesignalId?: string } };
-          resolve(os.User?.onesignalId || "");
-        } catch { resolve(""); }
-      });
-    });
-    if (oneSignalId) {
-      try { await pushApi.link({ onesignal_id: oneSignalId }); } catch { /* ignore */ }
-      return;
-    }
-    await new Promise((r) => setTimeout(r, 3000));
-  }
-}
-
-/** Разовая диагностика: сообщает серверу, что доступно в обёртке устройства.
- * Помогает понять, почему привязка OneSignal не срабатывает (нет моста и т.п.). */
-function reportOneSignalDiag(): void {
+async function serverLinkNative(): Promise<void> {
   try {
-    const w = window as unknown as {
-      median?: { onesignal?: Record<string, unknown> };
-      gonative?: { onesignal?: Record<string, unknown> };
+    type Info = {
+      oneSignalUserId?: string;   // subscription id
+      oneSignalId?: string;
+      onesignalId?: string;
+      oneSignalPushToken?: string;
     };
-    const osBridge = w.median?.onesignal || w.gonative?.onesignal;
-    void pushApi.diag({
-      isNative: isNativeApp(),
-      hasMedian: !!w.median,
-      hasGonative: !!w.gonative,
-      hasOsBridge: !!osBridge,
-      osBridgeKeys: osBridge ? Object.keys(osBridge) : [],
-      hasOnesignalInfo: typeof (osBridge as { onesignalInfo?: unknown })?.onesignalInfo === "function",
-      webSdkInited: !!window.__oneSignalInited,
-      ua: (navigator.userAgent || "").slice(0, 160),
-    });
-  } catch { /* ignore */ }
+    const w = window as unknown as {
+      median?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+      gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+    };
+    const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
+    if (typeof infoFn !== "function") return;
+    const info = await infoFn();
+    const subscription_id = info.oneSignalUserId || "";
+    const onesignal_id = info.oneSignalId || info.onesignalId || "";
+    if (!subscription_id && !onesignal_id) return;
+    await pushApi.link({ subscription_id, onesignal_id });
+  } catch { /* нет данных — ничего страшно */ }
 }
 
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
-  reportOneSignalDiag();
-  // Если в обёртке есть рабочий нативный мост OneSignal — привязываем через него.
-  if (hasNativeOneSignal()) {
+  // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
+  if (isNativeApp()) {
     nativeSetExternalId(String(userId));
-    void serverLinkNative(String(userId));
+    // Резервно просим сервер связать устройство (для старых сборок APK)
+    void serverLinkNative();
     return;
   }
-  // Иначе (браузер / PWA / APK без плагина OneSignal) — веб-SDK OneSignal.
   await initOneSignal();
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   window.OneSignalDeferred.push(async (OneSignal) => {
     try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
   });
-  // Резервная серверная привязка по onesignal_id (безопасна, не ломает доставку)
-  void serverLinkWebById(String(userId));
 }
 
 /** Отвязать пользователя (при выходе). */
