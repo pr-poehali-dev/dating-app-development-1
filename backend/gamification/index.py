@@ -55,6 +55,43 @@ def _add_coins(cur, user_id, amount, reason):
     return new_balance
 
 
+def _gift_coins_price(ruble_price: int) -> int:
+    """Цена подарка в монетах — та же формула, что на фронте (единый источник)."""
+    value = 180 + ruble_price * 0.12
+    if value < 500:
+        return round(value / 10) * 10
+    if value < 2000:
+        return round(value / 50) * 50
+    return round(value / 100) * 100
+
+
+def _bot_message(cur, user_id: int, sys_text: str) -> None:
+    """Системное сообщение от бота Полутон (напр. уведомление о подарке)."""
+    bot_email = 'system@lbloom.ru'
+    bot_photo = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
+    cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (bot_email,))
+    bot_row = cur.fetchone()
+    if not bot_row:
+        cur.execute(
+            "INSERT INTO users (name, email, password_hash, photo_url, verified) "
+            "VALUES ('Полутон', %s, 'system_no_login', %s, TRUE) RETURNING id",
+            (bot_email, bot_photo))
+        bot_row = cur.fetchone()
+    if not bot_row or bot_row[0] == user_id:
+        return
+    bot_id = bot_row[0]
+    cur.execute(
+        "SELECT id FROM matches WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s) LIMIT 1",
+        (bot_id, user_id, user_id, bot_id))
+    m = cur.fetchone()
+    if not m:
+        cur.execute("INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id", (bot_id, user_id))
+        m = cur.fetchone()
+    if m:
+        cur.execute("INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+                    (m[0], bot_id, sys_text))
+
+
 def _ensure_today_rows(cur, user_id):
     today = date.today()
     for key in TASK_ORDER:
@@ -173,6 +210,39 @@ def handler(event: dict, context) -> dict:
             new_balance = _add_coins(cur, user_id, -amount, reason)
             conn.commit()
             return resp(200, {'coins': new_balance, 'ok': True})
+
+        if action == 'buy_gift':
+            recipient_id = int(body.get('recipient_id', 0) or 0)
+            gift_id = int(body.get('gift_id', 0) or 0)
+            ruble_price = int(body.get('ruble_price', 0) or 0)
+            gift_name = (body.get('gift_name') or 'Подарок')[:255]
+            gift_emoji = (body.get('gift_emoji') or '🎁')[:10]
+            gift_category = (body.get('gift_category') or 'heart')[:50]
+            gift_variant = int(body.get('gift_variant', 0) or 0)
+            gift_rarity = (body.get('gift_rarity') or 'common')[:20]
+
+            if not recipient_id or not gift_id:
+                return resp(400, {'error': 'Не указан подарок или получатель'})
+            # Подарки за монеты — только «Особые» (не маркет)
+            if gift_category == 'market':
+                return resp(400, {'error': 'Этот подарок покупается только за рубли'})
+
+            cost = _gift_coins_price(ruble_price)
+            balance = _balance(cur, user_id)
+            if balance < cost:
+                return resp(400, {'error': 'Недостаточно монет', 'coins': balance, 'need': cost})
+
+            new_balance = _add_coins(cur, user_id, -cost, f'gift_{gift_id}')
+            cur.execute(
+                "INSERT INTO user_gifts "
+                "(sender_id, recipient_id, gift_id, gift_name, gift_emoji, gift_category, "
+                " gift_variant, gift_rarity, amount, payment_id) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (user_id, recipient_id, gift_id, gift_name, gift_emoji, gift_category,
+                 gift_variant, gift_rarity, cost, f'coins:{user_id}:{gift_id}'))
+            _bot_message(cur, user_id, f'__GIFT_BOT__{gift_emoji}|{gift_name}')
+            conn.commit()
+            return resp(200, {'ok': True, 'coins': new_balance, 'spent': cost})
 
         if action == 'history':
             cur.execute(

@@ -1244,6 +1244,12 @@ export const gamificationApi = {
     gamePost("claim", { task_key: taskKey }) as Promise<GamificationState>,
   spend: (amount: number, reason: string) =>
     gamePost("spend", { amount, reason }) as Promise<{ coins: number; ok?: boolean; error?: string }>,
+  buyGift: (payload: {
+    recipient_id: number; gift_id: number; ruble_price: number;
+    gift_name: string; gift_emoji: string; gift_category: string;
+    gift_variant: number; gift_rarity: string;
+  }) =>
+    gamePost("buy_gift", payload) as Promise<{ ok?: boolean; coins?: number; spent?: number; error?: string; need?: number }>,
 };
 
 export interface CompatQuestion {

@@ -121,6 +121,26 @@ export function giftSection(category: string): "market" | "special" {
   return category === "market" ? "market" : "special";
 }
 
+type Gift = (typeof GIFTS)[number] & { market?: boolean };
+
+/** Подарок покупается за монеты? Все «Особые» (кроме Маркета) — за монеты. */
+export function isCoinGift(gift: Gift): boolean {
+  return giftSection(gift.category) === "special";
+}
+
+/**
+ * Цена подарка в монетах. «Особые» — за монеты (от 180),
+ * лестница зависит от рублёвой цены и округляется до красивых чисел.
+ */
+export function giftCoins(gift: Gift): number {
+  // База 180 монет + плавная надбавка от рублёвой цены (даёт явный разброс)
+  const value = 180 + gift.price * 0.12;
+  // Округляем до аккуратных значений
+  if (value < 500) return Math.round(value / 10) * 10;
+  if (value < 2000) return Math.round(value / 50) * 50;
+  return Math.round(value / 100) * 100;
+}
+
 export const RARITY_STYLE: Record<string, { label: string; border: string; bg: string; text: string; glow: string }> = {
   common:    { label: "",            border: "rgba(255,255,255,0.08)", bg: "rgba(255,255,255,0.04)", text: "",         glow: "none" },
   rare:      { label: "Редкий",      border: "rgba(99,179,237,0.4)",   bg: "rgba(99,179,237,0.07)",  text: "#63B3ED",  glow: "0 0 18px rgba(99,179,237,0.35)" },
@@ -130,8 +150,9 @@ export const RARITY_STYLE: Record<string, { label: string; border: string; bg: s
 
 export const PAY_CREATE_URL = "https://functions.poehali.dev/d866e377-6dac-43c2-a709-799c346ac3ef";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GiftItem from "@/components/gifts/GiftItem";
+import { gamificationApi } from "@/lib/api";
 
 interface ProfileGiftSheetProps {
   recipientName: string;
@@ -142,22 +163,69 @@ interface ProfileGiftSheetProps {
   onClose: () => void;
   onSelectGift: (id: number) => void;
   onPayGift: (id: number) => void;
+  /** Вызывается после успешной отправки подарка за монеты */
+  onCoinGiftSent?: (giftId: number) => void;
 }
 
 export function ProfileGiftSheet({
   recipientName,
-  recipientId: _recipientId,
+  recipientId,
   giftSelected,
   giftDone,
   giftPaying,
   onClose,
   onSelectGift,
   onPayGift,
+  onCoinGiftSent,
 }: ProfileGiftSheetProps) {
   const [activeCategory, setActiveCategory] = useState("special");
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [coinBuying, setCoinBuying] = useState(false);
+  const [coinSent, setCoinSent] = useState<number | null>(null);
+  const [coinError, setCoinError] = useState("");
   const filtered = GIFTS.filter(g => giftSection(g.category) === activeCategory);
 
   useBackHandler(true, onClose);
+
+  useEffect(() => {
+    gamificationApi.state().then(s => setCoinBalance(s?.coins ?? 0)).catch(() => setCoinBalance(0));
+  }, []);
+
+  const handleGiftPay = async (giftId: number) => {
+    const gift = GIFTS.find(g => g.id === giftId);
+    if (!gift) return;
+    // Маркет — за рубли (старый поток), «Особые» — за монеты
+    if (!isCoinGift(gift)) { onPayGift(giftId); return; }
+
+    if (coinBuying) return;
+    const cost = giftCoins(gift);
+    if ((coinBalance ?? 0) < cost) {
+      setCoinError(`Не хватает монет: нужно ${cost}, у тебя ${coinBalance ?? 0}. Выполняй задания, чтобы заработать!`);
+      return;
+    }
+    setCoinBuying(true); setCoinError("");
+    try {
+      const r = await gamificationApi.buyGift({
+        recipient_id: recipientId,
+        gift_id: gift.id,
+        ruble_price: gift.price,
+        gift_name: gift.name,
+        gift_emoji: gift.emoji,
+        gift_category: gift.category,
+        gift_variant: gift.variant ?? 0,
+        gift_rarity: gift.rarity,
+      });
+      if (r.ok) {
+        setCoinBalance(r.coins ?? null);
+        setCoinSent(giftId);
+        onCoinGiftSent?.(giftId);
+      } else {
+        setCoinError(r.error || "Не удалось отправить подарок");
+      }
+    } catch {
+      setCoinError("Ошибка сети. Попробуй ещё раз.");
+    } finally { setCoinBuying(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: "var(--spark-dark, #0f0a1a)" }}>
@@ -170,9 +238,17 @@ export function ProfileGiftSheet({
             style={{ background: "rgba(255,255,255,0.08)" }}>
             <Icon name="ArrowLeft" size={18} className="text-white/80" />
           </button>
-          <div className="flex-1">
-            <p className="text-white font-bold text-lg leading-tight">Подарить {recipientName}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-lg leading-tight truncate">Подарить {recipientName}</p>
             <p className="text-white/40 text-xs mt-0.5">Выберите подарок</p>
+          </div>
+          {/* Баланс монет */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0"
+            style={{ background: "rgba(255,200,0,0.12)", border: "1px solid rgba(255,200,0,0.3)" }}>
+            <Icon name="Coins" size={15} style={{ color: "#FFC800" }} />
+            <span className="text-sm font-bold" style={{ color: "#FFC800" }}>
+              {coinBalance === null ? "…" : coinBalance.toLocaleString("ru")}
+            </span>
           </div>
         </div>
 
@@ -222,10 +298,18 @@ export function ProfileGiftSheet({
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
                   </p>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
-                    style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
-                    {gift.price.toLocaleString("ru")} ₽
-                  </span>
+                  {isCoinGift(gift) ? (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 flex items-center gap-0.5"
+                      style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.3)" }}>
+                      <Icon name="Coins" size={9} style={{ color: "#FFC800" }} />
+                      {giftCoins(gift).toLocaleString("ru")}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                      {gift.price.toLocaleString("ru")} ₽
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -236,6 +320,11 @@ export function ProfileGiftSheet({
         {giftSelected !== null && (() => {
           const gift = GIFTS.find(g => g.id === giftSelected)!;
           const rs = RARITY_STYLE[gift.rarity];
+          const coinGift = isCoinGift(gift);
+          const cost = giftCoins(gift);
+          const notEnough = coinGift && (coinBalance ?? 0) < cost;
+          const done = giftDone === giftSelected || coinSent === giftSelected;
+          const busy = coinGift ? coinBuying : giftPaying;
           return (
             <div className="absolute left-0 right-0 bottom-0 px-4 pt-3 flex-shrink-0 animate-slide-up"
               style={{
@@ -243,25 +332,37 @@ export function ProfileGiftSheet({
                 background: "linear-gradient(to top, var(--spark-dark,#0f0a1a) 70%, transparent)",
                 borderTop: "1px solid rgba(255,255,255,0.08)",
               }}>
+              {coinError && (
+                <p className="text-red-400 text-xs font-medium mb-2 px-1">{coinError}</p>
+              )}
               <div className="rounded-2xl p-4 flex items-center gap-4"
                 style={{ background: rs.bg || "rgba(255,200,0,0.06)", border: `1.5px solid ${rs.border || "rgba(255,200,0,0.2)"}`, boxShadow: rs.glow }}>
                 <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} emoji={gift.emoji} marketBadge={false} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
                   {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}
-                  <p className="text-white/40 text-xs">{gift.price.toLocaleString("ru")} ₽ для {recipientName}</p>
+                  {coinGift ? (
+                    <p className="text-xs flex items-center gap-1" style={{ color: notEnough ? "#F87171" : "#FFC800" }}>
+                      <Icon name="Coins" size={11} style={{ color: notEnough ? "#F87171" : "#FFC800" }} />
+                      {cost.toLocaleString("ru")} монет{notEnough ? " — не хватает" : ` для ${recipientName}`}
+                    </p>
+                  ) : (
+                    <p className="text-white/40 text-xs">{gift.price.toLocaleString("ru")} ₽ для {recipientName}</p>
+                  )}
                 </div>
-                {giftDone === giftSelected ? (
+                {done ? (
                   <div className="flex items-center gap-1 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: "rgba(74,222,128,0.15)" }}>
                     <Icon name="Check" size={14} className="text-green-400" />
                     <span className="text-green-400 text-xs font-semibold">Отправлен!</span>
                   </div>
                 ) : (
-                  <button disabled={giftPaying}
-                    onClick={() => onPayGift(giftSelected)}
-                    className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-60 flex items-center gap-1.5">
-                    {giftPaying
+                  <button disabled={busy || notEnough}
+                    onClick={() => handleGiftPay(giftSelected)}
+                    className="btn-grad px-4 py-2.5 text-xs font-bold text-white rounded-xl flex-shrink-0 disabled:opacity-40 flex items-center gap-1.5">
+                    {busy
                       ? <><Icon name="Loader2" size={13} className="animate-spin" />...</>
+                      : notEnough
+                      ? <><Icon name="Coins" size={13} />Мало монет</>
                       : <><Icon name="Gift" size={13} />Подарить</>}
                   </button>
                 )}

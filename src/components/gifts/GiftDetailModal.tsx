@@ -1,5 +1,6 @@
+import Icon from "@/components/ui/icon";
 import GiftItem from "@/components/gifts/GiftItem";
-import { RARITY_STYLE } from "@/components/screens/ProfileGiftSheet";
+import { RARITY_STYLE, isCoinGift, giftCoins } from "@/components/screens/ProfileGiftSheet";
 
 interface GiftDetail {
   id: number;
@@ -59,7 +60,14 @@ export function GiftDetailModal({ gift, onClose }: Props) {
         <div className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl"
           style={{ background: rs.bg, border: `1px solid ${rs.border}` }}>
           <span className="text-white/60 text-sm">Стоимость:</span>
-          <span className="text-white font-bold text-base">{gift.price.toLocaleString("ru")} ₽</span>
+          {isCoinGift({ category: gift.category, price: gift.price } as Parameters<typeof isCoinGift>[0]) ? (
+            <span className="font-bold text-base flex items-center gap-1" style={{ color: "#FFC800" }}>
+              <Icon name="Coins" size={15} style={{ color: "#FFC800" }} />
+              {giftCoins({ price: gift.price } as Parameters<typeof giftCoins>[0]).toLocaleString("ru")} монет
+            </span>
+          ) : (
+            <span className="text-white font-bold text-base">{gift.price.toLocaleString("ru")} ₽</span>
+          )}
         </div>
 
         {/* Отправитель */}

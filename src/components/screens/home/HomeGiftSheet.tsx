@@ -1,5 +1,5 @@
 import Icon from "@/components/ui/icon";
-import { GIFTS, RARITY_STYLE, giftSection } from "@/components/screens/ProfileGiftSheet";
+import { GIFTS, RARITY_STYLE, giftSection, isCoinGift, giftCoins } from "@/components/screens/ProfileGiftSheet";
 import GiftItem from "@/components/gifts/GiftItem";
 import { useBackHandler } from "@/hooks/backStack";
 
@@ -77,10 +77,18 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
                   )}
                   <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={72} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={selected} emoji={gift.emoji} />
                   <p className="text-white/90 text-xs font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">{gift.name}</p>
-                  <span className="text-xs font-bold px-2 py-1 rounded-full mt-0.5"
-                    style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
-                    {gift.price.toLocaleString("ru")} ₽
-                  </span>
+                  {isCoinGift(gift) ? (
+                    <span className="text-xs font-bold px-2 py-1 rounded-full mt-0.5 flex items-center gap-1"
+                      style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.3)" }}>
+                      <Icon name="Coins" size={11} style={{ color: "#FFC800" }} />
+                      {giftCoins(gift).toLocaleString("ru")}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2 py-1 rounded-full mt-0.5"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "white" }}>
+                      {gift.price.toLocaleString("ru")} ₽
+                    </span>
+                  )}
                 </button>
               );
             })}

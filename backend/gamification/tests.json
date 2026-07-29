@@ -21,6 +21,14 @@
       "body": {"action": "claim", "task_key": "checkin"},
       "expectedStatus": 401,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "buy_gift без токена — 401",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "buy_gift", "gift_id": 33, "recipient_id": 1, "ruble_price": 990},
+      "expectedStatus": 401,
+      "bodyMatcher": "partial"
     }
   ]
 }

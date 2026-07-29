@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { matchesApi, profilesApi, messagesApi, type Match, type Profile } from "@/lib/api";
-import { GIFTS, RARITY_STYLE, PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
+import { matchesApi, profilesApi, messagesApi, gamificationApi, type Match, type Profile } from "@/lib/api";
+import { GIFTS, RARITY_STYLE, PAY_CREATE_URL, isCoinGift, giftCoins } from "@/components/screens/ProfileGiftSheet";
 import GiftItem from "@/components/gifts/GiftItem";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
@@ -22,6 +22,13 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedRecipient, setSelectedRecipient] = useState<{ id: number; name: string; photo_url?: string; match_id?: number } | null>(null);
+  const [coinBalance, setCoinBalance] = useState<number | null>(null);
+  const [coinBuying, setCoinBuying] = useState(false);
+  const [coinError, setCoinError] = useState("");
+
+  useEffect(() => {
+    gamificationApi.state().then(s => setCoinBalance(s?.coins ?? 0)).catch(() => setCoinBalance(0));
+  }, []);
 
   // Загружаем чаты при открытии превью с режимом "user"
   useEffect(() => {
@@ -59,6 +66,47 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
 
   const gift = GIFTS.find(g => g.id === giftPreview)!;
   const rs = RARITY_STYLE[gift.rarity];
+  const coinGift = isCoinGift(gift);
+  const coinCost = giftCoins(gift);
+  const notEnough = coinGift && (coinBalance ?? 0) < coinCost;
+
+  const handleCoinBuy = async () => {
+    const isUser = giftRecipient === "user" && selectedRecipient;
+    const recipientId = isUser ? selectedRecipient!.id : currentUserId;
+    if (coinBuying) return;
+    if (notEnough) {
+      setCoinError(`Не хватает монет: нужно ${coinCost}, у тебя ${coinBalance ?? 0}. Выполняй задания!`);
+      return;
+    }
+    setCoinBuying(true); setCoinError("");
+    try {
+      const r = await gamificationApi.buyGift({
+        recipient_id: recipientId,
+        gift_id: gift.id,
+        ruble_price: gift.price,
+        gift_name: gift.name,
+        gift_emoji: gift.emoji,
+        gift_category: gift.category,
+        gift_variant: gift.variant ?? 0,
+        gift_rarity: gift.rarity,
+      });
+      if (r.ok) {
+        setCoinBalance(r.coins ?? null);
+        setGiftDone(giftPreview);
+        if (isUser) {
+          const giftMsg = `__GIFT__${gift.id}|${gift.name}|${gift.emoji}`;
+          try {
+            if (selectedRecipient!.match_id) await messagesApi.send(selectedRecipient!.match_id, giftMsg);
+            else await messagesApi.sendDirect(selectedRecipient!.id, giftMsg);
+          } catch (e) { void e; }
+        }
+      } else {
+        setCoinError(r.error || "Не удалось отправить подарок");
+      }
+    } catch {
+      setCoinError("Ошибка сети. Попробуй ещё раз.");
+    } finally { setCoinBuying(false); }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center px-6"
@@ -73,7 +121,17 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
         <div className="text-center">
           <p className="text-white font-bold text-xl">{gift.name}</p>
           {rs.label && <p className="text-sm font-bold mt-1" style={{ color: rs.text }}>{rs.label}</p>}
-          <p className="text-white/40 text-sm mt-1">{gift.price.toLocaleString("ru")} ₽</p>
+          {coinGift ? (
+            <p className="text-sm mt-1 flex items-center justify-center gap-1 font-bold" style={{ color: "#FFC800" }}>
+              <Icon name="Coins" size={13} style={{ color: "#FFC800" }} />
+              {coinCost.toLocaleString("ru")} монет
+            </p>
+          ) : (
+            <p className="text-white/40 text-sm mt-1">{gift.price.toLocaleString("ru")} ₽</p>
+          )}
+          {coinGift && coinBalance !== null && (
+            <p className="text-white/30 text-xs mt-0.5">У тебя {coinBalance.toLocaleString("ru")} монет</p>
+          )}
         </div>
 
         {/* Выбор получателя */}
@@ -174,12 +232,27 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
           </div>
         )}
 
+        {coinError && <p className="text-red-400 text-xs font-medium w-full text-center">{coinError}</p>}
+
         {giftDone === giftPreview ? (
           <div className="w-full py-3 rounded-2xl flex items-center justify-center gap-2"
             style={{ background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.3)" }}>
             <Icon name="Check" size={16} className="text-green-400" />
-            <span className="text-green-400 font-semibold">Подарок куплен!</span>
+            <span className="text-green-400 font-semibold">Подарок отправлен!</span>
           </div>
+        ) : coinGift ? (
+          <button
+            disabled={coinBuying || notEnough || (giftRecipient === "user" && !selectedRecipient)}
+            onClick={handleCoinBuy}
+            className="w-full btn-grad py-3.5 font-bold text-white rounded-2xl disabled:opacity-50 flex items-center justify-center gap-2">
+            {coinBuying
+              ? <><Icon name="Loader2" size={16} className="animate-spin" />Отправляю...</>
+              : giftRecipient === "user" && !selectedRecipient
+                ? <><Icon name="UserPlus" size={16} />Выберите получателя</>
+                : notEnough
+                  ? <><Icon name="Coins" size={16} />Не хватает монет</>
+                  : <><Icon name="Coins" size={16} />Подарить за {coinCost.toLocaleString("ru")}</>}
+          </button>
         ) : (
           <button
             disabled={giftPaying || (giftRecipient === "user" && !selectedRecipient)}
