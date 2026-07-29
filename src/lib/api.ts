@@ -547,6 +547,11 @@ export const pushApi = {
       method: "POST",
       body: JSON.stringify(ids),
     }),
+  diag: (report: Record<string, unknown>) =>
+    req<{ ok: boolean }>("push", "onesignal_diag", {
+      method: "POST",
+      body: JSON.stringify(report),
+    }),
 };
 
 // ─── Matches ─────────────────────────────────────────────────────────────────

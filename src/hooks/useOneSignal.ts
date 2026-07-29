@@ -306,9 +306,32 @@ async function serverLinkWebById(userId: string): Promise<void> {
   }
 }
 
+/** Разовая диагностика: сообщает серверу, что доступно в обёртке устройства.
+ * Помогает понять, почему привязка OneSignal не срабатывает (нет моста и т.п.). */
+function reportOneSignalDiag(): void {
+  try {
+    const w = window as unknown as {
+      median?: { onesignal?: Record<string, unknown> };
+      gonative?: { onesignal?: Record<string, unknown> };
+    };
+    const osBridge = w.median?.onesignal || w.gonative?.onesignal;
+    void pushApi.diag({
+      isNative: isNativeApp(),
+      hasMedian: !!w.median,
+      hasGonative: !!w.gonative,
+      hasOsBridge: !!osBridge,
+      osBridgeKeys: osBridge ? Object.keys(osBridge) : [],
+      hasOnesignalInfo: typeof (osBridge as { onesignalInfo?: unknown })?.onesignalInfo === "function",
+      webSdkInited: !!window.__oneSignalInited,
+      ua: (navigator.userAgent || "").slice(0, 160),
+    });
+  } catch { /* ignore */ }
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
+  reportOneSignalDiag();
   // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
   if (isNativeApp()) {
     nativeSetExternalId(String(userId));

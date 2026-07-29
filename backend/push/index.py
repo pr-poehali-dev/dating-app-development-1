@@ -329,11 +329,19 @@ def handler(event: dict, context) -> dict:
             conn.commit()
             return resp(200, {'ok': True})
 
+        # Диагностика: устройство сообщает, что доступно в его обёртке.
+        # Пишем в лог, чтобы понять, почему привязка не срабатывает.
+        if action == 'onesignal_diag':
+            body_raw = json.loads(event.get('body') or '{}')
+            print(f"[onesignal_diag] user_id={me['id']} report={json.dumps(body_raw)[:800]}")
+            return resp(200, {'ok': True})
+
         # Резервная серверная привязка устройства OneSignal к аккаунту
         if action == 'onesignal_link':
             body_raw = json.loads(event.get('body') or '{}')
             sub_id = (body_raw.get('subscription_id') or '').strip()
             os_id = (body_raw.get('onesignal_id') or '').strip()
+            print(f"[onesignal_link] request user_id={me['id']} sub_id={'yes' if sub_id else 'no'} os_id={'yes' if os_id else 'no'}")
             if not sub_id and not os_id:
                 return resp(400, {'error': 'Нужен subscription_id или onesignal_id'})
             result = onesignal_link_user(me['id'], sub_id, os_id)
