@@ -12,8 +12,12 @@ import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
 from upload_guard import validate_upload
 
-def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
-    """Отправляет push конкретному пользователю через OneSignal по External ID."""
+def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/', urgent: bool = False):
+    """Отправляет push конкретному пользователю через OneSignal по External ID.
+
+    urgent=True — для звонков: максимальный приоритет доставки, чтобы пуш
+    будил телефон немедленно даже при закрытом приложении.
+    """
     try:
         app_id = os.environ.get('ONESIGNAL_APP_ID', '')
         api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
@@ -27,6 +31,13 @@ def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/')
             'contents': {'en': body_text, 'ru': body_text},
             'url': url,
         }
+        if urgent:
+            payload['priority'] = 10
+            payload['android_channel_id'] = os.environ.get('ONESIGNAL_CALL_CHANNEL_ID', '')
+            payload['ttl'] = 45
+            payload['android_visibility'] = 1
+        if urgent and not payload.get('android_channel_id'):
+            payload.pop('android_channel_id', None)
         scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
         req = urllib.request.Request(
             'https://onesignal.com/api/v1/notifications',
@@ -327,7 +338,7 @@ def handler(event: dict, context) -> dict:
                   AND s.is_consumed = FALSE
                   AND s.from_user_id != %s
                   AND (ma.user1_id = %s OR ma.user2_id = %s)
-                  AND s.created_at >= NOW() - INTERVAL '30 seconds'
+                  AND s.created_at >= NOW() - INTERVAL '60 seconds'
                 ORDER BY s.created_at DESC
                 LIMIT 1
                 """,
@@ -395,6 +406,15 @@ def handler(event: dict, context) -> dict:
                     cur.execute("SELECT name FROM users WHERE id = %s", (me['id'],))
                     cn = cur.fetchone()
                     caller_name = cn[0] if cn else 'Кто-то'
+                    # OneSignal — будит телефон даже при закрытом приложении (приоритетно)
+                    _onesignal_to_user(
+                        callee_id,
+                        '📹 Входящий видеозвонок',
+                        f'{caller_name} звонит вам',
+                        f'/?call={match_id}',
+                        urgent=True,
+                    )
+                    # Web Push — резервный канал (когда браузер открыт/в фоне)
                     _push_to_user(
                         cur, conn, callee_id,
                         '📹 Входящий видеозвонок',
@@ -423,7 +443,7 @@ def handler(event: dict, context) -> dict:
             cur.execute(
                 "UPDATE webrtc_signals SET is_consumed = TRUE "
                 "WHERE match_id = %s AND signal_type = 'offer' AND is_consumed = FALSE "
-                "AND created_at <= NOW() - INTERVAL '20 seconds'",
+                "AND created_at <= NOW() - INTERVAL '60 seconds'",
                 (match_id,)
             )
 
