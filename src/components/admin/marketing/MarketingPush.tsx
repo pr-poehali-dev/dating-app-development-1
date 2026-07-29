@@ -3,27 +3,39 @@ import Icon from "@/components/ui/icon";
 import { adminApi } from "@/lib/api";
 
 export function MarketingPush({ token }: { token: string }) {
-  const [channel, setChannel] = useState<"internal" | "onesignal">("internal");
+  const [channel, setChannel] = useState<"internal" | "onesignal" | "test">("internal");
   const [pushTitle, setPushTitle] = useState("");
   const [pushMsg, setPushMsg] = useState("");
   const [pushUrl, setPushUrl] = useState("");
   const [pushSegment, setPushSegment] = useState("all");
+  const [testUserId, setTestUserId] = useState("");
   const [pushing, setPushing] = useState(false);
   const [pushResult, setPushResult] = useState<{ sent_to: number } | null>(null);
   const [pushError, setPushError] = useState("");
 
+  const canSend = channel === "test"
+    ? !!testUserId.trim() && !!pushMsg.trim()
+    : !!pushTitle.trim() && !!pushMsg.trim();
+
   const handlePush = async () => {
-    if (!pushTitle.trim() || !pushMsg.trim()) return;
+    if (!canSend) return;
     setPushing(true); setPushResult(null); setPushError("");
     try {
-      if (channel === "onesignal") {
+      if (channel === "test") {
+        const uid = parseInt(testUserId.trim(), 10);
+        if (!uid) throw new Error("Укажите числовой ID пользователя");
+        const r = await adminApi.oneSignalSendToUser(
+          token, uid, pushTitle.trim() || "Полутон 💕", pushMsg.trim(),
+        );
+        setPushResult({ sent_to: r.result?.recipients ?? 0 });
+      } else if (channel === "onesignal") {
         const r = await adminApi.oneSignalSend(token, pushTitle.trim(), pushMsg.trim(), pushUrl.trim());
         setPushResult({ sent_to: r.result?.recipients ?? 0 });
       } else {
         const r = await adminApi.pushBroadcast(token, pushTitle.trim(), pushMsg.trim(), pushSegment);
         setPushResult(r);
       }
-      setPushTitle(""); setPushMsg(""); setPushUrl("");
+      setPushTitle(""); setPushMsg(""); setPushUrl(""); setTestUserId("");
     } catch (e) {
       setPushError(e instanceof Error ? e.message : "Не удалось отправить");
     } finally { setPushing(false); }
@@ -38,6 +50,7 @@ export function MarketingPush({ token }: { token: string }) {
   const channels = [
     { id: "internal",  label: "Свои пуши",  icon: "Bell" },
     { id: "onesignal", label: "OneSignal",  icon: "Send" },
+    { id: "test",      label: "Тест по ID", icon: "UserCheck" },
   ];
 
   return (
@@ -45,9 +58,9 @@ export function MarketingPush({ token }: { token: string }) {
       {/* Канал отправки */}
       <div className="flex flex-col gap-2">
         <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest px-1">Канал</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {channels.map(c => (
-            <button key={c.id} onClick={() => setChannel(c.id as "internal" | "onesignal")}
+            <button key={c.id} onClick={() => setChannel(c.id as "internal" | "onesignal" | "test")}
               className="flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-semibold transition-all"
               style={channel === c.id
                 ? { background: "linear-gradient(135deg,rgba(255,45,120,0.18),rgba(155,89,182,0.18))", color: "white", border: "1px solid rgba(255,45,120,0.3)" }
@@ -84,10 +97,24 @@ export function MarketingPush({ token }: { token: string }) {
         </p>
       )}
 
+      {channel === "test" && (
+        <p className="text-white/40 text-xs px-1 leading-relaxed">
+          Пуш уйдёт одному пользователю по его ID через OneSignal. Устройство должно быть подписано
+          на уведомления и связано с аккаунтом — иначе OneSignal ответит «not subscribed».
+        </p>
+      )}
+
       {/* Форма */}
       <div className="rounded-2xl p-4 flex flex-col gap-3"
         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
         <p className="text-white/35 text-[10px] font-bold uppercase tracking-widest">Содержание</p>
+
+        {channel === "test" && (
+          <input value={testUserId} onChange={e => setTestUserId(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder="ID пользователя (например 77)" inputMode="numeric"
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/25 outline-none"
+            style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,45,120,0.25)" }} />
+        )}
 
         <input value={pushTitle} onChange={e => setPushTitle(e.target.value)}
           placeholder="Заголовок уведомления" maxLength={60}
@@ -127,12 +154,12 @@ export function MarketingPush({ token }: { token: string }) {
           </div>
         )}
 
-        <button onClick={handlePush} disabled={pushing || !pushTitle.trim() || !pushMsg.trim()}
+        <button onClick={handlePush} disabled={pushing || !canSend}
           className="py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40 flex items-center justify-center gap-2"
           style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>
           {pushing
             ? <><Icon name="Loader2" size={15} className="animate-spin" />Отправляю...</>
-            : <><Icon name="Send" size={15} />Отправить рассылку</>}
+            : <><Icon name="Send" size={15} />{channel === "test" ? "Отправить тестовый пуш" : "Отправить рассылку"}</>}
         </button>
       </div>
 
@@ -144,8 +171,8 @@ export function MarketingPush({ token }: { token: string }) {
             <Icon name="CheckCircle" size={16} style={{ color: "#4ADE80" }} />
           </div>
           <div>
-            <p className="text-green-300 font-bold text-sm">Рассылка отправлена</p>
-            <p className="text-green-400/60 text-xs">{pushResult.sent_to} пользователей получили уведомление</p>
+            <p className="text-green-300 font-bold text-sm">{channel === "test" ? "Тестовый пуш отправлен" : "Рассылка отправлена"}</p>
+            <p className="text-green-400/60 text-xs">{pushResult.sent_to} устройств получили уведомление</p>
           </div>
         </div>
       )}

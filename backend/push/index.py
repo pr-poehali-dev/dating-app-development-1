@@ -94,6 +94,13 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             data = json.loads(r.read().decode('utf-8'))
+        errs = data.get('errors')
+        if errs:
+            msg = errs[0] if isinstance(errs, list) and errs else str(errs)
+            low = str(msg).lower()
+            if 'not subscribed' in low or "doesn't match" in low or 'no subscribers' in low:
+                msg = 'Устройство пользователя не подписано на уведомления или не связано с аккаунтом'
+            return {'ok': False, 'error': msg}
         return {'ok': True, 'result': data}
     except urllib.error.HTTPError as e:
         return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
@@ -124,6 +131,13 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             data = json.loads(r.read().decode('utf-8'))
+        errs = data.get('errors')
+        if errs:
+            msg = errs[0] if isinstance(errs, list) and errs else str(errs)
+            low = str(msg).lower()
+            if 'not subscribed' in low or "doesn't match" in low or 'no subscribers' in low:
+                msg = 'Устройство пользователя не подписано на уведомления или не связано с аккаунтом'
+            return {'ok': False, 'error': msg}
         return {'ok': True, 'result': data}
     except urllib.error.HTTPError as e:
         return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
