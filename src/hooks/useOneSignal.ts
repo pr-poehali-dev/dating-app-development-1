@@ -217,24 +217,27 @@ export async function disableOneSignal(): Promise<boolean> {
  */
 function nativeSetExternalId(userId: string): void {
   try {
-    const w = window as unknown as {
-      median?: { onesignal?: Record<string, unknown> };
-      gonative?: { onesignal?: Record<string, unknown> };
+    type OSBridge = {
+      login?: (a: unknown) => void;
+      externalUserId?: { set?: (a: unknown) => void };
     };
-    const os = (w.median?.onesignal || w.gonative?.onesignal) as
-      | Record<string, (arg: unknown) => void>
-      | undefined;
-    if (os) {
-      // Разные версии Median используют разные имена метода
-      const fn =
-        os.setExternalUserId || os.externalUserId || os.login || os.setExternalId;
-      if (typeof fn === "function") { fn({ externalId: userId, externalUserId: userId }); return; }
+    const w = window as unknown as {
+      median?: { onesignal?: OSBridge; run?: (u: string) => void };
+      gonative?: { onesignal?: OSBridge; run?: (u: string) => void };
+    };
+    const os = w.median?.onesignal || w.gonative?.onesignal;
+
+    // Median SDK v5 (актуальный): median.onesignal.login({ externalId })
+    if (typeof os?.login === "function") { os.login({ externalId: userId }); return; }
+    // Median SDK v4 (legacy): median.onesignal.externalUserId.set({ externalId })
+    if (typeof os?.externalUserId?.set === "function") {
+      os.externalUserId.set({ externalId: userId });
+      return;
     }
-    // Мост как функция недоступен — используем JS-Bridge команду Median
-    const runner = (w.median as { run?: (u: string) => void } | undefined)?.run
-      || (w.gonative as { run?: (u: string) => void } | undefined)?.run;
+    // Универсальный JS-Bridge вызов Median по документированной команде
+    const runner = w.median?.run || w.gonative?.run;
     if (typeof runner === "function") {
-      runner(`median://onesignal/externalUserId?externalId=${encodeURIComponent(userId)}`);
+      runner(`median://onesignal/login?externalId=${encodeURIComponent(userId)}`);
     }
   } catch { /* нет нативной обёртки */ }
 }
