@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { DiscoverProfileModal } from "@/components/screens/SwipeScreens";
 import { PremiumConfetti } from "@/components/screens/PremiumConfetti";
+import { CoinTopUpSheet } from "@/components/screens/CoinTopUpSheet";
+import { gamificationApi } from "@/lib/api";
 import OfflineBanner from "@/components/OfflineBanner";
 import StarField from "@/components/StarField";
 import { EnableNotificationsBanner } from "@/components/EnableNotificationsBanner";
@@ -67,6 +70,7 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
             onGoToChats={() => { setDeepLinkProfile(null); goToChats(); }}
           />
         )}
+        <GlobalCoinTopUp />
       </div>
     );
   }
@@ -128,8 +132,27 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
           onClose={dismissIncoming}
         />
       )}
+      <GlobalCoinTopUp />
     </div>
   );
+}
+
+// Глобальный шит пополнения монет — открывается по событию app:open-topup
+function GlobalCoinTopUp() {
+  const [open, setOpen] = useState(false);
+  const [balance, setBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    const onOpen = () => {
+      setOpen(true);
+      gamificationApi.state().then(s => setBalance(s?.coins ?? 0)).catch(() => setBalance(null));
+    };
+    window.addEventListener("app:open-topup", onOpen);
+    return () => window.removeEventListener("app:open-topup", onOpen);
+  }, []);
+
+  if (!open) return null;
+  return <CoinTopUpSheet currentBalance={balance} onClose={() => setOpen(false)} />;
 }
 
 export default IndexShell;

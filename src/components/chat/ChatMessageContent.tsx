@@ -347,6 +347,30 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
       </div>
     );
   }
+  if (text.startsWith("__COINS_TOPUP__")) {
+    const amount = text.slice(15);
+    return (
+      <div className="flex flex-col items-center gap-3 py-4 px-5 select-none"
+        style={{
+          background: "linear-gradient(135deg, rgba(252,211,77,0.14) 0%, rgba(255,143,0,0.1) 100%)",
+          border: "1.5px solid rgba(252,211,77,0.35)",
+          borderRadius: 20,
+          minWidth: 220,
+          maxWidth: 280,
+          boxShadow: "0 4px 24px rgba(252,211,77,0.18)",
+        }}>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#FCD34D,#F59E0B)", boxShadow: "0 4px 16px rgba(252,211,77,0.5)" }}>
+          <Icon name="Coins" size={30} className="text-white" />
+        </div>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className="text-white font-black text-base tracking-wide">Баланс пополнен!</span>
+          <span className="font-black text-lg" style={{ color: "#FCD34D" }}>+{amount} монет</span>
+          <span className="text-white/35 text-[11px]">можно дарить подарки в разделе «Особые»</span>
+        </div>
+      </div>
+    );
+  }
   if (text === "❤️") {
     return <HeartMessage />;
   }

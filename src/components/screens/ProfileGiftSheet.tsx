@@ -196,6 +196,10 @@ export function ProfileGiftSheet({
     window.dispatchEvent(new Event("app:navigate-tasks"));
   };
 
+  const goTopUp = () => {
+    window.dispatchEvent(new Event("app:open-topup"));
+  };
+
   const handleGiftPay = async (giftId: number) => {
     const gift = GIFTS.find(g => g.id === giftId);
     if (!gift) return;
@@ -247,8 +251,8 @@ export function ProfileGiftSheet({
             <p className="text-white font-bold text-lg leading-tight truncate">Подарить {recipientName}</p>
             <p className="text-white/40 text-xs mt-0.5">Выберите подарок</p>
           </div>
-          {/* Баланс монет — тап ведёт к заданиям */}
-          <button onClick={goEarnCoins}
+          {/* Баланс монет — тап открывает пополнение */}
+          <button onClick={goTopUp}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
             style={{ background: "rgba(255,200,0,0.12)", border: "1px solid rgba(255,200,0,0.3)" }}>
             <Icon name="Coins" size={15} style={{ color: "#FFC800" }} />
@@ -363,11 +367,17 @@ export function ProfileGiftSheet({
                     <span className="text-green-400 text-xs font-semibold">Отправлен!</span>
                   </div>
                 ) : notEnough ? (
-                  <button onClick={goEarnCoins}
-                    className="px-4 py-2.5 text-xs font-bold rounded-xl flex-shrink-0 flex items-center gap-1.5 active:scale-95 transition-transform"
-                    style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.4)" }}>
-                    <Icon name="Sparkles" size={13} style={{ color: "#FFC800" }} />Как заработать
-                  </button>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <button onClick={goTopUp}
+                      className="btn-grad px-4 py-2 text-xs font-bold text-white rounded-xl flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
+                      <Icon name="CreditCard" size={13} />Пополнить
+                    </button>
+                    <button onClick={goEarnCoins}
+                      className="px-4 py-2 text-[11px] font-bold rounded-xl flex items-center justify-center gap-1 active:scale-95 transition-transform"
+                      style={{ background: "rgba(255,200,0,0.14)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.35)" }}>
+                      <Icon name="Sparkles" size={12} style={{ color: "#FFC800" }} />Заработать
+                    </button>
+                  </div>
                 ) : (
                   <button disabled={busy}
                     onClick={() => handleGiftPay(giftSelected)}

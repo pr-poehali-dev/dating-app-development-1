@@ -131,10 +131,10 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
           )}
           {coinGift && coinBalance !== null && (
             <button
-              onClick={() => { onClose(); window.dispatchEvent(new Event("app:navigate-tasks")); }}
+              onClick={() => window.dispatchEvent(new Event("app:open-topup"))}
               className="text-white/30 text-xs mt-0.5 inline-flex items-center gap-1 active:scale-95 transition-transform">
               У тебя {coinBalance.toLocaleString("ru")} монет
-              <span className="font-semibold" style={{ color: "#FFC800" }}>· заработать</span>
+              <span className="font-semibold" style={{ color: "#FFC800" }}>· пополнить</span>
             </button>
           )}
         </div>
@@ -246,12 +246,19 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
             <span className="text-green-400 font-semibold">Подарок отправлен!</span>
           </div>
         ) : coinGift && notEnough ? (
-          <button
-            onClick={() => { onClose(); window.dispatchEvent(new Event("app:navigate-tasks")); }}
-            className="w-full py-3.5 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-            style={{ background: "rgba(255,200,0,0.16)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.4)" }}>
-            <Icon name="Sparkles" size={16} style={{ color: "#FFC800" }} />Как заработать монеты
-          </button>
+          <div className="w-full flex flex-col gap-2">
+            <button
+              onClick={() => window.dispatchEvent(new Event("app:open-topup"))}
+              className="w-full btn-grad py-3.5 font-bold text-white rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+              <Icon name="CreditCard" size={16} />Пополнить монеты
+            </button>
+            <button
+              onClick={() => { onClose(); window.dispatchEvent(new Event("app:navigate-tasks")); }}
+              className="w-full py-2.5 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              style={{ background: "rgba(255,200,0,0.14)", color: "#FFC800", border: "1px solid rgba(255,200,0,0.35)" }}>
+              <Icon name="Sparkles" size={15} style={{ color: "#FFC800" }} />Заработать в заданиях
+            </button>
+          </div>
         ) : coinGift ? (
           <button
             disabled={coinBuying || (giftRecipient === "user" && !selectedRecipient)}

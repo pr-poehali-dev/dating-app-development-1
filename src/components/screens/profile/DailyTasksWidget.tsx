@@ -62,8 +62,9 @@ export function DailyTasksWidget() {
         border: "1px solid rgba(255,193,7,0.4)",
         boxShadow: "0 4px 20px rgba(255,193,7,0.14)",
       }}>
-      {/* Шапка: баланс + переключатель */}
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left">
+      {/* Шапка: баланс + переключатель + пополнение */}
+      <div className="w-full flex items-center pr-3">
+      <button onClick={() => setOpen(o => !o)} className="flex-1 min-w-0 flex items-center gap-2.5 px-3.5 py-3 text-left">
         <div className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 relative"
           style={{ background: "linear-gradient(135deg,#FFD54F,#FFB300)", boxShadow: "0 2px 12px rgba(255,179,0,0.5)" }}>
           <Icon name="Coins" size={18} className="text-white" />
@@ -89,6 +90,13 @@ export function DailyTasksWidget() {
         )}
         <Icon name={open ? "ChevronUp" : "ChevronDown"} size={16} className="text-white/40 flex-shrink-0" />
       </button>
+      <button onClick={() => window.dispatchEvent(new Event("app:open-topup"))}
+        className="ml-1.5 flex items-center gap-1 px-2.5 py-1.5 rounded-full flex-shrink-0 active:scale-95 transition-transform"
+        style={{ background: "linear-gradient(135deg,#FFB300,#FF8F00)", boxShadow: "0 2px 8px rgba(255,143,0,0.4)" }}>
+        <Icon name="Plus" size={13} className="text-white" />
+        <span className="text-white text-[11px] font-black">Пополнить</span>
+      </button>
+      </div>
 
       {/* Список заданий */}
       {open && (

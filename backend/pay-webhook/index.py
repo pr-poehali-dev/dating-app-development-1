@@ -69,6 +69,50 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
         _send_bot_message(cur, sender_id, sys_text)
 
 
+def _add_coins_from_metadata(cur, payment_id: str, metadata: dict, amount: float) -> None:
+    """Начисляет монеты после оплаты пополнения (kind == 'coins'). 1 руб = 1 монета."""
+    if not metadata or metadata.get('kind') != 'coins':
+        return
+
+    # Кому начислять: по токену сессии или по user_id из metadata
+    user_id = _int(metadata.get('user_id'))
+    token = metadata.get('sender_token') or metadata.get('token') or ''
+    if not user_id and token:
+        cur.execute("SELECT user_id FROM sessions WHERE token = %s LIMIT 1", (token,))
+        r = cur.fetchone()
+        if r:
+            user_id = r[0]
+    if not user_id:
+        return
+
+    # Кол-во монет = сумма в рублях (или явно переданное coins), минимум 500
+    coins = _int(metadata.get('coins')) or int(round(amount))
+    if coins < 500:
+        return
+
+    # Защита от повторного начисления по одному платежу
+    cur.execute(
+        "SELECT 1 FROM coin_transactions WHERE reason = %s LIMIT 1",
+        (f'topup:{payment_id}',)
+    )
+    if cur.fetchone():
+        return
+
+    cur.execute(
+        "UPDATE users SET coins = COALESCE(coins,0) + %s WHERE id = %s RETURNING coins",
+        (coins, user_id)
+    )
+    new_row = cur.fetchone()
+    if not new_row:
+        return
+    new_balance = int(new_row[0])
+    cur.execute(
+        "INSERT INTO coin_transactions (user_id, amount, reason, balance_after) VALUES (%s,%s,%s,%s)",
+        (user_id, coins, f'topup:{payment_id}', new_balance)
+    )
+    _send_bot_message(cur, user_id, f'__COINS_TOPUP__{coins}')
+
+
 def _apply_promo_from_metadata(cur, metadata: dict, user_id: int) -> None:
     """Списывает промокод после успешной оплаты (если был передан)."""
     promo_id = metadata.get('promo_id')
@@ -289,6 +333,7 @@ def handler(event: dict, context) -> dict:
             effective_metadata = db_metadata if db_metadata else metadata
 
             _create_gift_from_metadata(cur, payment_id, effective_metadata, db_amount)
+            _add_coins_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _create_boost_from_metadata(cur, payment_id, effective_metadata, db_amount)
             _create_premium_from_metadata(cur, payment_id, effective_metadata)
             _apply_promo_from_metadata(cur, effective_metadata, _int(effective_metadata.get('user_id')))
