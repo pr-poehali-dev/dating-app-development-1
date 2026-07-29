@@ -72,8 +72,39 @@ def handler(event: dict, context) -> dict:
             'isBase64Encoded': False
         }
 
-    # Проверяем промокод и пересчитываем сумму на сервере
     schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+
+    # ── Rate-limit создания платежей: не более 30 запросов с одного IP за
+    #    10 минут (защита от флуда и перебора). ──
+    client_ip = (event.get('requestContext') or {}).get('identity', {}).get('sourceIp', 'unknown')
+    _rl_dsn = os.environ.get('DATABASE_URL')
+    if _rl_dsn:
+        try:
+            _rc = psycopg2.connect(_rl_dsn, options=f"-c search_path={schema}")
+            _rcur = _rc.cursor()
+            _rcur.execute(
+                "SELECT COUNT(*) FROM auth_attempts WHERE ip = %s AND action = 'pay_create' "
+                "AND created_at > NOW() - INTERVAL '10 minutes'",
+                (client_ip,)
+            )
+            _too_many = _rcur.fetchone()[0] >= 30
+            _rcur.execute(
+                "INSERT INTO auth_attempts (ip, action, success) VALUES (%s, 'pay_create', TRUE)",
+                (client_ip,)
+            )
+            _rc.commit()
+            _rc.close()
+            if _too_many:
+                return {
+                    'statusCode': 429,
+                    'headers': HEADERS_CORS,
+                    'body': json.dumps({'error': 'Слишком много запросов. Повторите позже.'}),
+                    'isBase64Encoded': False
+                }
+        except Exception:
+            pass
+
+    # Проверяем промокод и пересчитываем сумму на сервере
     if promo_code:
         dsn_check = os.environ.get('DATABASE_URL')
         if dsn_check:

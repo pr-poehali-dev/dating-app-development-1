@@ -5,6 +5,7 @@ import base64
 import uuid
 import psycopg2
 import boto3
+from upload_guard import validate_upload
 
 
 def get_db():
@@ -57,14 +58,19 @@ def upload_image(image_b64: str) -> str:
     if len(raw) > 5 * 1024 * 1024:
         raise ValueError("too_big")
 
-    key = f"support/{uuid.uuid4().hex}.{ext}"
+    # Проверяем реальное содержимое (magic bytes), а не заявленный формат
+    _ok, real_ext, real_ct, _err = validate_upload(ALLOWED_IMG[ext], raw, 'image')
+    if not _ok:
+        raise ValueError("bad_format")
+
+    key = f"support/{uuid.uuid4().hex}.{real_ext}"
     s3 = boto3.client(
         "s3",
         endpoint_url="https://bucket.poehali.dev",
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
     )
-    s3.put_object(Bucket="files", Key=key, Body=raw, ContentType=ALLOWED_IMG[ext])
+    s3.put_object(Bucket="files", Key=key, Body=raw, ContentType=real_ct)
     return f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
 

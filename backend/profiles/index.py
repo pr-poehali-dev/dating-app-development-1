@@ -14,6 +14,7 @@ import urllib.error
 import boto3
 import psycopg2
 from moderation import moderate_photo, moderate_text, compare_faces, get_setting, score_to_priority, push_to_queue
+from upload_guard import validate_upload
 
 def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет push конкретному пользователю через OneSignal по External ID.
@@ -447,7 +448,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"avatars/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -491,7 +494,9 @@ def handler(event: dict, context) -> dict:
             audio_bytes = base64.b64decode(audio_data)
             if len(audio_bytes) > 5 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 5 МБ)'})
-            ext = content_type.split('/')[-1].split(';')[0] or 'webm'
+            _ok, ext, content_type, _err = validate_upload(content_type, audio_bytes, 'audio')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"voice/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -512,7 +517,9 @@ def handler(event: dict, context) -> dict:
             video_bytes = base64.b64decode(video_data)
             if len(video_bytes) > 20 * 1024 * 1024:
                 return resp(400, {'error': 'Видео слишком большое (макс. 20 МБ)'})
-            ext = content_type.split('/')[-1].split(';')[0] or 'webm'
+            _ok, ext, content_type, _err = validate_upload(content_type, video_bytes, 'video')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"videocircle/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -533,7 +540,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"covers/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -633,7 +642,9 @@ def handler(event: dict, context) -> dict:
             cur.execute("SELECT COUNT(*) FROM profile_photos WHERE user_id = %s AND is_hidden = FALSE", (me['id'],))
             if cur.fetchone()[0] >= 9:
                 return resp(400, {'error': 'Максимум 9 фото в галерее'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"gallery/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -732,7 +743,9 @@ def handler(event: dict, context) -> dict:
             limit = 2 if me['premium'] else 1
             if count >= limit:
                 return resp(403, {'error': 'limit', 'limit': limit, 'premium': me['premium']})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"private_photos/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -942,7 +955,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"posts/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
@@ -1226,7 +1241,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"selfies/{me['id']}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',

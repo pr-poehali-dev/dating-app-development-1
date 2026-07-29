@@ -10,6 +10,7 @@ import urllib.request
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
+from upload_guard import validate_upload
 
 def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет push конкретному пользователю через OneSignal по External ID."""
@@ -279,7 +280,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"chat_photos/{match_id}/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',

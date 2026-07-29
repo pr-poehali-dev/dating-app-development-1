@@ -69,6 +69,11 @@ def _create_gift_from_metadata(cur, payment_id: str, metadata: dict, amount: flo
     if not recipient_id or not gift_id:
         return
 
+    # Получатель должен реально существовать (иначе — подделанные данные)
+    cur.execute("SELECT 1 FROM users WHERE id = %s LIMIT 1", (recipient_id,))
+    if not cur.fetchone():
+        return
+
     # Защита от дубликатов: один платёж = один подарок
     cur.execute("SELECT id FROM user_gifts WHERE payment_id = %s LIMIT 1", (payment_id,))
     if cur.fetchone():
@@ -164,20 +169,18 @@ def _apply_promo_from_metadata(cur, metadata: dict, user_id: int) -> None:
         promo_id = int(promo_id)
     except (TypeError, ValueError):
         return
+    # Идемпотентно: уникальный индекс (promo_code_id, user_id) не даст списать
+    # промокод дважды. Счётчик увеличиваем ТОЛЬКО если строка реально добавлена.
     cur.execute(
-        "SELECT id FROM promo_code_uses WHERE promo_code_id = %s AND user_id = %s LIMIT 1",
+        "INSERT INTO promo_code_uses (promo_code_id, user_id) VALUES (%s, %s) "
+        "ON CONFLICT (promo_code_id, user_id) DO NOTHING RETURNING id",
         (promo_id, user_id)
     )
     if cur.fetchone():
-        return
-    cur.execute(
-        "INSERT INTO promo_code_uses (promo_code_id, user_id) VALUES (%s, %s)",
-        (promo_id, user_id)
-    )
-    cur.execute(
-        "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s",
-        (promo_id,)
-    )
+        cur.execute(
+            "UPDATE promo_codes SET used_count = used_count + 1 WHERE id = %s",
+            (promo_id,)
+        )
 
 
 def _create_premium_from_metadata(cur, payment_id: str, metadata: dict) -> None:

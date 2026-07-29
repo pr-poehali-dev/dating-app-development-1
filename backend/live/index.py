@@ -1,6 +1,7 @@
 import json, os, base64, uuid, psycopg2
 from datetime import datetime, timezone
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
+from upload_guard import validate_upload
 
 def get_db():
     schema = os.environ.get("MAIN_DB_SCHEMA", "public")
@@ -198,6 +199,9 @@ def handler(event: dict, context) -> dict:
                     return err("Bad image")
                 if len(image_bytes) > 5 * 1024 * 1024:
                     return err("Frame too large")
+                _ok, _ext, _ct, _e = validate_upload('image/jpeg', image_bytes, 'image')
+                if not _ok:
+                    return err("Bad image")
 
                 import boto3
                 key = f"live_frames/{stream_id}/{uuid.uuid4()}.jpg"

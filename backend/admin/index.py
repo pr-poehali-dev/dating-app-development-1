@@ -13,6 +13,7 @@ import urllib.error
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting, moderate_name, looks_like_ad_name
+from upload_guard import validate_upload
 
 
 def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
@@ -154,12 +155,36 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 200, 'headers': CORS, 'body': ''}
 
     ip = get_ip(event)
+
+    # ── Rate-limit брутфорса токена админки: не более 10 неудачных попыток
+    #    с одного IP за 15 минут. Иначе временно блокируем (429). ──
+    try:
+        conn_rl = get_conn()
+        cur_rl = conn_rl.cursor()
+        cur_rl.execute(
+            "SELECT COUNT(*) FROM auth_attempts WHERE ip = %s AND action = 'admin_login' "
+            "AND success = FALSE AND created_at > NOW() - INTERVAL '15 minutes'",
+            (ip,)
+        )
+        if cur_rl.fetchone()[0] >= 10:
+            audit(cur_rl, 'admin_bruteforce_blocked', 'critical', ip=ip)
+            conn_rl.commit()
+            conn_rl.close()
+            return resp(429, {'error': 'Слишком много попыток. Повторите позже.'})
+        conn_rl.close()
+    except Exception:
+        pass
+
     if not check_auth(event):
-        # Логируем неудачные попытки доступа к админке
+        # Логируем неудачные попытки доступа к админке + считаем для rate-limit
         try:
             conn_tmp = get_conn()
             cur_tmp = conn_tmp.cursor()
             audit(cur_tmp, 'admin_auth_failed', 'critical', ip=ip)
+            cur_tmp.execute(
+                "INSERT INTO auth_attempts (ip, action, success) VALUES (%s, 'admin_login', FALSE)",
+                (ip,)
+            )
             conn_tmp.commit()
             conn_tmp.close()
         except Exception:
@@ -1262,7 +1287,9 @@ def handler(event: dict, context) -> dict:
             image_bytes = base64.b64decode(image_data)
             if len(image_bytes) > 10 * 1024 * 1024:
                 return resp(400, {'error': 'Файл слишком большой (макс. 10 МБ)'})
-            ext = 'jpg' if 'jpeg' in content_type else content_type.split('/')[-1]
+            _ok, ext, content_type, _err = validate_upload(content_type, image_bytes, 'image')
+            if not _ok:
+                return resp(400, {'error': _err})
             key = f"admin/{uuid.uuid4()}.{ext}"
             s3 = boto3.client('s3',
                 endpoint_url='https://bucket.poehali.dev',
