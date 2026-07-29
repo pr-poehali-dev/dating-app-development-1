@@ -125,11 +125,25 @@ def check_rate_limit(cur, ip: str, action: str, max_attempts: int, window_minute
     count = cur.fetchone()[0]
     return count >= max_attempts
 
+def cleanup_security_logs(cur):
+    """Периодическая автоочистка журналов безопасности (вызывается с малой
+    вероятностью, чтобы не нагружать каждый запрос). Записи попыток входа
+    старше 24 часов бесполезны (окна rate-limit — минуты), журнал событий
+    безопасности храним 90 дней."""
+    try:
+        cur.execute("DELETE FROM auth_attempts WHERE created_at < NOW() - INTERVAL '24 hours'")
+        cur.execute("DELETE FROM security_events WHERE created_at < NOW() - INTERVAL '90 days'")
+    except Exception:
+        pass
+
 def log_attempt(cur, ip: str, action: str, success: bool, email: str = None):
     cur.execute(
         "INSERT INTO auth_attempts (ip, action, success, email) VALUES (%s, %s, %s, %s)",
         (ip, action, success, email)
     )
+    # ~2% запросов запускают уборку старых записей
+    if secrets.randbelow(50) == 0:
+        cleanup_security_logs(cur)
 
 def audit(cur, event_type: str, severity: str, ip: str = None, user_id: int = None, email: str = None, details: dict = None):
     cur.execute(

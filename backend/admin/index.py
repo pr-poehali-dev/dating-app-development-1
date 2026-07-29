@@ -8,6 +8,7 @@ import os
 import time
 import uuid
 import base64
+import random
 import urllib.request
 import urllib.error
 import psycopg2
@@ -185,6 +186,10 @@ def handler(event: dict, context) -> dict:
                 "INSERT INTO auth_attempts (ip, action, success) VALUES (%s, 'admin_login', FALSE)",
                 (ip,)
             )
+            # Периодическая автоочистка старых записей журналов
+            if random.randint(0, 49) == 0:
+                cur_tmp.execute("DELETE FROM auth_attempts WHERE created_at < NOW() - INTERVAL '24 hours'")
+                cur_tmp.execute("DELETE FROM security_events WHERE created_at < NOW() - INTERVAL '90 days'")
             conn_tmp.commit()
             conn_tmp.close()
         except Exception:

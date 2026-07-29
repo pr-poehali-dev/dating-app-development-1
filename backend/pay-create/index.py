@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+import random
 import hashlib
 import psycopg2
 import urllib.request
@@ -92,6 +93,9 @@ def handler(event: dict, context) -> dict:
                 "INSERT INTO auth_attempts (ip, action, success) VALUES (%s, 'pay_create', TRUE)",
                 (client_ip,)
             )
+            # Периодическая автоочистка старых записей журнала попыток
+            if random.randint(0, 49) == 0:
+                _rcur.execute("DELETE FROM auth_attempts WHERE created_at < NOW() - INTERVAL '24 hours'")
             _rc.commit()
             _rc.close()
             if _too_many:
