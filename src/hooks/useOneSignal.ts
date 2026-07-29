@@ -269,6 +269,36 @@ async function serverLinkNative(): Promise<void> {
   } catch { /* нет данных — ничего страшно */ }
 }
 
+/**
+ * Читает идентификатор устройства из веб-SDK OneSignal и просит сервер привязать
+ * его к аккаунту. Резервный канал для браузера/PWA: срабатывает, даже если
+ * клиентский OneSignal.login() не успел прописать external_id (частая причина
+ * ошибки invalid_aliases — устройство ещё не связано с аккаунтом на сервере).
+ */
+async function serverLinkWeb(userId: string): Promise<void> {
+  try {
+    const info = await new Promise<{ onesignal_id: string; subscription_id: string }>((resolve) => {
+      const timer = setTimeout(() => resolve({ onesignal_id: "", subscription_id: "" }), 8000);
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push((OneSignal: unknown) => {
+        try {
+          const os = OneSignal as {
+            User?: { onesignalId?: string; PushSubscription?: { id?: string } };
+          };
+          resolve({
+            onesignal_id: os.User?.onesignalId || "",
+            subscription_id: os.User?.PushSubscription?.id || "",
+          });
+        } catch { resolve({ onesignal_id: "", subscription_id: "" }); }
+        clearTimeout(timer);
+      });
+    });
+    if (!info.onesignal_id && !info.subscription_id) return;
+    if (lastUserId !== userId) return;
+    await pushApi.link({ subscription_id: info.subscription_id, onesignal_id: info.onesignal_id });
+  } catch { /* нет данных — ничего страшного */ }
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
@@ -284,6 +314,9 @@ export async function loginOneSignal(userId: number): Promise<void> {
   window.OneSignalDeferred.push(async (OneSignal) => {
     try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
   });
+  // Резервно привязываем на сервере по onesignal_id устройства (на случай, если
+  // клиентский login() не прописал external_id — тогда адресные пуши не доходят)
+  void serverLinkWeb(String(userId));
 }
 
 /** Отвязать пользователя (при выходе). */
