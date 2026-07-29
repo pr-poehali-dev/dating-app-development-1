@@ -269,6 +269,36 @@ async function serverLinkNative(): Promise<void> {
   } catch { /* нет данных — ничего страшно */ }
 }
 
+/**
+ * Резервная серверная привязка для браузера/PWA.
+ * Берёт ТОЛЬКО onesignal_id устройства (идентификатор устройства в OneSignal)
+ * и просит сервер добавить ему alias external_id. Этот путь безопасен: он не
+ * трогает тип подписки устройства (в отличие от передачи subscription_id),
+ * поэтому не может сломать доставку уже работающих пушей.
+ * Ждёт появления onesignal_id с повторами — на свежей сессии он готов не сразу.
+ */
+async function serverLinkWebById(userId: string): Promise<void> {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (lastUserId !== userId) return;
+    const oneSignalId = await new Promise<string>((resolve) => {
+      const timer = setTimeout(() => resolve(""), 5000);
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      window.OneSignalDeferred.push((OneSignal: unknown) => {
+        clearTimeout(timer);
+        try {
+          const os = OneSignal as { User?: { onesignalId?: string } };
+          resolve(os.User?.onesignalId || "");
+        } catch { resolve(""); }
+      });
+    });
+    if (oneSignalId) {
+      try { await pushApi.link({ onesignal_id: oneSignalId }); } catch { /* ignore */ }
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
@@ -284,6 +314,8 @@ export async function loginOneSignal(userId: number): Promise<void> {
   window.OneSignalDeferred.push(async (OneSignal) => {
     try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
   });
+  // Резервная серверная привязка по onesignal_id (безопасна, не ломает доставку)
+  void serverLinkWebById(String(userId));
 }
 
 /** Отвязать пользователя (при выходе). */
