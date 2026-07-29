@@ -90,13 +90,10 @@ function promptNativePush(): boolean {
     const bridge = w.median?.onesignal || w.gonative?.onesignal;
     if (bridge?.promptForPushNotifications) { bridge.promptForPushNotifications(); return true; }
     if (bridge?.register) { bridge.register(); return true; }
-    // Резервный способ — вызов по протоколу JS Bridge
-    const scheme = (w as { gonative?: unknown; median?: unknown }).gonative && !(w as { median?: unknown }).median ? "gonative" : "median";
-    const frame = document.createElement("iframe");
-    frame.style.display = "none";
-    frame.src = `${scheme}://onesignal/promptForPushNotifications`;
-    document.body.appendChild(frame);
-    setTimeout(() => frame.remove(), 300);
+    // Прямого JS-моста нет. НЕ создаём iframe со схемой median://…/gonative://… —
+    // Android не знает такую схему и показывает ложное окно «установите приложение
+    // банка». В нативной APK OneSignal подключён нативно и сам запрашивает
+    // разрешение при первом запуске, поэтому здесь считаем задачу выполненной.
     return true;
   } catch {
     return false;
