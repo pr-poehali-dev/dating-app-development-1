@@ -247,26 +247,33 @@ function nativeSetExternalId(userId: string): void {
  * привязать их к аккаунту. Резервный канал: работает даже на старых сборках APK,
  * где нативный login() не срабатывает.
  */
-async function serverLinkNative(): Promise<void> {
-  try {
-    type Info = {
-      oneSignalUserId?: string;   // subscription id
-      oneSignalId?: string;
-      onesignalId?: string;
-      oneSignalPushToken?: string;
-    };
-    const w = window as unknown as {
-      median?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
-      gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
-    };
-    const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
-    if (typeof infoFn !== "function") return;
-    const info = await infoFn();
-    const subscription_id = info.oneSignalUserId || "";
-    const onesignal_id = info.oneSignalId || info.onesignalId || "";
-    if (!subscription_id && !onesignal_id) return;
-    await pushApi.link({ subscription_id, onesignal_id });
-  } catch { /* нет данных — ничего страшно */ }
+async function serverLinkNative(userId: string): Promise<void> {
+  type Info = {
+    oneSignalUserId?: string;   // subscription id
+    oneSignalId?: string;
+    onesignalId?: string;
+    oneSignalPushToken?: string;
+  };
+  const w = window as unknown as {
+    median?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+    gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
+  };
+  const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
+  if (typeof infoFn !== "function") return;
+  // Данные устройства у Median готовы не сразу после старта — пробуем с повторами
+  for (let attempt = 0; attempt < 8; attempt++) {
+    if (lastUserId !== userId) return;
+    try {
+      const info = await infoFn();
+      const subscription_id = info.oneSignalUserId || "";
+      const onesignal_id = info.oneSignalId || info.onesignalId || "";
+      if (subscription_id || onesignal_id) {
+        await pushApi.link({ subscription_id, onesignal_id });
+        return;
+      }
+    } catch { /* мост ещё не готов — повторим */ }
+    await new Promise((r) => setTimeout(r, 3000));
+  }
 }
 
 /**
@@ -306,7 +313,7 @@ export async function loginOneSignal(userId: number): Promise<void> {
   if (isNativeApp()) {
     nativeSetExternalId(String(userId));
     // Резервно просим сервер связать устройство (для старых сборок APK)
-    void serverLinkNative();
+    void serverLinkNative(String(userId));
     return;
   }
   await initOneSignal();
