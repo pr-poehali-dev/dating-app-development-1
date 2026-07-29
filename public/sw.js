@@ -1,6 +1,6 @@
-/* Полутон Service Worker v3 — офлайн, кеш, push, видеозвонки, фоновая синхронизация */
+/* Полутон Service Worker v4 — офлайн, кеш, push, видеозвонки, фоновая синхронизация */
 
-const APP_VERSION = "polyuton-v3";
+const APP_VERSION = "polyuton-v4";
 const STATIC_CACHE = `${APP_VERSION}-static`;
 const DYNAMIC_CACHE = `${APP_VERSION}-dynamic`;
 const IMAGE_CACHE = `${APP_VERSION}-images`;
@@ -130,9 +130,17 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  /* Статические ассеты (JS/CSS/шрифты) — cache-first */
-  if (isStaticAsset(url)) {
+  /* Шрифты — cache-first (не меняются, можно держать долго) */
+  if (/\.(woff2?|ttf)(\?.*)?$/i.test(url.pathname)) {
     e.respondWith(cacheFirst(e.request, STATIC_CACHE));
+    return;
+  }
+
+  /* JS/CSS приложения — network-first: всегда берём свежую версию из сети,
+     кэш только как запасной вариант офлайн. Иначе после новой сборки
+     приложение (особенно в APK-обёртке) продолжало бы крутить старый код. */
+  if (isStaticAsset(url)) {
+    e.respondWith(networkFirst(e.request, STATIC_CACHE));
     return;
   }
 
