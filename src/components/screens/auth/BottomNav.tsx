@@ -3,7 +3,7 @@ import { haptic } from "@/hooks/useNative";
 
 type Screen = "discover" | "matches" | "likes" | "profile" | "chat" | "filter" | "premium" | "photos" | "live" | "verify" | "admin_verify";
 
-export function BottomNav({ active, onChange, unreadMessages = 0, likesCount = 0 }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number; likesCount?: number }) {
+export function BottomNav({ active, onChange, unreadMessages = 0, likesCount = 0, profilePhoto }: { active: Screen; onChange: (s: Screen) => void; unreadMessages?: number; likesCount?: number; profilePhoto?: string }) {
   const items: { screen: Screen; icon: string; label: string; badge?: number }[] = [
     { screen: "discover", icon: "House",              label: "Главная" },
     { screen: "photos",   icon: "Compass",            label: "Поиск" },
@@ -85,19 +85,37 @@ export function BottomNav({ active, onChange, unreadMessages = 0, likesCount = 0
                 style={{ zIndex: 1, minWidth: 0 }}
               >
                 <div key={isActive ? "on" : "off"} className={isActive ? "nav-icon-active" : ""}>
-                  <Icon
-                    name={item.icon as "House"|"Compass"|"Flame"|"MessageCircleHeart"|"Heart"|"CircleUserRound"}
-                    size={19}
-                    strokeWidth={isActive ? 2.3 : 1.7}
-                    style={{
-                      color: isActive
-                        ? "#fff"
-                        : isLive
-                        ? "rgba(255,140,50,0.6)"
-                        : "rgba(255,255,255,0.4)",
-                      transition: "color 0.2s",
-                    }}
-                  />
+                  {item.screen === "profile" && profilePhoto ? (
+                    <img
+                      src={profilePhoto}
+                      alt="Профиль"
+                      style={{
+                        width: 21,
+                        height: 21,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: isActive
+                          ? "2px solid #fff"
+                          : "2px solid rgba(255,255,255,0.35)",
+                        opacity: isActive ? 1 : 0.85,
+                        transition: "border-color 0.2s, opacity 0.2s",
+                      }}
+                    />
+                  ) : (
+                    <Icon
+                      name={item.icon as "House"|"Compass"|"Flame"|"MessageCircleHeart"|"Heart"|"CircleUserRound"}
+                      size={19}
+                      strokeWidth={isActive ? 2.3 : 1.7}
+                      style={{
+                        color: isActive
+                          ? "#fff"
+                          : isLive
+                          ? "rgba(255,140,50,0.6)"
+                          : "rgba(255,255,255,0.4)",
+                        transition: "color 0.2s",
+                      }}
+                    />
+                  )}
                 </div>
 
                 {/* Бейдж */}

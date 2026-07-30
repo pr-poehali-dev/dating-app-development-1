@@ -95,7 +95,7 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
             opacity: navVisible ? 1 : 0,
             transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.22s ease",
           }}>
-            <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} likesCount={unreadLikes} />
+            <BottomNav active={screen} onChange={(s) => navigateTo(s as Screen)} unreadMessages={unreadMessages} likesCount={unreadLikes} profilePhoto={currentUser.photo_url} />
           </div>
         )}
       </div>
