@@ -242,7 +242,7 @@ export const profilesApi = {
   },
 
   dailyMatch: () =>
-    req<{ matches: DailyMatch[]; date: string }>("profiles", "daily_match", {}),
+    req<{ matches: DailyMatch[]; date: string; premium_required?: boolean }>("profiles", "daily_match", {}),
 
   updateMe: (data: Partial<Profile>) =>
     req<{ ok: boolean }>("profiles", "update_me", {

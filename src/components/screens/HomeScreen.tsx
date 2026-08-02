@@ -228,7 +228,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
 
       {/* Знакомство дня */}
       {showDailyMatch && (
-        <DailyMatchScreen onClose={() => setShowDailyMatch(false)} onOpenChat={onOpenChat} />
+        <DailyMatchScreen onClose={() => setShowDailyMatch(false)} onOpenChat={onOpenChat} isPremium={!!currentUser.premium} onPremium={() => { setShowDailyMatch(false); onPremium?.(); }} />
       )}
 
       {/* Сетка новых пользователей */}

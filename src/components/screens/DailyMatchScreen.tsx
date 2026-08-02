@@ -5,16 +5,20 @@ import { trackTask } from "@/lib/trackTask";
 
 const DEFAULT_AVATAR = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png";
 
-export function DailyMatchScreen({ onClose, onOpenChat }: { onClose: () => void; onOpenChat?: (matchId: number) => void }) {
+export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPremium }: { onClose: () => void; onOpenChat?: (matchId: number) => void; isPremium?: boolean; onPremium?: () => void }) {
   const [matches, setMatches] = useState<DailyMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [idx, setIdx] = useState(0);
   const [liking, setLiking] = useState(false);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+  const [premiumRequired, setPremiumRequired] = useState(!isPremium);
 
   useEffect(() => {
     profilesApi.dailyMatch()
-      .then(d => setMatches(d.matches || []))
+      .then(d => {
+        if (d.premium_required) { setPremiumRequired(true); return; }
+        setMatches(d.matches || []);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
     trackTask("open_daily_match");
@@ -57,6 +61,31 @@ export function DailyMatchScreen({ onClose, onOpenChat }: { onClose: () => void;
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <Icon name="Loader2" size={30} className="animate-spin text-white/40" />
+        </div>
+      ) : premiumRequired ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5 animate-in fade-in duration-500">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full blur-2xl opacity-60"
+              style={{ background: "radial-gradient(circle,#FFC107,transparent 70%)" }} />
+            <div className="relative w-24 h-24 rounded-full flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg,rgba(255,193,7,0.22),rgba(255,45,120,0.18))",
+                border: "1px solid rgba(255,193,7,0.4)",
+                boxShadow: "0 8px 32px rgba(255,193,7,0.28), inset 0 1px 0 rgba(255,255,255,0.12)",
+              }}>
+              <Icon name="Crown" size={38} style={{ color: "#FFC107" }} />
+            </div>
+            <Icon name="Sparkles" size={16} className="absolute -top-1 -right-1 text-amber-300 animate-pulse" />
+          </div>
+          <div className="text-center">
+            <p className="text-white font-black text-lg">Только для Premium</p>
+            <p className="text-white/55 text-sm mt-1.5 leading-snug">Необходимо приобрести Premium,<br />чтобы видеть анкеты, которые<br />ИИ подбирает специально для тебя</p>
+          </div>
+          <button onClick={() => onPremium?.()} className="px-7 py-3 rounded-2xl text-white text-sm font-black active:scale-95 transition-transform flex items-center gap-2"
+            style={{ background: "linear-gradient(135deg,#FFC107,#FF2D78)", boxShadow: "0 6px 24px rgba(255,45,120,0.4)" }}>
+            <Icon name="Crown" size={17} /> Приобрести Premium
+          </button>
+          <button onClick={onClose} className="text-white/40 text-sm font-medium active:scale-95 transition-transform">Позже</button>
         </div>
       ) : !current ? (
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-5 animate-in fade-in duration-500">

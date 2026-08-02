@@ -356,6 +356,9 @@ def handler(event: dict, context) -> dict:
 
         # ── Знакомство дня: умный подбор 3 анкет в день с кэшем ────────────────
         if action == 'daily_match':
+            # Доступно только по подписке Premium
+            if not me.get('premium'):
+                return resp(200, {'matches': [], 'date': str(datetime.date.today()), 'premium_required': True})
             today = datetime.date.today()
             # 1. Уже подобранные на сегодня — берём из кэша
             cur.execute(
