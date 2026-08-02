@@ -269,16 +269,17 @@ def handler(event: dict, context) -> dict:
         conn = get_conn()
         try:
             cur = conn.cursor()
-            # Все пользователи с активной подпиской на пуши (не удалённые)
+            # «Знакомство дня» доступно только по Premium — шлём пуш только им.
             cur.execute(
-                "SELECT DISTINCT ps.user_id FROM push_subscriptions ps "
-                "JOIN users u ON u.id = ps.user_id "
-                "WHERE u.removed_at IS NULL"
+                "SELECT id FROM users WHERE removed_at IS NULL AND premium = TRUE"
             )
             user_ids = [r[0] for r in cur.fetchall()]
             sent = 0
             for uid in user_ids:
                 try:
+                    # OneSignal — доходит даже при закрытом приложении
+                    onesignal_send_to_user(uid, title, text, link)
+                    # Web Push — резервный канал
                     send_push_to_user(cur, conn, uid, title, text, link)
                     sent += 1
                 except Exception:
