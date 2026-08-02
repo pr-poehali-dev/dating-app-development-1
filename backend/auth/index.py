@@ -29,6 +29,42 @@ def get_conn():
 def hash_password(p: str) -> str:
     return hashlib.sha256(p.encode()).hexdigest()
 
+def send_welcome_message(cur, user_id: int) -> None:
+    """Приветственное сообщение от бота Полутон новому пользователю после регистрации."""
+    bot_email = 'system@lbloom.ru'
+    bot_photo = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
+    cur.execute("SELECT id FROM users WHERE email = %s LIMIT 1", (bot_email,))
+    bot_row = cur.fetchone()
+    if not bot_row:
+        cur.execute(
+            "INSERT INTO users (name, email, password_hash, photo_url, verified) "
+            "VALUES ('Полутон', %s, 'system_no_login', %s, TRUE) RETURNING id",
+            (bot_email, bot_photo))
+        bot_row = cur.fetchone()
+    if not bot_row or bot_row[0] == user_id:
+        return
+    bot_id = bot_row[0]
+    cur.execute(
+        "SELECT id FROM matches WHERE (user1_id=%s AND user2_id=%s) OR (user1_id=%s AND user2_id=%s) LIMIT 1",
+        (bot_id, user_id, user_id, bot_id))
+    m = cur.fetchone()
+    if not m:
+        cur.execute("INSERT INTO matches (user1_id, user2_id) VALUES (%s, %s) RETURNING id", (bot_id, user_id))
+        m = cur.fetchone()
+    if not m:
+        return
+    text = (
+        "Добро пожаловать в Полутон 💜\n\n"
+        "Вот как получить максимум от приложения с первого дня!\n\n"
+        "😍 Заполненный профиль = больше внимания. Открой свой профиль, добавь фото и расскажи о себе — так тебе будут чаще писать.\n\n"
+        "📸 Верифицированный профиль = больше доверия. Пройди верификацию в профиле и получи постоянный значок «настоящий» — на такие анкеты откликаются охотнее.\n\n"
+        "✨ «Знакомство дня» — каждый день ИИ подбирает для тебя людей по интересам. Загляни и найди свою пару! Функция доступна по подписке Premium.\n\n"
+        "🔥 Хочешь ещё больше от Полутона? Загляни в раздел с пакетами подписки.\n\n"
+        "🛡️ Будь в безопасности. Сообщай о нарушениях через функцию жалоб, а перед встречей проверяй собеседника по видеозвонку."
+    )
+    cur.execute("INSERT INTO messages (match_id, sender_id, text) VALUES (%s, %s, %s)",
+                (m[0], bot_id, text))
+
 def hash_password_legacy(p: str) -> str:
     salt = os.environ.get('PASSWORD_SALT', 'lb_default_salt_v1')
     return hashlib.sha256(f"{salt}{p}".encode()).hexdigest()
@@ -281,6 +317,10 @@ def handler(event: dict, context) -> dict:
             cur.execute("INSERT INTO sessions (user_id, token, ip, user_agent) VALUES (%s, %s, %s, %s)", (user_id, new_token, ip, ua))
             log_attempt(cur, ip, 'register', True, email)
             audit(cur, 'register', 'info', ip=ip, user_id=user_id, email=email)
+            try:
+                send_welcome_message(cur, user_id)
+            except Exception:
+                pass
             conn.commit()
             cur.execute(
                 "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
