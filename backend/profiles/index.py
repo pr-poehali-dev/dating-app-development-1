@@ -7,6 +7,7 @@ import os
 import base64
 import uuid
 import random
+import datetime
 import smtplib
 import ssl
 import urllib.request
@@ -352,6 +353,128 @@ def handler(event: dict, context) -> dict:
                     item['age'] = None
                 profiles_list.append(item)
             return resp(200, {'profiles': profiles_list})
+
+        # ── Знакомство дня: умный подбор 3 анкет в день с кэшем ────────────────
+        if action == 'daily_match':
+            today = datetime.date.today()
+            # 1. Уже подобранные на сегодня — берём из кэша
+            cur.execute(
+                "SELECT dm.candidate_id, dm.score, dm.reason, dm.seen, "
+                "       u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.zodiac, u.show_age "
+                "FROM daily_matches dm JOIN users u ON u.id = dm.candidate_id "
+                "WHERE dm.user_id = %s AND dm.match_date = %s AND u.removed_at IS NULL "
+                "ORDER BY dm.score DESC",
+                (me['id'], today)
+            )
+            cached = cur.fetchall()
+
+            if not cached:
+                # 2. Кэша нет — подбираем. Берём предпочтения и интересы себя
+                cur.execute(
+                    "SELECT gender, looking_for, city, age, tags, zodiac FROM users WHERE id = %s",
+                    (me['id'],)
+                )
+                mrow = cur.fetchone()
+                my_gender = mrow[0] if mrow else None
+                my_looking = mrow[1] if mrow else None
+                my_city = mrow[2] if mrow else None
+                my_age = mrow[3] if mrow else None
+                my_tags = mrow[4] if mrow else None
+                my_tags = [t.lower() for t in my_tags] if isinstance(my_tags, list) else []
+                my_zodiac = mrow[5] if mrow else None
+
+                conds = [
+                    "u.id != %s",
+                    "u.incognito = FALSE",
+                    "u.removed_at IS NULL",
+                    "u.email != 'system@lbloom.ru'",
+                    "u.photo_url IS NOT NULL",
+                    "u.id NOT IN (SELECT blocked_id FROM user_blocks WHERE blocker_id = %s)",
+                    "u.id NOT IN (SELECT blocker_id FROM user_blocks WHERE blocked_id = %s)",
+                    "u.id NOT IN (SELECT to_user_id FROM likes WHERE from_user_id = %s)",
+                ]
+                cparams = [me['id'], me['id'], me['id'], me['id']]
+
+                # Пол — по предпочтению «кого ищу»
+                if my_looking == 'female':
+                    conds.append("u.gender = 'female'")
+                elif my_looking == 'male':
+                    conds.append("u.gender = 'male'")
+
+                where_c = " AND ".join(conds)
+                cur.execute(f"""
+                    SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.zodiac, u.gender, u.show_age
+                    FROM users u
+                    WHERE {where_c}
+                    ORDER BY u.last_seen DESC NULLS LAST
+                    LIMIT 200
+                """, cparams)
+                cand_rows = cur.fetchall()
+
+                scored = []
+                for c in cand_rows:
+                    c_id, c_name, c_age, c_city, c_bio, c_photo, c_tags, c_verified, c_zodiac, c_gender, c_show_age = c
+                    c_tags_l = [t.lower() for t in c_tags] if isinstance(c_tags, list) else []
+                    common = [t for t in c_tags_l if t in my_tags]
+                    score = 0
+                    reasons = []
+                    if common:
+                        score += len(common) * 20
+                        reasons.append(f"{len(common)} общих интересов" if len(common) != 1 else "общий интерес")
+                    if my_city and c_city and my_city.strip().lower() == c_city.strip().lower():
+                        score += 25
+                        reasons.append("один город")
+                    if my_age and c_age and abs(int(my_age) - int(c_age)) <= 3:
+                        score += 15
+                        reasons.append("близки по возрасту")
+                    if my_zodiac and c_zodiac and my_zodiac == c_zodiac:
+                        score += 10
+                        reasons.append("один знак зодиака")
+                    if c_verified:
+                        score += 8
+                    # немного случайности, чтобы подборка не была всегда одинаковой
+                    score += random.randint(0, 7)
+                    if not reasons:
+                        reasons.append("новое интересное знакомство")
+                    reason = ", ".join(reasons[:2]).capitalize()
+                    # приводим к «проценту совместимости» 40..99 для красивого бейджа
+                    pct = min(99, 40 + score)
+                    scored.append((c_id, pct, reason, c_name, c_age, c_city, c_bio, c_photo, c_tags, c_verified, c_zodiac, c_show_age))
+
+                scored.sort(key=lambda x: x[1], reverse=True)
+                top = scored[:3]
+
+                for it in top:
+                    cur.execute(
+                        "INSERT INTO daily_matches (user_id, match_date, candidate_id, score, reason, seen) "
+                        "VALUES (%s, %s, %s, %s, %s, FALSE) ON CONFLICT (user_id, match_date, candidate_id) DO NOTHING",
+                        (me['id'], today, it[0], it[1], it[2])
+                    )
+                conn.commit()
+
+                cached = [
+                    (it[0], it[1], it[2], False, it[3], it[4], it[5], it[6], it[7], it[8], it[9], it[10], it[11])
+                    for it in top
+                ]
+
+            matches_out = []
+            for row in cached:
+                cid, score, reason, seen, name, age, city, bio, photo, tags, verified, zodiac, show_age = row
+                matches_out.append({
+                    'id': cid,
+                    'name': name,
+                    'age': age if show_age else None,
+                    'city': city,
+                    'bio': bio,
+                    'photo_url': photo,
+                    'tags': tags if isinstance(tags, list) else [],
+                    'verified': bool(verified),
+                    'zodiac': zodiac,
+                    'score': int(score),
+                    'reason': reason,
+                    'seen': bool(seen),
+                })
+            return resp(200, {'matches': matches_out, 'date': str(today)})
 
         # Сохранить геолокацию
         # ── Инкогнито ──────────────────────────────────────────────────────────
