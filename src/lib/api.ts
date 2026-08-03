@@ -574,6 +574,12 @@ export const messagesApi = {
   icebreakers: (matchId: number) =>
     req<{ icebreakers: string[] }>("messages", "icebreakers", {}, { match_id: String(matchId) }),
 
+  openChat: (to_user_id: number) =>
+    req<{ ok: boolean; match_id: number }>("messages", "open_chat", {
+      method: "POST",
+      body: JSON.stringify({ to_user_id }),
+    }),
+
   sendDirect: (to_user_id: number, text: string) =>
     req<{ ok: boolean; match_id: number }>("messages", "send_direct", {
       method: "POST",

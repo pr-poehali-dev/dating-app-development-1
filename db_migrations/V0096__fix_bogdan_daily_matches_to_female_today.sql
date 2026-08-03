@@ -1,0 +1,3 @@
+UPDATE daily_matches SET candidate_id = 41, score = 85, reason = 'Общий интерес, один город' WHERE user_id = 1 AND match_date = CURRENT_DATE AND candidate_id = 30;
+UPDATE daily_matches SET candidate_id = 43, score = 72, reason = 'Общий интерес, близки по возрасту' WHERE user_id = 1 AND match_date = CURRENT_DATE AND candidate_id = 66;
+UPDATE daily_matches SET candidate_id = 63, score = 70, reason = 'Общий интерес' WHERE user_id = 1 AND match_date = CURRENT_DATE AND candidate_id = 72;

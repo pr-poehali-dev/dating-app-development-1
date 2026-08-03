@@ -398,10 +398,10 @@ def handler(event: dict, context) -> dict:
                 ]
                 cparams = [me['id'], me['id'], me['id'], me['id']]
 
-                # Пол — по предпочтению «кого ищу»
-                if my_looking == 'female':
+                # Пол: мужчине показываем девушек, женщине — парней
+                if my_gender == 'male':
                     conds.append("u.gender = 'female'")
-                elif my_looking == 'male':
+                elif my_gender == 'female':
                     conds.append("u.gender = 'male'")
 
                 where_c = " AND ".join(conds)

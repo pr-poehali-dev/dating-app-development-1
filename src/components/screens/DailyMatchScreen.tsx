@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
-import { profilesApi, likesApi, type DailyMatch } from "@/lib/api";
+import { profilesApi, messagesApi, type DailyMatch } from "@/lib/api";
 import { trackTask } from "@/lib/trackTask";
 
 const DEFAULT_AVATAR = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png";
@@ -9,8 +9,7 @@ export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPrem
   const [matches, setMatches] = useState<DailyMatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [idx, setIdx] = useState(0);
-  const [liking, setLiking] = useState(false);
-  const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+  const [writing, setWriting] = useState(false);
   const [premiumRequired, setPremiumRequired] = useState(!isPremium);
 
   useEffect(() => {
@@ -26,18 +25,16 @@ export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPrem
 
   const current = matches[idx];
 
-  const handleLike = async () => {
-    if (!current || liking || likedIds.has(current.id)) return;
-    setLiking(true);
+  const handleWrite = async () => {
+    if (!current || writing) return;
+    setWriting(true);
     try {
-      const res = await likesApi.send(current.id);
-      trackTask("send_likes");
-      setLikedIds(prev => new Set([...prev, current.id]));
-      if (res.match && res.match_id && onOpenChat) {
-        window.dispatchEvent(new CustomEvent("app:match"));
+      const res = await messagesApi.openChat(current.id);
+      if (res.match_id && onOpenChat) {
+        onClose();
+        onOpenChat(res.match_id);
       }
-    } catch { /* ignore */ } finally { setLiking(false); }
-    setTimeout(() => { if (idx < matches.length - 1) setIdx(i => i + 1); }, 500);
+    } catch { /* ignore */ } finally { setWriting(false); }
   };
 
   return (
@@ -176,13 +173,12 @@ export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPrem
               style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)" }}>
               <Icon name="X" size={22} className="text-white/70" />
             </button>
-            <button onClick={handleLike} disabled={liking || likedIds.has(current.id)}
+            <button onClick={handleWrite} disabled={writing}
               className="flex-1 h-14 rounded-full flex items-center justify-center gap-2 text-white font-black active:scale-[0.98] transition-all disabled:opacity-70"
               style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)", boxShadow: "0 6px 24px rgba(255,45,120,0.5)" }}>
-              {likedIds.has(current.id)
-                ? <><Icon name="Check" size={20} /> Лайк отправлен</>
-                : liking ? <Icon name="Loader2" size={20} className="animate-spin" />
-                : <><Icon name="Heart" size={20} /> Нравится</>}
+              {writing
+                ? <Icon name="Loader2" size={20} className="animate-spin" />
+                : <><Icon name="MessageCircle" size={20} /> Написать</>}
             </button>
           </div>
         </div>
