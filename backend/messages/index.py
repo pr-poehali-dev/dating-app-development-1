@@ -123,6 +123,62 @@ def handler(event: dict, context) -> dict:
 
         cur = conn.cursor()
 
+        # Персональные фразы-«ледоколы» для начала разговора
+        if action == 'icebreakers':
+            try:
+                match_id = int(params.get('match_id', 0))
+            except (ValueError, TypeError):
+                return resp(400, {'error': 'Некорректный match_id'})
+            cur.execute(
+                "SELECT user1_id, user2_id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                (match_id, me['id'], me['id'])
+            )
+            mrow = cur.fetchone()
+            if not mrow:
+                return resp(403, {'error': 'Нет доступа'})
+            partner_id = mrow[1] if mrow[0] == me['id'] else mrow[0]
+            # Не показываем ледоколы для системного бота
+            cur.execute("SELECT name, city, tags, email FROM users WHERE id = %s", (partner_id,))
+            prow = cur.fetchone()
+            if not prow or prow[3] == 'system@lbloom.ru':
+                return resp(200, {'icebreakers': []})
+            p_name = (prow[0] or '').strip()
+            p_city = (prow[1] or '').strip()
+            p_tags = prow[2] if isinstance(prow[2], list) else []
+            # Мои интересы — чтобы найти общее
+            cur.execute("SELECT tags FROM users WHERE id = %s", (me['id'],))
+            myrow = cur.fetchone()
+            my_tags = myrow[0] if myrow and isinstance(myrow[0], list) else []
+            my_low = [t.lower() for t in my_tags]
+            common = [t for t in p_tags if t.lower() in my_low]
+
+            lines = []
+            hi = f'Привет, {p_name}!' if p_name else 'Привет!'
+            if common:
+                ci = common[0].lstrip('🎌 ').strip()
+                lines.append(f'{hi} Вижу, ты тоже увлекаешься «{ci}» — как давно?')
+                if len(common) > 1:
+                    ci2 = common[1].lstrip('🎌 ').strip()
+                    lines.append(f'О, у нас много общего — например, «{ci2}». Что посоветуешь новичку?')
+            if p_tags:
+                pi = p_tags[0].lstrip('🎌 ').strip()
+                lines.append(f'{hi} Заметил в профиле «{pi}» — расскажешь подробнее?')
+            if p_city:
+                lines.append(f'{hi} Ты из {p_city}? Какое любимое место в городе?')
+            # Универсальные, если данных мало
+            lines.append(f'{hi} Как проходит твой день?')
+            lines.append(f'{hi} Что тебя вдохновляет в последнее время?')
+            # Уникализируем и берём первые 4
+            seen = set()
+            uniq = []
+            for l in lines:
+                if l not in seen:
+                    seen.add(l)
+                    uniq.append(l)
+                if len(uniq) >= 4:
+                    break
+            return resp(200, {'icebreakers': uniq})
+
         if action == 'list':
             try:
                 match_id = int(params.get('match_id', 0))
