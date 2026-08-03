@@ -152,32 +152,46 @@ def handler(event: dict, context) -> dict:
             my_low = [t.lower() for t in my_tags]
             common = [t for t in p_tags if t.lower() in my_low]
 
+            try:
+                variant = int(params.get('variant', 0))
+            except (ValueError, TypeError):
+                variant = 0
+
             lines = []
             hi = f'Привет, {p_name}!' if p_name else 'Привет!'
-            if common:
-                ci = common[0].lstrip('🎌 ').strip()
+            # Фразы по общим интересам
+            for ct in common:
+                ci = ct.lstrip('🎌 ').strip()
                 lines.append(f'{hi} Вижу, ты тоже увлекаешься «{ci}» — как давно?')
-                if len(common) > 1:
-                    ci2 = common[1].lstrip('🎌 ').strip()
-                    lines.append(f'О, у нас много общего — например, «{ci2}». Что посоветуешь новичку?')
-            if p_tags:
-                pi = p_tags[0].lstrip('🎌 ').strip()
+                lines.append(f'О, у нас общий интерес — «{ci}». Что посоветуешь?')
+            # Фразы по интересам собеседника
+            for pt in p_tags:
+                pi = pt.lstrip('🎌 ').strip()
                 lines.append(f'{hi} Заметил в профиле «{pi}» — расскажешь подробнее?')
+                lines.append(f'{hi} А «{pi}» — это надолго или недавнее увлечение?')
+            # Фразы по городу
             if p_city:
                 lines.append(f'{hi} Ты из {p_city}? Какое любимое место в городе?')
-            # Универсальные, если данных мало
+                lines.append(f'{hi} Что посоветуешь посмотреть в {p_city}?')
+            # Универсальные
             lines.append(f'{hi} Как проходит твой день?')
             lines.append(f'{hi} Что тебя вдохновляет в последнее время?')
-            # Уникализируем и берём первые 4
+            lines.append(f'{hi} Чем любишь заниматься на выходных?')
+            lines.append(f'{hi} Кофе или чай? От ответа многое зависит :)')
+            lines.append(f'{hi} Расскажи, что подняло тебе настроение сегодня?')
+
+            # Уникализируем, сохраняя порядок
             seen = set()
             uniq = []
             for l in lines:
                 if l not in seen:
                     seen.add(l)
                     uniq.append(l)
-                if len(uniq) >= 4:
-                    break
-            return resp(200, {'icebreakers': uniq})
+            # Сдвигаем набор по variant, чтобы «Обновить» давало другие фразы
+            if uniq:
+                shift = (variant * 4) % len(uniq)
+                uniq = uniq[shift:] + uniq[:shift]
+            return resp(200, {'icebreakers': uniq[:4]})
 
         if action == 'list':
             try:

@@ -7,15 +7,17 @@ export function ChatIcebreakers({ matchId, onPick }: { matchId: number; onPick: 
   const [lines, setLines] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [hidden, setHidden] = useState(false);
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     let alive = true;
-    messagesApi.icebreakers(matchId)
+    setLoading(true);
+    messagesApi.icebreakers(matchId, nonce)
       .then(d => { if (alive) setLines(d.icebreakers || []); })
       .catch(() => {})
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [matchId]);
+  }, [matchId, nonce]);
 
   if (hidden || (!loading && lines.length === 0)) return null;
 
@@ -26,6 +28,10 @@ export function ChatIcebreakers({ matchId, onPick }: { matchId: number; onPick: 
         <div className="flex items-center gap-1.5 mb-2">
           <Icon name="Sparkles" size={14} className="text-pink-400" />
           <span className="text-white/80 text-xs font-bold flex-1">С чего начать разговор</span>
+          <button onClick={() => { if (!loading) setNonce(n => n + 1); }} disabled={loading}
+            className="text-white/40 hover:text-white/70 disabled:opacity-40 mr-1" title="Обновить фразы">
+            <Icon name="RefreshCw" size={13} className={loading ? "animate-spin" : ""} />
+          </button>
           <button onClick={() => setHidden(true)} className="text-white/35 hover:text-white/60">
             <Icon name="X" size={14} />
           </button>

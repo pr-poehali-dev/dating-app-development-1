@@ -571,8 +571,8 @@ export const messagesApi = {
       body: JSON.stringify({ match_id: matchId, text }),
     }),
 
-  icebreakers: (matchId: number) =>
-    req<{ icebreakers: string[] }>("messages", "icebreakers", {}, { match_id: String(matchId) }),
+  icebreakers: (matchId: number, variant = 0) =>
+    req<{ icebreakers: string[] }>("messages", "icebreakers", {}, { match_id: String(matchId), variant: String(variant) }),
 
   openChat: (to_user_id: number) =>
     req<{ ok: boolean; match_id: number }>("messages", "open_chat", {
