@@ -10,6 +10,7 @@ export { EditProfileModal } from "@/components/screens/EditProfileModal";
 export { VerifyScreen, AdminVerifyScreen } from "@/components/screens/VerifyScreens";
 
 import { EditProfileModal } from "@/components/screens/EditProfileModal";
+import { ImageCropModal } from "@/components/screens/profile/ImageCropModal";
 import { SettingsSubScreen } from "@/components/screens/SettingsSubScreen";
 import { ProfileTopBar, ProfileHeader } from "@/components/screens/profile/ProfileHeader";
 import { ProfilePhotosScreen } from "@/components/screens/profile/ProfilePhotosScreen";
@@ -43,6 +44,8 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
   const [localPhoto, setLocalPhoto] = useState(currentUser.photo_url || "");
   const [localCover, setLocalCover] = useState(currentUser.cover_url || "");
   const [editOpen, setEditOpen] = useState(false);
+  // Кадрирование фото перед загрузкой
+  const [cropState, setCropState] = useState<null | { src: string; mode: "avatar" | "cover" }>(null);
 
   useEffect(() => {
     if (currentUser.photo_url && !photoUploading) setLocalPhoto(currentUser.photo_url);
@@ -116,34 +119,49 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     }
   };
 
+  // Загрузка уже обрезанного аватара
+  const uploadAvatar = async (base64: string) => {
+    setPhotoError("");
+    setPhotoUploading(true);
+    setLocalPhoto(base64);
+    try {
+      const res = await profilesApi.uploadPhoto(base64, "image/jpeg");
+      setLocalPhoto(`${res.photo_url}?t=${Date.now()}`);
+      onPhotoUpdate(res.photo_url);
+    } catch (err: unknown) {
+      setPhotoError(err instanceof Error ? err.message : "Ошибка загрузки");
+      setLocalPhoto(currentUser.photo_url || "");
+    } finally { setPhotoUploading(false); }
+  };
+
+  // Загрузка уже обрезанной обложки
+  const uploadCover = async (base64: string) => {
+    setCoverUploading(true);
+    setLocalCover(base64);
+    try {
+      const res = await profilesApi.uploadCover(base64, "image/jpeg");
+      setLocalCover(`${res.cover_url}?t=${Date.now()}`);
+      onProfileUpdate({ cover_url: res.cover_url });
+    } catch { setLocalCover(currentUser.cover_url || ""); }
+    finally { setCoverUploading(false); }
+  };
+
   // Универсальный обработчик выбора фото в секции «Фото»
   const handlePhotoSectionFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
     if (!file.type.startsWith("image/")) return;
+    if (file.size > 10 * 1024 * 1024) { setPhotoError("Файл слишком большой (макс. 10 МБ)"); return; }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
       if (photoUploadMode === "cover") {
-        setCoverUploading(true);
-        setLocalCover(base64);
-        try {
-          const res = await profilesApi.uploadCover(base64, file.type);
-          setLocalCover(`${res.cover_url}?t=${Date.now()}`);
-          onProfileUpdate({ cover_url: res.cover_url });
-        } catch { setLocalCover(currentUser.cover_url || ""); }
-        finally { setCoverUploading(false); }
+        setCropState({ src: base64, mode: "cover" });
       } else if (photoUploadMode === "avatar") {
-        setPhotoUploading(true);
-        setLocalPhoto(base64);
-        try {
-          const res = await profilesApi.uploadPhoto(base64, file.type);
-          setLocalPhoto(`${res.photo_url}?t=${Date.now()}`);
-          onPhotoUpdate(res.photo_url);
-        } catch { setLocalPhoto(currentUser.photo_url || ""); }
-        finally { setPhotoUploading(false); }
+        setCropState({ src: base64, mode: "avatar" });
       } else {
+        // Галерея — загружаем без кадрирования
         setGalleryUploading(true);
         try {
           const res = await profilesApi.addProfilePhoto(base64, file.type);
@@ -154,7 +172,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     reader.readAsDataURL(file);
   };
 
-  // Загрузка аватара по клику прямо на фото
+  // Загрузка аватара по клику прямо на фото — открываем кадрирование
   const handleAvatarDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -162,18 +180,9 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
     if (!file.type.startsWith("image/")) { setPhotoError("Выбери изображение"); return; }
     if (file.size > 10 * 1024 * 1024) { setPhotoError("Файл слишком большой (макс. 10 МБ)"); return; }
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       const base64 = ev.target?.result as string;
-      setLocalPhoto(base64);
-      setPhotoUploading(true);
-      try {
-        const res = await profilesApi.uploadPhoto(base64, file.type);
-        setLocalPhoto(`${res.photo_url}?t=${Date.now()}`);
-        onPhotoUpdate(res.photo_url);
-      } catch (err: unknown) {
-        setPhotoError(err instanceof Error ? err.message : "Ошибка загрузки");
-        setLocalPhoto(currentUser.photo_url || "");
-      } finally { setPhotoUploading(false); }
+      setCropState({ src: base64, mode: "avatar" });
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -209,6 +218,23 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
 
   return (
     <>
+      {cropState && (
+        <ImageCropModal
+          src={cropState.src}
+          title={cropState.mode === "avatar" ? "Аватар" : "Обложка профиля"}
+          aspect={cropState.mode === "avatar" ? 1 : 16 / 9}
+          round={cropState.mode === "avatar"}
+          outW={cropState.mode === "avatar" ? 640 : 1280}
+          outH={cropState.mode === "avatar" ? 640 : 720}
+          onCancel={() => setCropState(null)}
+          onDone={(b64) => {
+            const mode = cropState.mode;
+            setCropState(null);
+            if (mode === "avatar") uploadAvatar(b64);
+            else uploadCover(b64);
+          }}
+        />
+      )}
       {editOpen && (
         <EditProfileModal user={currentUser} onSave={onProfileUpdate} onClose={() => setEditOpen(false)} />
       )}
