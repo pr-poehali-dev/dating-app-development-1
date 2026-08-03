@@ -727,7 +727,6 @@ def handler(event: dict, context) -> dict:
             if not active:
                 return resp(400, {'error': 'Промокод недействителен'})
             if expires_at and expires_at.tzinfo:
-                import datetime
                 if datetime.datetime.now(datetime.timezone.utc) > expires_at:
                     return resp(400, {'error': 'Срок действия промокода истёк'})
             if used_count >= max_uses:
