@@ -286,14 +286,34 @@ async function webServerLink(): Promise<void> {
     try {
       // Даём SDK время получить onesignalId после подписки
       let osId = OneSignal.User?.onesignalId || "";
-      const subId = OneSignal.User?.PushSubscription?.id || "";
-      for (let i = 0; i < 6 && !osId; i++) {
-        await new Promise((r) => setTimeout(r, 1000));
+      let subId = OneSignal.User?.PushSubscription?.id || "";
+      for (let i = 0; i < 8 && !osId && !subId; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
         osId = OneSignal.User?.onesignalId || "";
+        subId = OneSignal.User?.PushSubscription?.id || "";
       }
-      if (!osId && !subId) return;
+      if (!osId && !subId) {
+        // Сообщаем на сервер, что идентификаторы не появились — иначе причина
+        // молчаливой неудачи привязки остаётся невидимой в логах.
+        void pushApi.diag({
+          stage: "webServerLink",
+          reason: "no_ids",
+          native: isNativeApp(),
+          permission: !!OneSignal.Notifications?.permission,
+          optedIn: !!OneSignal.User?.PushSubscription?.optedIn,
+          ua: navigator.userAgent.slice(0, 180),
+        }).catch(() => {});
+        return;
+      }
       await pushApi.link({ subscription_id: subId, onesignal_id: osId });
-    } catch { /* нет данных — ничего страшного */ }
+    } catch (e) {
+      void pushApi.diag({
+        stage: "webServerLink",
+        reason: "exception",
+        error: String((e as Error)?.message || e).slice(0, 200),
+        native: isNativeApp(),
+      }).catch(() => {});
+    }
   });
 }
 
@@ -323,6 +343,15 @@ function linkWithRetries(userId: string): void {
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
+  // Отмечаем на сервере сам факт попытки привязки — чтобы в логах было видно,
+  // доходит ли дело до неё и в какой среде работает устройство.
+  void pushApi.diag({
+    stage: "loginOneSignal",
+    user_id: userId,
+    native: isNativeApp(),
+    permission: typeof Notification !== "undefined" ? Notification.permission : "n/a",
+    ua: navigator.userAgent.slice(0, 180),
+  }).catch(() => {});
   // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
   if (isNativeApp()) {
     linkWithRetries(String(userId));
