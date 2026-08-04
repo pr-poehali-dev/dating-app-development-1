@@ -233,18 +233,41 @@ function nativeSetExternalId(userId: string): void {
     const os = w.median?.onesignal || w.gonative?.onesignal;
 
     // Median SDK v5 (актуальный): median.onesignal.login({ externalId })
-    if (typeof os?.login === "function") { os.login({ externalId: userId }); return; }
+    if (typeof os?.login === "function") {
+      os.login({ externalId: userId });
+      void pushApi.diag({ stage: "nativeSetExternalId", method: "login", ok: true }).catch(() => {});
+      return;
+    }
     // Median SDK v4 (legacy): median.onesignal.externalUserId.set({ externalId })
     if (typeof os?.externalUserId?.set === "function") {
       os.externalUserId.set({ externalId: userId });
+      void pushApi.diag({ stage: "nativeSetExternalId", method: "externalUserId.set", ok: true }).catch(() => {});
       return;
     }
     // Универсальный JS-Bridge вызов Median по документированной команде
     const runner = w.median?.run || w.gonative?.run;
     if (typeof runner === "function") {
       runner(`median://onesignal/login?externalId=${encodeURIComponent(userId)}`);
+      void pushApi.diag({ stage: "nativeSetExternalId", method: "run_scheme", ok: true }).catch(() => {});
+      return;
     }
-  } catch { /* нет нативной обёртки */ }
+    // Ни один из мостов не найден — именно поэтому external_id не проставляется
+    void pushApi.diag({
+      stage: "nativeSetExternalId",
+      ok: false,
+      reason: "no_bridge",
+      hasMedian: !!w.median,
+      hasGonative: !!w.gonative,
+      hasOnesignalObj: !!os,
+    }).catch(() => {});
+  } catch (e) {
+    void pushApi.diag({
+      stage: "nativeSetExternalId",
+      ok: false,
+      reason: "exception",
+      error: String((e as Error)?.message || e).slice(0, 200),
+    }).catch(() => {});
+  }
 }
 
 /**
@@ -265,13 +288,32 @@ async function serverLinkNative(): Promise<void> {
       gonative?: { onesignal?: { onesignalInfo?: () => Promise<Info> } };
     };
     const infoFn = w.median?.onesignal?.onesignalInfo || w.gonative?.onesignal?.onesignalInfo;
-    if (typeof infoFn !== "function") return;
+    if (typeof infoFn !== "function") {
+      void pushApi.diag({ stage: "serverLinkNative", ok: false, reason: "no_info_fn" }).catch(() => {});
+      return;
+    }
     const info = await infoFn();
     const subscription_id = info.oneSignalUserId || "";
     const onesignal_id = info.oneSignalId || info.onesignalId || "";
-    if (!subscription_id && !onesignal_id) return;
+    if (!subscription_id && !onesignal_id) {
+      void pushApi.diag({
+        stage: "serverLinkNative",
+        ok: false,
+        reason: "empty_info",
+        infoKeys: Object.keys(info || {}),
+      }).catch(() => {});
+      return;
+    }
     await pushApi.link({ subscription_id, onesignal_id });
-  } catch { /* нет данных — ничего страшно */ }
+    void pushApi.diag({ stage: "serverLinkNative", ok: true, hasSubId: !!subscription_id, hasOsId: !!onesignal_id }).catch(() => {});
+  } catch (e) {
+    void pushApi.diag({
+      stage: "serverLinkNative",
+      ok: false,
+      reason: "exception",
+      error: String((e as Error)?.message || e).slice(0, 200),
+    }).catch(() => {});
+  }
 }
 
 /**
