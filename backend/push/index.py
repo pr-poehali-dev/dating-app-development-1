@@ -215,6 +215,56 @@ def onesignal_link_user(user_id: int, subscription_id: str = '', onesignal_id: s
     return {'ok': False, 'error': 'Нужен subscription_id или onesignal_id'}
 
 
+def onesignal_user_status(user_id: int) -> dict:
+    """Запрашивает у OneSignal состояние пользователя по External ID.
+
+    Возвращает: привязано ли устройство, сколько push-подписок, подписаны ли они.
+    """
+    app_id = os.environ.get('ONESIGNAL_APP_ID', '')
+    api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
+    if not app_id or not api_key:
+        return {'ok': False, 'error': 'Не заданы ключи OneSignal'}
+    scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
+    headers = {'Content-Type': 'application/json; charset=utf-8',
+               'Authorization': f'{scheme} {api_key}'}
+    url = f'https://api.onesignal.com/apps/{app_id}/users/by/external_id/{user_id}'
+    req = urllib.request.Request(url, headers=headers, method='GET')
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read().decode('utf-8') or '{}')
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {'ok': True, 'linked': False, 'devices': 0, 'subscribed': 0,
+                    'message': 'Устройство не привязано к аккаунту (в OneSignal нет пользователя с этим External ID). Пользователь должен войти в аккаунт и включить уведомления.'}
+        return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
+    except Exception as ex:
+        return {'ok': False, 'error': str(ex)}
+
+    subs = data.get('subscriptions') or []
+    push_subs = [s for s in subs if str(s.get('type', '')).lower().endswith('push')]
+    subscribed = [s for s in push_subs if s.get('enabled') and s.get('notification_types', 0) != 0]
+    devices_info = []
+    for s in push_subs:
+        devices_info.append({
+            'type': s.get('type'),
+            'device': s.get('device_model') or s.get('device_os') or '—',
+            'enabled': bool(s.get('enabled')),
+            'notification_types': s.get('notification_types'),
+        })
+    return {
+        'ok': True,
+        'linked': True,
+        'devices': len(push_subs),
+        'subscribed': len(subscribed),
+        'devices_info': devices_info,
+        'message': (
+            f'Устройство привязано. Активных push-подписок: {len(subscribed)} из {len(push_subs)}.'
+            if subscribed else
+            'Устройство привязано, но НЕ подписано на push (пользователь не разрешил уведомления или отключил их).'
+        ),
+    }
+
+
 def handler(event: dict, context) -> dict:
     """Управление push-подписками."""
     if event.get('httpMethod') == 'OPTIONS':
@@ -222,6 +272,18 @@ def handler(event: dict, context) -> dict:
 
     params = event.get('queryStringParameters') or {}
     action = params.get('action', '')
+
+    # Проверка статуса привязки пользователя в OneSignal (админ-токен)
+    if action == 'onesignal_status':
+        admin = (event.get('headers') or {}).get('X-Admin-Token', '') or \
+                (event.get('headers') or {}).get('x-admin-token', '')
+        if not admin or admin != os.environ.get('ADMIN_TOKEN', ''):
+            return resp(403, {'error': 'Нет доступа'})
+        uid = int(params.get('user_id', 0))
+        if not uid:
+            return resp(400, {'error': 'user_id обязателен'})
+        result = onesignal_user_status(uid)
+        return resp(200 if result.get('ok') else 502, result)
 
     # Тестовая отправка конкретному пользователю через OneSignal (админ-токен)
     if action == 'onesignal_test':

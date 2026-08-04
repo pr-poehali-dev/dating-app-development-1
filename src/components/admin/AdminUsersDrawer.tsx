@@ -35,6 +35,9 @@ function PushForm({ token, userId, userName, onDone }: { token: string; userId: 
   const [text, setText] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errMsg, setErrMsg] = useState("");
+  const [diag, setDiag] = useState<"idle" | "loading">("idle");
+  const [diagResult, setDiagResult] = useState<{ linked: boolean; devices: number; subscribed: number; message: string } | null>(null);
+  const [diagErr, setDiagErr] = useState("");
 
   const send = async () => {
     if (!text.trim()) return;
@@ -49,10 +52,49 @@ function PushForm({ token, userId, userName, onDone }: { token: string; userId: 
     }
   };
 
+  const checkStatus = async () => {
+    setDiag("loading"); setDiagErr(""); setDiagResult(null);
+    try {
+      const r = await adminApi.oneSignalUserStatus(token, userId);
+      setDiagResult(r);
+    } catch (e) {
+      setDiagErr(e instanceof Error ? e.message : "Ошибка");
+    } finally {
+      setDiag("idle");
+    }
+  };
+
+  const ok = diagResult?.linked && (diagResult?.subscribed ?? 0) > 0;
+
   return (
     <div className="w-full mt-2.5 flex flex-col gap-2 p-2.5 rounded-xl"
       style={{ background: "rgba(255,45,120,0.06)", border: "1px solid rgba(255,45,120,0.15)" }}>
       <p className="text-white/50 text-[11px] font-semibold">Push для {userName}</p>
+
+      {/* Диагностика привязки устройства */}
+      <button onClick={checkStatus} disabled={diag === "loading"}
+        className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-1.5"
+        style={{ background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.12)" }}>
+        {diag === "loading"
+          ? <Icon name="Loader2" size={13} className="animate-spin" />
+          : <><Icon name="Search" size={12} />Проверить подключение push</>}
+      </button>
+      {diagErr && <p className="text-red-400/80 text-[10px] break-all">{diagErr}</p>}
+      {diagResult && (
+        <div className="rounded-lg px-2.5 py-2 flex items-start gap-1.5"
+          style={{ background: ok ? "rgba(74,222,128,0.08)" : "rgba(248,113,113,0.08)", border: `1px solid ${ok ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)"}` }}>
+          <Icon name={ok ? "CheckCircle" : "AlertTriangle"} size={13} className={ok ? "text-green-400 mt-0.5 flex-shrink-0" : "text-red-400 mt-0.5 flex-shrink-0"} />
+          <div className="min-w-0">
+            <p className={`text-[10px] font-bold ${ok ? "text-green-400" : "text-red-400"}`}>
+              {ok ? "Push подключён" : "Push не дойдёт"}
+            </p>
+            <p className="text-white/55 text-[10px] leading-snug mt-0.5">{diagResult.message}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="h-px my-0.5" style={{ background: "rgba(255,255,255,0.08)" }} />
+
       <textarea value={text} onChange={e => setText(e.target.value)} rows={2} maxLength={180}
         placeholder="Текст уведомления..."
         className="w-full rounded-lg px-3 py-2 text-xs text-white placeholder-white/25 outline-none resize-none"

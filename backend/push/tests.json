@@ -22,6 +22,13 @@
       "body": {"subscription_id": "test"},
       "expectedStatus": 401,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "onesignal_status без админ-токена — 403",
+      "method": "GET",
+      "path": "/?action=onesignal_status&user_id=1",
+      "expectedStatus": 403,
+      "bodyMatcher": "partial"
     }
   ]
 }

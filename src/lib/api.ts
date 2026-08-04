@@ -1114,6 +1114,16 @@ export const adminApi = {
       return data as { ok: boolean; result?: { recipients?: number } };
     }),
 
+  oneSignalUserStatus: (token: string, user_id: number) =>
+    fetch(`${URLS.push}?action=onesignal_status&user_id=${user_id}`, {
+      method: 'GET',
+      headers: { 'X-Admin-Token': token },
+    }).then(async (res) => {
+      const data = await res.json();
+      if (!res.ok || data.ok === false) throw new Error(data.error || 'Ошибка проверки статуса');
+      return data as { ok: boolean; linked: boolean; devices: number; subscribed: number; message: string };
+    }),
+
   banners: (token: string) =>
     adminReq<{ banners: { id: number; title: string; subtitle: string; color_from: string; color_to: string; active: boolean; created_at: string }[] }>('banners', {}, token),
   bannerSave: (token: string, data: Record<string, unknown>) =>
