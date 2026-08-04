@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { messagesApi } from "@/lib/api";
+import { toast } from "@/hooks/use-toast";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 import { ICE_SERVERS, AUDIO_CONSTRAINTS, type CallState, type VideoCallProps } from "./constants";
 
@@ -238,9 +239,17 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
       await messagesApi.signalSend(matchId, "offer", JSON.stringify(offer));
     } catch (e) {
       console.error("[VideoCall] startCall error:", e);
+      const msg = e instanceof Error ? e.message : "";
+      if (msg.includes("заблокировал")) {
+        toast({
+          title: "Звонок невозможен",
+          description: "Пользователь вас заблокировал — вы не можете ему позвонить.",
+        });
+        onClose?.();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId]);
+  }, [matchId, onClose]);
 
   const acceptCall = useCallback(async () => {
     const offerPayload = pendingOfferRef.current;

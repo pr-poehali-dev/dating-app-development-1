@@ -474,11 +474,27 @@ def handler(event: dict, context) -> dict:
             if not match_id or not signal_type or not payload:
                 return resp(400, {'error': 'match_id, signal_type, payload обязательны'})
             cur.execute(
-                "SELECT id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
+                "SELECT user1_id, user2_id FROM matches WHERE id = %s AND (user1_id = %s OR user2_id = %s)",
                 (match_id, me['id'], me['id'])
             )
-            if not cur.fetchone():
+            mrow = cur.fetchone()
+            if not mrow:
                 return resp(403, {'error': 'Нет доступа'})
+            callee_id = mrow[1] if mrow[0] == me['id'] else mrow[0]
+
+            # При начале звонка (offer) проверяем, не заблокировал ли нас собеседник.
+            # Если да — не даём инициировать звонок и сообщаем звонящему причину.
+            if signal_type == 'offer':
+                cur.execute(
+                    "SELECT 1 FROM user_blocks WHERE blocker_id=%s AND blocked_id=%s",
+                    (callee_id, me['id'])
+                )
+                if cur.fetchone():
+                    return resp(403, {
+                        'error': 'Пользователь вас заблокировал — позвонить ему нельзя',
+                        'blocked': True,
+                    })
+
             cur.execute(
                 "INSERT INTO webrtc_signals (match_id, from_user_id, signal_type, payload) VALUES (%s, %s, %s, %s) RETURNING id",
                 (match_id, me['id'], signal_type, payload)
@@ -488,31 +504,24 @@ def handler(event: dict, context) -> dict:
             # При начале звонка (offer) шлём получателю push «Входящий видеозвонок»,
             # чтобы он увидел вызов даже если приложение свёрнуто или закрыто.
             if signal_type == 'offer':
-                cur.execute(
-                    "SELECT user1_id, user2_id FROM matches WHERE id = %s",
-                    (match_id,)
+                cur.execute("SELECT name FROM users WHERE id = %s", (me['id'],))
+                cn = cur.fetchone()
+                caller_name = cn[0] if cn else 'Кто-то'
+                # OneSignal — будит телефон даже при закрытом приложении (приоритетно)
+                _onesignal_to_user(
+                    callee_id,
+                    '📹 Входящий видеозвонок',
+                    f'{caller_name} звонит вам',
+                    f'/?call={match_id}',
+                    urgent=True,
                 )
-                mrow = cur.fetchone()
-                if mrow:
-                    callee_id = mrow[1] if mrow[0] == me['id'] else mrow[0]
-                    cur.execute("SELECT name FROM users WHERE id = %s", (me['id'],))
-                    cn = cur.fetchone()
-                    caller_name = cn[0] if cn else 'Кто-то'
-                    # OneSignal — будит телефон даже при закрытом приложении (приоритетно)
-                    _onesignal_to_user(
-                        callee_id,
-                        '📹 Входящий видеозвонок',
-                        f'{caller_name} звонит вам',
-                        f'/?call={match_id}',
-                        urgent=True,
-                    )
-                    # Web Push — резервный канал (когда браузер открыт/в фоне)
-                    _push_to_user(
-                        cur, conn, callee_id,
-                        '📹 Входящий видеозвонок',
-                        f'{caller_name} звонит вам',
-                        f'/?call={match_id}'
-                    )
+                # Web Push — резервный канал (когда браузер открыт/в фоне)
+                _push_to_user(
+                    cur, conn, callee_id,
+                    '📹 Входящий видеозвонок',
+                    f'{caller_name} звонит вам',
+                    f'/?call={match_id}'
+                )
             return resp(200, {'ok': True})
 
         # WebRTC сигналинг: получить новые сигналы (polling)
