@@ -41,7 +41,7 @@ export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPrem
     <div className="fixed inset-0 z-[100] flex flex-col"
       style={{ background: "linear-gradient(180deg,#1a0f2e 0%,#140b22 60%,#0e0818 100%)" }}>
       {/* Шапка */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-2 flex-shrink-0"
+      <div className="flex items-center gap-3 px-4 pt-4 pb-2 flex-shrink-0 w-full max-w-md mx-auto"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
         <button onClick={onClose} className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ background: "rgba(255,255,255,0.08)" }}>
@@ -113,7 +113,7 @@ export function DailyMatchScreen({ onClose, onOpenChat, isPremium = true, onPrem
             style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>Хорошо</button>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col px-4 pb-5 overflow-y-auto">
+        <div className="flex-1 flex flex-col px-4 pb-5 overflow-y-auto w-full max-w-md mx-auto">
           {/* Индикатор */}
           {matches.length > 1 && (
             <div className="flex items-center justify-center gap-1.5 mb-2">
