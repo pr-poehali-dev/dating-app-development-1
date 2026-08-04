@@ -306,12 +306,15 @@ async function webServerLink(): Promise<void> {
 function linkWithRetries(userId: string): void {
   const delays = [0, 2000, 5000, 10000, 20000, 40000];
   delays.forEach((ms) => {
-    setTimeout(() => {
+    setTimeout(async () => {
       if (lastUserId !== userId) return; // пользователь успел выйти/смениться
       if (isNativeApp()) {
         nativeSetExternalId(userId);
         void serverLinkNative();
       }
+      // ВАЖНО: без init очередь OneSignalDeferred никогда не выполняется,
+      // и резервная серверная привязка просто не уходит (external_id остаётся пустым).
+      await initOneSignal();
       void webServerLink();
     }, ms);
   });
