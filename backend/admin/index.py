@@ -11,6 +11,11 @@ import base64
 import random
 import urllib.request
 import urllib.error
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting, moderate_name, looks_like_ad_name
@@ -73,6 +78,34 @@ def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str 
             conn.commit()
     except Exception:
         pass
+
+
+def _send_support_email(to_email: str, name: str, question: str, answer: str):
+    """Отправляет ответ поддержки пользователю на email."""
+    try:
+        smtp_user = os.environ.get('SMTP_USER', '')
+        smtp_password = os.environ.get('SMTP_PASSWORD', '')
+        if not smtp_user or not smtp_password or not to_email:
+            return
+        greeting = f"Здравствуйте, {name}!" if name else "Здравствуйте!"
+        text_body = (
+            f"{greeting}\n\n"
+            f"Служба поддержки Полутон ответила на ваше обращение.\n\n"
+            f"Ваш вопрос:\n{question}\n\n"
+            f"Ответ поддержки:\n{answer}\n\n"
+            f"С уважением,\nКоманда Полутон"
+        )
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = Header('Ответ службы поддержки — Полутон', 'utf-8')
+        msg['From'] = formataddr((str(Header('Полутон', 'utf-8')), smtp_user))
+        msg['To'] = to_email
+        msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+        with smtplib.SMTP_SSL('smtp.mail.ru', 465) as server:
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, [to_email], msg.as_string())
+    except Exception:
+        pass
+
 
 SYSTEM_BOT_EMAIL = 'system@lbloom.ru'
 SYSTEM_BOT_PHOTO = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
@@ -540,12 +573,58 @@ def handler(event: dict, context) -> dict:
             reply_text = body.get('reply', '').strip()
             if not ticket_id or not reply_text:
                 return resp(400, {'error': 'ticket_id и reply обязательны'})
+
+            # Данные тикета: вопрос, автор и контакты
+            cur.execute("""
+                SELECT user_id, message, guest_email, guest_name
+                FROM support_tickets WHERE id = %s
+            """, (ticket_id,))
+            trow = cur.fetchone()
+            ticket_user_id = trow[0] if trow else None
+            question_text = (trow[1] or '') if trow else ''
+            guest_email = (trow[2] or '') if trow else ''
+            guest_name = (trow[3] or '') if trow else ''
+
             cur.execute("""
                 UPDATE support_tickets
                 SET reply = %s, status = 'closed', replied_at = NOW()
                 WHERE id = %s
             """, (reply_text, ticket_id))
+
+            # Email пользователя (если зарегистрирован) + имя
+            target_email = guest_email
+            target_name = guest_name
+            if ticket_user_id:
+                cur.execute("SELECT email, name FROM users WHERE id = %s", (ticket_user_id,))
+                urow = cur.fetchone()
+                if urow:
+                    if urow[0]:
+                        target_email = urow[0]
+                    if urow[1]:
+                        target_name = urow[1]
+
+            # Уведомление-«колокольчик» для зарегистрированного пользователя
+            if ticket_user_id:
+                cur.execute(
+                    "INSERT INTO notifications (user_id, type, from_user_id, read, text) "
+                    "VALUES (%s, 'support_reply', NULL, FALSE, %s)",
+                    (ticket_user_id, reply_text[:300])
+                )
+
             conn.commit()
+
+            # Push-уведомления
+            if ticket_user_id:
+                try:
+                    _push_to_user(cur, conn, ticket_user_id, '💬 Поддержка Полутон', reply_text[:100], '/')
+                    _onesignal_to_user(ticket_user_id, '💬 Поддержка Полутон', reply_text[:100], '/')
+                except Exception:
+                    pass
+
+            # Email с ответом
+            if target_email:
+                _send_support_email(target_email, target_name, question_text, reply_text)
+
             return resp(200, {'ok': True})
 
         # ── Редактировать профиль пользователя ───────────────────────────────
