@@ -20,7 +20,7 @@ export function IndexScreens({ c, currentUser }: { c: IndexController; currentUs
       <div className="h-full" style={{ display: screen === "matches" ? "flex" : "none", flexDirection: "column" }}>
         <RealMatchesScreen onChat={openChat} />
       </div>
-      {screen === "likes" && <RealLikesScreen onPremium={() => navigateTo("premium")} onOpenChat={openChat} onGoToChats={goToChats} />}
+      {screen === "likes" && <RealLikesScreen isPremium={!!currentUser.premium} onPremium={() => navigateTo("premium")} onOpenChat={openChat} onGoToChats={goToChats} />}
       {screen === "profile" && <RealProfileScreen currentUser={currentUser} onPremium={() => navigateTo("premium")} onLogout={handleLogout} onPhotoUpdate={handlePhotoUpdate} onProfileUpdate={handleProfileUpdate} onVerify={() => navigateTo("verify")} />}
       {screen === "chat" && chatId && <RealChatScreen matchId={chatId} currentUserId={currentUser.id} onBack={backToMatches} />}
       {screen === "filter" && (

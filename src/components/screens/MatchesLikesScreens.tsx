@@ -252,7 +252,7 @@ export function RealMatchesScreen({ onChat }: { onChat: (matchId: number) => voi
 }
 
 // ─── RealLikesScreen ──────────────────────────────────────────────────────────
-export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats }: { onPremium: () => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void }) {
+export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats, isPremium }: { onPremium: () => void; onOpenChat?: (matchId: number) => void; onGoToChats?: () => void; isPremium?: boolean }) {
   const [likedMe, setLikedMe] = useState<LikedBy[]>([]);
   const [loading, setLoading] = useState(true);
   const [openProfile, setOpenProfile] = useState<Profile | null>(null);
@@ -301,7 +301,8 @@ export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats }: { onPrem
         </div>
       </div>
 
-      {/* Premium-баннер */}
+      {/* Premium-баннер — скрыт для пользователей с подпиской */}
+      {!isPremium && (
       <div className="mx-5 mb-5 p-5 rounded-3xl relative overflow-hidden"
         style={{ background: "linear-gradient(135deg, rgba(255,45,120,0.25), rgba(155,89,182,0.25))", border: "1px solid rgba(255,45,120,0.3)" }}>
         <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full pointer-events-none"
@@ -318,6 +319,7 @@ export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats }: { onPrem
         </div>
         <button onClick={onPremium} className="btn-grad px-5 py-2.5 text-sm w-full relative">Открыть все лайки</button>
       </div>
+      )}
 
       {likedMe.length === 0 ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-5 px-8 text-center">
