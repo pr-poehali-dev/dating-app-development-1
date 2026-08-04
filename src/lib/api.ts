@@ -99,7 +99,9 @@ async function req<T>(
       err.banned = true;
       throw err;
     }
-    throw new Error((data.error as string) || "Ошибка сервера");
+    const err = new Error((data.error as string) || "Ошибка сервера") as Error & { blocked?: boolean };
+    if (data.blocked === true) err.blocked = true;
+    throw err;
   }
   return data as T;
 }

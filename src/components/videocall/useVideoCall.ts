@@ -239,11 +239,12 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
       await messagesApi.signalSend(matchId, "offer", JSON.stringify(offer));
     } catch (e) {
       console.error("[VideoCall] startCall error:", e);
-      const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("заблокировал")) {
+      const err = e as Error & { blocked?: boolean };
+      const msg = err?.message || "";
+      if (err?.blocked || msg.includes("заблокировал") || msg.includes("запретил видеозвонки")) {
         toast({
           title: "Звонок невозможен",
-          description: "Пользователь вас заблокировал — вы не можете ему позвонить.",
+          description: msg || "Пользователь вас заблокировал — вы не можете ему позвонить.",
         });
         onClose?.();
       }
@@ -305,6 +306,14 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
             }
           }
           if (sig.signal_type === "hangup") {
+            // Собеседник запретил видеочаты — его устройство сбросило вызов автоматически.
+            // Объясняем звонящему причину, иначе он видит просто «звонок завершён».
+            if (sig.payload === "blocked" && isInitiator) {
+              toast({
+                title: "Звонок невозможен",
+                description: "Пользователь запретил видеозвонки от вас.",
+              });
+            }
             if (isInitiator && !connectedRef.current) logCallResult("missed");
             stopAll();
             setCallState("ended");

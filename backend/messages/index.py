@@ -483,7 +483,8 @@ def handler(event: dict, context) -> dict:
             callee_id = mrow[1] if mrow[0] == me['id'] else mrow[0]
 
             # При начале звонка (offer) проверяем, не заблокировал ли нас собеседник.
-            # Если да — не даём инициировать звонок и сообщаем звонящему причину.
+            # Две независимые блокировки: общая (user_blocks) и запрет видеочатов (video_blocks).
+            # Если стоит любая — не даём инициировать звонок и сообщаем звонящему причину.
             if signal_type == 'offer':
                 cur.execute(
                     "SELECT 1 FROM user_blocks WHERE blocker_id=%s AND blocked_id=%s",
@@ -492,6 +493,15 @@ def handler(event: dict, context) -> dict:
                 if cur.fetchone():
                     return resp(403, {
                         'error': 'Пользователь вас заблокировал — позвонить ему нельзя',
+                        'blocked': True,
+                    })
+                cur.execute(
+                    "SELECT 1 FROM video_blocks WHERE blocker_id=%s AND blocked_id=%s",
+                    (callee_id, me['id'])
+                )
+                if cur.fetchone():
+                    return resp(403, {
+                        'error': 'Пользователь запретил видеозвонки от вас — позвонить ему нельзя',
                         'blocked': True,
                     })
 
