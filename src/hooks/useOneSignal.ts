@@ -125,8 +125,9 @@ export async function promptOneSignal(): Promise<boolean> {
         try { await OneSignal.User?.PushSubscription?.optIn?.(); } catch { /* ignore */ }
         // Привязываем свежую подписку к аккаунту, чтобы адресные пуши доходили
         try { if (lastUserId) await OneSignal.login(lastUserId); } catch { /* ignore */ }
-        // Резервно связываем через сервер по onesignalId
-        try { if (lastUserId) void webServerLink(); } catch { /* ignore */ }
+        // Резервно связываем через сервер по onesignalId — с повторами, потому что
+        // подписка появляется в OneSignal не мгновенно после выдачи разрешения
+        try { if (lastUserId) linkWithRetries(lastUserId); } catch { /* ignore */ }
         done(!!OneSignal.Notifications.permission);
       } catch {
         done(false);
@@ -296,15 +297,32 @@ async function webServerLink(): Promise<void> {
   });
 }
 
+/**
+ * Повторяет привязку несколько раз с нарастающей паузой.
+ * Нужно потому, что в момент входа подписки ещё нет: пользователь только
+ * потом разрешает уведомления, а нативный мост Median готов не сразу.
+ * Без повторов External ID остаётся пустым и адресные пуши не доходят.
+ */
+function linkWithRetries(userId: string): void {
+  const delays = [0, 2000, 5000, 10000, 20000, 40000];
+  delays.forEach((ms) => {
+    setTimeout(() => {
+      if (lastUserId !== userId) return; // пользователь успел выйти/смениться
+      if (isNativeApp()) {
+        nativeSetExternalId(userId);
+        void serverLinkNative();
+      }
+      void webServerLink();
+    }, ms);
+  });
+}
+
 /** Связать текущего пользователя с OneSignal (External ID = наш user id). */
 export async function loginOneSignal(userId: number): Promise<void> {
   lastUserId = String(userId);
   // В нативной APK — привязываем через мост Median (веб-SDK там не работает)
   if (isNativeApp()) {
-    nativeSetExternalId(String(userId));
-    // Резервно просим сервер связать устройство (для старых сборок APK)
-    void serverLinkNative();
-    void webServerLink();
+    linkWithRetries(String(userId));
     return;
   }
   await initOneSignal();
@@ -313,7 +331,7 @@ export async function loginOneSignal(userId: number): Promise<void> {
     try { await OneSignal.login(String(userId)); } catch { /* ignore */ }
   });
   // Резервно — серверная привязка по onesignalId (на случай, если login не проставил external_id)
-  void webServerLink();
+  linkWithRetries(String(userId));
 }
 
 /** Отвязать пользователя (при выходе). */
