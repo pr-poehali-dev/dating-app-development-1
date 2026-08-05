@@ -13,6 +13,7 @@ import { NewUsersGridScreen } from "@/components/screens/home/NewUsersGridScreen
 import { StoryUploadSheet } from "@/components/screens/StoryUploadSheet";
 import { DailyMatchScreen } from "@/components/screens/DailyMatchScreen";
 import { DailyMatchBanner } from "@/components/screens/home/DailyMatchBanner";
+import { MarketingBannersFeed } from "@/components/screens/home/MarketingBannersFeed";
 
 // ─── HomeScreen ───────────────────────────────────────────────────────────────
 export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGoToChats, onPremium }: {
@@ -203,6 +204,7 @@ export function HomeScreen({ currentUser, onGoLive, onJoinLive, onOpenChat, onGo
         />
 
         <DailyMatchBanner onClick={() => setShowDailyMatch(true)} />
+        <MarketingBannersFeed />
 
         <HomeFeedContent
           loading={loading}

@@ -13,6 +13,13 @@
       "path": "/?action=onesignal_app_id",
       "expectedStatus": 200,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "Active banners",
+      "method": "GET",
+      "path": "/?action=active_banners",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
     }
   ]
 }

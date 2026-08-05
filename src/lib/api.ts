@@ -533,9 +533,18 @@ export const notifSettingsApi = {
 };
 
 // ─── Config ───────────────────────────────────────────────────────────────────
+export interface AppBanner {
+  id: number;
+  title: string;
+  subtitle: string;
+  color_from: string;
+  color_to: string;
+}
+
 export const configApi = {
   yandexMapsKey: () => req<{ api_key: string }>("config", "yandex_maps_key"),
   oneSignalAppId: () => req<{ app_id: string }>("config", "onesignal_app_id"),
+  activeBanners: () => req<{ banners: AppBanner[] }>("config", "active_banners"),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────
