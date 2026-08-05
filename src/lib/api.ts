@@ -656,6 +656,7 @@ export interface User {
   looking_for?: string;
   premium?: boolean;
   premium_tier?: "start" | "plus" | "gold";
+  premium_until?: string | null;
   height?: number;
   weight?: number;
   relationship_status?: string;

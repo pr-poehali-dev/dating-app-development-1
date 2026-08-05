@@ -198,13 +198,14 @@ def is_ip_blocked(cur, ip: str) -> str:
 def build_user_dict(cur, user_id: int) -> dict:
     """Собирает полный объект пользователя (как в login)."""
     cur.execute(
-        "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
+        "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.premium_until, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
         "FROM users u WHERE u.id = %s", (user_id,)
     )
     urow = cur.fetchone()
-    cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
+    cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'premium_until', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
     user = dict(zip(cols, urow))
     user['created_at'] = str(user['created_at']) if user['created_at'] else None
+    user['premium_until'] = str(user['premium_until']) if user['premium_until'] else None
     cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
     user['followers'] = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (user_id,))
@@ -323,13 +324,14 @@ def handler(event: dict, context) -> dict:
                 pass
             conn.commit()
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.premium_until, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age "
                 "FROM users u WHERE u.id = %s", (user_id,)
             )
             urow = cur.fetchone()
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'premium_until', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age']
             user = dict(zip(cols, urow))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            user['premium_until'] = str(user['premium_until']) if user['premium_until'] else None
             user['followers'] = 0
             user['following'] = 0
             user['email_verified'] = False
@@ -378,13 +380,14 @@ def handler(event: dict, context) -> dict:
             audit(cur, 'login_success', 'info', ip=ip, user_id=user_id, email=email)
             conn.commit()
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.premium_until, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
                 "FROM users u WHERE u.id = %s", (user_id,)
             )
             urow = cur.fetchone()
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'premium_until', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
             user = dict(zip(cols, urow))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            user['premium_until'] = str(user['premium_until']) if user['premium_until'] else None
             cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))
             user['followers'] = cur.fetchone()[0]
             cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE subscriber_id = %s", (user_id,))
@@ -395,7 +398,7 @@ def handler(event: dict, context) -> dict:
 
         if action == 'me':
             cur.execute(
-                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
+                "SELECT u.id, u.email, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.gender, u.looking_for, u.premium, u.premium_tier, u.premium_until, u.username, u.height, u.weight, u.relationship_status, u.created_at, u.cover_url, u.show_age, u.zodiac "
                 "FROM users u JOIN sessions s ON s.user_id = u.id "
                 "WHERE s.token = %s AND s.expires_at > NOW()",
                 (token,)
@@ -411,9 +414,10 @@ def handler(event: dict, context) -> dict:
                 cur.execute("UPDATE users SET online = FALSE WHERE id = %s", (row[0],))
                 conn.commit()
                 return resp(403, {'error': 'banned', 'banned': True, 'reason': ban[0] or 'Нарушение правил сообщества'})
-            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
+            cols = ['id', 'email', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'gender', 'looking_for', 'premium', 'premium_tier', 'premium_until', 'username', 'height', 'weight', 'relationship_status', 'created_at', 'cover_url', 'show_age', 'zodiac']
             user = dict(zip(cols, row))
             user['created_at'] = str(user['created_at']) if user['created_at'] else None
+            user['premium_until'] = str(user['premium_until']) if user['premium_until'] else None
             # Подписчики и подписки из user_subscriptions
             user_id = user['id']
             cur.execute("SELECT COUNT(*) FROM user_subscriptions WHERE target_id = %s", (user_id,))

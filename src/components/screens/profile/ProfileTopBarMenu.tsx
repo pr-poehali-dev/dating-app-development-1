@@ -4,6 +4,7 @@ import { type User } from "@/lib/api";
 import { ProfileLegalSheet } from "@/components/screens/profile/ProfileLegalSheet";
 import { ProfileThemeSheet } from "@/components/screens/profile/ProfileThemeSheet";
 import { ProfileLanguageSheet } from "@/components/screens/profile/ProfileLanguageSheet";
+import { ProfileSubscriptionSheet } from "@/components/screens/profile/ProfileSubscriptionSheet";
 import { useBackHandler } from "@/hooks/backStack";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
 import { THEME_META, type AppTheme } from "@/hooks/useAppTheme";
@@ -19,6 +20,7 @@ export function ProfileTopBarMenu({
   onSettingsScreen,
   onLogout,
   onVerify,
+  onPremium,
   currentUser,
   appTheme,
   onAppThemeChange,
@@ -28,6 +30,7 @@ export function ProfileTopBarMenu({
   onSettingsScreen: (s: SettingsScreen) => void;
   onLogout: () => void;
   onVerify: () => void;
+  onPremium?: () => void;
   currentUser: User;
   appTheme?: AppTheme;
   onAppThemeChange?: (t: AppTheme) => void;
@@ -36,12 +39,14 @@ export function ProfileTopBarMenu({
   const [legalTab, setLegalTab] = useState<"terms" | "privacy">("terms");
   const [showTheme, setShowTheme] = useState(false);
   const [showLanguage, setShowLanguage] = useState(false);
+  const [showSubscription, setShowSubscription] = useState(false);
   const { icon: appIcon, setIcon: setAppIcon, native: iconNative } = useAppIcon();
   const { i18n } = useTranslation();
   const currentLang = LANGUAGES.find(l => l.code === i18n.language) || LANGUAGES[0];
 
   // Кнопка "Назад" закрывает меню настроек, а не выбрасывает из профиля
-  useBackHandler(menuOpen || showLegal || showTheme || showLanguage, () => {
+  useBackHandler(menuOpen || showLegal || showTheme || showLanguage || showSubscription, () => {
+    if (showSubscription) { setShowSubscription(false); return; }
     if (showLanguage) { setShowLanguage(false); return; }
     if (showTheme) { setShowTheme(false); return; }
     if (showLegal) { setShowLegal(false); return; }
@@ -57,6 +62,15 @@ export function ProfileTopBarMenu({
       iconBg: currentUser.verified ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.07)",
       iconColor: currentUser.verified ? "text-blue-400" : "text-white/50",
       badge: currentUser.verified ? "✓" : undefined,
+    },
+    {
+      icon: "Sparkles" as const,
+      label: "Мои подписки",
+      sub: currentUser.premium ? "Premium активен" : "Оформи Premium",
+      action: () => { setShowSubscription(true); },
+      iconBg: currentUser.premium ? "rgba(255,45,120,0.14)" : "rgba(255,255,255,0.07)",
+      iconColor: currentUser.premium ? "text-pink-400" : "text-white/50",
+      badge: currentUser.premium ? "✓" : undefined,
     },
     {
       icon: "Settings" as const,
@@ -173,6 +187,14 @@ export function ProfileTopBarMenu({
 
       {showLanguage && (
         <ProfileLanguageSheet onClose={() => setShowLanguage(false)} />
+      )}
+
+      {showSubscription && (
+        <ProfileSubscriptionSheet
+          currentUser={currentUser}
+          onClose={() => setShowSubscription(false)}
+          onUpgrade={() => { setShowSubscription(false); onMenuToggle(false); onPremium?.(); }}
+        />
       )}
 
       {menuOpen && (

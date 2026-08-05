@@ -294,6 +294,7 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
           onSettingsScreen={(s) => setSettingsScreen(s)}
           onLogout={onLogout}
           onVerify={onVerify}
+          onPremium={onPremium}
           appTheme={appTheme}
           onAppThemeChange={setAppTheme}
         />

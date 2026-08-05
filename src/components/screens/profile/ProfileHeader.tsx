@@ -113,6 +113,7 @@ export function ProfileTopBar({
   onSettingsScreen,
   onLogout,
   onVerify,
+  onPremium,
   currentUser,
   appTheme,
   onAppThemeChange,
@@ -123,6 +124,7 @@ export function ProfileTopBar({
   onSettingsScreen: (s: SettingsScreen) => void;
   onLogout: () => void;
   onVerify: () => void;
+  onPremium?: () => void;
   currentUser: User;
   appTheme?: AppTheme;
   onAppThemeChange?: (t: AppTheme) => void;
@@ -162,6 +164,7 @@ export function ProfileTopBar({
             onSettingsScreen={onSettingsScreen}
             onLogout={onLogout}
             onVerify={onVerify}
+            onPremium={onPremium}
             currentUser={currentUser}
             appTheme={appTheme}
             onAppThemeChange={onAppThemeChange}
