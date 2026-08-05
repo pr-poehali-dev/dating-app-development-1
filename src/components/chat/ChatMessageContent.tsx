@@ -148,8 +148,13 @@ export function renderMsgContent(text: string, out: boolean, partnerId?: number,
     return <VideoCircleMessage url={url} />;
   }
   if (text.startsWith("__VANISH__")) {
-    const url = text.slice(10);
-    return <VanishPhoto url={url} out={out} />;
+    const rest = text.slice(10);
+    const sep = rest.indexOf("|");
+    const head = sep > 0 ? rest.slice(0, sep) : "";
+    const hasTtl = /^\d+$/.test(head);
+    const ttl = hasTtl ? parseInt(head, 10) : 60;
+    const url = hasTtl ? rest.slice(sep + 1) : rest;
+    return <VanishPhoto url={url} out={out} ttl={ttl} />;
   }
   if (text.startsWith("__LOC__")) {
     const coords = text.slice(7);

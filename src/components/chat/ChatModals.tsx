@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type Message } from "@/lib/api";
 
@@ -67,11 +68,14 @@ export function ChatContextMenu({ msg, onDelete, onClose }: ContextMenuProps) {
 // ─── Пикер исчезающих фото ────────────────────────────────────────────────────
 interface VanishPickerProps {
   photos: { id: number; photo_url: string }[];
-  onPick: (url: string) => void;
+  onPick: (url: string, ttl: number) => void;
   onClose: () => void;
 }
 
+const TTL_OPTIONS = [10, 30, 60];
+
 export function ChatVanishPicker({ photos, onPick, onClose }: VanishPickerProps) {
+  const [ttl, setTtl] = useState(60);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(5px)" }}
@@ -91,14 +95,32 @@ export function ChatVanishPicker({ photos, onPick, onClose }: VanishPickerProps)
             <p className="text-white/40 text-sm text-center">В галерее нет фото. Добавь фото в профиле.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 pb-2">
-            {photos.map(p => (
-              <button key={p.id} onClick={() => onPick(p.photo_url)}
-                className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-all">
-                <img src={p.photo_url} className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex items-center gap-2 pb-3">
+              <Icon name="Timer" size={15} className="text-white/40" />
+              <span className="text-white/45 text-[12px] mr-auto">Время показа</span>
+              <div className="flex gap-1.5">
+                {TTL_OPTIONS.map(v => (
+                  <button key={v} onClick={() => setTtl(v)}
+                    className="px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all active:scale-95"
+                    style={{
+                      background: ttl === v ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "rgba(255,255,255,0.07)",
+                      color: ttl === v ? "#fff" : "rgba(255,255,255,0.55)",
+                    }}>
+                    {v}с
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pb-2">
+              {photos.map(p => (
+                <button key={p.id} onClick={() => onPick(p.photo_url, ttl)}
+                  className="aspect-square rounded-xl overflow-hidden active:scale-95 transition-all">
+                  <img src={p.photo_url} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

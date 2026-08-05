@@ -249,7 +249,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
       if (!base64) { input.value = ""; return; }
       try {
         const res = await messagesApi.uploadChatPhoto(matchId, base64, fileType);
-        await sendSystem(`__VANISH__${res.photo_url}`);
+        await sendSystem(`__VANISH__60|${res.photo_url}`);
       } catch { /* ignore */ }
       finally { input.value = ""; }
     };
@@ -265,9 +265,9 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     setShowPlus(false);
   };
 
-  const sendVanishPhoto = async (photoUrl: string) => {
+  const sendVanishPhoto = async (photoUrl: string, ttl = 60) => {
     setShowVanishPicker(false);
-    await sendSystem(`__VANISH__${photoUrl}`);
+    await sendSystem(`__VANISH__${ttl}|${photoUrl}`);
   };
 
   const sendLocation = () => {

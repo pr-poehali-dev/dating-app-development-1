@@ -6,11 +6,11 @@ import { SparkleVeil } from "@/components/chat/SparkleVeil";
 import { BurnAway } from "@/components/chat/BurnAway";
 
 // ─── VanishPhoto ──────────────────────────────────────────────────────────────
-export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
+export function VanishPhoto({ url, out, ttl = 60 }: { url: string; out: boolean; ttl?: number }) {
   const [visible, setVisible] = useState(true);
   const [burning, setBurning] = useState(false);
   const [opened, setOpened] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(60);
+  const [secondsLeft, setSecondsLeft] = useState(ttl);
   const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
               </div>
               <span className="text-white text-[12px] font-semibold"
                 style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
-                {out ? "Одноразовое фото" : "Нажми, чтобы открыть"}
+                {out ? `Одноразовое фото · ${ttl}с` : "Нажми, чтобы открыть"}
               </span>
             </div>
           </div>
