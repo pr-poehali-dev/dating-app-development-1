@@ -119,8 +119,7 @@ export function SupportModal({ onClose }: { onClose: () => void }) {
                   style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)" }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#FF6A3D")}
                   onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)")} />
-                <div className="flex items-center justify-between mt-1 px-1">
-                  <span className="text-white/35 text-[11px]">Поддержка осуществляется на английском и русском языках</span>
+                <div className="flex items-center justify-end mt-1 px-1">
                   <span className="text-white/35 text-[11px]">{MAX_MSG - message.length}</span>
                 </div>
               </div>
