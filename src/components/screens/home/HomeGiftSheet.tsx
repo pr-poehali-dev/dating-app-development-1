@@ -75,6 +75,12 @@ export function HomeGiftSheet({ giftCategory, giftBuying, onCategoryChange, onPi
                       {rs.label}
                     </span>
                   )}
+                  {"limited" in gift && gift.limited && (
+                    <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-md leading-none"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "#fff" }}>
+                      LIMITED
+                    </span>
+                  )}
                   <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={72} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={selected} emoji={gift.emoji} />
                   <p className="text-white/90 text-xs font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">{gift.name}</p>
                   {isCoinGift(gift) ? (

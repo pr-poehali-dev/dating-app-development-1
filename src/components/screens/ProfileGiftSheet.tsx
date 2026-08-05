@@ -48,8 +48,9 @@ export const GIFTS = [
   { id: 38, name: "Звезда удачи",   emoji: "⭐", price: 6990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 5 },
   { id: 39, name: "Королевская корона", emoji: "👑", price: 14990, anim: "gift-animated",   rarity: "legendary", category: "special", variant: 6 },
   { id: 40, name: "Дракон",         emoji: "🐉", price: 29990, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 7 },
-  { id: 41, name: "Полутон",        emoji: "🌗", price: 30000, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 8 },
+  { id: 41, name: "Полутон",        emoji: "🌗", price: 30000, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 8, coins: 30000, limited: "Лимит · 500 шт" },
   /* ─── Маркет (эмодзи-подарки, как в Telegram) ─── */
+  { id: 100, name: "Полутон",        emoji: "🌗", price: 30000, anim: "gift-animated", rarity: "legendary", category: "market", variant: 8, market: true, limited: "Лимит · 500 шт" },
   { id: 101, name: "Мишка",          emoji: "🧸", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
   { id: 102, name: "Сердце с бантом", emoji: "💝", price: 15,   anim: "gift-pulse",   rarity: "common", category: "market", variant: 0, market: true },
   { id: 103, name: "Подарок",        emoji: "🎁", price: 25,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
@@ -122,7 +123,7 @@ export function giftSection(category: string): "market" | "special" {
   return category === "market" ? "market" : "special";
 }
 
-type Gift = (typeof GIFTS)[number] & { market?: boolean };
+type Gift = (typeof GIFTS)[number] & { market?: boolean; coins?: number; limited?: string };
 
 /** Подарок покупается за монеты? Все «Особые» (кроме Маркета) — за монеты. */
 export function isCoinGift(gift: Gift): boolean {
@@ -134,6 +135,8 @@ export function isCoinGift(gift: Gift): boolean {
  * лестница зависит от рублёвой цены и округляется до красивых чисел.
  */
 export function giftCoins(gift: Gift): number {
+  // Явно заданная цена в монетах (для особых/лимитированных подарков)
+  if (gift.coins) return gift.coins;
   // База 180 монет + плавная надбавка от рублёвой цены (даёт явный разброс)
   const value = 180 + gift.price * 0.12;
   // Округляем до аккуратных значений
@@ -306,6 +309,12 @@ export function ProfileGiftSheet({
                       {rs.label}
                     </span>
                   )}
+                  {(gift as Gift).limited && (
+                    <span className="absolute top-1 right-1 text-[7px] font-bold px-1 py-0.5 rounded-md leading-none flex items-center gap-0.5"
+                      style={{ background: "linear-gradient(90deg,#FF2D78,#9B59B6)", color: "#fff" }}>
+                      LIMITED
+                    </span>
+                  )}
                   <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={52} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} selected={sel} emoji={gift.emoji} />
                   <p className="text-white/90 text-[10px] font-semibold leading-tight text-center line-clamp-2 w-full px-0.5">
                     {gift.name}
@@ -352,7 +361,12 @@ export function ProfileGiftSheet({
                 <GiftItem category={gift.category as "heart"|"rose"|"bear"|"ring"|"special"|"market"} variant={gift.variant ?? 0} animKey={gift.anim} size={56} rarity={gift.rarity as "common"|"rare"|"epic"|"legendary"} emoji={gift.emoji} marketBadge={false} />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-semibold text-sm">{gift.name}</p>
-                  {rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}
+                  {(gift as Gift).limited ? (
+                    <p className="text-[11px] font-bold flex items-center gap-1" style={{ color: "#FF7AB0" }}>
+                      <Icon name="Sparkles" size={11} style={{ color: "#FF7AB0" }} />
+                      Ограниченная версия · {(gift as Gift).limited}
+                    </p>
+                  ) : rs.label && <p className="text-xs font-bold" style={{ color: rs.text }}>{rs.label}</p>}
                   {coinGift ? (
                     <p className="text-xs flex items-center gap-1" style={{ color: notEnough ? "#F87171" : "#FFC800" }}>
                       <Icon name="Coins" size={11} style={{ color: notEnough ? "#F87171" : "#FFC800" }} />

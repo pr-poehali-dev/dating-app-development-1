@@ -121,6 +121,13 @@ export function HomeGiftPreview({ giftPreview, giftDone, setGiftDone, onClose, c
         <div className="text-center">
           <p className="text-white font-bold text-xl">{gift.name}</p>
           {rs.label && <p className="text-sm font-bold mt-1" style={{ color: rs.text }}>{rs.label}</p>}
+          {"limited" in gift && gift.limited && (
+            <p className="text-xs font-bold mt-1 inline-flex items-center gap-1 px-2 py-1 rounded-full"
+              style={{ background: "rgba(255,45,120,0.14)", color: "#FF7AB0", border: "1px solid rgba(255,45,120,0.35)" }}>
+              <Icon name="Sparkles" size={11} style={{ color: "#FF7AB0" }} />
+              Ограниченная версия · {gift.limited}
+            </p>
+          )}
           {coinGift ? (
             <p className="text-sm mt-1 flex items-center justify-center gap-1 font-bold" style={{ color: "#FFC800" }}>
               <Icon name="Coins" size={13} style={{ color: "#FFC800" }} />

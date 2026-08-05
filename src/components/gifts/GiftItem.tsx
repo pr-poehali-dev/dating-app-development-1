@@ -5,6 +5,11 @@ import type { GiftSceneCategory } from "./GiftScenes";
 type GiftCategory = GiftSceneCategory | "market";
 type Rarity = "common" | "rare" | "epic" | "legendary";
 
+/** Эмодзи фирменных подарков → живая сцена (показывается в любом разделе) */
+const BRANDED_SCENE: Record<string, { category: GiftSceneCategory; variant: number }> = {
+  "🌗": { category: "special", variant: 8 },
+};
+
 interface GiftItemProps {
   category: GiftCategory;
   variant: number;
@@ -24,6 +29,11 @@ interface GiftItemProps {
  */
 export default function GiftItem({ category, variant, animKey, size = 56, rarity = "common", selected = false, emoji, marketBadge = false }: GiftItemProps) {
   void animKey; void rarity;
+  // Фирменные подарки показываем живой сценой даже в разделе «Маркет»
+  const branded = emoji ? BRANDED_SCENE[emoji] : undefined;
+  if (branded) {
+    return <AnimatedGift size={size} category={branded.category} variant={branded.variant} withBackground burst={selected} />;
+  }
   if (category === "market" && emoji) {
     return <MarketGiftIcon emoji={emoji} size={size} badge={marketBadge} />;
   }
