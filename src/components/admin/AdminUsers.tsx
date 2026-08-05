@@ -107,7 +107,10 @@ function EditUserDialog({ user, token, onClose, onSaved }: {
   const [form, setForm] = useState({
     name: user.name, age: String(user.age ?? ""), city: user.city ?? "",
     premium: user.premium, verified: user.verified,
+    premium_tier: user.premium_tier || "plus",
+    premium_months: "",
   });
+  const premiumJustEnabled = form.premium && !user.premium;
   const [activity, setActivity] = useState<Activity | null>(null);
   const [actLoading, setActLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -126,10 +129,18 @@ function EditUserDialog({ user, token, onClose, onSaved }: {
         city: form.city.trim() || null,
         premium: form.premium,
         verified: form.verified,
+        ...(form.premium ? {
+          premium_tier: form.premium_tier,
+          ...(form.premium_months ? { premium_months: Number(form.premium_months) } : {}),
+        } : {}),
       });
       onSaved(); onClose();
     } catch { void 0; } finally { setSaving(false); }
   };
+
+  const premiumUntilLabel = user.premium_until
+    ? new Date(user.premium_until).toLocaleDateString("ru", { day: "numeric", month: "long", year: "numeric" })
+    : null;
 
   const statItems = activity ? [
     { label: "Лайков →",    value: activity.likes_sent,      color: "#F472B6" },
@@ -203,6 +214,36 @@ function EditUserDialog({ user, token, onClose, onSaved }: {
                 </button>
               ))}
             </div>
+
+            {form.premium && (
+              <div className="rounded-xl p-3 flex flex-col gap-2.5"
+                style={{ background: "rgba(252,211,77,0.06)", border: "1px solid rgba(252,211,77,0.15)" }}>
+                {premiumUntilLabel && (
+                  <p className="text-white/40 text-[11px]">Сейчас действует до: <span className="text-white/70 font-semibold">{premiumUntilLabel}</span></p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={form.premium_tier} onChange={e => setForm(f => ({ ...f, premium_tier: e.target.value as "start" | "plus" | "gold" }))}
+                    className="w-full rounded-lg px-3 py-2 text-xs text-white outline-none"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                    <option value="start">Старт</option>
+                    <option value="plus">Плюс</option>
+                    <option value="gold">Золото</option>
+                  </select>
+                  <select value={form.premium_months} onChange={e => setForm(f => ({ ...f, premium_months: e.target.value }))}
+                    className="w-full rounded-lg px-3 py-2 text-xs text-white outline-none"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                    <option value="">Не менять срок</option>
+                    <option value="1">На 1 месяц</option>
+                    <option value="3">На 3 месяца</option>
+                    <option value="12">На 12 месяцев</option>
+                  </select>
+                </div>
+                {premiumJustEnabled && !form.premium_months && (
+                  <p className="text-amber-300/70 text-[10px]">⚠ Выбери срок — иначе дата окончания подписки останется пустой</p>
+                )}
+              </div>
+            )}
+
             <button onClick={handleSave} disabled={saving}
               className="py-3 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: "linear-gradient(135deg,#FF2D78,#9B59B6)" }}>

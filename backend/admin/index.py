@@ -12,6 +12,7 @@ import random
 import urllib.request
 import urllib.error
 import smtplib
+from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
@@ -299,7 +300,7 @@ def handler(event: dict, context) -> dict:
             q = f"%{search}%" if search else None
             if q:
                 cur.execute(
-                    "SELECT u.id, u.name, u.email, u.username, u.age, u.city, u.verified, u.online, u.premium, u.created_at, "
+                    "SELECT u.id, u.name, u.email, u.username, u.age, u.city, u.verified, u.online, u.premium, u.premium_tier, u.premium_until, u.created_at, "
                     "EXISTS(SELECT 1 FROM banned_users b WHERE b.user_id = u.id) as banned "
                     "FROM users u WHERE u.name ILIKE %s OR u.email ILIKE %s OR u.username ILIKE %s "
                     "ORDER BY u.created_at DESC LIMIT %s OFFSET %s",
@@ -307,12 +308,12 @@ def handler(event: dict, context) -> dict:
                 )
             else:
                 cur.execute(
-                    "SELECT u.id, u.name, u.email, u.username, u.age, u.city, u.verified, u.online, u.premium, u.created_at, "
+                    "SELECT u.id, u.name, u.email, u.username, u.age, u.city, u.verified, u.online, u.premium, u.premium_tier, u.premium_until, u.created_at, "
                     "EXISTS(SELECT 1 FROM banned_users b WHERE b.user_id = u.id) as banned "
                     "FROM users u ORDER BY u.created_at DESC LIMIT %s OFFSET %s",
                     (per_page, offset)
                 )
-            cols = ['id', 'name', 'email', 'username', 'age', 'city', 'verified', 'online', 'premium', 'created_at', 'banned']
+            cols = ['id', 'name', 'email', 'username', 'age', 'city', 'verified', 'online', 'premium', 'premium_tier', 'premium_until', 'created_at', 'banned']
             users = [dict(zip(cols, row)) for row in cur.fetchall()]
             cur.execute("SELECT COUNT(*) FROM users" + (" WHERE name ILIKE %s OR email ILIKE %s OR username ILIKE %s" if q else ""),
                         (q, q, q) if q else ())
@@ -634,6 +635,23 @@ def handler(event: dict, context) -> dict:
                 return resp(400, {'error': 'user_id обязателен'})
             allowed = ['name', 'age', 'city', 'bio', 'gender', 'premium', 'verified']
             updates = {k: v for k, v in body.items() if k in allowed}
+            # Ручная выдача Premium админом: если включаем подписку и клиент прислал
+            # срок в месяцах — проставляем tier и дату окончания, иначе они останутся
+            # пустыми и на экране "Моя подписка" не будет видно, когда она истекает.
+            if updates.get('premium') is True:
+                tier = body.get('premium_tier')
+                if tier in ('start', 'plus', 'gold'):
+                    updates['premium_tier'] = tier
+                months = body.get('premium_months')
+                if months:
+                    try:
+                        months = int(months)
+                        updates['premium_until'] = datetime.utcnow() + timedelta(days=30 * months)
+                    except (TypeError, ValueError):
+                        pass
+            if updates.get('premium') is False:
+                updates['premium_tier'] = None
+                updates['premium_until'] = None
             if not updates:
                 return resp(400, {'error': 'Нет полей для обновления'})
             set_clause = ', '.join(f"{k} = %s" for k in updates)

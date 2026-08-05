@@ -781,6 +781,8 @@ export interface AdminUser {
   verified: boolean;
   online: boolean;
   premium: boolean;
+  premium_tier?: "start" | "plus" | "gold" | null;
+  premium_until?: string | null;
   created_at: string;
   banned: boolean;
 }
