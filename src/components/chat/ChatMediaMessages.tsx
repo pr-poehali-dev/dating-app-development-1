@@ -3,10 +3,12 @@ import Icon from "@/components/ui/icon";
 import { ProtectedImage } from "@/components/ui/ProtectedImage";
 import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 import { SparkleVeil } from "@/components/chat/SparkleVeil";
+import { BurnAway } from "@/components/chat/BurnAway";
 
 // ─── VanishPhoto ──────────────────────────────────────────────────────────────
 export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   const [visible, setVisible] = useState(true);
+  const [burning, setBurning] = useState(false);
   const [opened, setOpened] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(60);
   const [lightbox, setLightbox] = useState(false);
@@ -15,12 +17,21 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
     if (!opened || out) return;
     const timer = setInterval(() => {
       setSecondsLeft(s => {
-        if (s <= 1) { clearInterval(timer); setVisible(false); return 0; }
+        if (s <= 1) { clearInterval(timer); setLightbox(false); setBurning(true); return 0; }
         return s - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
   }, [opened, out]);
+
+  if (burning) {
+    return (
+      <div className="relative rounded-2xl overflow-hidden"
+        style={{ width: 200, height: 200, background: "#000" }}>
+        <BurnAway src={url} size={200} onDone={() => { setBurning(false); setVisible(false); }} />
+      </div>
+    );
+  }
 
   if (!visible) {
     return (
