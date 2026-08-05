@@ -13,7 +13,7 @@ interface Particle {
 export function SparkleVeil({
   width,
   height,
-  density = 0.045,
+  density = 0.012,
   color = "255,255,255",
 }: {
   width: number;

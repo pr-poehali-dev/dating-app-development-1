@@ -26,7 +26,7 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
     return (
       <div className="relative rounded-2xl overflow-hidden"
         style={{ width: 200, height: 200, background: "#000", border: "1px solid rgba(255,255,255,0.06)" }}>
-        <SparkleVeil width={200} height={200} density={0.02} />
+        <SparkleVeil width={200} height={200} density={0.006} />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
           <Icon name="EyeOff" size={22} className="text-white/40" />
           <span className="text-white/40 text-[12px]">Фото исчезло</span>
@@ -38,7 +38,7 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
   return (
     <>
       <div className="relative">
-        {opened || out ? (
+        {opened ? (
           <ProtectedImage src={url} className="rounded-xl cursor-pointer active:scale-95 transition-transform"
             style={{ width: 200, height: 200, objectFit: "cover" }}
             onClick={() => setLightbox(true)} />
@@ -51,15 +51,17 @@ export function VanishPhoto({ url, out }: { url: string; out: boolean }) {
               background: "#000",
               border: "1px solid rgba(255,255,255,0.08)",
             }}
-            onClick={() => !out && setOpened(true)}>
+            onClick={() => setOpened(true)}>
             <SparkleVeil width={200} height={200} />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 pointer-events-none"
+              style={{ background: "radial-gradient(circle at 50% 45%, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.35) 45%, transparent 72%)" }}>
               <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(255,255,255,0.14)", backdropFilter: "blur(4px)" }}>
+                style={{ background: "rgba(255,255,255,0.16)", border: "1px solid rgba(255,255,255,0.25)" }}>
                 <Icon name="Flame" size={22} className="text-white" />
               </div>
-              <span className="text-white/85 text-[12px] font-medium">
-                {out ? "Ожидает просмотра" : "Нажми, чтобы открыть"}
+              <span className="text-white text-[12px] font-semibold"
+                style={{ textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
+                {out ? "Одноразовое фото" : "Нажми, чтобы открыть"}
               </span>
             </div>
           </div>
