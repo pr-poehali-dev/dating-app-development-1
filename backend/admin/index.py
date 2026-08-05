@@ -17,6 +17,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email.utils import formataddr
+from html import escape as html_escape
 import psycopg2
 import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting, moderate_name, looks_like_ad_name
@@ -81,6 +82,76 @@ def _push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str 
         pass
 
 
+LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
+
+
+def _build_support_email_html(greeting: str, question: str, answer: str) -> str:
+    """Брендированный HTML письма с ответом поддержки (тёмная тема, логотип Полутон)."""
+    q = html_escape(question).replace('\n', '<br>')
+    a = html_escape(answer).replace('\n', '<br>')
+    return f"""\
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Полутон</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0e0a18;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Служба поддержки Полутон ответила на ваше обращение</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0e0a18;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#181225;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#FF2D78,#9B59B6);padding:32px 32px 28px;text-align:center;">
+              <img src="{LOGO_URL}" width="64" height="64" alt="Полутон" style="border-radius:18px;display:block;margin:0 auto 14px;box-shadow:0 6px 20px rgba(0,0,0,0.25);">
+              <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:800;letter-spacing:0.5px;">Полутон</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <h2 style="margin:0 0 8px;color:#ffffff;font-size:19px;font-weight:700;">{html_escape(greeting)}</h2>
+              <p style="margin:0;color:rgba(255,255,255,0.6);font-size:15px;line-height:1.6;">
+                Служба поддержки ответила на ваше обращение.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px 8px;">
+              <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px 20px;">
+                <div style="color:rgba(255,255,255,0.35);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Ваш вопрос</div>
+                <div style="color:rgba(255,255,255,0.85);font-size:15px;line-height:1.6;">{q}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 26px;">
+              <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.3);border-radius:16px;padding:18px 20px;">
+                <div style="color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Ответ поддержки</div>
+                <div style="color:#ffffff;font-size:15px;line-height:1.65;">{a}</div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:22px 32px;border-top:1px solid rgba(255,255,255,0.06);text-align:center;">
+              <p style="margin:0;color:rgba(255,255,255,0.3);font-size:12px;line-height:1.5;">
+                Остались вопросы? Напишите нам снова через раздел «Поддержка» в приложении.<br>
+                С любовью, команда Полутон 💕
+              </p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:20px 0 0;color:rgba(255,255,255,0.2);font-size:11px;">
+          Это автоматическое письмо, отвечать на него не нужно.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+
 def _send_support_email(to_email: str, name: str, question: str, answer: str):
     """Отправляет ответ поддержки пользователю на email."""
     try:
@@ -101,6 +172,7 @@ def _send_support_email(to_email: str, name: str, question: str, answer: str):
         msg['From'] = formataddr((str(Header('Полутон', 'utf-8')), smtp_user))
         msg['To'] = to_email
         msg.attach(MIMEText(text_body, 'plain', 'utf-8'))
+        msg.attach(MIMEText(_build_support_email_html(greeting, question, answer), 'html', 'utf-8'))
         with smtplib.SMTP_SSL('smtp.mail.ru', 465) as server:
             server.login(smtp_user, smtp_password)
             server.sendmail(smtp_user, [to_email], msg.as_string())
