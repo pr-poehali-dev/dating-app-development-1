@@ -38,6 +38,7 @@ const BG_PALETTE: Record<GiftSceneCategory, [string, string][]> = {
   special: [
     ["#8B4A52", "#5A2A33"], ["#3A6E7A", "#163438"], ["#7A5A9A", "#2E1E4A"], ["#9A6A3A", "#4A301A"],
     ["#5A7A3A", "#243818"], ["#9A3A6A", "#4A1636"], ["#3A5A9A", "#16244A"], ["#7A3A3A", "#381616"],
+    ["#8B2E6E", "#1B1030"],
   ],
 };
 

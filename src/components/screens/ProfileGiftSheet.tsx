@@ -48,6 +48,7 @@ export const GIFTS = [
   { id: 38, name: "Звезда удачи",   emoji: "⭐", price: 6990,  anim: "gift-animated",       rarity: "epic",      category: "special", variant: 5 },
   { id: 39, name: "Королевская корона", emoji: "👑", price: 14990, anim: "gift-animated",   rarity: "legendary", category: "special", variant: 6 },
   { id: 40, name: "Дракон",         emoji: "🐉", price: 29990, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 7 },
+  { id: 41, name: "Полутон",        emoji: "🌗", price: 30000, anim: "gift-animated",       rarity: "legendary", category: "special", variant: 8 },
   /* ─── Маркет (эмодзи-подарки, как в Telegram) ─── */
   { id: 101, name: "Мишка",          emoji: "🧸", price: 50,   anim: "gift-float",   rarity: "common", category: "market", variant: 0, market: true },
   { id: 102, name: "Сердце с бантом", emoji: "💝", price: 15,   anim: "gift-pulse",   rarity: "common", category: "market", variant: 0, market: true },

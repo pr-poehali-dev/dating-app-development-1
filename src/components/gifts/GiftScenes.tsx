@@ -10,14 +10,15 @@
 import { GIFT_SCENE_KEYFRAMES } from "./giftScenesShared";
 import { HeartScene, RoseScene, BearScene, RingScene } from "./GiftScenesPrimary";
 import { DogScene, CatScene, RabbitScene, RocketScene, UnicornScene, StarScene, CrownScene, DragonScene } from "./GiftScenesSpecial";
+import { PolutonScene } from "./GiftPoluton";
 
 export { GIFT_SCENE_KEYFRAMES };
 export { HeartScene, RoseScene, BearScene, RingScene };
-export { DogScene, CatScene, RabbitScene, RocketScene, UnicornScene, StarScene, CrownScene, DragonScene };
+export { DogScene, CatScene, RabbitScene, RocketScene, UnicornScene, StarScene, CrownScene, DragonScene, PolutonScene };
 
 export type GiftSceneCategory = "heart" | "rose" | "bear" | "ring" | "special";
 
-const SPECIAL_SCENES = [DogScene, CatScene, RabbitScene, RocketScene, UnicornScene, StarScene, CrownScene, DragonScene];
+const SPECIAL_SCENES = [DogScene, CatScene, RabbitScene, RocketScene, UnicornScene, StarScene, CrownScene, DragonScene, PolutonScene];
 
 export function GiftScene({ category, variant = 0 }: { category: GiftSceneCategory; variant?: number }) {
   switch (category) {
