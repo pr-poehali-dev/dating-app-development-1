@@ -8,6 +8,13 @@ import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 import { ZodiacBadge } from "@/components/screens/profile/ZodiacBanner";
 
+/** Расстояние человеческим языком: «меньше 1 км», «5,2 км», «660 км» */
+function formatDistance(km: number): string {
+  if (km < 1) return "меньше 1 км";
+  if (km < 10) return `${String(km.toFixed(1)).replace(".0", "").replace(".", ",")} км`;
+  return `${Math.round(km).toLocaleString("ru")} км`;
+}
+
 interface ProfileData {
   bio?: string;
   tags?: string[];
@@ -66,9 +73,11 @@ export function ProfileInfoSection({
 
       {/* Город + последний визит */}
       <div className="flex items-center justify-between px-5 pt-2 pb-1">
-        {currentProfile.city ? (
-          <p className="text-white/50 text-xs flex items-center gap-1">
-            <Icon name="MapPin" size={11} className="text-white/30" />{currentProfile.city}
+        {(currentProfile.city || currentProfile.distance_km != null) ? (
+          <p className="text-white/60 text-sm flex items-center gap-1">
+            <Icon name="MapPin" size={14} className="text-white/40" />
+            {[currentProfile.city, currentProfile.distance_km != null ? formatDistance(currentProfile.distance_km) : null]
+              .filter(Boolean).join(" · ")}
           </p>
         ) : <span />}
         <div className="flex items-center gap-1.5">
@@ -84,13 +93,13 @@ export function ProfileInfoSection({
             if (isOnline) {
               return (
                 <>
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-green-400 text-xs font-medium">онлайн</span>
+                  <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-green-400 text-sm font-medium">онлайн</span>
                 </>
               );
             }
             if (!ts) {
-              return <span className="text-white/25 text-[11px]">не в сети</span>;
+              return <span className="text-white/35 text-sm">не в сети</span>;
             }
             let label: string;
             if (mins < 60) label = `был(а) ${mins} мин. назад`;
@@ -99,8 +108,8 @@ export function ProfileInfoSection({
             else label = "давно не в сети";
             return (
               <>
-                <div className="w-1.5 h-1.5 rounded-full bg-white/25" />
-                <span className="text-white/35 text-[11px]">{label}</span>
+                <div className="w-2 h-2 rounded-full bg-white/30" />
+                <span className="text-white/45 text-sm">{label}</span>
               </>
             );
           })()}

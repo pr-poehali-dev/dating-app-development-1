@@ -18,8 +18,6 @@ interface ProfilePhotoSectionProps {
   profilePremium?: boolean;
   profilePremiumTier?: PremiumTier | null;
   profileBoosted?: boolean;
-  profileCity?: string;
-  distanceKm?: number | null;
   profileOnline?: boolean;
   coverUrl?: string;
   profileGender?: string;
@@ -48,8 +46,6 @@ export function ProfilePhotoSection({
   profilePremium,
   profilePremiumTier,
   profileBoosted,
-  profileCity,
-  distanceKm,
   profileOnline,
   onClose,
   onShowMenu,
@@ -133,8 +129,6 @@ export function ProfilePhotoSection({
       profilePremium={profilePremium}
       profilePremiumTier={profilePremiumTier}
       profileBoosted={profileBoosted}
-      profileCity={profileCity}
-      distanceKm={distanceKm}
       streakReward={streakReward}
       photoAnimStyle={photoAnimStyle}
       dragY={dragY}
