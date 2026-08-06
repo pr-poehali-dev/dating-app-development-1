@@ -51,7 +51,7 @@ export function PublicStreakBadge({ userId }: { userId: number }) {
   // Нулевой стрик — минимальная строка
   if (data.current_streak === 0) {
     return (
-      <div className="mx-5 mt-2 mb-1 rounded-xl px-3 py-2 flex items-center gap-2"
+      <div className="w-full rounded-2xl px-4 py-3 flex items-center gap-2"
         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
         <FlameIcon color="#6b7280" size={14} />
         <p className="text-white/30 text-xs flex-1">Стрик не начат</p>
@@ -60,14 +60,14 @@ export function PublicStreakBadge({ userId }: { userId: number }) {
   }
 
   return (
-    <div className="mx-5 mt-2 mb-1 rounded-2xl overflow-hidden"
+    <div className="w-full rounded-2xl overflow-hidden"
       style={{
         background: `linear-gradient(135deg, ${color}15 0%, rgba(155,89,182,0.08) 100%)`,
         border: `1px solid ${color}28`,
       }}>
 
       {/* Компактная строка */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-center gap-2 px-4 py-3">
         <div style={{ filter: `drop-shadow(0 0 4px ${color}88)`, flexShrink: 0 }}>
           <FlameIcon color={color} size={16} />
         </div>
