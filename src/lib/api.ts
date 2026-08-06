@@ -701,6 +701,8 @@ export interface Profile {
   boosted?: boolean;
   username?: string;
   zodiac?: string;
+  /** Расстояние до пользователя в км (если у обоих есть геолокация) */
+  distance_km?: number | null;
 }
 
 export interface DailyMatch {

@@ -68,6 +68,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     bio?: string; tags?: string[]; followers: number; following: number; created_at?: string;
   }>({ followers: 0, following: 0 });
   const [profileStreakDays, setProfileStreakDays] = useState(0);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
 
   const mainPhoto = currentProfile.photo_url || DEFAULT_AVATAR;
 
@@ -94,6 +95,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
     setPrivateReqSent(false);
     setPhotoTab(null);
     setMatchId(null);
+    setDistanceKm(null);
     import("@/lib/api").then(({ postsApi, profilesApi, streaksApi }) => {
       streaksApi.getUser(currentProfile.id)
         .then(d => { if (d?.current_streak) setProfileStreakDays(d.current_streak); })
@@ -102,7 +104,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
       trackTask("view_profiles");
       const profileReq = postsApi.getUserProfile(currentProfile.id)
         .then(d => {
-          const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string };
+          const p = d.profile as typeof d.profile & { followers?: number; following?: number; created_at?: string; distance_km?: number | null };
+          setDistanceKm(p.distance_km ?? null);
           setProfileData({
             bio: d.profile.bio,
             tags: d.profile.tags as string[],
@@ -382,7 +385,7 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
         />
 
         <ProfileInfoSection
-          currentProfile={currentProfile}
+          currentProfile={{ ...currentProfile, distance_km: distanceKm ?? currentProfile.distance_km ?? null }}
           profileData={profileData}
           userId={currentProfile.id}
           photoTab={photoTab}

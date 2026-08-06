@@ -67,6 +67,22 @@ def get_me(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
 
+def _distance_km(conn, my_id: int, other_lat, other_lon):
+    """Расстояние в км между мной и другим пользователем. None, если координат нет."""
+    if other_lat is None or other_lon is None:
+        return None
+    cur = conn.cursor()
+    cur.execute("SELECT latitude, longitude FROM users WHERE id = %s", (my_id,))
+    row = cur.fetchone()
+    if not row or row[0] is None or row[1] is None:
+        return None
+    import math
+    lat1, lon1 = math.radians(float(row[0])), math.radians(float(row[1]))
+    lat2, lon2 = math.radians(float(other_lat)), math.radians(float(other_lon))
+    c = math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon2 - lon1)
+    dist = 6371.0 * math.acos(max(-1.0, min(1.0, c)))
+    return round(dist, 1)
+
 LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
 
 def build_email_html(preheader: str, heading: str, intro: str, highlight_label: str, highlight_value: str, note: str, footer: str) -> str:
@@ -1041,15 +1057,19 @@ def handler(event: dict, context) -> dict:
             cur.execute("""
                 SELECT u.id, u.name, u.age, u.city, u.bio, u.photo_url, u.tags, u.verified, u.online, u.last_seen, u.created_at,
                        u.username, u.premium, u.premium_tier, u.cover_url, u.gender, u.height, u.weight, u.relationship_status,
-                       (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted
+                       (EXISTS (SELECT 1 FROM profile_boosts pb WHERE pb.user_id = u.id AND pb.expires_at > NOW())) AS boosted,
+                       u.latitude, u.longitude
                 FROM users u WHERE u.id = %s
             """, (uid,))
             row = cur.fetchone()
             if not row:
                 return resp(404, {'error': 'Пользователь не найден'})
             cols = ['id', 'name', 'age', 'city', 'bio', 'photo_url', 'tags', 'verified', 'online', 'last_seen', 'created_at',
-                    'username', 'premium', 'premium_tier', 'cover_url', 'gender', 'height', 'weight', 'relationship_status', 'boosted']
+                    'username', 'premium', 'premium_tier', 'cover_url', 'gender', 'height', 'weight', 'relationship_status', 'boosted',
+                    'latitude', 'longitude']
             profile = dict(zip(cols, row))
+            # Расстояние до пользователя (км) — считаем, если есть координаты у обоих
+            profile['distance_km'] = _distance_km(conn, me['id'], profile.pop('latitude', None), profile.pop('longitude', None))
             profile['created_at'] = str(profile['created_at'])
             profile['last_seen'] = str(profile['last_seen']) if profile['last_seen'] else None
             # Подписчики и подписки из user_subscriptions
