@@ -519,8 +519,8 @@ def handler(event: dict, context) -> dict:
             lon_v = float(body.get('lon', 0))
             country_v = body.get('country', '').strip()[:100]
             city_v = body.get('city', '').strip()[:100]
-            cur.execute("UPDATE users SET latitude=%s, longitude=%s, country=%s, city=COALESCE(NULLIF(%s,''), city) WHERE id=%s",
-                        (lat_v, lon_v, country_v or None, city_v or None, me['id']))
+            cur.execute("UPDATE users SET latitude=%s, longitude=%s, country=COALESCE(NULLIF(%s,''), country), city=COALESCE(NULLIF(%s,''), city) WHERE id=%s",
+                        (lat_v, lon_v, country_v, city_v, me['id']))
             conn.commit()
             return resp(200, {'ok': True})
 

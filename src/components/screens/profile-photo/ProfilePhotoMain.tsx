@@ -18,6 +18,9 @@ interface ProfilePhotoMainProps {
   profilePremium?: boolean;
   profilePremiumTier?: PremiumTier | null;
   profileBoosted?: boolean;
+  profileCity?: string;
+  /** Расстояние до пользователя в км */
+  distanceKm?: number | null;
   streakReward: StreakReward | null;
   photoAnimStyle: React.CSSProperties;
   dragY: number;
@@ -53,6 +56,8 @@ export function ProfilePhotoMain({
   profilePremium,
   profilePremiumTier,
   profileBoosted,
+  profileCity,
+  distanceKm,
   streakReward,
   photoAnimStyle,
   dragY,
@@ -210,6 +215,29 @@ export function ProfilePhotoMain({
               streakReward={streakReward}
             />
           </div>
+
+          {/* Город и расстояние */}
+          {(profileCity || distanceKm != null) && (
+            <div className="flex items-center gap-2 mb-3 -mt-1">
+              {profileCity && (
+                <span className="flex items-center gap-1 text-white/80 text-xs font-medium"
+                  style={{ textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>
+                  <Icon name="MapPin" size={12} className="text-white/60" />{profileCity}
+                </span>
+              )}
+              {distanceKm != null && (
+                <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: "rgba(255,45,120,0.85)", color: "#fff", backdropFilter: "blur(8px)" }}>
+                  <Icon name="Navigation" size={11} className="text-white" />
+                  {distanceKm < 1
+                    ? "меньше 1 км"
+                    : distanceKm < 10
+                      ? `${String(distanceKm.toFixed(1)).replace(".0", "").replace(".", ",")} км`
+                      : `${Math.round(distanceKm).toLocaleString("ru")} км`}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Кнопки действий */}
           <div className="flex items-center gap-2.5">

@@ -8,13 +8,6 @@ import { PhotoZoomViewer } from "@/components/ui/PhotoZoomViewer";
 import { PublicStreakBadge } from "@/components/screens/profile/PublicStreakBadge";
 import { ZodiacBadge } from "@/components/screens/profile/ZodiacBanner";
 
-/** Расстояние человеческим языком: «рядом», «1,2 км», «5 км», «120 км» */
-export function formatDistance(km: number): string {
-  if (km < 1) return "меньше 1 км";
-  if (km < 10) return `${km.toFixed(1).replace(".", ",").replace(",0", "")} км`;
-  return `${Math.round(km).toLocaleString("ru")} км`;
-}
-
 interface ProfileData {
   bio?: string;
   tags?: string[];
@@ -73,20 +66,9 @@ export function ProfileInfoSection({
 
       {/* Город + последний визит */}
       <div className="flex items-center justify-between px-5 pt-2 pb-1">
-        {(currentProfile.city || currentProfile.distance_km != null) ? (
-          <p className="text-white/50 text-xs flex items-center gap-1.5">
-            {currentProfile.city && (
-              <span className="flex items-center gap-1">
-                <Icon name="MapPin" size={11} className="text-white/30" />{currentProfile.city}
-              </span>
-            )}
-            {currentProfile.distance_km != null && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"
-                style={{ background: "rgba(255,45,120,0.12)", color: "#FF7AB0" }}>
-                <Icon name="Navigation" size={10} style={{ color: "#FF7AB0" }} />
-                {formatDistance(currentProfile.distance_km)}
-              </span>
-            )}
+        {currentProfile.city ? (
+          <p className="text-white/50 text-xs flex items-center gap-1">
+            <Icon name="MapPin" size={11} className="text-white/30" />{currentProfile.city}
           </p>
         ) : <span />}
         <div className="flex items-center gap-1.5">

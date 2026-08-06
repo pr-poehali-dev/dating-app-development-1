@@ -370,6 +370,8 @@ export function DiscoverProfileModal({ profile, profiles, profileIndex, onClose,
           profilePremium={currentProfile.premium}
           profilePremiumTier={currentProfile.premium_tier}
           profileBoosted={currentProfile.boosted}
+          profileCity={currentProfile.city}
+          distanceKm={distanceKm ?? currentProfile.distance_km ?? null}
           profileOnline={isUserOnline(currentProfile.last_seen, currentProfile.online)}
           coverUrl={currentProfile.cover_url}
           profileGender={currentProfile.gender}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, isBanError, clearAllAuth, type User, type LiveStream, type Profile } from "@/lib/api";
+import { authApi, notificationsApi, matchesApi, messagesApi, postsApi, profilesApi, isBanError, clearAllAuth, type User, type LiveStream, type Profile } from "@/lib/api";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { loginOneSignal, logoutOneSignal } from "@/hooks/useOneSignal";
 import { useOffline, cacheMatches, registerSyncHandler, removePendingAction } from "@/hooks/useOffline";
@@ -164,6 +164,29 @@ export function useIndexController() {
       // При закрытии вкладки ставим офлайн
       authApi.logout().catch(() => {});
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUser]);
+
+  // Тихо обновляем геолокацию — чтобы в анкетах показывалось расстояние.
+  // Разрешение уже выданное браузером используется молча; если его нет — ничего не спрашиваем.
+  useEffect(() => {
+    if (!currentUser || !navigator.geolocation) return;
+    const KEY = "geo_sync_at";
+    const last = Number(localStorage.getItem(KEY) || 0);
+    if (Date.now() - last < 6 * 3600_000) return;
+    const save = () => navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        localStorage.setItem(KEY, String(Date.now()));
+        profilesApi.updateGeo(pos.coords.latitude, pos.coords.longitude, "", "").catch(() => {});
+      },
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600_000 },
+    );
+    if (navigator.permissions?.query) {
+      navigator.permissions.query({ name: "geolocation" as PermissionName })
+        .then(s => { if (s.state === "granted") save(); })
+        .catch(() => {});
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasUser]);
 
