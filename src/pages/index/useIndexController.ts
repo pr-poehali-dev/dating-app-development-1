@@ -251,9 +251,14 @@ export function useIndexController() {
   // Обработка редиректа после оплаты Premium
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("payment") === "success") {
+    const path = window.location.pathname;
+    if (path === "/pay/fail") {
+      window.history.replaceState({}, "", "/");
+      return;
+    }
+    if (params.get("payment") === "success" || path === "/pay/success") {
       // Убираем параметр из URL
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState({}, "", "/");
       // Обновляем данные пользователя (теперь premium=true)
       if (authApi.isLoggedIn()) {
         authApi.me().then((d) => {
