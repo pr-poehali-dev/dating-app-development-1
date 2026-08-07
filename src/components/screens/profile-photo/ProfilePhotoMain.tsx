@@ -74,8 +74,8 @@ export function ProfilePhotoMain({
   return (
     <div className="flex-shrink-0">
 
-      {/* ── Фото (половина экрана, но не выше 440px на широких экранах) ── */}
-      <div className="relative w-full overflow-hidden mx-auto" style={{ height: "min(50dvh, 440px)", maxWidth: 440 }}
+      {/* ── Фото во всю ширину экрана, без боковых полей ── */}
+      <div className="relative w-full overflow-hidden" style={{ height: "min(62dvh, 620px)" }}
         onTouchStart={mainOnTouchStart}
         onTouchMove={mainOnTouchMove}
         onTouchEnd={mainOnTouchEnd}>
