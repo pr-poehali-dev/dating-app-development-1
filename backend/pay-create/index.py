@@ -2,10 +2,8 @@ import json
 import os
 import uuid
 import random
-import hashlib
 import psycopg2
 import urllib.request
-import urllib.parse
 import base64
 import datetime
 
@@ -29,24 +27,10 @@ def handler(event: dict, context) -> dict:
     body = event.get('body', '{}') or '{}'
     data = json.loads(body)
 
-    provider = (data.get('provider') or 'yookassa').strip().lower()
-    if provider not in ('yookassa', 'robokassa'):
-        provider = 'yookassa'
-
     shop_id = os.environ.get('YOOKASSA_SHOP_ID')
     secret_key = os.environ.get('YOOKASSA_SECRET_KEY')
-    rk_login = os.environ.get('ROBOKASSA_MERCHANT_LOGIN')
-    rk_pass1 = os.environ.get('ROBOKASSA_PASSWORD_1')
 
-    if provider == 'robokassa' and (not rk_login or not rk_pass1):
-        return {
-            'statusCode': 500,
-            'headers': HEADERS_CORS,
-            'body': json.dumps({'error': 'Robokassa не настроена'}),
-            'isBase64Encoded': False
-        }
-
-    if provider == 'yookassa' and (not shop_id or not secret_key):
+    if not shop_id or not secret_key:
         return {
             'statusCode': 500,
             'headers': HEADERS_CORS,
@@ -168,92 +152,6 @@ def handler(event: dict, context) -> dict:
             metadata['promo_discount'] = promo_discount
             if amount < 10:
                 amount = 10.0
-
-    # ── Robokassa: формируем ссылку на оплату по номеру счёта ──
-    if provider == 'robokassa':
-        dsn_rk = os.environ.get('DATABASE_URL')
-        if not dsn_rk:
-            return {
-                'statusCode': 500,
-                'headers': HEADERS_CORS,
-                'body': json.dumps({'error': 'DB not configured'}),
-                'isBase64Encoded': False
-            }
-        conn_rk = psycopg2.connect(dsn_rk, options=f"-c search_path={schema}")
-        cur_rk = conn_rk.cursor()
-        cur_rk.execute("SELECT nextval('robokassa_inv_seq')")
-        inv_id = int(cur_rk.fetchone()[0])
-
-        out_sum = f'{float(amount):.2f}'
-        receipt_json = json.dumps({
-            'sno': 'usn_income',
-            'items': [{
-                'name': description[:128],
-                'quantity': 1,
-                'sum': float(out_sum),
-                'payment_method': 'full_payment',
-                'payment_object': 'service',
-                'tax': 'none'
-            }]
-        }, ensure_ascii=False)
-        receipt_enc = urllib.parse.quote(receipt_json, safe='')
-
-        # Подпись: MerchantLogin:OutSum:InvId:Receipt:Password1:Shp_...
-        sign_src = f'{rk_login}:{out_sum}:{inv_id}:{receipt_enc}:{rk_pass1}:Shp_order={inv_id}'
-        signature = hashlib.md5(sign_src.encode('utf-8')).hexdigest()
-
-        params = {
-            'MerchantLogin': rk_login,
-            'OutSum': out_sum,
-            'InvId': str(inv_id),
-            'Description': description[:100],
-            'Receipt': receipt_json,
-            'SignatureValue': signature,
-            'Shp_order': str(inv_id),
-            'Culture': 'ru',
-            'Encoding': 'utf-8',
-        }
-        if user_email:
-            params['Email'] = user_email
-        if os.environ.get('ROBOKASSA_TEST_MODE') == '1':
-            params['IsTest'] = '1'
-
-        payment_url = 'https://auth.robokassa.ru/Merchant/Index.aspx?' + urllib.parse.urlencode(params)
-        order_number = f'rk_{inv_id}'
-
-        metadata['return_url'] = return_url
-        cur_rk.execute(
-            "INSERT INTO orders (order_number, user_name, user_email, amount, status, payment_url, "
-            "order_comment, metadata, provider, robokassa_inv_id) "
-            "VALUES (%s, %s, %s, %s, 'pending', %s, %s, %s::jsonb, 'robokassa', %s) "
-            "ON CONFLICT (order_number) DO UPDATE SET payment_url = EXCLUDED.payment_url, "
-            "metadata = EXCLUDED.metadata",
-            (
-                order_number,
-                metadata.get('user_name', 'Пользователь'),
-                user_email,
-                float(amount),
-                payment_url,
-                description,
-                json.dumps(metadata),
-                inv_id
-            )
-        )
-        conn_rk.commit()
-        cur_rk.close()
-        conn_rk.close()
-
-        return {
-            'statusCode': 200,
-            'headers': HEADERS_CORS,
-            'body': json.dumps({
-                'payment_id': order_number,
-                'payment_url': payment_url,
-                'status': 'pending',
-                'provider': 'robokassa'
-            }),
-            'isBase64Encoded': False
-        }
 
     idempotence_key = str(uuid.uuid4())
 

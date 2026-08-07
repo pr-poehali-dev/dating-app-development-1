@@ -3,7 +3,6 @@ import Icon from "@/components/ui/icon";
 import { useBackHandler } from "@/hooks/backStack";
 import { useYookassa } from "@/components/extensions/yookassa/useYookassa";
 import { PAY_CREATE_URL } from "@/components/screens/ProfileGiftSheet";
-import { PayMethodPicker, type PayProvider } from "@/components/payments/PayMethodPicker";
 
 const MIN_TOPUP = 500;
 
@@ -25,7 +24,6 @@ export function CoinTopUpSheet({ currentBalance, onClose }: Props) {
   const { pay, loading } = useYookassa(PAY_CREATE_URL);
   const [selected, setSelected] = useState<number>(1000);
   const [custom, setCustom] = useState("");
-  const [provider, setProvider] = useState<PayProvider>("yookassa");
 
   useBackHandler(true, onClose);
 
@@ -45,7 +43,6 @@ export function CoinTopUpSheet({ currentBalance, onClose }: Props) {
         coins: String(amount),
         sender_token: token,
       },
-      provider,
     });
   };
 
@@ -120,7 +117,6 @@ export function CoinTopUpSheet({ currentBalance, onClose }: Props) {
           )}
         </div>
 
-        <PayMethodPicker value={provider} onChange={setProvider} className="mt-5" />
 
         <p className="text-white/30 text-xs text-center mt-5 leading-relaxed px-4">
           Монеты зачислятся автоматически после оплаты. Ими можно дарить подарки в разделе «Особые». Монеты нельзя передавать другим и вывести обратно.

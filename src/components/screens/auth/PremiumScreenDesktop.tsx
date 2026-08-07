@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
-import { PayMethodPicker, type PayProvider } from "@/components/payments/PayMethodPicker";
 import { postsApi2, profilesApi } from "@/lib/api";
 
 const LOGO_URL = "https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png";
@@ -48,7 +47,6 @@ export function PremiumScreenDesktop({ onClose, currentUser }: { onClose: () => 
   const defaultSelected = plans.findIndex((p) => p.popular);
   const [selected, setSelected] = useState(defaultSelected >= 0 ? defaultSelected : 1);
   const [paying, setPaying] = useState(false);
-  const [payProvider, setPayProvider] = useState<PayProvider>("yookassa");
   const [error, setError] = useState("");
   const [promoCode, setPromoCode] = useState("");
   const [promoDiscount, setPromoDiscount] = useState(0);
@@ -88,7 +86,6 @@ export function PremiumScreenDesktop({ onClose, currentUser }: { onClose: () => 
           description: `Полутон Premium — ${plan.label}${promoApplied ? ` (промокод ${promoApplied})` : ""}`,
           user_email: currentUser.email,
           return_url: window.location.origin + "/?payment=success",
-          provider: payProvider,
           metadata: {
             user_id: String(currentUser.id),
             user_name: currentUser.name,
@@ -329,8 +326,7 @@ export function PremiumScreenDesktop({ onClose, currentUser }: { onClose: () => 
           )}
           {promoError && <p className="text-red-400 text-xs px-1">{promoError}</p>}
 
-          <PayMethodPicker value={payProvider} onChange={setPayProvider} />
-
+  
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
           <button disabled={paying} onClick={handlePay}
             className="prem-d-btn w-full py-4 rounded-2xl text-base font-black text-white disabled:opacity-60 flex items-center justify-center gap-2 hover:brightness-110 hover:-translate-y-0.5 transition-all">

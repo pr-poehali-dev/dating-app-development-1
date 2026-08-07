@@ -2,7 +2,6 @@ import json
 import os
 import datetime
 import base64
-import hashlib
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -313,74 +312,6 @@ def _create_boost_from_metadata(cur, payment_id: str, metadata: dict, amount: fl
     _send_bot_message(cur, user_id, sys_text)
 
 
-def _handle_robokassa(event: dict) -> dict:
-    """
-    Обрабатывает Result URL от Robokassa (GET/POST с OutSum, InvId, SignatureValue).
-    Проверяет подпись по Паролю #2 и начисляет покупку. В ответ Robokassa
-    ждёт строку вида OK{InvId}.
-    """
-    params = dict(event.get('queryStringParameters') or {})
-    raw_body = event.get('body') or ''
-    if raw_body and not raw_body.strip().startswith('{'):
-        for k, v in urllib.parse.parse_qsl(raw_body):
-            params.setdefault(k, v)
-
-    norm = {k.lower(): v for k, v in params.items()}
-    out_sum = norm.get('outsum') or ''
-    inv_id = norm.get('invid') or ''
-    signature = (norm.get('signaturevalue') or '').lower()
-    pass2 = os.environ.get('ROBOKASSA_PASSWORD_2') or ''
-
-    if not out_sum or not inv_id or not signature or not pass2:
-        return {'statusCode': 400, 'headers': {**HEADERS, 'Content-Type': 'text/plain'},
-                'body': 'bad request', 'isBase64Encoded': False}
-
-    shp = sorted([(k, v) for k, v in params.items() if k.lower().startswith('shp_')])
-    shp_str = ''.join(f':{k}={v}' for k, v in shp)
-    expected = hashlib.md5(f'{out_sum}:{inv_id}:{pass2}{shp_str}'.encode('utf-8')).hexdigest().lower()
-
-    if signature != expected:
-        return {'statusCode': 403, 'headers': {**HEADERS, 'Content-Type': 'text/plain'},
-                'body': 'bad sign', 'isBase64Encoded': False}
-
-    dsn = os.environ.get('DATABASE_URL')
-    if not dsn:
-        return {'statusCode': 200, 'headers': {**HEADERS, 'Content-Type': 'text/plain'},
-                'body': f'OK{inv_id}', 'isBase64Encoded': False}
-
-    order_number = f'rk_{int(inv_id)}'
-    conn = psycopg2.connect(dsn)
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            "UPDATE orders SET status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP "
-            "WHERE order_number = %s AND status <> 'paid' RETURNING metadata, amount",
-            (order_number,)
-        )
-        row = cur.fetchone()
-        if row:
-            meta = row[0] or {}
-            try:
-                paid_amount = float(out_sum)
-            except (TypeError, ValueError):
-                paid_amount = float(row[1] or 0)
-
-            _create_gift_from_metadata(cur, order_number, meta, paid_amount)
-            _add_coins_from_metadata(cur, order_number, meta, paid_amount)
-            _create_boost_from_metadata(cur, order_number, meta, paid_amount)
-            _create_premium_from_metadata(cur, order_number, meta)
-            _apply_promo_from_metadata(cur, meta, _int(meta.get('user_id')))
-        conn.commit()
-    except Exception:
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
-
-    return {'statusCode': 200, 'headers': {**HEADERS, 'Content-Type': 'text/plain'},
-            'body': f'OK{inv_id}', 'isBase64Encoded': False}
-
-
 def handler(event: dict, context) -> dict:
     """
     Вебхук от ЮKassa — получает уведомление об успешной оплате и обновляет заказ.
@@ -389,14 +320,6 @@ def handler(event: dict, context) -> dict:
     """
     if event.get('httpMethod') == 'OPTIONS':
         return {'statusCode': 200, 'headers': HEADERS, 'body': '', 'isBase64Encoded': False}
-
-    # Robokassa шлёт InvId/SignatureValue в query или form-body
-    _qs = {k.lower(): v for k, v in (event.get('queryStringParameters') or {}).items()}
-    _raw = event.get('body') or ''
-    if 'signaturevalue' not in _qs and _raw and not _raw.strip().startswith('{'):
-        _qs.update({k.lower(): v for k, v in urllib.parse.parse_qsl(_raw)})
-    if 'signaturevalue' in _qs and 'invid' in _qs:
-        return _handle_robokassa(event)
 
     body = event.get('body', '{}') or '{}'
     try:

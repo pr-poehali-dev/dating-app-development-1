@@ -3,16 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Icon from "@/components/ui/icon";
 import { AuthLegalContent } from "@/components/screens/auth/AuthLegalContent";
-import { AuthOfferContent } from "@/components/screens/auth/AuthOfferContent";
-import { openLegalExternally, type LegalTab } from "@/lib/openLegal";
+import { openLegalExternally } from "@/lib/openLegal";
 
-export default function LegalPage({ tab }: { tab: LegalTab }) {
+export default function LegalPage({ tab }: { tab: "terms" | "privacy" }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isTerms = tab === "terms";
-  const title = tab === "offer"
-    ? "Публичная оферта"
-    : isTerms ? t("legal.termsTitle") : t("legal.privacyTitle");
+  const title = isTerms ? t("legal.termsTitle") : t("legal.privacyTitle");
 
   useEffect(() => {
     // В установленном приложении (APK/standalone) правовые документы открываем
@@ -50,9 +47,7 @@ export default function LegalPage({ tab }: { tab: LegalTab }) {
 
         {/* Контент документа на светлом фоне */}
         <div className="flex flex-col gap-5">
-          {tab === "offer"
-            ? <AuthOfferContent lightBg />
-            : <AuthLegalContent tab={tab} lightBg />}
+          <AuthLegalContent tab={tab} lightBg />
         </div>
 
         <div className="mt-10 pt-6" style={{ borderTop: "1px solid rgba(0,0,0,0.08)" }}>

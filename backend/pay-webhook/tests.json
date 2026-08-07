@@ -10,30 +10,50 @@
       "name": "Missing payment id returns 400",
       "method": "POST",
       "path": "/",
-      "body": {"event": "payment.succeeded", "object": {}},
+      "body": {
+        "event": "payment.succeeded",
+        "object": {}
+      },
       "expectedStatus": 400
     },
     {
       "name": "Valid webhook returns 200",
       "method": "POST",
       "path": "/",
-      "body": {"event": "payment.succeeded", "object": {"id": "test-payment-id", "status": "succeeded"}},
+      "body": {
+        "event": "payment.succeeded",
+        "object": {
+          "id": "test-payment-id",
+          "status": "succeeded"
+        }
+      },
       "expectedStatus": 200
     },
     {
       "name": "Forged succeeded payment is rejected (not verified by YooKassa)",
       "method": "POST",
       "path": "/",
-      "body": {"event": "payment.succeeded", "object": {"id": "forged-nonexistent-id", "status": "succeeded", "amount": {"value": "9999.00", "currency": "RUB"}, "metadata": {"kind": "coins", "user_id": "1", "coins": "999999"}}},
+      "body": {
+        "event": "payment.succeeded",
+        "object": {
+          "id": "forged-nonexistent-id",
+          "status": "succeeded",
+          "amount": {
+            "value": "9999.00",
+            "currency": "RUB"
+          },
+          "metadata": {
+            "kind": "coins",
+            "user_id": "1",
+            "coins": "999999"
+          }
+        }
+      },
       "expectedStatus": 200,
-      "expectedBody": {"ok": false},
+      "expectedBody": {
+        "ok": false
+      },
       "bodyMatcher": "partial"
-    },
-    {
-      "name": "Robokassa bad signature rejected",
-      "method": "GET",
-      "path": "/?OutSum=100.00&InvId=1001&SignatureValue=deadbeef",
-      "expectedStatus": 403
     }
   ]
 }

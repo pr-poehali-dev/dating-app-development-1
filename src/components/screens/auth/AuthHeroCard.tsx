@@ -20,7 +20,6 @@ export function AuthHeroCard({
   onShowForgot,
   onOpenTerms,
   onOpenPrivacy,
-  onOpenOffer,
   onEmailTakenDismiss,
   onOAuth,
   oauthLoading,
@@ -42,7 +41,6 @@ export function AuthHeroCard({
   onShowForgot: () => void;
   onOpenTerms: () => void;
   onOpenPrivacy: () => void;
-  onOpenOffer: () => void;
   onEmailTakenDismiss: () => void;
   onOAuth: (provider: "vk" | "mailru") => void;
   oauthLoading: "vk" | "mailru" | null;
@@ -169,10 +167,6 @@ export function AuthHeroCard({
         . {t("auth.agreementMiddle")}{" "}
         <button onClick={onOpenPrivacy} className="text-white/70 font-semibold hover:text-pink-300 transition-colors">
           {t("footer.privacy")}
-        </button>
-        {" и "}
-        <button onClick={onOpenOffer} className="text-white/70 font-semibold hover:text-pink-300 transition-colors">
-          Публичную оферту
         </button>
         .
       </p>

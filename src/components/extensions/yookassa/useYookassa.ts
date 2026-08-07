@@ -6,7 +6,6 @@ export interface YookassaPayload {
   userEmail?: string;
   returnUrl: string;
   metadata?: Record<string, string>;
-  provider?: 'yookassa' | 'robokassa';
 }
 
 export interface YookassaResult {
@@ -31,8 +30,7 @@ export function useYookassa(apiUrl: string) {
           description: payload.description,
           user_email: payload.userEmail ?? '',
           return_url: payload.returnUrl,
-          metadata: payload.metadata ?? {},
-          provider: payload.provider ?? 'yookassa'
+          metadata: payload.metadata ?? {}
         })
       });
       const data = await res.json();

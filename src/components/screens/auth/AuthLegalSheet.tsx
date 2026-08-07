@@ -1,17 +1,14 @@
 import Icon from "@/components/ui/icon";
 import { AuthLegalContent } from "./AuthLegalContent";
-import { AuthOfferContent } from "./AuthOfferContent";
-import type { LegalTab } from "@/lib/openLegal";
 
 export function AuthLegalSheet({
   tab,
   onClose,
 }: {
-  tab: LegalTab;
+  tab: "terms" | "privacy";
   onClose: () => void;
 }) {
   const isTerms = tab === "terms";
-  const isOffer = tab === "offer";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end"
@@ -30,11 +27,11 @@ export function AuthLegalSheet({
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
               style={{ background: isTerms ? "rgba(255,45,120,0.12)" : "rgba(155,89,182,0.12)" }}>
-              <Icon name={isTerms ? "Scale" : isOffer ? "FileText" : "Shield"} size={19} className={isTerms ? "text-pink-400" : "text-purple-400"} />
+              <Icon name={isTerms ? "Scale" : "Shield"} size={19} className={isTerms ? "text-pink-400" : "text-purple-400"} />
             </div>
             <div>
               <p className="text-white font-bold text-base">
-                {isTerms ? "Лицензионное соглашение" : isOffer ? "Публичная оферта" : "Политика конфиденциальности"}
+                {isTerms ? "Лицензионное соглашение" : "Политика конфиденциальности"}
               </p>
               <p className="text-white/35 text-xs">Полутон · Редакция от 26 июля 2026 г.</p>
             </div>
@@ -47,7 +44,7 @@ export function AuthLegalSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4" style={{ scrollbarWidth: "none" }}>
-          {isOffer ? <AuthOfferContent /> : <AuthLegalContent tab={tab} />}
+          <AuthLegalContent tab={tab} />
           <button onClick={onClose}
             className="w-full py-3.5 rounded-2xl text-white font-bold text-sm mt-1"
             style={{ background: isTerms ? "linear-gradient(135deg,#FF2D78,#9B59B6)" : "linear-gradient(135deg,#9B59B6,#6c3faf)" }}>
