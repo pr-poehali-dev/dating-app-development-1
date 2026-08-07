@@ -293,8 +293,8 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
       )}
 
       {/* Карточка */}
-      <div className="mx-4 mb-4 rounded-3xl overflow-hidden"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div className="mb-4 overflow-hidden"
+        style={{ background: "rgba(255,255,255,0.04)", borderTop: "1px solid rgba(255,255,255,0.07)", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
 
         {/* Шапка автора */}
         <div className="flex items-center gap-3 px-4 pt-4 pb-3">
@@ -333,11 +333,11 @@ export function PostCard({ post, currentUserId, onLike, onComment, onDelete, onP
         </div>
 
         {/* Фото */}
-        <div className="relative mx-3 rounded-2xl overflow-hidden" onDoubleClick={handleDoubleTap}>
+        <div className="relative overflow-hidden" onDoubleClick={handleDoubleTap}>
           <img
             src={post.photo_url}
-            className="w-full object-cover cursor-pointer"
-            style={{ maxHeight: 560 }}
+            className="w-full object-cover cursor-pointer block"
+            style={{ maxHeight: 620 }}
             onClick={() => setLightbox(true)}
           />
           {/* Анимация сердца при двойном тапе */}
