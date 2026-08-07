@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { SupportModal } from "@/components/screens/auth/SupportModal";
-import { openLegalExternally } from "@/lib/openLegal";
+import { openLegalExternally, type LegalTab } from "@/lib/openLegal";
 
 export function AuthSiteFooter() {
   const { t } = useTranslation();
@@ -10,7 +10,7 @@ export function AuthSiteFooter() {
   const year = new Date().getFullYear();
   const [showSupport, setShowSupport] = useState(false);
 
-  const openLegal = (tab: "terms" | "privacy") => {
+  const openLegal = (tab: LegalTab) => {
     if (!openLegalExternally(tab)) navigate(`/${tab}`);
   };
 
@@ -26,6 +26,8 @@ export function AuthSiteFooter() {
             className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.terms")}</button>
           <button onClick={() => openLegal("privacy")}
             className="text-white/45 text-sm hover:text-pink-400 transition-colors">{t("footer.privacy")}</button>
+          <button onClick={() => openLegal("offer")}
+            className="text-white/45 text-sm hover:text-pink-400 transition-colors">Публичная оферта</button>
         </div>
       </div>
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}

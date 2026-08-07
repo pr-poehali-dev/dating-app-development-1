@@ -19,6 +19,7 @@ export function AuthForm({
   onShowForgot,
   onOpenTerms,
   onOpenPrivacy,
+  onOpenOffer,
   onEmailTakenDismiss,
   onOAuth,
   oauthLoading,
@@ -40,6 +41,7 @@ export function AuthForm({
   onShowForgot: () => void;
   onOpenTerms: () => void;
   onOpenPrivacy: () => void;
+  onOpenOffer: () => void;
   onEmailTakenDismiss: () => void;
   onOAuth: (provider: "vk" | "mailru") => void;
   oauthLoading: "vk" | "mailru" | null;
@@ -252,6 +254,10 @@ export function AuthForm({
               {" "}{t("auth.agreementMiddle")}{" "}
               <button onClick={onOpenPrivacy} className="text-white font-bold hover:text-pink-300 transition-colors">
                 {t("footer.privacy")}
+              </button>
+              {", "}
+              <button onClick={onOpenOffer} className="text-white font-bold hover:text-pink-300 transition-colors">
+                Публичная оферта
               </button>
             </p>
           </div>

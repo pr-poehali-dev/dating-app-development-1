@@ -28,6 +28,7 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
   const [showPassword, setShowPassword] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showOffer, setShowOffer] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
   const [oauthLoading, setOAuthLoading] = useState<"vk" | "mailru" | null>(null);
 
@@ -78,6 +79,7 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
 
   const openTerms = () => { if (!openLegalExternally("terms")) setShowTerms(true); };
   const openPrivacy = () => { if (!openLegalExternally("privacy")) setShowPrivacy(true); };
+  const openOffer = () => { if (!openLegalExternally("offer")) setShowOffer(true); };
 
   const submit = async () => {
     setError("");
@@ -122,6 +124,9 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
       {showPrivacy && (
         <AuthLegalSheet tab="privacy" onClose={() => setShowPrivacy(false)} />
       )}
+      {showOffer && (
+        <AuthLegalSheet tab="offer" onClose={() => setShowOffer(false)} />
+      )}
 
       {banned && (
         <BannedNotice
@@ -156,6 +161,7 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
           onShowForgot={() => setShowForgot(true)}
           onOpenTerms={openTerms}
           onOpenPrivacy={openPrivacy}
+          onOpenOffer={openOffer}
           onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
           onOAuth={startOAuth}
           oauthLoading={oauthLoading}
@@ -179,6 +185,7 @@ export function AuthScreen({ onAuth, variant = "phone", initialBanMessage = null
           onShowForgot={() => setShowForgot(true)}
           onOpenTerms={openTerms}
           onOpenPrivacy={openPrivacy}
+          onOpenOffer={openOffer}
           onEmailTakenDismiss={() => { setEmailTaken(false); setError(""); }}
           onOAuth={startOAuth}
           oauthLoading={oauthLoading}

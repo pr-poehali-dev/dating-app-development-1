@@ -36,6 +36,7 @@ function AppInner() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/terms" element={<LegalPage tab="terms" />} />
         <Route path="/privacy" element={<LegalPage tab="privacy" />} />
+        <Route path="/offer" element={<LegalPage tab="offer" />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -5,7 +5,9 @@ import { isStandaloneApp } from "@/lib/isStandalone";
 // Браузер сам преобразует кириллицу в punycode при переходе.
 const SITE_ORIGIN = "https://полуто-н.рф";
 
-export function legalUrl(tab: "terms" | "privacy"): string {
+export type LegalTab = "terms" | "privacy" | "offer";
+
+export function legalUrl(tab: LegalTab): string {
   return `${SITE_ORIGIN}/${tab}`;
 }
 
@@ -16,7 +18,7 @@ export function legalUrl(tab: "terms" | "privacy"): string {
  * @returns true — документ открыт снаружи (внутренний Sheet показывать не нужно).
  *          false — мы в обычном вебе, показываем документ внутри приложения.
  */
-export function openLegalExternally(tab: "terms" | "privacy"): boolean {
+export function openLegalExternally(tab: LegalTab): boolean {
   if (!isStandaloneApp()) return false;
 
   const url = legalUrl(tab);
