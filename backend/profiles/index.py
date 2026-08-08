@@ -570,6 +570,13 @@ def handler(event: dict, context) -> dict:
             row = cur.fetchone()
             return resp(200, {'incognito': row[0] if row else False})
 
+        if action == 'clear_geo':
+            # Пользователь выключил геолокацию — стираем координаты,
+            # чтобы расстояние больше не считалось ни для кого.
+            cur.execute("UPDATE users SET latitude = NULL, longitude = NULL WHERE id = %s", (me['id'],))
+            conn.commit()
+            return resp(200, {'ok': True})
+
         if action == 'update_geo':
             body = json.loads(event.get('body') or '{}')
             lat_v = float(body.get('lat', 0))

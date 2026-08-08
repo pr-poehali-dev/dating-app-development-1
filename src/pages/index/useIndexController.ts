@@ -171,6 +171,8 @@ export function useIndexController() {
   // Разрешение уже выданное браузером используется молча; если его нет — ничего не спрашиваем.
   useEffect(() => {
     if (!currentUser || !navigator.geolocation) return;
+    // Пользователь выключил локацию в настройках — не трогаем геолокацию
+    if (localStorage.getItem("geo_enabled") === "0") return;
     const KEY = "geo_sync_at";
     const last = Number(localStorage.getItem(KEY) || 0);
     if (Date.now() - last < 6 * 3600_000) return;

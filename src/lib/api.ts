@@ -258,6 +258,8 @@ export const profilesApi = {
       body: JSON.stringify({ lat, lon, country, city }),
     }),
 
+  clearGeo: () => req<{ ok: boolean }>("profiles", "clear_geo", { method: "POST", body: "{}" }),
+
   uploadPhoto: (image: string, content_type: string) =>
     req<{ ok: boolean; photo_url: string }>("profiles", "upload_photo", {
       method: "POST",
