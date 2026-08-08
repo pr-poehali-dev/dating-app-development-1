@@ -1,22 +1,21 @@
-// ── Кнопка магазина приложений — в едином стиле с кнопками VK / Mail.ru ─────
-export function StoreDownloadButton({ store }: { store: "rustore" | "nashstore" }) {
-  const isRuStore = store === "rustore";
+// ── Кнопка «Доступно в RuStore» — официальный бейдж магазина ────────────────
+const RUSTORE_URL = "https://www.rustore.ru/";
+
+export function StoreDownloadButton() {
   return (
-    <button
-      type="button"
-      onClick={(e) => e.preventDefault()}
-      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-white text-sm font-semibold transition-all active:scale-95 hover:brightness-110"
-      style={{
-        background: isRuStore ? "#1E88E5" : "linear-gradient(135deg,#FF3B5C,#C81E45)",
-        boxShadow: isRuStore ? "0 4px 16px rgba(30,136,229,0.35)" : "0 4px 16px rgba(255,59,92,0.35)",
-      }}
+    <a
+      href={RUSTORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-full max-w-[220px] mx-auto transition-all active:scale-95 hover:brightness-105"
+      aria-label="Доступно в RuStore"
     >
       <img
-        src={isRuStore ? "/stores/rustore.png" : "/stores/nashstore.png"}
-        alt={isRuStore ? "RuStore" : "NashStore"}
-        className="w-5 h-5 rounded-md flex-shrink-0 object-cover"
+        src="/stores/rustore-badge.png"
+        alt="Доступно в RuStore"
+        className="w-full h-auto rounded-xl"
+        style={{ background: "#fff", boxShadow: "0 4px 18px rgba(0,0,0,0.35)" }}
       />
-      {isRuStore ? "RuStore" : "NashStore"}
-    </button>
+    </a>
   );
 }

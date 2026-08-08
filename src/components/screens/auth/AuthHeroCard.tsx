@@ -58,11 +58,8 @@ export function AuthHeroCard({
         <h2 className="font-unbounded text-white text-2xl font-black">{t("auth.downloadFree")}</h2>
       </div>
 
-      {/* Магазины приложений */}
-      <div className="flex gap-3">
-        <StoreDownloadButton store="rustore" />
-        <StoreDownloadButton store="nashstore" />
-      </div>
+      {/* Магазин приложений */}
+      <StoreDownloadButton />
 
       {/* Разделитель */}
       <div className="flex items-center gap-3">
