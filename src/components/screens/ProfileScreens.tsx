@@ -20,6 +20,7 @@ import { ProfileBioSection } from "@/components/screens/profile/ProfileBioSectio
 import { ProfileTabPanels } from "@/components/screens/profile/ProfileTabPanels";
 import { StreakWidget } from "@/components/screens/profile/StreakWidget";
 import { DailyTasksWidget } from "@/components/screens/profile/DailyTasksWidget";
+import { PagePush, usePagePush } from "@/components/ui/PagePush";
 
 type SettingsScreen = "account" | "privacy" | "notifications" | "appearance" | "sounds" | "videochat" | "private_photos" | "blocked" | "help" | "security" | "data_storage" | "stickers";
 type ActiveTab = null | "settings" | "stats" | "shop" | "photos" | "private" | "gifts";
@@ -433,17 +434,43 @@ export function RealProfileScreen({ currentUser, onPremium, onLogout, onPhotoUpd
       </div>
 
       {settingsScreen && (
-        <div className="absolute inset-0 z-20 flex flex-col" style={{ background: "var(--spark-dark, #0f0a1a)" }}>
-          <SettingsSubScreen
-            screen={settingsScreen}
-            currentUser={currentUser}
-            onProfileUpdate={onProfileUpdate}
-            onClose={() => { setSettingsScreen(null); setMenuOpen(true); }}
-            onLogout={onLogout}
-            onPremium={onPremium}
-          />
-        </div>
+        <SettingsOverlay
+          screen={settingsScreen}
+          currentUser={currentUser}
+          onProfileUpdate={onProfileUpdate}
+          onDone={() => { setSettingsScreen(null); setMenuOpen(true); }}
+          onLogout={onLogout}
+          onPremium={onPremium}
+        />
       )}
     </>
+  );
+}
+/**
+ * Оверлей раздела настроек с нативным переходом:
+ * страница въезжает справа и уезжает вправо при закрытии.
+ */
+function SettingsOverlay({ screen, currentUser, onProfileUpdate, onDone, onLogout, onPremium }: {
+  screen: SettingsScreen;
+  currentUser: User;
+  onProfileUpdate: (data: Partial<User>) => void;
+  onDone: () => void;
+  onLogout: () => void;
+  onPremium: () => void;
+}) {
+  const { closing, close } = usePagePush(onDone);
+
+  return (
+    <PagePush closing={closing} className="absolute inset-0 z-20 flex flex-col"
+      style={{ background: "var(--spark-dark, #0f0a1a)" }}>
+      <SettingsSubScreen
+        screen={screen}
+        currentUser={currentUser}
+        onProfileUpdate={onProfileUpdate}
+        onClose={close}
+        onLogout={onLogout}
+        onPremium={onPremium}
+      />
+    </PagePush>
   );
 }

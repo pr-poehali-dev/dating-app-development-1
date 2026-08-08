@@ -86,6 +86,36 @@
   animation: screen-enter-up 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
+/* ── Нативный push/pop переход внутренних страниц (настройки, верификация и т.д.) ── */
+@keyframes page-push-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes page-push-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0.5;
+  }
+}
+.page-push-in {
+  animation: page-push-in 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+  will-change: transform, opacity;
+}
+.page-push-out {
+  animation: page-push-out 0.24s cubic-bezier(0.4, 0, 1, 1) both;
+  will-change: transform, opacity;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
@@ -157,10 +187,18 @@
 }
 
 @keyframes emojiTap {
-  0% { transform: scale(1); }
-  35% { transform: scale(1.55) rotate(-8deg); }
-  70% { transform: scale(0.85) rotate(6deg); }
-  100% { transform: scale(1) rotate(0); }
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.55) rotate(-8deg);
+  }
+  70% {
+    transform: scale(0.85) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
 }
 .emoji-tapped {
   animation: emojiTap 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -451,12 +489,21 @@ html.theme-amber {
 
 /* Звёздное небо — фиксированный слой звёзд, одинаковый на всех экранах */
 @keyframes starsDrift {
-  from { transform: translate(0, 0); }
-  to   { transform: translate(-2.5%, -2%); }
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-2.5%, -2%);
+  }
 }
 @keyframes starsTwinkle {
-  0%, 100% { opacity: 0.75; }
-  50%      { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .app-bg .app-hearts-layer {
@@ -471,10 +518,18 @@ html.theme-amber {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='20' cy='30' r='1.4' opacity='0.9'/%3E%3Ccircle cx='70' cy='14' r='0.9' opacity='0.6'/%3E%3Ccircle cx='120' cy='55' r='1.7' opacity='0.85'/%3E%3Ccircle cx='160' cy='20' r='1' opacity='0.55'/%3E%3Ccircle cx='210' cy='45' r='1.3' opacity='0.8'/%3E%3Ccircle cx='245' cy='90' r='0.9' opacity='0.5'/%3E%3Ccircle cx='30' cy='95' r='1' opacity='0.6'/%3E%3Ccircle cx='95' cy='115' r='1.5' opacity='0.9'/%3E%3Ccircle cx='150' cy='100' r='0.8' opacity='0.5'/%3E%3Ccircle cx='190' cy='135' r='1.4' opacity='0.85'/%3E%3Ccircle cx='15' cy='160' r='1.1' opacity='0.65'/%3E%3Ccircle cx='60' cy='185' r='0.9' opacity='0.55'/%3E%3Ccircle cx='110' cy='170' r='1.6' opacity='0.9'/%3E%3Ccircle cx='170' cy='190' r='1' opacity='0.6'/%3E%3Ccircle cx='230' cy='170' r='1.3' opacity='0.8'/%3E%3Ccircle cx='245' cy='230' r='0.9' opacity='0.55'/%3E%3Ccircle cx='40' cy='230' r='1.4' opacity='0.85'/%3E%3Ccircle cx='90' cy='245' r='0.9' opacity='0.5'/%3E%3Ccircle cx='140' cy='235' r='1.2' opacity='0.7'/%3E%3Ccircle cx='200' cy='220' r='1' opacity='0.6'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='50' cy='60' r='2.2' opacity='0.85'/%3E%3Ccircle cx='180' cy='30' r='1.8' opacity='0.7'/%3E%3Ccircle cx='320' cy='90' r='2.4' opacity='0.9'/%3E%3Ccircle cx='260' cy='200' r='1.6' opacity='0.6'/%3E%3Ccircle cx='90' cy='240' r='2' opacity='0.75'/%3E%3Ccircle cx='370' cy='280' r='1.7' opacity='0.65'/%3E%3Ccircle cx='150' cy='330' r='2.1' opacity='0.8'/%3E%3Ccircle cx='30' cy='380' r='1.6' opacity='0.6'/%3E%3Ccircle cx='260' cy='370' r='1.9' opacity='0.7'/%3E%3C/g%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='860' viewBox='0 0 400 860'%3E%3Cg stroke='%23ffffff' stroke-opacity='0.45' stroke-width='1.3' fill='none'%3E%3Cpath d='M300,235 L255,195 L250,160 L275,140 L300,150 L325,140 L350,160 L345,195 Z' stroke-dasharray='4 5'/%3E%3C/g%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='300' cy='235' r='1.8' opacity='0.95'/%3E%3Ccircle cx='255' cy='195' r='1.5' opacity='0.9'/%3E%3Ccircle cx='250' cy='160' r='1.5' opacity='0.9'/%3E%3Ccircle cx='275' cy='140' r='1.5' opacity='0.9'/%3E%3Ccircle cx='300' cy='150' r='1.5' opacity='0.9'/%3E%3Ccircle cx='325' cy='140' r='1.5' opacity='0.9'/%3E%3Ccircle cx='350' cy='160' r='1.5' opacity='0.9'/%3E%3Ccircle cx='345' cy='195' r='1.5' opacity='0.9'/%3E%3C/g%3E%3Cg stroke='%23ffffff' stroke-opacity='0.35' stroke-width='1.1' fill='none'%3E%3Cpath d='M110,330 L150,315 L172,344'/%3E%3C/g%3E%3Cg stroke='%23ffffff' stroke-opacity='0.4' stroke-width='1.2' fill='none'%3E%3Cpath d='M295,410 L250,450 L300,470 L215,510 L232,562'/%3E%3C/g%3E%3Cpath d='M160,392 c-6,-8 -18,-8 -18,2 c0,8 10,15 18,22 c8,-7 18,-14 18,-22 c0,-10 -12,-10 -18,-2 Z' fill='none' stroke='%23ffffff' stroke-opacity='0.18' stroke-width='1.2'/%3E%3C/svg%3E");
-  background-size: 260px 260px, 420px 420px, contain;
+  background-size:
+    260px 260px,
+    420px 420px,
+    contain;
   background-repeat: repeat, repeat, no-repeat;
-  background-position: 0 0, 60px 40px, center top;
-  animation: starsDrift 100s linear infinite alternate, starsTwinkle 5s ease-in-out infinite;
+  background-position:
+    0 0,
+    60px 40px,
+    center top;
+  animation:
+    starsDrift 100s linear infinite alternate,
+    starsTwinkle 5s ease-in-out infinite;
 }
 
 .app-bg::before {
@@ -516,8 +571,15 @@ html.theme-amber {
 }
 
 @keyframes nebulaGlow {
-  0%, 100% { opacity: 0.85; transform: scale(1); }
-  50%      { opacity: 1; transform: scale(1.06); }
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -548,12 +610,23 @@ html.theme-amber {
 }
 .star-dot-bright {
   background: #fff8ec;
-  box-shadow: 0 0 4px 1px rgba(255, 240, 210, 0.55), 0 0 8px 2px rgba(255, 45, 120, 0.18);
+  box-shadow:
+    0 0 4px 1px rgba(255, 240, 210, 0.55),
+    0 0 8px 2px rgba(255, 45, 120, 0.18);
 }
 @keyframes starTwinklePulse {
-  0%   { opacity: 0.2; transform: scale(0.8); }
-  50%  { opacity: 1;   transform: scale(1.3); }
-  100% { opacity: 0.2; transform: scale(0.8); }
+  0% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .star-dot {
@@ -573,10 +646,14 @@ html.theme-amber {
     border-color 0.3s ease;
 }
 
-
 /* Gradient text */
 .grad-text {
-  background: linear-gradient(135deg, #ff5a5f, var(--spark-pink), var(--spark-purple));
+  background: linear-gradient(
+    135deg,
+    #ff5a5f,
+    var(--spark-pink),
+    var(--spark-purple)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -969,8 +1046,8 @@ html.theme-amber {
 }
 @keyframes giftRainbow {
   0% {
-    filter: hue-rotate(0deg) drop-shadow(0 0 10px rgba(var(--spark-pink-rgb), 0.8))
-      brightness(1.1);
+    filter: hue-rotate(0deg)
+      drop-shadow(0 0 10px rgba(var(--spark-pink-rgb), 0.8)) brightness(1.1);
     transform: scale(1);
   }
   25% {
@@ -989,8 +1066,8 @@ html.theme-amber {
     transform: scale(1.08);
   }
   100% {
-    filter: hue-rotate(360deg) drop-shadow(0 0 10px rgba(var(--spark-pink-rgb), 0.8))
-      brightness(1.1);
+    filter: hue-rotate(360deg)
+      drop-shadow(0 0 10px rgba(var(--spark-pink-rgb), 0.8)) brightness(1.1);
     transform: scale(1);
   }
 }
@@ -1082,19 +1159,23 @@ html.theme-amber {
 @keyframes gift3dRoseEpic {
   0% {
     transform: perspective(200px) rotateY(0deg) scale(1);
-    filter: drop-shadow(0 0 12px rgba(var(--spark-pink-rgb), 0.8)) brightness(1.1);
+    filter: drop-shadow(0 0 12px rgba(var(--spark-pink-rgb), 0.8))
+      brightness(1.1);
   }
   33% {
     transform: perspective(200px) rotateY(25deg) scale(1.12);
-    filter: drop-shadow(-6px 8px 28px rgba(var(--spark-pink-rgb), 1)) brightness(1.4);
+    filter: drop-shadow(-6px 8px 28px rgba(var(--spark-pink-rgb), 1))
+      brightness(1.4);
   }
   66% {
     transform: perspective(200px) rotateY(-25deg) scale(1.12);
-    filter: drop-shadow(6px 8px 28px rgba(var(--spark-pink-rgb), 1)) brightness(1.4);
+    filter: drop-shadow(6px 8px 28px rgba(var(--spark-pink-rgb), 1))
+      brightness(1.4);
   }
   100% {
     transform: perspective(200px) rotateY(0deg) scale(1);
-    filter: drop-shadow(0 0 12px rgba(var(--spark-pink-rgb), 0.8)) brightness(1.1);
+    filter: drop-shadow(0 0 12px rgba(var(--spark-pink-rgb), 0.8))
+      brightness(1.1);
   }
 }
 @keyframes gift3dBearGlow {

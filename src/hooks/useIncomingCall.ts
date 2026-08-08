@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { messagesApi } from "@/lib/api";
 import { isVideoBlocked } from "@/lib/videoBlocks";
+import { isAllCallsBlocked } from "@/lib/callSettings";
 
 export interface IncomingCall {
   matchId: number;
@@ -45,7 +46,8 @@ export function useIncomingCall(enabled: boolean, suppress: boolean): {
         if (stopped || !call) return;
         // Пользователь запретил видеозвонки с этим человеком — сразу отклоняем,
         // звонок не показываем, а звонящему шлём завершение, чтобы не ждал.
-        if (isVideoBlocked(call.from_user_id)) {
+        // Пользователь запретил все входящие видеочаты в настройках
+        if (isAllCallsBlocked() || isVideoBlocked(call.from_user_id)) {
           messagesApi.signalSend(call.match_id, "hangup", "blocked").catch(() => {});
           dismissedRef.current.add(call.match_id);
           return;

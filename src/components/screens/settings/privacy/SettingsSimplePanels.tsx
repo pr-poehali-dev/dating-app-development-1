@@ -1,5 +1,6 @@
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
 import { PushSubscribeButton } from "./PushSubscribeButton";
+import { CallNotificationsBlock } from "./CallNotificationsBlock";
 
 interface SimplePanelsProps {
   screen: string;
@@ -44,6 +45,9 @@ export function SettingsSimplePanels({
             <Toggle value={notif.promo} onChange={() => onNotifToggle("promo")} />
           </Row>
         </div>
+
+        {/* Видеозвонки */}
+        <CallNotificationsBlock />
         </div>
       )}
 

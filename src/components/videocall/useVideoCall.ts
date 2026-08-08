@@ -3,6 +3,7 @@ import { messagesApi } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
 import { ICE_SERVERS, getIceServers, AUDIO_CONSTRAINTS, type CallState, type VideoCallProps } from "./constants";
+import { isCallAlertsOn } from "@/lib/callSettings";
 
 export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onClose }: VideoCallProps) {
   const [callState, setCallState] = useState<CallState>(isInitiator ? "calling" : "incoming");
@@ -35,6 +36,8 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   }, []);
 
   const startRingtone = useCallback(() => {
+    // Пользователь отключил оповещения о звонках в настройках — звонок беззвучный
+    if (!isCallAlertsOn()) return;
     try {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AC();

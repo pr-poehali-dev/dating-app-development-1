@@ -198,7 +198,7 @@ export function ProfileTopBarMenu({
       )}
 
       {menuOpen && (
-        <div className="fixed inset-0 z-[80] flex flex-col"
+        <div className="fixed inset-0 z-[80] flex flex-col page-push-in"
           style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #120818 100%)" }}>
 
           {/* Шапка — назад + аватар + имя */}

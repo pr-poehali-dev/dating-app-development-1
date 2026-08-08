@@ -18,7 +18,7 @@ export function ProfileThemeSheet({ appTheme, onSelect, appIcon, iconNative, onS
   useBackHandler(true, onClose);
 
   return (
-    <div className="fixed inset-0 z-[90] flex flex-col"
+    <div className="fixed inset-0 z-[90] flex flex-col page-push-in"
       style={{ background: "linear-gradient(180deg, #1a0a2e 0%, #120818 100%)" }}>
 
       {/* Шапка */}
