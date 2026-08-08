@@ -907,8 +907,17 @@ export const blocksApi = {
 };
 
 // ─── Video call blocks ────────────────────────────────────────────────────────
+export interface VideoBlockedUser {
+  id: number;
+  name: string;
+  photo_url?: string;
+  age?: number;
+  verified?: boolean;
+  created_at: string;
+}
+
 export const videoBlocksApi = {
-  list: () => req<{ blocked_ids: number[] }>("profiles", "video_blocks_list"),
+  list: () => req<{ blocked_ids: number[]; users?: VideoBlockedUser[] }>("profiles", "video_blocks_list"),
   block: (user_id: number) => req<{ ok: boolean }>("profiles", "video_block", { method: "POST", body: JSON.stringify({ user_id }) }),
   unblock: (user_id: number) => req<{ ok: boolean }>("profiles", "video_unblock", { method: "POST", body: JSON.stringify({ user_id }) }),
 };

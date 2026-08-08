@@ -1540,8 +1540,21 @@ def handler(event: dict, context) -> dict:
 
         # Список ID пользователей, которым я запретил видеозвонки
         if action == 'video_blocks_list':
-            cur.execute("SELECT blocked_id FROM video_blocks WHERE blocker_id = %s", (me['id'],))
-            return resp(200, {'blocked_ids': [r[0] for r in cur.fetchall()]})
+            # Отдаём и ID, и карточки пользователей (имя, фото) — чтобы экран
+            # «Заблокированные звонки» показывал живой список, а не голые номера.
+            cur.execute(
+                "SELECT u.id, u.name, u.photo_url, u.age, u.verified, vb.created_at "
+                "FROM video_blocks vb JOIN users u ON u.id = vb.blocked_id "
+                "WHERE vb.blocker_id = %s ORDER BY vb.created_at DESC",
+                (me['id'],)
+            )
+            rows = cur.fetchall()
+            users = [
+                {'id': r[0], 'name': r[1], 'photo_url': r[2], 'age': r[3],
+                 'verified': r[4], 'created_at': str(r[5])}
+                for r in rows
+            ]
+            return resp(200, {'blocked_ids': [u['id'] for u in users], 'users': users})
 
         # Запретить видеозвонки с пользователем
         if action == 'video_block':
