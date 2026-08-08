@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { messagesApi } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
-import { ICE_SERVERS, getIceServers, AUDIO_CONSTRAINTS, type CallState, type VideoCallProps } from "./constants";
+import {
+  ICE_SERVERS, getIceServers, AUDIO_CONSTRAINTS,
+  pickVideoProfile, videoConstraintsFor, HD_PROFILE, SD_PROFILE, LOW_PROFILE,
+  type VideoProfile, type CallState, type VideoCallProps,
+} from "./constants";
 import { isCallAlertsOn } from "@/lib/callSettings";
 
 export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onClose }: VideoCallProps) {
@@ -26,6 +30,25 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   );
   const remoteDescSetRef = useRef(false);
   const facingModeRef = useRef<"user" | "environment">("user");
+  // Текущий профиль качества — стартуем от возможностей сети, дальше подстраиваем на лету
+  const profileRef = useRef<VideoProfile>(pickVideoProfile());
+  const qualityTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoSenderRef = useRef<RTCRtpSender | null>(null);
+
+  /** Записывает профиль качества в параметры исходящего видео. */
+  const applyProfileToSender = (sender: RTCRtpSender, p: VideoProfile) => {
+    try {
+      const params = sender.getParameters();
+      if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
+      params.encodings[0].maxBitrate = p.maxBitrate;
+      params.encodings[0].maxFramerate = p.frameRate;
+      params.encodings[0].scaleResolutionDownBy = 1;
+      // На мобильном интернете важнее отсутствие фризов, чем максимальная
+      // детализация: разрешаем кодеку временно снижать чёткость вместо заиканий.
+      params.degradationPreference = "balanced";
+      sender.setParameters(params).catch(() => {});
+    } catch { /* ignore */ }
+  };
 
   const ringCtxRef = useRef<AudioContext | null>(null);
   const ringTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -70,6 +93,7 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   const stopAll = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (qualityTimerRef.current) { clearInterval(qualityTimerRef.current); qualityTimerRef.current = null; }
     stopRingtone();
     localStreamRef.current?.getTracks().forEach(t => t.stop());
     pcRef.current?.close();
@@ -99,14 +123,10 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
     onClose();
   }, [stopAll, matchId, onClose, logCallResult]);
 
-  const buildVideoConstraints = (): MediaTrackConstraints => ({
-    // Просим Full HD как идеал — камера отдаст максимум, что умеет,
-    // а адаптация битрейта/разрешения происходит уже в WebRTC при слабой сети.
-    width: { ideal: 1920, max: 1920 },
-    height: { ideal: 1080, max: 1080 },
-    frameRate: { ideal: 30, max: 30 },
-    facingMode: facingModeRef.current,
-  });
+  const buildVideoConstraints = (): MediaTrackConstraints =>
+    // HD 720p — оптимум для мобильного интернета: чёткая картинка без фризов.
+    // На слабой сети профиль автоматически ниже, чтобы не было заиканий.
+    videoConstraintsFor(profileRef.current, facingModeRef.current);
   const VIDEO_CONSTRAINTS = buildVideoConstraints();
 
   const applyEchoConstraints = async (stream: MediaStream) => {
@@ -151,12 +171,81 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   const connectedRef = useRef(false);
   const iceRestartedRef = useRef(false);
 
+  /**
+   * Следит за качеством связи во время разговора и подстраивает картинку:
+   * при потерях пакетов и нехватке канала опускает качество (чтобы не тормозило),
+   * при хорошей связи — возвращает HD 720p.
+   */
+  const startQualityMonitor = () => {
+    if (qualityTimerRef.current) return;
+    let lastPacketsSent = 0;
+    let lastPacketsLost = 0;
+    let goodTicks = 0;
+
+    qualityTimerRef.current = setInterval(async () => {
+      const pc = pcRef.current;
+      const sender = videoSenderRef.current;
+      if (!pc || !sender) return;
+      try {
+        const stats = await pc.getStats(sender.track || undefined);
+        let packetsSent = 0, packetsLost = 0, limitedByBandwidth = false;
+
+        stats.forEach((r) => {
+          const s = r as unknown as Record<string, unknown>;
+          if (s.type === "outbound-rtp" && s.kind === "video") {
+            packetsSent = Number(s.packetsSent || 0);
+            if (s.qualityLimitationReason === "bandwidth" || s.qualityLimitationReason === "cpu") {
+              limitedByBandwidth = true;
+            }
+          }
+          if (s.type === "remote-inbound-rtp" && s.kind === "video") {
+            packetsLost = Number(s.packetsLost || 0);
+          }
+        });
+
+        const sentDelta = packetsSent - lastPacketsSent;
+        const lostDelta = packetsLost - lastPacketsLost;
+        lastPacketsSent = packetsSent;
+        lastPacketsLost = packetsLost;
+        if (sentDelta <= 0) return;
+
+        const lossRate = Math.max(0, lostDelta) / sentDelta;
+        const current = profileRef.current;
+
+        // Плохо: теряется больше 4% пакетов или канал явно не тянет
+        if (lossRate > 0.04 || limitedByBandwidth) {
+          goodTicks = 0;
+          const next = current === HD_PROFILE ? SD_PROFILE : LOW_PROFILE;
+          if (next !== current) {
+            profileRef.current = next;
+            applyProfileToSender(sender, next);
+          }
+          return;
+        }
+
+        // Хорошо несколько замеров подряд — можно поднять качество обратно
+        if (lossRate < 0.015) {
+          goodTicks += 1;
+          if (goodTicks >= 3 && current !== HD_PROFILE) {
+            const next = current === LOW_PROFILE ? SD_PROFILE : HD_PROFILE;
+            profileRef.current = next;
+            applyProfileToSender(sender, next);
+            goodTicks = 0;
+          }
+        } else {
+          goodTicks = 0;
+        }
+      } catch { /* ignore */ }
+    }, 3000);
+  };
+
   const markConnected = () => {
     if (connectedRef.current) return;
     connectedRef.current = true;
     stopRingtone();
     setCallState("connected");
     startTimer();
+    startQualityMonitor();
     logCallResult("accepted");
   };
 
@@ -173,27 +262,21 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
       if (t.kind === "video") { try { t.contentHint = "motion"; } catch { /* ignore */ } }
       const sender = pc.addTrack(t, stream);
       if (t.kind === "video") {
-        const params = sender.getParameters();
-        if (!params.encodings || params.encodings.length === 0) params.encodings = [{}];
-        // Full HD требует более высокого потолка битрейта для чёткой картинки.
-        params.encodings[0].maxBitrate = 4_000_000;
-        params.encodings[0].maxFramerate = 30;
-        // Не масштабируем разрешение вниз без необходимости — отдаём максимум.
-        params.encodings[0].scaleResolutionDownBy = 1;
-        // При слабой сети сохраняем чёткость картинки (жертвуя плавностью),
-        // чтобы лицо оставалось детализированным.
-        params.degradationPreference = "maintain-resolution";
-        sender.setParameters(params).catch(() => {});
+        videoSenderRef.current = sender;
+        applyProfileToSender(sender, profileRef.current);
       }
     });
 
-    // Предпочитаем современные кодеки (VP9 / H264) — заметно лучше картинка
-    // при том же битрейте, чем у устаревшего VP8.
+    // На телефонах H264 кодируется аппаратно — меньше нагрев, меньше задержка
+    // и стабильнее картинка на мобильном интернете. На десктопе выгоднее VP9.
     try {
       const caps = RTCRtpReceiver.getCapabilities?.("video");
       const tr = pc.getTransceivers().find(x => x.sender.track?.kind === "video");
       if (caps && tr && tr.setCodecPreferences) {
-        const preferred = ["video/VP9", "video/H264", "video/VP8"];
+        const isMobile = /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || "");
+        const preferred = isMobile
+          ? ["video/H264", "video/VP9", "video/VP8"]
+          : ["video/VP9", "video/H264", "video/VP8"];
         const sorted = [...caps.codecs].sort((a, b) => {
           const ia = preferred.indexOf(a.mimeType); const ib = preferred.indexOf(b.mimeType);
           return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
@@ -413,7 +496,12 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
 
       // Заменяем трек в исходящем соединении без пересоздания звонка
       const sender = pcRef.current?.getSenders().find(s => s.track?.kind === "video");
-      if (sender) await sender.replaceTrack(newVideoTrack);
+      if (sender) {
+        await sender.replaceTrack(newVideoTrack);
+        videoSenderRef.current = sender;
+        applyProfileToSender(sender, profileRef.current);
+      }
+      try { newVideoTrack.contentHint = "motion"; } catch { /* ignore */ }
 
       // Обновляем локальный поток: убираем старый видеотрек, добавляем новый
       const oldTrack = localStreamRef.current?.getVideoTracks()[0];

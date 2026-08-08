@@ -75,6 +75,67 @@ export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   googAudioMirroring: false,
 };
 
+/**
+ * Профиль качества видео. Подбирается под тип сети:
+ * на Wi-Fi/4G — честные 720p, на слабом мобильном — ниже, чтобы не было фризов.
+ */
+export interface VideoProfile {
+  width: number;
+  height: number;
+  frameRate: number;
+  /** Стартовый потолок битрейта, бит/с */
+  maxBitrate: number;
+  /** Нижняя граница, ниже которой автоподстройка не опускается */
+  minBitrate: number;
+}
+
+type NetInfo = { effectiveType?: string; downlink?: number; saveData?: boolean };
+
+function netInfo(): NetInfo {
+  const n = navigator as unknown as { connection?: NetInfo; mozConnection?: NetInfo; webkitConnection?: NetInfo };
+  return n.connection || n.mozConnection || n.webkitConnection || {};
+}
+
+/** HD 720p — целевое качество звонка. */
+export const HD_PROFILE: VideoProfile = {
+  width: 1280, height: 720, frameRate: 30,
+  maxBitrate: 2_200_000, minBitrate: 500_000,
+};
+
+/** Средний профиль для нестабильной мобильной сети. */
+export const SD_PROFILE: VideoProfile = {
+  width: 960, height: 540, frameRate: 25,
+  maxBitrate: 1_200_000, minBitrate: 350_000,
+};
+
+/** Экономный профиль — очень слабый интернет или режим экономии трафика. */
+export const LOW_PROFILE: VideoProfile = {
+  width: 640, height: 360, frameRate: 20,
+  maxBitrate: 600_000, minBitrate: 200_000,
+};
+
+/** Выбирает профиль качества по текущему состоянию сети. */
+export function pickVideoProfile(): VideoProfile {
+  const { effectiveType, downlink, saveData } = netInfo();
+  if (saveData) return LOW_PROFILE;
+  if (effectiveType === "slow-2g" || effectiveType === "2g") return LOW_PROFILE;
+  if (effectiveType === "3g") return SD_PROFILE;
+  // downlink в Мбит/с — если сеть заведомо узкая, не насилуем её HD
+  if (typeof downlink === "number" && downlink > 0 && downlink < 1.2) return LOW_PROFILE;
+  if (typeof downlink === "number" && downlink > 0 && downlink < 2.5) return SD_PROFILE;
+  return HD_PROFILE;
+}
+
+/** Ограничения камеры под выбранный профиль. */
+export function videoConstraintsFor(p: VideoProfile, facingMode: "user" | "environment"): MediaTrackConstraints {
+  return {
+    width: { ideal: p.width, max: 1280 },
+    height: { ideal: p.height, max: 720 },
+    frameRate: { ideal: p.frameRate, max: 30 },
+    facingMode,
+  };
+}
+
 export const formatDuration = (s: number) => {
   const m = Math.floor(s / 60);
   const sec = s % 60;
