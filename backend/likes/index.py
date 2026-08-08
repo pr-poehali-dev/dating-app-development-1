@@ -172,10 +172,11 @@ def handler(event: dict, context) -> dict:
             rows = cur.fetchall()
             cols = ['id', 'name', 'age', 'photo_url', 'verified', 'is_super', 'created_at']
             liked_me = []
-            for i, r in enumerate(rows):
+            for r in rows:
                 item = dict(zip(cols, r))
                 item['created_at'] = str(item['created_at'])
-                item['blurred'] = not me['premium'] and i > 0
+                # Без подписки все карточки скрыты, с подпиской — видны полностью
+                item['blurred'] = not me['premium']
                 liked_me.append(item)
             return resp(200, {'liked_me': liked_me, 'total': len(liked_me)})
 

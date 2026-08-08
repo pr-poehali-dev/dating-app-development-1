@@ -297,7 +297,9 @@ export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats, isPremium 
         </div>
         <div>
           <h2 className="text-white font-golos font-bold text-2xl leading-tight">Ты им понравился</h2>
-          <p className="text-white/40 text-sm mt-0.5">{likedMe.length} человек лайкнули тебя</p>
+          <p className="text-white/40 text-sm mt-0.5">
+            {likedMe.length} человек лайкнули тебя{!isPremium && likedMe.length > 0 ? " · скрыто" : ""}
+          </p>
         </div>
       </div>
 
@@ -388,8 +390,14 @@ export function RealLikesScreen({ onPremium, onOpenChat, onGoToChats, isPremium 
               {/* Имя, возраст, верификация */}
               <div className="absolute bottom-2 left-2 right-2">
                 <div className="flex items-center gap-1 min-w-0">
-                  <p className="text-white font-semibold text-[13px] leading-tight truncate drop-shadow">{p.name}{p.age ? `, ${p.age}` : ""}</p>
-                  {p.verified && <Icon name="BadgeCheck" size={12} className="text-sky-400 flex-shrink-0" style={{ fill: "rgba(56,189,248,0.2)" }} />}
+                  {p.blurred ? (
+                    <span className="h-2.5 rounded-full flex-1" style={{ background: "rgba(255,255,255,0.22)", maxWidth: "70%" }} />
+                  ) : (
+                    <>
+                      <p className="text-white font-semibold text-[13px] leading-tight truncate drop-shadow">{p.name}{p.age ? `, ${p.age}` : ""}</p>
+                      {p.verified && <Icon name="BadgeCheck" size={12} className="text-sky-400 flex-shrink-0" style={{ fill: "rgba(56,189,248,0.2)" }} />}
+                    </>
+                  )}
                 </div>
               </div>
             </button>
