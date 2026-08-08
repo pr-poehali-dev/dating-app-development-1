@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { messagesApi } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { checkMediaPrereqs, describeMediaError } from "@/lib/mediaAccess";
-import { ICE_SERVERS, AUDIO_CONSTRAINTS, type CallState, type VideoCallProps } from "./constants";
+import { ICE_SERVERS, getIceServers, AUDIO_CONSTRAINTS, type CallState, type VideoCallProps } from "./constants";
 
 export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onClose }: VideoCallProps) {
   const [callState, setCallState] = useState<CallState>(isInitiator ? "calling" : "incoming");
@@ -146,6 +146,7 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
 
   const remoteStreamRef = useRef<MediaStream | null>(null);
   const connectedRef = useRef(false);
+  const iceRestartedRef = useRef(false);
 
   const markConnected = () => {
     if (connectedRef.current) return;
@@ -156,8 +157,12 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
     logCallResult("accepted");
   };
 
-  const buildPeer = (stream: MediaStream) => {
-    const pc = new RTCPeerConnection(ICE_SERVERS);
+  const buildPeer = async (stream: MediaStream) => {
+    // Конфигурация с сервера содержит TURN-ретранслятор — без него звонок
+    // не проходит через мобильный интернет операторов (двойной NAT).
+    let cfg: RTCConfiguration = ICE_SERVERS;
+    try { cfg = await getIceServers(); } catch { /* используем встроенный список */ }
+    const pc = new RTCPeerConnection(cfg);
     pcRef.current = pc;
     stream.getTracks().forEach(t => {
       // contentHint="motion" — подсказка кодеку сохранять плавность и детализацию
@@ -221,10 +226,30 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
         messagesApi.signalSend(matchId, "ice", JSON.stringify(e.candidate)).catch(() => {});
       }
     };
+    // На мобильном интернете прямой канал часто не поднимается —
+    // перезапускаем подбор маршрута, прежде чем показывать ошибку.
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === "failed") {
+        try { pc.restartIce(); } catch { /* ignore */ }
+      }
+    };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "connected") markConnected();
-      if (pc.connectionState === "failed" || pc.connectionState === "disconnected") {
-        setMediaError("Соединение прервано");
+      if (pc.connectionState === "failed") {
+        if (!iceRestartedRef.current) {
+          iceRestartedRef.current = true;
+          try { pc.restartIce(); } catch { /* ignore */ }
+          return;
+        }
+        setMediaError("Не удалось установить соединение. Проверьте интернет");
+      }
+      if (pc.connectionState === "disconnected") {
+        // Кратковременный обрыв мобильной сети — даём шанс восстановиться
+        setTimeout(() => {
+          if (pcRef.current === pc && pc.connectionState === "disconnected") {
+            setMediaError("Соединение прервано");
+          }
+        }, 6000);
       }
     };
     return pc;
@@ -233,7 +258,7 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
   const startCall = useCallback(async () => {
     try {
       const stream = await getMedia();
-      const pc = buildPeer(stream);
+      const pc = await buildPeer(stream);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await messagesApi.signalSend(matchId, "offer", JSON.stringify(offer));
@@ -261,7 +286,7 @@ export function useVideoCall({ matchId, isInitiator, initialOffer, earlyIce, onC
     stopRingtone();
     try {
       const stream = await getMedia();
-      const pc = buildPeer(stream);
+      const pc = await buildPeer(stream);
       await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(offerPayload)));
       remoteDescSetRef.current = true;
       // применяем буферизованные ICE-кандидаты

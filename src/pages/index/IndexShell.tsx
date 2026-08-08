@@ -8,6 +8,7 @@ import StarField from "@/components/StarField";
 import { EnableNotificationsBanner } from "@/components/EnableNotificationsBanner";
 import { BottomNav, DesktopSidebar } from "@/components/screens/AuthPremiumNav";
 import VideoCall from "@/components/VideoCall";
+import { prefetchIceServers } from "@/components/videocall/constants";
 import type { User } from "@/lib/api";
 import type { Screen } from "./types";
 import type { IndexController } from "./useIndexController";
@@ -25,6 +26,10 @@ export function IndexShell({ c, currentUser }: { c: IndexController; currentUser
     deepLinkProfile, setDeepLinkProfile,
     navigateTo, openChat, goToChats, handleLogout,
   } = c;
+
+  // Заранее получаем адреса серверов связи, чтобы видеозвонок соединялся
+  // быстро и работал на мобильном интернете
+  useEffect(() => { prefetchIceServers(); }, []);
 
   const screensContent = <IndexScreens c={c} currentUser={currentUser} />;
 

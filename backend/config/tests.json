@@ -20,6 +20,13 @@
       "path": "/?action=active_banners",
       "expectedStatus": 200,
       "bodyMatcher": "partial"
+    },
+    {
+      "name": "ICE servers for video calls",
+      "method": "GET",
+      "path": "/?action=ice_servers",
+      "expectedStatus": 200,
+      "bodyMatcher": "partial"
     }
   ]
 }

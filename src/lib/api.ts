@@ -545,6 +545,7 @@ export const configApi = {
   yandexMapsKey: () => req<{ api_key: string }>("config", "yandex_maps_key"),
   oneSignalAppId: () => req<{ app_id: string }>("config", "onesignal_app_id"),
   activeBanners: () => req<{ banners: AppBanner[] }>("config", "active_banners"),
+  iceServers: () => req<{ ice_servers: RTCIceServer[]; has_turn: boolean }>("config", "ice_servers"),
 };
 
 // ─── Push ─────────────────────────────────────────────────────────────────────
