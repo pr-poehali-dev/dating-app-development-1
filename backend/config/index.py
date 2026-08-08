@@ -47,7 +47,11 @@ def handler(event: dict, context) -> dict:
         turn_user = (os.environ.get('TURN_USERNAME') or '').strip()
         turn_pass = (os.environ.get('TURN_CREDENTIAL') or '').strip()
         if turn_urls and turn_user and turn_pass:
-            urls = [u.strip() for u in turn_urls.replace('\n', ',').split(',') if u.strip()]
+            import re as _re
+            # Адреса могут быть разделены запятой, пробелом, переносом строки
+            # или точкой с запятой — принимаем любой вариант.
+            urls = [u.strip().strip('"\'') for u in _re.split(r'[,;\s]+', turn_urls) if u.strip()]
+            urls = [u for u in urls if u.startswith('turn:') or u.startswith('turns:')]
             if urls:
                 servers.append({'urls': urls, 'username': turn_user, 'credential': turn_pass})
         else:
