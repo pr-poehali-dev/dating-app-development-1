@@ -1,7 +1,9 @@
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { getStreakReward } from "@/lib/streakRewards";
 import { DEFAULT_AVATAR } from "@/components/ui/UserAvatar";
+import { shareProfile } from "@/lib/shareProfile";
 
 function DefaultCover() {
   return (
@@ -35,6 +37,7 @@ export function ProfileCoverAvatar({
   streakDays?: number;
 }) {
   const streakReward = getStreakReward(streakDays);
+  const [shared, setShared] = useState<boolean | null>(null);
 
   return (
     <div className="relative w-full" style={{ marginBottom: 52 }}>
@@ -69,14 +72,31 @@ export function ProfileCoverAvatar({
           </div>
         )}
 
-        {/* Кнопка смены фона */}
+        {/* Кнопки: поделиться + смена фона */}
         {!coverUploading && (
-          <button
-            onClick={e => { e.stopPropagation(); onCoverClick(); }}
-            className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
-            style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}>
-            <Icon name="ImagePlus" size={12} />Фон
-          </button>
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            <button
+              onClick={async e => {
+                e.stopPropagation();
+                const res = await shareProfile(currentUser.id, currentUser.name);
+                if (res !== "shared") {
+                  setShared(res === "copied");
+                  setTimeout(() => setShared(null), 2200);
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
+              style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}>
+              <Icon name={shared === true ? "Check" : "Share2"} size={12}
+                style={{ color: shared === true ? "#4ADE80" : undefined }} />
+              {shared === true ? "Скопировано" : shared === false ? "Не вышло" : "Поделиться"}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); onCoverClick(); }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-white/85 text-xs font-semibold transition-all active:scale-95"
+              style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.18)" }}>
+              <Icon name="ImagePlus" size={12} />Фон
+            </button>
+          </div>
         )}
       </div>
 
