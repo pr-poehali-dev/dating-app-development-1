@@ -139,7 +139,7 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
   const [sounds, setSounds] = useState({ messages: true, matches: true, notifications: true });
 
   const [video, setVideo] = useState({ autoAccept: false, blurBg: true, mirrorCamera: true });
-  const [privacy, setPrivacy] = useState({ showOnline: true, showDistance: true, readReceipts: true, searchable: true });
+  const [privacy, setPrivacy] = useState({ showOnline: true, showDistance: currentUser.show_distance ?? true, readReceipts: true, searchable: true });
 
   const [incognito, setIncognito] = useState(currentUser.incognito ?? false);
   const [incognitoLoading, setIncognitoLoading] = useState(false);
@@ -289,7 +289,11 @@ export function SettingsSubScreen({ screen, currentUser, onProfileUpdate, onClos
         onUsernameChange={(v) => { setUsername(v); setUsernameError(""); }}
         onSaveAccount={saveAccount}
         privacy={privacy}
-        onPrivacyToggle={(key) => setPrivacy(p => ({ ...p, [key]: !p[key] }))}
+        onPrivacyToggle={(key) => setPrivacy(p => {
+          const next = { ...p, [key]: !p[key] };
+          if (key === "showDistance") profilesApi.updateMe({ show_distance: next.showDistance }).catch(() => {});
+          return next;
+        })}
         notif={notif}
         onNotifToggle={handleNotifToggle}
         appear={appear}

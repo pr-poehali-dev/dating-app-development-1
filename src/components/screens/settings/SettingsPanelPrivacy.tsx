@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/ui/icon";
 import { type User } from "@/lib/api";
 import { Toggle, Row } from "@/components/screens/SettingsUIKit";
+import { shareProfile } from "@/lib/shareProfile";
 import {
   promptOneSignal,
   disableOneSignal,
@@ -172,6 +173,39 @@ function PushSubscribeButton() {
   );
 }
 
+function ShareMyProfileButton({ userId, name }: { userId: number; name: string }) {
+  const [state, setState] = useState<"idle" | "copied" | "fail">("idle");
+
+  const handleShare = async () => {
+    const res = await shareProfile(userId, name);
+    if (res === "copied") {
+      setState("copied");
+      setTimeout(() => setState("idle"), 2500);
+    } else if (res === "fail") {
+      setState("fail");
+      setTimeout(() => setState("idle"), 2500);
+    }
+  };
+
+  return (
+    <button onClick={handleShare}
+      className="glass-card overflow-hidden w-full flex items-center gap-3 px-4 py-3.5 active:opacity-70 transition-opacity text-left">
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: "linear-gradient(135deg,rgba(255,45,120,0.25),rgba(155,89,182,0.25))" }}>
+        <Icon name={state === "copied" ? "Check" : "Share2"} size={15}
+          style={{ color: state === "copied" ? "#4ADE80" : "#FF2D78" }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-white/90 text-sm font-semibold leading-tight">Поделиться моим профилем</p>
+        <p className="text-white/30 text-[11px] leading-tight mt-0.5">
+          {state === "copied" ? "Ссылка скопирована" : state === "fail" ? "Не удалось поделиться" : "Отправь ссылку друзьям"}
+        </p>
+      </div>
+      <Icon name="ChevronRight" size={14} className="text-white/20 flex-shrink-0" />
+    </button>
+  );
+}
+
 interface Props {
   screen: string;
   currentUser: User;
@@ -288,6 +322,9 @@ export function SettingsPanelPrivacy({
               <Toggle value={privacy.searchable} onChange={() => onPrivacyToggle("searchable")} />
             </Row>
           </div>
+
+          {/* Поделиться своим профилем */}
+          <ShareMyProfileButton userId={currentUser.id} name={currentUser.name} />
 
           {/* Правовые документы */}
           <button onClick={onOpenLegal}

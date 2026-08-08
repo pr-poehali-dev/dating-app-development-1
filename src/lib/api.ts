@@ -675,6 +675,7 @@ export interface User {
   cover_url?: string;
   email_verified?: boolean;
   show_age?: boolean;
+  show_distance?: boolean;
   incognito?: boolean;
   zodiac?: string;
 }
@@ -698,6 +699,7 @@ export interface Profile {
   gender?: string;
   relationship_status?: string;
   show_age?: boolean;
+  show_distance?: boolean;
   boosted?: boolean;
   username?: string;
   zodiac?: string;
