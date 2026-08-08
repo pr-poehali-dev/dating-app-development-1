@@ -7,7 +7,7 @@ export function StoreDownloadButton() {
       href={RUSTORE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="block w-full max-w-[220px] mx-auto transition-all active:scale-95 hover:brightness-105"
+      className="block w-full max-w-[200px] mr-auto transition-all active:scale-95 hover:brightness-105"
       aria-label="Доступно в RuStore"
     >
       <img
