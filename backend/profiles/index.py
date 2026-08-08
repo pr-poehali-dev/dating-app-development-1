@@ -67,21 +67,76 @@ def get_me(conn, token: str):
     row = cur.fetchone()
     return {'id': row[0], 'premium': row[1], 'name': row[2]} if row else None
 
-def _distance_km(conn, my_id: int, other_lat, other_lon):
-    """Расстояние в км между мной и другим пользователем. None, если координат нет."""
-    if other_lat is None or other_lon is None:
+CITY_COORDS = {
+    'москва': (55.7558, 37.6173), 'санкт-петербург': (59.9311, 30.3609), 'спб': (59.9311, 30.3609),
+    'новосибирск': (55.0084, 82.9357), 'екатеринбург': (56.8389, 60.6057), 'казань': (55.7963, 49.1088),
+    'нижний новгород': (56.3269, 44.0059), 'челябинск': (55.1644, 61.4368), 'самара': (53.1959, 50.1002),
+    'омск': (54.9885, 73.3242), 'ростов-на-дону': (47.2357, 39.7015), 'уфа': (54.7388, 55.9721),
+    'красноярск': (56.0153, 92.8932), 'воронеж': (51.6720, 39.1843), 'пермь': (58.0105, 56.2502),
+    'волгоград': (48.7080, 44.5133), 'краснодар': (45.0355, 38.9753), 'саратов': (51.5336, 46.0343),
+    'тюмень': (57.1522, 65.5272), 'тольятти': (53.5303, 49.3461), 'ижевск': (56.8526, 53.2045),
+    'барнаул': (53.3548, 83.7698), 'ульяновск': (54.3142, 48.4031), 'иркутск': (52.2870, 104.3050),
+    'хабаровск': (48.4827, 135.0838), 'ярославль': (57.6261, 39.8845), 'владивосток': (43.1155, 131.8855),
+    'махачкала': (42.9849, 47.5047), 'томск': (56.4846, 84.9476), 'оренбург': (51.7727, 55.0988),
+    'кемерово': (55.3547, 86.0873), 'новокузнецк': (53.7557, 87.1099), 'рязань': (54.6295, 39.7415),
+    'астрахань': (46.3497, 48.0408), 'пенза': (53.1959, 45.0183), 'липецк': (52.6031, 39.5708),
+    'киров': (58.6035, 49.6679), 'тула': (54.1961, 37.6182), 'чебоксары': (56.1439, 47.2489),
+    'калининград': (54.7104, 20.4522), 'брянск': (53.2434, 34.3639), 'курск': (51.7373, 36.1874),
+    'иваново': (57.0004, 40.9739), 'магнитогорск': (53.4186, 59.0472), 'тверь': (56.8587, 35.9176),
+    'ставрополь': (45.0428, 41.9734), 'сочи': (43.5855, 39.7231), 'белгород': (50.5952, 36.5873),
+    'грозный': (43.3169, 45.6981), 'владикавказ': (43.0367, 44.6678), 'сургут': (61.2540, 73.3962),
+    'калуга': (54.5293, 36.2754), 'смоленск': (54.7818, 32.0401), 'волжский': (48.7862, 44.7797),
+    'череповец': (59.1269, 37.9092), 'вологда': (59.2205, 39.8915), 'саранск': (54.1838, 45.1749),
+    'якутск': (62.0281, 129.7326), 'мурманск': (68.9585, 33.0827), 'тамбов': (52.7212, 41.4523),
+    'нальчик': (43.4981, 43.6189), 'стерлитамак': (53.6304, 55.9308), 'кострома': (57.7665, 40.9269),
+    'петрозаводск': (61.7849, 34.3469), 'новороссийск': (44.7239, 37.7686), 'таганрог': (47.2362, 38.8969),
+    'минск': (53.9006, 27.5590), 'алматы': (43.2220, 76.8512), 'астана': (51.1694, 71.4491),
+    'ташкент': (41.2995, 69.2401), 'бишкек': (42.8746, 74.5698), 'баку': (40.4093, 49.8671),
+    'ереван': (40.1792, 44.4991), 'тбилиси': (41.7151, 44.8271), 'киев': (50.4501, 30.5234),
+}
+
+
+def _city_coords(city):
+    if not city:
         return None
-    cur = conn.cursor()
-    cur.execute("SELECT latitude, longitude FROM users WHERE id = %s", (my_id,))
-    row = cur.fetchone()
-    if not row or row[0] is None or row[1] is None:
-        return None
+    key = str(city).strip().lower().replace('ё', 'е')
+    return CITY_COORDS.get(key)
+
+
+def _haversine(lat1, lon1, lat2, lon2):
     import math
-    lat1, lon1 = math.radians(float(row[0])), math.radians(float(row[1]))
-    lat2, lon2 = math.radians(float(other_lat)), math.radians(float(other_lon))
-    c = math.sin(lat1) * math.sin(lat2) + math.cos(lat1) * math.cos(lat2) * math.cos(lon2 - lon1)
-    dist = 6371.0 * math.acos(max(-1.0, min(1.0, c)))
-    return round(dist, 1)
+    p1, l1 = math.radians(float(lat1)), math.radians(float(lon1))
+    p2, l2 = math.radians(float(lat2)), math.radians(float(lon2))
+    c = math.sin(p1) * math.sin(p2) + math.cos(p1) * math.cos(p2) * math.cos(l2 - l1)
+    return round(6371.0 * math.acos(max(-1.0, min(1.0, c))), 1)
+
+
+def _distance_km(conn, my_id: int, other_lat, other_lon, other_city=None):
+    """
+    Расстояние в км между мной и другим пользователем.
+    Если точных координат нет — считаем приблизительно по центрам городов.
+    None, только если неизвестен ни город, ни координаты.
+    """
+    cur = conn.cursor()
+    cur.execute("SELECT latitude, longitude, city FROM users WHERE id = %s", (my_id,))
+    row = cur.fetchone()
+    if not row:
+        return None
+    my_lat, my_lon, my_city = row[0], row[1], row[2]
+
+    if my_lat is None or my_lon is None:
+        fallback = _city_coords(my_city)
+        if not fallback:
+            return None
+        my_lat, my_lon = fallback
+
+    if other_lat is None or other_lon is None:
+        fallback = _city_coords(other_city)
+        if not fallback:
+            return None
+        other_lat, other_lon = fallback
+
+    return _haversine(my_lat, my_lon, other_lat, other_lon)
 
 LOGO_URL = 'https://cdn.poehali.dev/projects/9df03ca1-fcdc-457e-ab68-903e1fac923d/bucket/085ca416-a53e-408a-a24a-5534172b3dc9.png'
 
@@ -1069,7 +1124,7 @@ def handler(event: dict, context) -> dict:
                     'latitude', 'longitude']
             profile = dict(zip(cols, row))
             # Расстояние до пользователя (км) — считаем, если есть координаты у обоих
-            profile['distance_km'] = _distance_km(conn, me['id'], profile.pop('latitude', None), profile.pop('longitude', None))
+            profile['distance_km'] = _distance_km(conn, me['id'], profile.pop('latitude', None), profile.pop('longitude', None), profile.get('city'))
             profile['created_at'] = str(profile['created_at'])
             profile['last_seen'] = str(profile['last_seen']) if profile['last_seen'] else None
             # Подписчики и подписки из user_subscriptions
