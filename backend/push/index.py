@@ -46,12 +46,28 @@ def web_link(url: str) -> str:
     Пустая строка — значит адрес сайта не задан и поле отправлять не нужно.
     """
     if url.startswith('http'):
-        return url
+        return _idna(url)
     base = os.environ.get('APP_WEB_URL', '').strip().rstrip('/')
     if not base:
         return ''
     path = url if url.startswith('/') else '/' + url
-    return base + path
+    return _idna(base) + path
+
+
+def _idna(full_url: str) -> str:
+    """Переводит кириллический домен в технический вид (punycode).
+
+    Сервис уведомлений принимает только латинские адреса, поэтому
+    полуто-н.рф превращаем в xn----utbhbbdxh.xn--p1ai автоматически.
+    """
+    try:
+        head, rest = full_url.split('://', 1)
+        host, slash, tail = rest.partition('/')
+        if host.isascii():
+            return full_url
+        return f"{head}://{host.encode('idna').decode()}{slash}{tail}"
+    except Exception:
+        return full_url
 
 
 def deep_link(url: str) -> str:
