@@ -250,6 +250,25 @@ export function useIndexController() {
     }
   }, [currentUser]);
 
+  // Переход по клику на уведомление: ?open=chat&match=ID | likes | matches
+  useEffect(() => {
+    if (!currentUser) return;
+    const params = new URLSearchParams(window.location.search);
+    const open = params.get("open");
+    if (!open) return;
+    const mid = parseInt(params.get("match") || "", 10);
+    window.history.replaceState({}, "", window.location.pathname);
+    if (open === "chat" && mid) {
+      setPrevScreen("matches");
+      setChatId(mid);
+      setScreen("chat");
+    } else if (open === "likes") {
+      setScreen("likes");
+    } else if (open === "matches") {
+      setScreen("matches");
+    }
+  }, [currentUser]);
+
   // Обработка редиректа после оплаты Premium
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

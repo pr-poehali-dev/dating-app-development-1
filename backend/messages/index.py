@@ -12,6 +12,14 @@ import boto3
 from moderation import moderate_text, moderate_photo, score_to_priority, push_to_queue, get_setting
 from upload_guard import validate_upload
 
+def _link(path: str = '/') -> str:
+    """Абсолютная ссылка на нужный экран для перехода по уведомлению."""
+    base = (os.environ.get('APP_WEB_URL', '') or '').rstrip('/')
+    if not base:
+        return path
+    return base + (path if path.startswith('/') else '/' + path)
+
+
 def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/', urgent: bool = False):
     """Отправляет push конкретному пользователю через OneSignal по External ID.
 
@@ -29,7 +37,8 @@ def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/',
             'target_channel': 'push',
             'headings': {'en': title, 'ru': title},
             'contents': {'en': body_text, 'ru': body_text},
-            'url': url,
+            'url': _link(url),
+            'data': {'targetUrl': url, 'path': url},
         }
         if urgent:
             payload['priority'] = 10
@@ -299,8 +308,9 @@ def handler(event: dict, context) -> dict:
             sender_name = sn[0] if sn else 'Новое сообщение'
             preview = text if not text.startswith('__') else ('🎤 Голосовое' if text.startswith('__AUDIO__') else '📷 Фото' if text.startswith('__VANISH__') else '🎁 Подарок' if text.startswith('__GIFT__') else '📍 Локация' if text.startswith('__LOC__') else '🎨 Стикер' if text.startswith('__STICKER__') else '📵 Пропущенный видеозвонок' if text.startswith('__VCALL__missed') else '💬 Сообщение')
             push_title = f'📵 {sender_name}' if text.startswith('__VCALL__missed') else f'💬 {sender_name}'
-            _push_to_user(cur, conn, partner_id, push_title, preview[:80], '/')
-            _onesignal_to_user(partner_id, push_title, preview[:80], '/')
+            chat_link = f'/?open=chat&match={match_id}'
+            _push_to_user(cur, conn, partner_id, push_title, preview[:80], chat_link)
+            _onesignal_to_user(partner_id, push_title, preview[:80], chat_link)
             return resp(200, {'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1]), 'out': True})
 
         # Отправить первое сообщение без матча — создаём матч автоматически
@@ -360,8 +370,9 @@ def handler(event: dict, context) -> dict:
             sd = cur.fetchone()
             sd_name = sd[0] if sd else 'Новое сообщение'
             sd_preview = text if not text.startswith('__') else '💬 Сообщение'
-            _push_to_user(cur, conn, to_user_id, f'💬 {sd_name}', sd_preview[:80], '/')
-            _onesignal_to_user(to_user_id, f'💬 {sd_name}', sd_preview[:80], '/')
+            sd_link = f'/?open=chat&match={match_id}'
+            _push_to_user(cur, conn, to_user_id, f'💬 {sd_name}', sd_preview[:80], sd_link)
+            _onesignal_to_user(to_user_id, f'💬 {sd_name}', sd_preview[:80], sd_link)
             return resp(200, {'ok': True, 'match_id': match_id, 'id': row[0], 'sender_id': me['id'], 'text': text, 'created_at': str(row[1])})
 
         # Загрузить фото для чата (vanish или обычное)

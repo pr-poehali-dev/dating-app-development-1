@@ -8,6 +8,14 @@ import urllib.request
 import urllib.error
 import psycopg2
 
+def _link(path: str = '/') -> str:
+    """Абсолютная ссылка на нужный экран для перехода по уведомлению."""
+    base = (os.environ.get('APP_WEB_URL', '') or '').rstrip('/')
+    if not base:
+        return path
+    return base + (path if path.startswith('/') else '/' + path)
+
+
 def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет push конкретному пользователю через OneSignal по External ID."""
     try:
@@ -21,7 +29,8 @@ def _onesignal_to_user(user_id: int, title: str, body_text: str, url: str = '/')
             'target_channel': 'push',
             'headings': {'en': title, 'ru': title},
             'contents': {'en': body_text, 'ru': body_text},
-            'url': url,
+            'url': _link(url),
+            'data': {'targetUrl': url, 'path': url},
         }
         scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
         req = urllib.request.Request(
@@ -154,12 +163,13 @@ def handler(event: dict, context) -> dict:
             sender_row = cur.fetchone()
             sender_name = sender_row[0] if sender_row else 'Кто-то'
             if mutual:
-                _push_to_user(cur, conn, to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
-                _onesignal_to_user(to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', '/')
+                m_link = f'/?open=chat&match={match_id}' if match_id else '/?open=matches'
+                _push_to_user(cur, conn, to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', m_link)
+                _onesignal_to_user(to_id, 'Полутон 💕', f'Совпадение с {sender_name}! Напишите первыми', m_link)
             else:
                 label = '⭐ Суперлайк' if is_super else '❤️ Лайк'
-                _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/')
-                _onesignal_to_user(to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/')
+                _push_to_user(cur, conn, to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/?open=likes')
+                _onesignal_to_user(to_id, f'{label} от {sender_name}', 'Вас лайкнули в Полутон!', '/?open=likes')
             return resp(200, {'ok': True, 'match': bool(mutual), 'match_id': match_id})
 
         if action == 'liked_me':
