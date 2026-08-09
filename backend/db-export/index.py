@@ -5,6 +5,7 @@
 import json
 import os
 import re
+import secrets
 import boto3
 import psycopg2
 
@@ -129,7 +130,7 @@ def handler(event: dict, context) -> dict:
         aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
         aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
     )
-    key = 'export/database.sql'
+    key = f'export/database-{secrets.token_hex(8)}.sql'
     s3.put_object(Bucket='files', Key=key, Body=data, ContentType='text/plain; charset=utf-8')
     url = f"https://cdn.poehali.dev/projects/{os.environ['AWS_ACCESS_KEY_ID']}/bucket/{key}"
 
