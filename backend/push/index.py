@@ -134,6 +134,7 @@ def apply_links(payload: dict, url: str):
     link = deep_link(url)
     if link and not link.startswith('http'):
         payload.setdefault('data', {})['deeplink'] = link
+    print(f"[push_link] url={payload.get('url')} deeplink={link}")
 
 
 def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscribed Users') -> dict:
