@@ -226,7 +226,7 @@ export function SettingsHelpPanel({ screen }: Props) {
             { icon: "MessageCircle", title: "Написать в поддержку",      sub: "Ответим в течение 24 часов",         id: "ticket"   },
             { icon: "BookOpen",      title: "Частые вопросы",             sub: "Ответы на популярные вопросы",       id: "faq"      },
             { icon: "FileText",      title: "Правила сообщества",         sub: "Как мы обеспечиваем безопасность",   id: "rules"    },
-            { icon: "Info",          title: "О приложении",               sub: "Полутон v1.9",                       id: ""         },
+            { icon: "Info",          title: "О приложении",               sub: "Полутон v1.9.1",                     id: ""         },
           ] as const).map((item) => (
             <button key={item.title}
               onClick={() => { if (item.id) setHelpSub(item.id as HelpSub); }}
