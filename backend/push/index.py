@@ -121,6 +121,21 @@ def send_push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: 
         cur.execute("DELETE FROM push_subscriptions WHERE id = ANY(%s)", (bad_ids,))
         conn.commit()
 
+def apply_links(payload: dict, url: str):
+    """Проставляет ссылку открытия уведомления.
+
+    Всегда даём обычную веб-ссылку: обёртка приложения открывает её ВНУТРИ
+    приложения, а на телефоне без приложения — в браузере. Своя схема
+    приложения идёт дополнительно, чтобы новые сборки открывали нужный экран.
+    """
+    web = web_link(url)
+    if web:
+        payload['url'] = web
+    link = deep_link(url)
+    if link and not link.startswith('http'):
+        payload.setdefault('data', {})['deeplink'] = link
+
+
 def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscribed Users') -> dict:
     """Отправляет push через OneSignal REST API всем подписчикам сегмента."""
     app_id = os.environ.get('ONESIGNAL_APP_ID', '')
@@ -134,13 +149,7 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         'contents': {'en': body_text, 'ru': body_text},
         'data': {'targetUrl': url, 'path': url, 'url': url},
     }
-    link = deep_link(url)
-    web = web_link(url)
-    if link.startswith('http'):
-        if web:
-            payload['url'] = web
-    else:
-        payload['app_url'] = link
+    apply_links(payload, url)
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
@@ -234,16 +243,7 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         payload['include_subscription_ids'] = subs
     else:
         payload['include_aliases'] = {'external_id': [str(user_id)]}
-    link = deep_link(url)
-    web = web_link(url)
-    if link.startswith('http'):
-        # Веб-версия: обычная ссылка (в PWA откроется само приложение)
-        if web:
-            payload['url'] = web
-    else:
-        # Нативная обёртка: только своя схема. web_url НЕ передаём —
-        # иначе телефон открывает браузер вместо приложения.
-        payload['app_url'] = link
+    apply_links(payload, url)
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
