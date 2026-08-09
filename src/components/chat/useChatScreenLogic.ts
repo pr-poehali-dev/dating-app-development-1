@@ -48,6 +48,7 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
   const [videoCall, setVideoCall] = useState<{ isInitiator: boolean; offerPayload?: string; earlyIce?: string[] } | null>(null);
   const [showChatMenu, setShowChatMenu] = useState(false);
   const [showVideoCircle, setShowVideoCircle] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const [showCompatibility, setShowCompatibility] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -257,6 +258,15 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     reader.readAsDataURL(file);
   };
 
+  const sendCapturedPhoto = async (dataUrl: string, mimeType: string) => {
+    setShowCamera(false);
+    setShowPlus(false);
+    try {
+      const res = await messagesApi.uploadChatPhoto(matchId, dataUrl, mimeType);
+      await sendSystem(`__VANISH__60|${res.photo_url}`);
+    } catch { /* ignore */ }
+  };
+
   const openVanishPicker = () => {
     import("@/lib/api").then(({ profilesApi: pApi }) => {
       pApi.listProfilePhotos().then(r => setVanishPhotos(r.photos));
@@ -403,6 +413,8 @@ export function useChatScreenLogic(matchId: number, currentUserId: number) {
     videoCall, setVideoCall,
     showChatMenu, setShowChatMenu,
     showVideoCircle, setShowVideoCircle,
+    showCamera, setShowCamera,
+    sendCapturedPhoto,
     showCompatibility, setShowCompatibility,
     subscribed, setSubscribed,
     recording, recordSecs, micError, setMicError,

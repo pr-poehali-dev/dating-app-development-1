@@ -2,6 +2,7 @@ import { profilesApi } from "@/lib/api";
 import Icon from "@/components/ui/icon";
 import { ChatHeader } from "@/components/chat/ChatHeader";
 import { ChatInputBar } from "@/components/chat/ChatInputBar";
+import { PhotoCapture } from "@/components/chat/PhotoCapture";
 import { ChatMessagesList } from "@/components/chat/ChatMessagesList";
 import { ChatIcebreakers } from "@/components/chat/ChatIcebreakers";
 import { ChatScreenModals } from "@/components/chat/ChatScreenModals";
@@ -141,7 +142,15 @@ export function RealChatScreen({ matchId, currentUserId, onBack }: { matchId: nu
             onOpenVideoCall={() => { c.setShowPlus(false); startVideoCall(); }}
             onOpenAwardPicker={() => { c.setShowAwardPicker(true); c.setShowPlus(false); }}
             onOpenVideoCircle={() => { c.setShowVideoCircle(true); c.setShowPlus(false); }}
+            onOpenCamera={() => { c.setShowCamera(true); c.setShowPlus(false); }}
           />
+          {c.showCamera && (
+            <PhotoCapture
+              onCapture={c.sendCapturedPhoto}
+              onClose={() => c.setShowCamera(false)}
+              onFallback={() => { c.setShowCamera(false); c.fileRef.current?.click(); }}
+            />
+          )}
           </>
         )}
       </div>

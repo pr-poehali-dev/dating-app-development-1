@@ -28,6 +28,7 @@ interface Props {
   onOpenVideoCall: () => void;
   onOpenAwardPicker: () => void;
   onOpenVideoCircle: () => void;
+  onOpenCamera: () => void;
 }
 
 export function ChatInputBar({
@@ -35,7 +36,7 @@ export function ChatInputBar({
   inputRef, fileRef, cameraRef,
   onInputChange, onSend, onStartRecording, onStopRecording,
   onTogglePlus, onToggleEmoji, onToggleStickers, onEmojiPick, onSendSticker,
-  onFileSelect, onOpenVanishPicker, onSendLocation, onOpenVideoCall, onOpenAwardPicker, onOpenVideoCircle,
+  onFileSelect, onOpenVanishPicker, onSendLocation, onOpenVideoCall, onOpenAwardPicker, onOpenVideoCircle, onOpenCamera,
 }: Props) {
 
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
@@ -66,7 +67,7 @@ export function ChatInputBar({
               </p>
               <button
                 className="w-full flex items-center gap-4 px-5 py-4 active:bg-white/5 transition-colors border-b border-white/5"
-                onClick={() => { setShowPhotoMenu(false); cameraRef.current?.click(); }}>
+                onClick={() => { setShowPhotoMenu(false); onOpenCamera(); }}>
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: "rgba(255,45,120,0.15)" }}>
                   <Icon name="Camera" size={18} className="text-pink-400" />
