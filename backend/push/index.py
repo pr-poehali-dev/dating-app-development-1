@@ -102,7 +102,7 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         'included_segments': [segment],
         'headings': {'en': title, 'ru': title},
         'contents': {'en': body_text, 'ru': body_text},
-        'data': {'path': url, 'url': url},
+        'data': {'targetUrl': url, 'path': url, 'url': url},
     }
     link = deep_link(url)
     if link.startswith('http'):
@@ -149,7 +149,9 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         'contents': {'en': body_text, 'ru': body_text},
         # Данные для навигации внутри приложения — обёртка читает их и
         # открывает нужный экран, не выкидывая пользователя в браузер.
-        'data': {'path': url, 'url': url},
+        # targetUrl — так обёртка приложения (Median) понимает, какой экран
+        # открыть ВНУТРИ приложения вместо запуска браузера.
+        'data': {'targetUrl': url, 'path': url, 'url': url},
     }
     link = deep_link(url)
     if link.startswith('http'):
