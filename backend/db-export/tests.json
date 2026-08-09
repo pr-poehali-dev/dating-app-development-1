@@ -1,0 +1,10 @@
+{
+  "tests": [
+    {
+      "name": "Без токена доступ запрещён",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 403
+    }
+  ]
+}
