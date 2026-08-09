@@ -230,21 +230,30 @@ self.addEventListener("notificationclick", (e) => {
 
   if (e.action === "close") return;
 
-  const url = (e.notification.data && e.notification.data.url) || "/";
+  let url = (e.notification.data && e.notification.data.url) || "/";
+
+  /* Из полного адреса берём только путь — чтобы открывалось само приложение,
+     а не новая вкладка браузера с сайтом. */
+  try {
+    url = new URL(url, self.location.origin).pathname
+        + new URL(url, self.location.origin).search;
+  } catch (err) {
+    url = "/";
+  }
 
   e.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((list) => {
-        /* Фокусируем существующую вкладку */
+        /* Приложение уже запущено — просто фокусируем и переводим на экран */
         for (const client of list) {
-          if (client.url.includes(self.location.origin) && "focus" in client) {
-            client.postMessage({ type: "NAVIGATE", url });
-            return client.focus();
+          if (client.url.indexOf(self.location.origin) === 0) {
+            client.postMessage({ type: "NAVIGATE", url: url });
+            if ("focus" in client) return client.focus();
           }
         }
-        /* Или открываем новую */
-        return clients.openWindow(url);
+        /* Иначе запускаем приложение с нужного экрана */
+        return clients.openWindow(self.location.origin + url);
       })
   );
 });

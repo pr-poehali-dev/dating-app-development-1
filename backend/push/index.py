@@ -39,6 +39,29 @@ def get_me(conn, token: str):
 def resp(code: int, body: dict) -> dict:
     return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False)}
 
+
+def deep_link(url: str) -> str:
+    """Ссылка для перехода ВНУТРЬ приложения, а не в браузер.
+
+    Схема приложения (APP_DEEPLINK_SCHEME, например `poluton`) регистрируется
+    в обёртке приложения. Тогда нажатие на пуш открывает само приложение
+    на нужном экране, а не веб-версию в браузере.
+    """
+    scheme = os.environ.get('APP_DEEPLINK_SCHEME', '').strip()
+    if not scheme or not url:
+        return url or '/'
+    # Уже готовая deep-link ссылка — не трогаем
+    if '://' in url and not url.startswith('http'):
+        return url
+    path = url
+    if path.startswith('http'):
+        # Вырезаем путь из полного адреса сайта
+        parts = path.split('/', 3)
+        path = '/' + (parts[3] if len(parts) > 3 else '')
+    if not path.startswith('/'):
+        path = '/' + path
+    return f'{scheme}://open{path}'
+
 def send_push_to_user(cur, conn, user_id: int, title: str, body_text: str, url: str = '/'):
     """Отправляет push всем подпискам пользователя. Удаляет невалидные (410/404)."""
     vapid_private = os.environ.get('VAPID_PRIVATE_KEY', '')
@@ -79,8 +102,14 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         'included_segments': [segment],
         'headings': {'en': title, 'ru': title},
         'contents': {'en': body_text, 'ru': body_text},
-        'url': url,
+        'data': {'path': url, 'url': url},
     }
+    link = deep_link(url)
+    if link.startswith('http'):
+        payload['url'] = link
+    else:
+        payload['app_url'] = link
+        payload['web_url'] = url
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
@@ -118,8 +147,18 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         'target_channel': 'push',
         'headings': {'en': title, 'ru': title},
         'contents': {'en': body_text, 'ru': body_text},
-        'url': url,
+        # Данные для навигации внутри приложения — обёртка читает их и
+        # открывает нужный экран, не выкидывая пользователя в браузер.
+        'data': {'path': url, 'url': url},
     }
+    link = deep_link(url)
+    if link.startswith('http'):
+        # Веб-версия: обычная ссылка (в PWA откроется само приложение)
+        payload['url'] = link
+    else:
+        # Нативная обёртка: своя схема — приложение открывается напрямую
+        payload['app_url'] = link
+        payload['web_url'] = url
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',

@@ -3,8 +3,10 @@ import App from './App'
 import './index.css'
 import { initAppTheme } from '@/hooks/useAppTheme'
 import '@/i18n'
+import { initPushNavigation } from '@/lib/pushNavigation'
 
 initAppTheme();
+initPushNavigation();
 
 // Гасим необработанные ошибки OneSignal SDK, чтобы они не всплывали в интерфейсе
 window.addEventListener("unhandledrejection", (e) => {
