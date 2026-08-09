@@ -40,6 +40,20 @@ def resp(code: int, body: dict) -> dict:
     return {'statusCode': code, 'headers': CORS, 'body': json.dumps(body, ensure_ascii=False)}
 
 
+def web_link(url: str) -> str:
+    """Полный веб-адрес для уведомления (OneSignal не принимает относительные).
+
+    Пустая строка — значит адрес сайта не задан и поле отправлять не нужно.
+    """
+    if url.startswith('http'):
+        return url
+    base = os.environ.get('APP_WEB_URL', '').strip().rstrip('/')
+    if not base:
+        return ''
+    path = url if url.startswith('/') else '/' + url
+    return base + path
+
+
 def deep_link(url: str) -> str:
     """Ссылка для перехода ВНУТРЬ приложения, а не в браузер.
 
@@ -105,11 +119,14 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         'data': {'targetUrl': url, 'path': url, 'url': url},
     }
     link = deep_link(url)
+    web = web_link(url)
     if link.startswith('http'):
-        payload['url'] = link
+        if web:
+            payload['url'] = web
     else:
         payload['app_url'] = link
-        payload['web_url'] = url
+        if web:
+            payload['web_url'] = web
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
@@ -154,13 +171,16 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         'data': {'targetUrl': url, 'path': url, 'url': url},
     }
     link = deep_link(url)
+    web = web_link(url)
     if link.startswith('http'):
         # Веб-версия: обычная ссылка (в PWA откроется само приложение)
-        payload['url'] = link
+        if web:
+            payload['url'] = web
     else:
         # Нативная обёртка: своя схема — приложение открывается напрямую
         payload['app_url'] = link
-        payload['web_url'] = url
+        if web:
+            payload['web_url'] = web
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
