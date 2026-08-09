@@ -166,15 +166,59 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
         return {'ok': False, 'error': e.read().decode('utf-8', 'ignore'), 'status': e.code}
 
 
+def remember_device(user_id: int, subscription_id: str = '', onesignal_id: str = ''):
+    """Запоминает устройство пользователя, чтобы слать уведомления адресно."""
+    if not subscription_id and not onesignal_id:
+        return
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+        sid = subscription_id.replace("'", "''")
+        oid = onesignal_id.replace("'", "''")
+        cur.execute(
+            f"INSERT INTO {schema}.user_onesignal (user_id, onesignal_id, subscription_id, updated_at) "
+            f"VALUES ({int(user_id)}, NULLIF('{oid}',''), NULLIF('{sid}',''), NOW()) "
+            f"ON CONFLICT (user_id) DO UPDATE SET "
+            f"onesignal_id = COALESCE(NULLIF('{oid}',''), {schema}.user_onesignal.onesignal_id), "
+            f"subscription_id = COALESCE(NULLIF('{sid}',''), {schema}.user_onesignal.subscription_id), "
+            f"updated_at = NOW()"
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[remember_device] user_id={user_id} error={e}")
+
+
+def device_subscriptions(user_id: int) -> list:
+    """Возвращает известные устройства пользователя для адресной отправки."""
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        schema = os.environ.get('MAIN_DB_SCHEMA', 'public')
+        cur.execute(
+            f"SELECT subscription_id FROM {schema}.user_onesignal "
+            f"WHERE user_id = {int(user_id)} AND subscription_id IS NOT NULL"
+        )
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        return [r[0] for r in rows if r[0]]
+    except Exception as e:
+        print(f"[device_subscriptions] user_id={user_id} error={e}")
+        return []
+
+
 def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = '/') -> dict:
     """Отправляет push конкретному пользователю через OneSignal по External ID."""
     app_id = os.environ.get('ONESIGNAL_APP_ID', '')
     api_key = os.environ.get('ONESIGNAL_REST_API_KEY', '')
     if not app_id or not api_key:
         return {'ok': False, 'error': 'Не заданы ключи OneSignal'}
+    subs = device_subscriptions(user_id)
     payload = {
         'app_id': app_id,
-        'include_aliases': {'external_id': [str(user_id)]},
         'target_channel': 'push',
         'headings': {'en': title, 'ru': title},
         'contents': {'en': body_text, 'ru': body_text},
@@ -184,6 +228,12 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         # открыть ВНУТРИ приложения вместо запуска браузера.
         'data': {'targetUrl': url, 'path': url, 'url': url},
     }
+    # Адресуем напрямую устройству, если знаем его. Это надёжнее привязки
+    # по аккаунту: она иногда слетает при переустановке приложения.
+    if subs:
+        payload['include_subscription_ids'] = subs
+    else:
+        payload['include_aliases'] = {'external_id': [str(user_id)]}
     link = deep_link(url)
     web = web_link(url)
     if link.startswith('http'):
@@ -488,6 +538,7 @@ def handler(event: dict, context) -> dict:
             print(f"[onesignal_link] request user_id={me['id']} sub_id={'yes' if sub_id else 'no'} os_id={'yes' if os_id else 'no'}")
             if not sub_id and not os_id:
                 return resp(400, {'error': 'Нужен subscription_id или onesignal_id'})
+            remember_device(me['id'], sub_id, os_id)
             result = onesignal_link_user(me['id'], sub_id, os_id)
             return resp(200 if result['ok'] else 502, result)
 
