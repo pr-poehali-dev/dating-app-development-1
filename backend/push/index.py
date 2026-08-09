@@ -125,8 +125,6 @@ def onesignal_send(title: str, body_text: str, url: str, segment: str = 'Subscri
             payload['url'] = web
     else:
         payload['app_url'] = link
-        if web:
-            payload['web_url'] = web
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
@@ -177,10 +175,9 @@ def onesignal_send_to_user(user_id: int, title: str, body_text: str, url: str = 
         if web:
             payload['url'] = web
     else:
-        # Нативная обёртка: своя схема — приложение открывается напрямую
+        # Нативная обёртка: только своя схема. web_url НЕ передаём —
+        # иначе телефон открывает браузер вместо приложения.
         payload['app_url'] = link
-        if web:
-            payload['web_url'] = web
     scheme = 'Key' if api_key.startswith('os_v2_') else 'Basic'
     req = urllib.request.Request(
         'https://onesignal.com/api/v1/notifications',
